@@ -1,185 +1,129 @@
-import { Outlet, useLocation, useNavigate, Link } from "react-router";
-import { useState } from "react";
+import { Outlet, useLocation, Link, useNavigate } from "react-router";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
-import { Bell, Search, ChevronLeft, Moon, Sun, Globe, Menu, Activity, X } from "lucide-react";
-import { cn } from "./ui/shared";
-import { useI18n, useTheme, LOCALES } from "../../lib";
+import { Activity, Bell, Search, User, Menu, ChevronLeft } from "lucide-react";
+import { Button } from "./ui/shared";
+import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { useState } from "react";
+import { cn } from "./ui/utils";
 
 export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { t, locale, setLocale } = useI18n();
-  const { dark, toggle } = useTheme();
-  const [langOpen, setLangOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
-
   const path = location.pathname;
+  
+  // Determine role and portal context
   const isLanding = path === "/";
   const isPatient = path.startsWith("/patient");
-  const isDoctor = path.startsWith("/doctor");
-  const isAdmin = path.startsWith("/admin");
-  const isFinance = path.startsWith("/finance");
-  const isLab = path.startsWith("/lab");
+  const isProfessional = !isPatient && !isLanding;
 
-  let role: "patient" | "doctor" | "admin" | "finance" | "lab" = "doctor";
-  if (isPatient) role = "patient";
-  if (isAdmin) role = "admin";
-  if (isFinance) role = "finance";
-  if (isLab) role = "lab";
+  // Determine Role for Sidebar
+  let role: "doctor" | "admin" | "finance" | "lab" = "doctor";
+  if (path.startsWith("/admin")) role = "admin";
+  if (path.startsWith("/finance")) role = "finance";
+  if (path.startsWith("/lab")) role = "lab";
 
-  const pathParts = path.split("/").filter(Boolean);
-  const canGoBack = pathParts.length > 1;
+  // Breadcrumb/Back support
+  const canGoBack = path.split("/").filter(Boolean).length > 1;
 
-  const notifications = [
-    { id: 1, text: "Dr. Sarah confirmed your appointment", time: "2m ago", unread: true },
-    { id: 2, text: "Lab results are ready to view", time: "1h ago", unread: true },
-    { id: 3, text: "Prescription refill approved", time: "3h ago", unread: false },
-  ];
-  const unreadCount = notifications.filter(n => n.unread).length;
-
-  const userName = isPatient ? "John Doe" : isDoctor ? "Dr. Brandan" : "Admin";
-  const userRole = isPatient ? "Patient" : isDoctor ? "Chief Medical Officer" : "System Admin";
-  const userInitials = isPatient ? "JD" : isDoctor ? "DB" : "AD";
+  if (isLanding) {
+    return <Outlet />;
+  }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
-      {/* Sidebar — shown for all portals on desktop, overlay on mobile */}
-      {!isLanding && (
-        <Sidebar
-          role={role}
-          mobileOpen={mobileMenuOpen}
-          onMobileClose={() => setMobileMenuOpen(false)}
-        />
+    <div className="flex h-screen w-full overflow-hidden bg-background font-sans antialiased text-foreground">
+      {/* Desktop Sidebar (Left) */}
+      {isProfessional && (
+        <div className="hidden md:block h-full">
+          <Sidebar role={role} />
+        </div>
       )}
 
-      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
-        {/* Header */}
-        {!isLanding && (
-          <header className="flex h-14 md:h-16 items-center justify-between border-b border-border bg-card px-3 md:px-5 gap-2 shrink-0 z-30">
-            {/* Left */}
-            <div className="flex items-center gap-1.5 min-w-0">
-              <button
-                className="flex items-center justify-center h-9 w-9 rounded-xl hover:bg-accent transition-colors md:hidden"
-                onClick={() => setMobileMenuOpen(o => !o)}
+      <div className="flex flex-1 flex-col overflow-hidden relative">
+        {/* Header - Glassmorphic Design */}
+        <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 md:px-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            {/* Mobile Sidebar Trigger (For Pros) */}
+            {isProfessional && (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden h-10 w-10 rounded-xl hover:bg-primary/5 active:scale-95 transition-all">
+                    <Menu className="h-6 w-6 text-primary" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-72 border-r-0 shadow-2xl">
+                  <Sidebar role={role} />
+                </SheetContent>
+              </Sheet>
+            )}
+
+            {/* Back Button (For Deep Pages) */}
+            {canGoBack && !isProfessional && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate(-1)}
+                className="h-10 w-10 rounded-xl bg-primary/5 text-primary"
               >
-                <Menu className="h-5 w-5" />
-              </button>
-              {canGoBack && (
-                <button
-                  onClick={() => navigate(-1)}
-                  className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-lg hover:bg-accent"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t("back")}</span>
-                </button>
-              )}
-              <div className="flex items-center gap-2 md:hidden">
-                <div className="h-6 w-6 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                  <Activity className="h-3.5 w-3.5 text-white" />
-                </div>
-                <span className="font-bold text-sm truncate">Brandan Health</span>
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+            )}
+
+            {/* Brand Logo */}
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <div className="bg-primary p-2 rounded-xl group-hover:rotate-12 transition-transform duration-300 shadow-lg shadow-primary/20">
+                <Activity className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <span className="font-bold text-xl tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                Brandan
+              </span>
+            </Link>
+          </div>
+
+          {/* Desktop Search */}
+          <div className="hidden lg:flex flex-1 max-w-md mx-8 relative group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Search health records..." 
+              className="w-full pl-11 pr-4 py-2.5 bg-muted/40 rounded-2xl border border-transparent focus:border-primary/20 focus:bg-background focus:ring-4 focus:ring-primary/5 text-sm transition-all outline-none"
+            />
+          </div>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl hover:bg-primary/5 group">
+              <Bell className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-destructive border-2 border-background animate-pulse" />
+            </Button>
+            
+            <div className="h-8 w-[1px] bg-border/60 mx-1 hidden sm:block" />
+
+            <div className="flex items-center gap-3 pl-1">
+              <div className="hidden sm:flex flex-col text-right">
+                <span className="text-xs font-bold leading-tight">Dr. Brandan</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">Chief Medical</span>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 p-[1px] shadow-md shadow-primary/20">
+                 <div className="h-full w-full rounded-[11px] bg-background flex items-center justify-center">
+                    <User className="h-5 w-5 text-primary" />
+                 </div>
               </div>
             </div>
+          </div>
+        </header>
 
-            {/* Center search */}
-            <div className="hidden md:flex flex-1 max-w-sm items-center relative mx-4">
-              <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder={t("search")}
-                className="w-full pl-9 pr-4 py-2 bg-muted/60 rounded-full text-sm border border-transparent focus:border-primary focus:outline-none focus:bg-background transition-all"
-              />
-            </div>
-
-            {/* Right */}
-            <div className="flex items-center gap-1">
-              <button onClick={toggle} className="h-9 w-9 flex items-center justify-center rounded-xl hover:bg-accent transition-colors">
-                {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
-
-              {/* Language */}
-              <div className="relative">
-                <button
-                  onClick={() => { setLangOpen(o => !o); setNotifOpen(false); }}
-                  className="h-9 w-9 flex items-center justify-center rounded-xl hover:bg-accent transition-colors"
-                >
-                  <Globe className="h-4 w-4" />
-                </button>
-                {langOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
-                    <div className="absolute right-0 top-11 z-50 w-44 bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
-                      {LOCALES.map(l => (
-                        <button key={l.code} onClick={() => { setLocale(l.code); setLangOpen(false); }}
-                          className={cn("flex items-center gap-3 w-full px-4 py-2.5 text-sm hover:bg-accent transition-colors",
-                            locale === l.code && "bg-primary/10 text-primary font-semibold")}>
-                          <span>{l.flag}</span><span>{l.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Notifications */}
-              <div className="relative">
-                <button
-                  onClick={() => { setNotifOpen(o => !o); setLangOpen(false); }}
-                  className="h-9 w-9 flex items-center justify-center rounded-xl hover:bg-accent transition-colors relative"
-                >
-                  <Bell className="h-4 w-4" />
-                  {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-card" />}
-                </button>
-                {notifOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-                    <div className="absolute right-0 top-11 z-50 w-80 bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
-                      <div className="px-4 py-3 border-b border-border font-semibold text-sm flex items-center justify-between">
-                        <span>Notifications</span>
-                        <span className="text-xs text-primary font-normal cursor-pointer">Mark all read</span>
-                      </div>
-                      {notifications.map(n => (
-                        <div key={n.id} className={cn("px-4 py-3 hover:bg-accent transition-colors cursor-pointer border-b border-border/50 last:border-0", n.unread && "bg-primary/5")}>
-                          <div className="flex items-start gap-2">
-                            {n.unread && <span className="h-2 w-2 rounded-full bg-primary mt-1.5 shrink-0" />}
-                            <div>
-                              <p className="text-sm font-medium leading-snug">{n.text}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">{n.time}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Avatar */}
-              <div className="flex items-center gap-2 pl-2 border-l border-border ml-1">
-                <div className="hidden md:flex flex-col text-right">
-                  <span className="text-xs font-semibold leading-tight">{userName}</span>
-                  <span className="text-[10px] text-muted-foreground">{userRole}</span>
-                </div>
-                <div className="h-8 w-8 md:h-9 md:w-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0 cursor-pointer">
-                  {userInitials}
-                </div>
-              </div>
-            </div>
-          </header>
-        )}
-
-        {/* Content */}
+        {/* Scrollable Content Area */}
         <main className={cn(
-          "flex-1 overflow-y-auto",
-          !isLanding && "p-4 md:p-6",
-          isPatient && "pb-24",
-          !isPatient && !isLanding && "pb-6"
+          "flex-1 overflow-y-auto overflow-x-hidden scroll-smooth",
+          isPatient ? "pb-28" : "pb-6"
         )}>
-          <Outlet />
+          <div className="w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Outlet />
+          </div>
         </main>
 
+        {/* Bottom Navigation (Patient Portal Only) */}
         {isPatient && <BottomNav />}
       </div>
     </div>
