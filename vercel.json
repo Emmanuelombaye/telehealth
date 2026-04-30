@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd telehealth && npm install && npm run build",
+  "outputDirectory": "telehealth/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
