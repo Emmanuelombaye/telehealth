@@ -7,7 +7,7 @@ import {
   User 
 } from "lucide-react";
 import { cn } from "./ui/shared";
-import { motion } from "motion";
+import { motion } from "framer-motion";
 
 export function BottomNav() {
   const navItems = [
