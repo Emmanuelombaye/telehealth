@@ -11,6 +11,7 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname;
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Determine role and portal context
   const isLanding = path === "/";
@@ -45,14 +46,14 @@ export function AppLayout() {
           <div className="flex items-center gap-3">
             {/* Mobile Sidebar Trigger (For Pros) */}
             {isProfessional && (
-              <Sheet>
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="md:hidden h-10 w-10 rounded-xl hover:bg-primary/5 active:scale-95 transition-all">
                     <Menu className="h-6 w-6 text-primary" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-72 border-r-0 shadow-2xl">
-                  <Sidebar role={role} />
+                  <Sidebar role={role} onMobileClose={() => setIsMobileMenuOpen(false)} />
                 </SheetContent>
               </Sheet>
             )}

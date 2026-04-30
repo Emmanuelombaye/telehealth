@@ -83,7 +83,7 @@ const roleColors: Record<Role, string> = {
 const roleLabels: Record<Role, string> = {
   patient: "Patient Portal",
   doctor: "Doctor Portal",
-  admin: "Admin Portal",
+  admin: "System Administration",
   finance: "Finance Portal",
   lab: "Lab Portal",
 };
@@ -92,12 +92,12 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const { t } = useI18n();
   const menu = menuConfig[role];
 
-  const Content = () => (
-    <div className="flex h-full flex-col overflow-hidden">
+  const SidebarContent = () => (
+    <div className="flex h-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       {/* Logo */}
-      <div className="flex h-14 md:h-16 items-center justify-between border-b border-sidebar-border px-4 shrink-0">
+      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4 shrink-0 bg-sidebar">
         <Link to="/" className="flex items-center gap-2.5" onClick={onMobileClose}>
-          <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center shrink-0", roleColors[role])}>
+          <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center shrink-0 shadow-lg", roleColors[role])}>
             <Activity className="h-4 w-4 text-white" />
           </div>
           <div>
@@ -106,14 +106,14 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
           </div>
         </Link>
         {onMobileClose && (
-          <button onClick={onMobileClose} className="md:hidden p-1.5 rounded-lg hover:bg-sidebar-accent">
-            <X className="h-4 w-4" />
+          <button onClick={onMobileClose} className="md:hidden p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors">
+            <X className="h-5 w-5 text-muted-foreground" />
           </button>
         )}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
         {menu.map((item) => (
           <NavLink
             key={item.href}
@@ -122,22 +122,22 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
             onClick={onMobileClose}
             className={({ isActive }) =>
               cn(
-                "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 group",
+                "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 group relative",
                 isActive
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )
             }
           >
             {({ isActive }) => (
               <>
                 <div className="flex items-center gap-3 min-w-0">
-                  <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-white" : "text-muted-foreground group-hover:text-sidebar-accent-foreground")} />
+                  <item.icon className={cn("h-4 w-4 shrink-0 transition-colors", isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-sidebar-accent-foreground")} />
                   <span className="truncate">{item.label}</span>
                 </div>
                 {item.badge && item.badge > 0 && (
-                  <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0",
-                    isActive ? "bg-white/20 text-white" : "bg-red-500 text-white")}>
+                  <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm",
+                    isActive ? "bg-white/20 text-white" : "bg-primary text-primary-foreground")}>
                     {item.badge}
                   </span>
                 )}
@@ -148,22 +148,22 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
       </nav>
 
       {/* User footer */}
-      <div className="p-3 border-t border-sidebar-border shrink-0 space-y-1">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-sidebar-accent">
-          <div className={cn("h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", roleColors[role])}>
-            {role === "doctor" ? "DB" : role === "admin" ? "AD" : role === "patient" ? "JD" : "US"}
+      <div className="p-4 border-t border-sidebar-border shrink-0 space-y-2 bg-sidebar/50">
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-sidebar-accent/50 border border-sidebar-border">
+          <div className={cn("h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-inner", roleColors[role])}>
+            {role === "doctor" ? "HV" : role === "admin" ? "AV" : role === "patient" ? "AS" : "US"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold truncate">
-              {role === "doctor" ? "Dr. Brandan" : role === "admin" ? "Admin User" : role === "patient" ? "John Doe" : "Staff"}
+            <p className="text-xs font-bold truncate">
+              {role === "doctor" ? "Dr. Harrison Vance" : role === "admin" ? "Alex Sterling" : role === "patient" ? "Alex Sterling" : "Staff Member"}
             </p>
-            <p className="text-[10px] text-muted-foreground capitalize">{role} · Online</p>
+            <p className="text-[10px] text-muted-foreground capitalize font-medium">{role} Portal · Online</p>
           </div>
-          <div className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
         </div>
         <Link to="/" onClick={onMobileClose}
-          className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
-          <LogOut className="h-4 w-4" />
+          className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors group">
+          <LogOut className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           <span>{t("logout")}</span>
         </Link>
       </div>
@@ -172,20 +172,25 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
 
   return (
     <>
-      {/* Desktop */}
-      <div className="hidden md:flex h-full w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-        <Content />
+      {/* Desktop Persistent Sidebar */}
+      <div className="hidden md:flex h-full w-60 shrink-0 flex-col">
+        <SidebarContent />
       </div>
 
-      {/* Mobile overlay */}
+      {/* Mobile Modal Sidebar (Only when mobileOpen is true) */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onMobileClose} />
-          <div className="relative w-72 bg-sidebar text-sidebar-foreground h-full shadow-2xl z-10">
-            <Content />
+        <div className="fixed inset-0 z-[100] flex md:hidden">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={onMobileClose} />
+          <div className="relative w-72 bg-sidebar text-sidebar-foreground h-full shadow-2xl z-10 animate-in slide-in-from-left duration-300">
+            <SidebarContent />
           </div>
         </div>
       )}
+
+      {/* Shared Content Export (For Sheet/Drawer use) */}
+      <div className="md:hidden contents">
+        {!mobileOpen && <SidebarContent />}
+      </div>
     </>
   );
 }
