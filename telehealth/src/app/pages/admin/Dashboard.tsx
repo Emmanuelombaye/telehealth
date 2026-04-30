@@ -19,10 +19,10 @@ const userDist = [
 ];
 
 const recentLogs = [
-  { user: "Dr. Sarah Johnson", action: "Record Access", target: "Patient #8492", time: "2m ago", severity: "info" },
+  { user: "Dr. Elena Rodriguez", action: "Record Access", target: "Patient #8492", time: "2m ago", severity: "info" },
   { user: "Unknown IP", action: "Failed Login x50", target: "Admin Portal", time: "14m ago", severity: "critical" },
   { user: "System", action: "Backup Completed", target: "Vault-Alpha", time: "1h ago", severity: "info" },
-  { user: "Nurse Maria", action: "Prescription Created", target: "Patient #2210", time: "3h ago", severity: "medium" },
+  { user: "Nurse Chloe", action: "Prescription Created", target: "Patient #2210", time: "3h ago", severity: "medium" },
 ];
 
 const quickLinks = [

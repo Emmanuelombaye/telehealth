@@ -23,7 +23,7 @@ export function PatientDashboard() {
       <div className="flex items-center justify-between pt-1">
         <div>
           <p className="text-sm text-muted-foreground">{greeting},</p>
-          <h1 className="text-xl font-bold">John Doe 👋</h1>
+          <h1 className="text-xl font-bold">Alex Sterling 👋</h1>
         </div>
         <Link to="/patient/appointments">
           <Button className="rounded-full h-10 px-4 shadow-md shadow-primary/20 text-sm gap-1.5">
@@ -101,7 +101,7 @@ export function PatientDashboard() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm">General Consultation</p>
-                <p className="text-xs text-muted-foreground">Dr. Sarah Johnson</p>
+                <p className="text-xs text-muted-foreground">Dr. Elena Rodriguez</p>
                 <div className="flex items-center gap-1 mt-1">
                   <Calendar className="h-3 w-3 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground">Today • 10:30 AM</span>
@@ -120,7 +120,7 @@ export function PatientDashboard() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm">Cardiology Follow-up</p>
-                <p className="text-xs text-muted-foreground">Dr. Michael Chen</p>
+                <p className="text-xs text-muted-foreground">Dr. Marcus Thorne</p>
                 <div className="flex items-center gap-1 mt-1">
                   <Calendar className="h-3 w-3 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground">May 20 • 2:00 PM</span>

@@ -101,7 +101,7 @@ export function AppLayout() {
 
             <div className="flex items-center gap-3 pl-1">
               <div className="hidden sm:flex flex-col text-right">
-                <span className="text-xs font-bold leading-tight">Dr. Brandan</span>
+                <span className="text-xs font-bold leading-tight">Dr. Harrison Vance</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">Chief Medical</span>
               </div>
               <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 p-[1px] shadow-md shadow-primary/20">

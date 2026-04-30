@@ -13,10 +13,10 @@ const statsData = [
 ];
 
 const patientQueue = [
-  { id: 1, name: "Alice Thompson", time: "09:00 AM", type: "Follow-up", status: "In Lobby", avatar: "AT", urgent: true },
-  { id: 2, name: "Robert Wilson", time: "09:30 AM", type: "General Consult", status: "Ready", avatar: "RW", urgent: false },
-  { id: 3, name: "Sarah Miller", time: "10:00 AM", type: "Lab Review", status: "Scheduled", avatar: "SM", urgent: false },
-  { id: 4, name: "James Brown", time: "10:30 AM", type: "Prescription", status: "Scheduled", avatar: "JB", urgent: false },
+  { id: 1, name: "Sophie Bennett", time: "09:00 AM", type: "Follow-up", status: "In Lobby", avatar: "SB", urgent: true },
+  { id: 2, name: "Caleb Montgomery", time: "09:30 AM", type: "General Consult", status: "Ready", avatar: "CM", urgent: false },
+  { id: 3, name: "Maya Brooks", time: "10:00 AM", type: "Lab Review", status: "Scheduled", avatar: "MB", urgent: false },
+  { id: 4, name: "Isaiah Jackson", time: "10:30 AM", type: "Prescription", status: "Scheduled", avatar: "IJ", urgent: false },
 ];
 
 export function DoctorDashboard() {
@@ -29,7 +29,7 @@ export function DoctorDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">{greeting},</p>
-          <h1 className="text-2xl font-bold">Dr. Brandan 👨‍⚕️</h1>
+          <h1 className="text-2xl font-bold">Dr. Harrison Vance 👨‍⚕️</h1>
           <p className="text-sm text-muted-foreground mt-0.5">14 patients scheduled today</p>
         </div>
         <div className="flex items-center gap-2">
