@@ -1,0 +1,8 @@
+{
+  "name": "telehealth-root",
+  "private": true,
+  "scripts": {
+    "build": "cd telehealth && npm install && npm run build",
+    "install": "cd telehealth && npm install"
+  }
+}
