@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { User, Stethoscope, ShieldCheck, ArrowRight, Activity, Globe, Star, CheckCircle2, Video, Lock, Zap } from "lucide-react";
+import { User, Stethoscope, ShieldCheck, ArrowRight, Activity, Globe, Star, CheckCircle2, Video, Lock, Zap, Pill, Building2, HeartPulse, Share2 } from "lucide-react";
 import { Card, CardContent, Button, cn } from "../components/ui/shared";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useI18n, LOCALES } from "../../lib";
@@ -34,6 +34,51 @@ export function LandingPage() {
       gradient: "from-slate-600 to-slate-700",
       bg: "bg-slate-50 dark:bg-slate-950/30",
       image: "https://images.unsplash.com/photo-1777269749032-d8d458ae594d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
+    },
+    {
+      title: "Pharmacy Portal",
+      description: "Manage prescriptions, inventory, and fulfillment.",
+      icon: Pill,
+      href: "/pharmacy",
+      gradient: "from-teal-500 to-teal-600",
+      bg: "bg-teal-50 dark:bg-teal-950/30",
+      image: "https://images.unsplash.com/photo-1758691462743-f9fc9e430d39?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
+    },
+    {
+      title: "Insurance Portal",
+      description: "Process claims, verify coverage, and manage billing.",
+      icon: Building2,
+      href: "/insurance",
+      gradient: "from-blue-600 to-blue-700",
+      bg: "bg-blue-50 dark:bg-blue-950/30",
+      image: "https://images.unsplash.com/photo-1758691463620-188ca7c1a04f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
+    },
+    {
+      title: "Nurse Triage",
+      description: "Pre-consultation interviews and patient queue management.",
+      icon: HeartPulse,
+      href: "/nurse",
+      gradient: "from-pink-500 to-pink-600",
+      bg: "bg-pink-50 dark:bg-pink-950/30",
+      image: "https://images.unsplash.com/photo-1777269749032-d8d458ae594d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
+    },
+    {
+      title: "Corporate Portal",
+      description: "B2B portal for employee wellness and benefits.",
+      icon: Building2,
+      href: "/corporate",
+      gradient: "from-indigo-600 to-indigo-700",
+      bg: "bg-indigo-50 dark:bg-indigo-950/30",
+      image: "https://images.unsplash.com/photo-1758691462743-f9fc9e430d39?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
+    },
+    {
+      title: "Affiliate Portal",
+      description: "Track referrals, share records, and manage commissions.",
+      icon: Share2,
+      href: "/affiliate",
+      gradient: "from-orange-500 to-orange-600",
+      bg: "bg-orange-50 dark:bg-orange-950/30",
+      image: "https://images.unsplash.com/photo-1758691463620-188ca7c1a04f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
     },
   ];
 

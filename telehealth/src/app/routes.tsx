@@ -26,6 +26,13 @@ import { DoctorSchedulePage } from "./pages/doctor/pages/Schedule";
 import { DoctorMessagesPage } from "./pages/doctor/pages/Messages";
 import { DoctorConsultPage } from "./pages/doctor/pages/Consult";
 import { DoctorLabsPage } from "./pages/doctor/pages/Labs";
+import { DoctorScribePage } from "./pages/doctor/pages/Scribe";
+import { DoctorRPMPage } from "./pages/doctor/pages/RPM";
+import { DoctorERxPage } from "./pages/doctor/pages/ERx";
+import { DoctorImagingPage } from "./pages/doctor/pages/Imaging";
+import { DoctorReferralsPage } from "./pages/doctor/pages/Referrals";
+import { DoctorBillingPage } from "./pages/doctor/pages/Billing";
+import { DoctorEducationPage } from "./pages/doctor/pages/Education";
 
 // Admin pages
 import { AdminTreatmentsPage } from "./pages/admin/pages/Treatments";
@@ -42,6 +49,12 @@ import { AdminAffiliatesPage } from "./pages/admin/pages/Affiliates";
 import { AdminUsersPage } from "./pages/admin/pages/Users";
 import { AdminAuditPage } from "./pages/admin/pages/Audit";
 import { AdminSettingsPage } from "./pages/admin/pages/Settings";
+
+import { PharmacyDashboard } from "./pages/pharmacy/Dashboard";
+import { InsuranceDashboard } from "./pages/insurance/Dashboard";
+import { NurseDashboard } from "./pages/nurse/Dashboard";
+import { CorporateDashboard } from "./pages/corporate/Dashboard";
+import { AffiliateDashboard } from "./pages/affiliate/Dashboard";
 
 import { NotFoundPage } from "./pages/NotFound";
 
@@ -83,6 +96,13 @@ export const router = createBrowserRouter([
           { path: "messages", Component: DoctorMessagesPage },
           { path: "consult", Component: DoctorConsultPage },
           { path: "labs", Component: DoctorLabsPage },
+          { path: "scribe", Component: DoctorScribePage },
+          { path: "rpm", Component: DoctorRPMPage },
+          { path: "erx", Component: DoctorERxPage },
+          { path: "imaging", Component: DoctorImagingPage },
+          { path: "referrals", Component: DoctorReferralsPage },
+          { path: "billing", Component: DoctorBillingPage },
+          { path: "education", Component: DoctorEducationPage },
         ],
       },
 
@@ -106,6 +126,28 @@ export const router = createBrowserRouter([
           { path: "audit", Component: AdminAuditPage },
           { path: "settings", Component: AdminSettingsPage },
         ],
+      },
+
+      // New Portals
+      {
+        path: "pharmacy",
+        children: [{ index: true, Component: PharmacyDashboard }],
+      },
+      {
+        path: "insurance",
+        children: [{ index: true, Component: InsuranceDashboard }],
+      },
+      {
+        path: "nurse",
+        children: [{ index: true, Component: NurseDashboard }],
+      },
+      {
+        path: "corporate",
+        children: [{ index: true, Component: CorporateDashboard }],
+      },
+      {
+        path: "affiliate",
+        children: [{ index: true, Component: AffiliateDashboard }],
       },
 
       { path: "*", Component: NotFoundPage },

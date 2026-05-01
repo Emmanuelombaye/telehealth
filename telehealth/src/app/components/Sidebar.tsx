@@ -5,12 +5,13 @@ import {
   CreditCard, FlaskConical, X, TrendingUp, Package, Wrench,
   HelpCircle, Tag, Share2, BarChart3, Layers, Home,
   Bell, User, Heart, FolderOpen, Pill, TestTube, UserCheck,
-  FileCheck, Receipt, Percent, Building2
+  FileCheck, Receipt, Percent, Building2, Bot, HeartPulse,
+  Image as ImageIcon, ArrowRightLeft, BookOpen
 } from "lucide-react";
 import { cn } from "./ui/shared";
 import { useI18n } from "../../lib";
 
-type Role = "patient" | "doctor" | "admin" | "finance" | "lab";
+type Role = "patient" | "doctor" | "admin" | "finance" | "lab" | "pharmacy" | "insurance" | "nurse" | "corporate" | "affiliate";
 
 interface SidebarProps {
   role: Role;
@@ -42,6 +43,13 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
     { icon: MessageSquare, label: "Messages", href: "/doctor/messages", badge: 2 },
     { icon: Stethoscope, label: "Consultation", href: "/doctor/consult" },
     { icon: FlaskConical, label: "Lab Requests", href: "/doctor/labs" },
+    { icon: Bot, label: "AI Scribe", href: "/doctor/scribe" },
+    { icon: HeartPulse, label: "RPM", href: "/doctor/rpm", badge: 4 },
+    { icon: Pill, label: "e-Prescribing", href: "/doctor/erx" },
+    { icon: ImageIcon, label: "Imaging (PACS)", href: "/doctor/imaging" },
+    { icon: ArrowRightLeft, label: "Referrals", href: "/doctor/referrals" },
+    { icon: Receipt, label: "Coding & Billing", href: "/doctor/billing" },
+    { icon: BookOpen, label: "Education", href: "/doctor/education" },
   ],
   admin: [
     { icon: LayoutDashboard, label: "Home", href: "/admin" },
@@ -70,6 +78,32 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
     { icon: FlaskConical, label: "Test Orders", href: "/lab" },
     { icon: Package, label: "Pharmacy", href: "/lab/pharmacy" },
   ],
+  pharmacy: [
+    { icon: Pill, label: "Prescriptions", href: "/pharmacy" },
+    { icon: Package, label: "Inventory", href: "/pharmacy/inventory" },
+    { icon: TrendingUp, label: "Fulfillment", href: "/pharmacy/fulfillment" },
+  ],
+  insurance: [
+    { icon: Building2, label: "Claims", href: "/insurance" },
+    { icon: Receipt, label: "Authorizations", href: "/insurance/authorizations" },
+    { icon: Users, label: "Members", href: "/insurance/members" },
+  ],
+  nurse: [
+    { icon: Stethoscope, label: "Triage Queue", href: "/nurse" },
+    { icon: FileCheck, label: "Intake Review", href: "/nurse/intake" },
+    { icon: Heart, label: "Vitals", href: "/nurse/vitals" },
+  ],
+  corporate: [
+    { icon: Building2, label: "Dashboard", href: "/corporate" },
+    { icon: Users, label: "Employees", href: "/corporate/employees" },
+    { icon: BarChart3, label: "Usage Analytics", href: "/corporate/analytics" },
+    { icon: Receipt, label: "Billing", href: "/corporate/billing" },
+  ],
+  affiliate: [
+    { icon: Share2, label: "Referrals", href: "/affiliate" },
+    { icon: TrendingUp, label: "Commissions", href: "/affiliate/commissions" },
+    { icon: FileText, label: "Marketing Assets", href: "/affiliate/assets" },
+  ],
 };
 
 const roleColors: Record<Role, string> = {
@@ -78,6 +112,11 @@ const roleColors: Record<Role, string> = {
   admin: "bg-slate-700",
   finance: "bg-amber-500",
   lab: "bg-purple-500",
+  pharmacy: "bg-teal-500",
+  insurance: "bg-blue-600",
+  nurse: "bg-pink-500",
+  corporate: "bg-indigo-600",
+  affiliate: "bg-orange-500",
 };
 
 const roleLabels: Record<Role, string> = {
@@ -86,6 +125,11 @@ const roleLabels: Record<Role, string> = {
   admin: "System Administration",
   finance: "Finance Portal",
   lab: "Lab Portal",
+  pharmacy: "Pharmacy Portal",
+  insurance: "Insurance Portal",
+  nurse: "Nurse Triage Portal",
+  corporate: "Corporate Portal",
+  affiliate: "Affiliate Portal",
 };
 
 export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {

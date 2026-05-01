@@ -19,10 +19,15 @@ export function AppLayout() {
   const isProfessional = !isPatient && !isLanding;
 
   // Determine Role for Sidebar
-  let role: "doctor" | "admin" | "finance" | "lab" = "doctor";
+  let role: "doctor" | "admin" | "finance" | "lab" | "pharmacy" | "insurance" | "nurse" | "corporate" | "affiliate" = "doctor";
   if (path.startsWith("/admin")) role = "admin";
   if (path.startsWith("/finance")) role = "finance";
   if (path.startsWith("/lab")) role = "lab";
+  if (path.startsWith("/pharmacy")) role = "pharmacy";
+  if (path.startsWith("/insurance")) role = "insurance";
+  if (path.startsWith("/nurse")) role = "nurse";
+  if (path.startsWith("/corporate")) role = "corporate";
+  if (path.startsWith("/affiliate")) role = "affiliate";
 
   // Breadcrumb/Back support
   const canGoBack = path.split("/").filter(Boolean).length > 1;
