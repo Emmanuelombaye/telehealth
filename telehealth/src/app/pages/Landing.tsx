@@ -112,11 +112,6 @@ export function LandingPage() {
                 {t("landing.cta")} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/doctor">
-              <Button size="lg" variant="outline" className="rounded-full px-8 w-full sm:w-auto">
-                {t("portal.doctor")}
-              </Button>
-            </Link>
           </div>
         </div>
 
