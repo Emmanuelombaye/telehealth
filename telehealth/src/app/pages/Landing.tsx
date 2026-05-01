@@ -1,110 +1,230 @@
 import { Link } from "react-router";
-import { 
-  User, 
-  Stethoscope, 
-  ShieldCheck, 
-  CreditCard, 
-  FlaskConical, 
-  Activity,
-  ArrowRight
-} from "lucide-react";
-import { Card, CardContent, Button } from "../components/ui/shared";
+import { User, Stethoscope, ShieldCheck, ArrowRight, Activity, Globe, Star, CheckCircle2, Video, Lock, Zap } from "lucide-react";
+import { Card, CardContent, Button, cn } from "../components/ui/shared";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { useI18n, LOCALES } from "../../lib";
 
 export function LandingPage() {
+  const { t, locale, setLocale } = useI18n();
+
   const portals = [
     {
-      title: "Patient Portal",
-      description: "Manage your health, book appointments, and chat with doctors.",
+      title: t("portal.patient"),
+      description: t("portal.patient.desc"),
       icon: User,
       href: "/patient",
-      color: "bg-blue-500",
-      image: "https://images.unsplash.com/photo-1758691462743-f9fc9e430d39?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwZG9jdG9yJTIwaG9zcGl0YWwlMjBwYXRpZW50JTIwdGVsZW1lZGljaW5lfGVufDF8fHx8MTc3NzU2ODg3MXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+      gradient: "from-blue-500 to-blue-600",
+      bg: "bg-blue-50 dark:bg-blue-950/30",
+      image: "https://images.unsplash.com/photo-1758691462743-f9fc9e430d39?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
     },
     {
-      title: "Doctor Portal",
-      description: "Access patient records, manage schedule, and conduct consultations.",
+      title: t("portal.doctor"),
+      description: t("portal.doctor.desc"),
       icon: Stethoscope,
       href: "/doctor",
-      color: "bg-emerald-500",
-      image: "https://images.unsplash.com/photo-1758691463620-188ca7c1a04f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmllbmRseSUyMGRvY3RvciUyMGNvbnN1bHRhdGlvbiUyMGRpZ2l0YWwlMjBoZWFsdGh8ZW58MXx8fHwxNzc3NTY4ODczfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+      gradient: "from-emerald-500 to-emerald-600",
+      bg: "bg-emerald-50 dark:bg-emerald-950/30",
+      image: "https://images.unsplash.com/photo-1758691463620-188ca7c1a04f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
     },
     {
-      title: "Admin Portal",
-      description: "Oversee system operations, audit logs, and user management.",
+      title: t("portal.admin"),
+      description: t("portal.admin.desc"),
       icon: ShieldCheck,
       href: "/admin",
-      color: "bg-slate-700",
-      image: "https://images.unsplash.com/photo-1777269749032-d8d458ae594d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBob3NwaXRhbCUyMGludGVyaW9yJTIwY2xlYW4lMjBjbGluaWN8ZW58MXx8fHwxNzc3NTY4ODc0fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+      gradient: "from-slate-600 to-slate-700",
+      bg: "bg-slate-50 dark:bg-slate-950/30",
+      image: "https://images.unsplash.com/photo-1777269749032-d8d458ae594d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
     },
   ];
 
+  const stats = [
+    { value: "2.4M+", label: t("landing.stats.patients") },
+    { value: "18K+", label: t("landing.stats.doctors") },
+    { value: "120+", label: t("landing.stats.countries") },
+    { value: "99.9%", label: t("landing.stats.uptime") },
+  ];
+
+  const features = [
+    { icon: Video, title: "HD Video Consultations", desc: "Crystal-clear video calls with automatic bandwidth adaptation." },
+    { icon: Lock, title: "HIPAA-Grade Security", desc: "End-to-end encryption, audit logs, and zero-trust architecture." },
+    { icon: Globe, title: "6 Languages", desc: "Full RTL support for Arabic, plus EN, ES, FR, ZH, PT." },
+    { icon: Zap, title: "Instant Matching", desc: "AI-powered doctor matching in under 60 seconds." },
+    { icon: Activity, title: "Real-time Vitals", desc: "Connect wearables and monitor health metrics live." },
+    { icon: CheckCircle2, title: "Verified Doctors", desc: "Every doctor is board-certified and background-checked." },
+  ];
+
+  const testimonials = [
+    { name: "Maria G.", country: "🇪🇸 Spain", text: "I got a specialist consultation in 10 minutes. Incredible platform.", rating: 5 },
+    { name: "Ahmed K.", country: "🇸🇦 Saudi Arabia", text: "الواجهة العربية ممتازة والأطباء محترفون جداً.", rating: 5 },
+    { name: "Liu W.", country: "🇨🇳 China", text: "界面简洁，医生专业，预约非常方便。", rating: 5 },
+  ];
+
   return (
-    <div className="max-w-6xl mx-auto py-12 px-4">
-      <div className="text-center mb-16">
-        <div className="flex justify-center mb-4">
-          <Activity className="h-12 w-12 text-primary" />
+    <div className="min-h-screen bg-background">
+      {/* Top bar */}
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center">
+              <Activity className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-bold text-base">Brandan Health</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Language quick-switch */}
+            <div className="hidden sm:flex items-center gap-1">
+              {LOCALES.map(l => (
+                <button
+                  key={l.code}
+                  onClick={() => setLocale(l.code)}
+                  className={cn(
+                    "text-sm px-2 py-1 rounded-lg transition-colors",
+                    locale === l.code ? "bg-primary text-white font-semibold" : "hover:bg-accent text-muted-foreground"
+                  )}
+                >
+                  {l.flag}
+                </button>
+              ))}
+            </div>
+            <Link to="/patient">
+              <Button size="sm" className="rounded-full">{t("landing.cta")}</Button>
+            </Link>
+          </div>
         </div>
-        <h1 className="text-4xl font-bold tracking-tight mb-4">Brandan Health</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          The next-generation enterprise TeleHealth platform. Secure, scalable, and patient-centered.
-        </p>
-      </div>
+      </header>
 
-      <div className="grid md:grid-cols-3 gap-8">
-        {portals.map((portal) => (
-          <Link key={portal.href} to={portal.href} className="group">
-            <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 overflow-hidden border-2 hover:border-primary">
-              <div className="h-48 overflow-hidden">
-                <ImageWithFallback 
-                  src={portal.image} 
-                  alt={portal.title} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-emerald-500/5 pt-16 pb-20 px-4">
+        <div className="max-w-6xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
+            <Globe className="h-3.5 w-3.5" />
+            Available in {LOCALES.length} languages worldwide
+          </div>
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-primary via-blue-500 to-emerald-500 bg-clip-text text-transparent leading-tight">
+            {t("landing.hero")}
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
+            {t("landing.sub")}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link to="/patient">
+              <Button size="lg" className="rounded-full px-8 shadow-lg shadow-primary/30 w-full sm:w-auto">
+                {t("landing.cta")} <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/doctor">
+              <Button size="lg" variant="outline" className="rounded-full px-8 w-full sm:w-auto">
+                {t("portal.doctor")}
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Floating stats */}
+        <div className="max-w-4xl mx-auto mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
+          {stats.map((s, i) => (
+            <div key={i} className="bg-card border border-border rounded-2xl p-4 text-center shadow-sm">
+              <p className="text-2xl md:text-3xl font-extrabold text-primary">{s.value}</p>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Portal cards */}
+      <section className="max-w-6xl mx-auto px-4 py-16">
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">Choose Your Portal</h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          {portals.map((portal) => (
+            <Link key={portal.href} to={portal.href} className="group">
+              <Card className="h-full overflow-hidden border-2 border-transparent hover:border-primary transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                <div className="h-44 overflow-hidden relative">
+                  <ImageWithFallback
+                    src={portal.image}
+                    alt={portal.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className={cn("absolute inset-0 bg-gradient-to-t", `${portal.gradient} opacity-20`)} />
+                </div>
+                <CardContent className="p-5">
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white mb-3 bg-gradient-to-br", portal.gradient)}>
+                    <portal.icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-1">{portal.title}</h3>
+                  <p className="text-sm text-muted-foreground mb-4">{portal.description}</p>
+                  <div className="flex items-center text-primary text-sm font-semibold">
+                    Enter Portal <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="bg-muted/40 py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">Enterprise-Grade Features</h2>
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+            {features.map((f, i) => (
+              <div key={i} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+                  <f.icon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-1">{f.title}</h3>
+                <p className="text-sm text-muted-foreground">{f.desc}</p>
               </div>
-              <CardContent className="p-6">
-                <div className={`${portal.color} w-12 h-12 rounded-lg flex items-center justify-center text-white mb-4`}>
-                  <portal.icon className="h-6 w-6" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">{portal.title}</h3>
-                <p className="text-muted-foreground mb-6">
-                  {portal.description}
-                </p>
-                <div className="flex items-center text-primary font-semibold">
-                  Enter Portal <ArrowRight className="ml-2 h-4 w-4" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      <div className="mt-20 grid md:grid-cols-2 gap-8 items-center bg-muted/30 p-8 rounded-3xl">
-        <div>
-          <h2 className="text-2xl font-bold mb-4">Enterprise-Grade Security</h2>
-          <ul className="space-y-3">
-            {[
-              "HIPAA-aligned data encryption at rest and in transit",
-              "Role-based access control (RBAC) with granular permissions",
-              "Comprehensive audit logging for compliance",
-              "Real-time secure video and messaging protocols"
-            ].map((item, i) => (
-              <li key={i} className="flex items-start">
-                <ShieldCheck className="h-5 w-5 text-emerald-500 mr-2 shrink-0 mt-0.5" />
-                <span>{item}</span>
-              </li>
             ))}
-          </ul>
-          <Button className="mt-8">Get Started</Button>
+          </div>
         </div>
-        <div className="hidden md:block">
-           <ImageWithFallback 
-              src="https://images.unsplash.com/photo-1579154204601-01588f351e67?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGhjYXJlJTIwbGFib3JhdG9yeSUyMHBoYXJtYWN5JTIwZGFzaGJvYXJkfGVufDF8fHx8MTc3NzU2ODg3M3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral" 
-              alt="Security" 
-              className="rounded-2xl shadow-lg"
-            />
+      </section>
+
+      {/* Testimonials */}
+      <section className="max-w-6xl mx-auto px-4 py-16">
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">Trusted Globally</h2>
+        <div className="grid md:grid-cols-3 gap-5">
+          {testimonials.map((t, i) => (
+            <div key={i} className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex gap-0.5 mb-3">
+                {Array.from({ length: t.rating }).map((_, j) => (
+                  <Star key={j} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                ))}
+              </div>
+              <p className="text-sm text-foreground mb-4 leading-relaxed">"{t.text}"</p>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                  {t.name[0]}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.country}</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      </section>
+
+      {/* CTA Banner */}
+      <section className="bg-gradient-to-r from-primary to-blue-600 py-14 px-4 text-white text-center">
+        <h2 className="text-2xl md:text-3xl font-bold mb-3">Ready to transform healthcare?</h2>
+        <p className="text-white/80 mb-6 max-w-xl mx-auto">Join 2.4 million patients and 18,000 doctors on the world's most advanced telehealth platform.</p>
+        <Link to="/patient">
+          <Button size="lg" variant="secondary" className="rounded-full px-8 font-bold">
+            {t("landing.cta")} <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </Link>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border py-8 px-4 text-center text-sm text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Activity className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-foreground">Brandan Health</span>
+        </div>
+        <p>© {new Date().getFullYear()} Brandan Health. HIPAA-compliant. Available in {LOCALES.length} languages.</p>
+      </footer>
     </div>
   );
 }
