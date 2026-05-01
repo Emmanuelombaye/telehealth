@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mic, MicOff, Save, RefreshCw, FileText, Bot, CheckCircle2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared";
 
 export function DoctorScribePage() {
   const [isRecording, setIsRecording] = useState(false);

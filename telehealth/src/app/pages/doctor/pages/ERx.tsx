@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pill, AlertTriangle, ShieldCheck, Search, Send, FileCheck } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared";
 
 export function DoctorERxPage() {
   const [search, setSearch] = useState("");

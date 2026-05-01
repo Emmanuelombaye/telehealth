@@ -1,5 +1,5 @@
 import { HeartPulse, Activity, AlertCircle, Watch, Smartphone, RefreshCw } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const bpData = [
