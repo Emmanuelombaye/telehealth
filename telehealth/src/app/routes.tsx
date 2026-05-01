@@ -51,10 +51,21 @@ import { AdminAuditPage } from "./pages/admin/pages/Audit";
 import { AdminSettingsPage } from "./pages/admin/pages/Settings";
 
 import { PharmacyDashboard } from "./pages/pharmacy/Dashboard";
+import { PharmacyInventoryPage } from "./pages/pharmacy/pages/Inventory";
+import { PharmacyFulfillmentPage } from "./pages/pharmacy/pages/Fulfillment";
 import { InsuranceDashboard } from "./pages/insurance/Dashboard";
+import { InsuranceAuthorizationsPage } from "./pages/insurance/pages/Authorizations";
+import { InsuranceMembersPage } from "./pages/insurance/pages/Members";
 import { NurseDashboard } from "./pages/nurse/Dashboard";
+import { NurseIntakePage } from "./pages/nurse/pages/Intake";
+import { NurseVitalsPage } from "./pages/nurse/pages/Vitals";
 import { CorporateDashboard } from "./pages/corporate/Dashboard";
+import { CorporateEmployeesPage } from "./pages/corporate/pages/Employees";
+import { CorporateAnalyticsPage } from "./pages/corporate/pages/Analytics";
+import { CorporateBillingPage } from "./pages/corporate/pages/Billing";
 import { AffiliateDashboard } from "./pages/affiliate/Dashboard";
+import { AffiliateCommissionsPage } from "./pages/affiliate/pages/Commissions";
+import { AffiliateAssetsPage } from "./pages/affiliate/pages/Assets";
 
 import { NotFoundPage } from "./pages/NotFound";
 
@@ -131,23 +142,44 @@ export const router = createBrowserRouter([
       // New Portals
       {
         path: "pharmacy",
-        children: [{ index: true, Component: PharmacyDashboard }],
+        children: [
+          { index: true, Component: PharmacyDashboard },
+          { path: "inventory", Component: PharmacyInventoryPage },
+          { path: "fulfillment", Component: PharmacyFulfillmentPage },
+        ],
       },
       {
         path: "insurance",
-        children: [{ index: true, Component: InsuranceDashboard }],
+        children: [
+          { index: true, Component: InsuranceDashboard },
+          { path: "authorizations", Component: InsuranceAuthorizationsPage },
+          { path: "members", Component: InsuranceMembersPage },
+        ],
       },
       {
         path: "nurse",
-        children: [{ index: true, Component: NurseDashboard }],
+        children: [
+          { index: true, Component: NurseDashboard },
+          { path: "intake", Component: NurseIntakePage },
+          { path: "vitals", Component: NurseVitalsPage },
+        ],
       },
       {
         path: "corporate",
-        children: [{ index: true, Component: CorporateDashboard }],
+        children: [
+          { index: true, Component: CorporateDashboard },
+          { path: "employees", Component: CorporateEmployeesPage },
+          { path: "analytics", Component: CorporateAnalyticsPage },
+          { path: "billing", Component: CorporateBillingPage },
+        ],
       },
       {
         path: "affiliate",
-        children: [{ index: true, Component: AffiliateDashboard }],
+        children: [
+          { index: true, Component: AffiliateDashboard },
+          { path: "commissions", Component: AffiliateCommissionsPage },
+          { path: "assets", Component: AffiliateAssetsPage },
+        ],
       },
 
       { path: "*", Component: NotFoundPage },
