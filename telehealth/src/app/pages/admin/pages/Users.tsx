@@ -3,11 +3,11 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 
 const users = [
   { id: 1, name: "Alice Thompson", email: "alice@email.com", role: "patient", status: "active", joined: "Jan 15, 2026", country: "🇺🇸" },
-  { id: 2, name: "Dr. Sarah Johnson", email: "sarah.j@brandanhealth.com", role: "doctor", status: "active", joined: "Dec 1, 2025", country: "🇺🇸" },
+  { id: 2, name: "Dr. Sarah Johnson", email: "sarah.j@brandonhealth.com", role: "doctor", status: "active", joined: "Dec 1, 2025", country: "🇺🇸" },
   { id: 3, name: "Robert Wilson", email: "robert.w@email.com", role: "patient", status: "active", joined: "Feb 20, 2026", country: "🇬🇧" },
-  { id: 4, name: "Dr. Michael Chen", email: "m.chen@brandanhealth.com", role: "doctor", status: "active", joined: "Nov 15, 2025", country: "🇨🇳" },
+  { id: 4, name: "Dr. Michael Chen", email: "m.chen@brandonhealth.com", role: "doctor", status: "active", joined: "Nov 15, 2025", country: "🇨🇳" },
   { id: 5, name: "James Brown", email: "james.b@email.com", role: "patient", status: "suspended", joined: "Mar 5, 2026", country: "🇺🇸" },
-  { id: 6, name: "Nurse Maria Lopez", email: "m.lopez@brandanhealth.com", role: "staff", status: "active", joined: "Jan 8, 2026", country: "🇪🇸" },
+  { id: 6, name: "Nurse Maria Lopez", email: "m.lopez@brandonhealth.com", role: "staff", status: "active", joined: "Jan 8, 2026", country: "🇪🇸" },
 ];
 
 const roleColors = { patient: "bg-blue-100 text-blue-700 dark:bg-blue-950/40", doctor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40", staff: "bg-purple-100 text-purple-700 dark:bg-purple-950/40", admin: "bg-slate-100 text-slate-700 dark:bg-slate-950/40" };

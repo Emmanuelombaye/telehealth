@@ -76,7 +76,7 @@ export function AppLayout() {
                 <Activity className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="font-bold text-xl tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Brandan
+                Brandon
               </span>
             </Link>
           </div>

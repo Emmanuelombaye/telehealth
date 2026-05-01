@@ -2,7 +2,7 @@ Act as a senior product architect, UX/UI designer, and full-stack engineer from 
 
 Design a complete enterprise-grade TeleHealth platform called:
 
-"Brandan Health"
+"Brandon Health"
 
 This is a production-ready SaaS system inspired by global healthcare platforms like Teladoc Health and Amwell.
 

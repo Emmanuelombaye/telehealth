@@ -25,7 +25,7 @@ export function DoctorConsultPage() {
                 <p className="text-xs mt-1">Alice Thompson</p>
               </div>
               <div className="absolute bottom-3 right-3 bg-slate-800 rounded-xl p-2 text-white/60 text-xs">
-                <p className="font-bold">Dr. Brandan</p>
+                <p className="font-bold">Dr. Brandon</p>
               </div>
               <div className="absolute bottom-3 left-3 flex gap-2">
                 <button onClick={() => setMuted(m => !m)} className={`h-9 w-9 rounded-full flex items-center justify-center ${muted ? "bg-red-500" : "bg-white/20"}`}>

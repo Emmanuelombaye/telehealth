@@ -49,7 +49,7 @@ export function AdminSettingsPage() {
       <Card>
         <CardHeader className="pb-2 pt-4 px-4"><CardTitle className="text-sm flex items-center gap-2"><Settings className="h-4 w-4 text-primary" /> General</CardTitle></CardHeader>
         <CardContent className="px-4 pb-4 space-y-3">
-          {[{ label: "Platform Name", value: "Brandan Health" }, { label: "Support Email", value: "support@brandanhealth.com" }, { label: "Default Language", value: "English" }, { label: "Default Timezone", value: "UTC" }].map((f, i) => (
+          {[{ label: "Platform Name", value: "Brandon Health" }, { label: "Support Email", value: "support@brandonhealth.com" }, { label: "Default Language", value: "English" }, { label: "Default Timezone", value: "UTC" }].map((f, i) => (
             <div key={i}>
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{f.label}</label>
               <input defaultValue={f.value} className="w-full mt-1 border border-border rounded-xl px-3 py-2 text-sm bg-background focus:outline-none focus:border-primary" />

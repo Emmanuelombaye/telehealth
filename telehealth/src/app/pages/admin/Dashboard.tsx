@@ -40,7 +40,7 @@ export function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold">System Administration</h1>
-          <p className="text-sm text-muted-foreground">Global overview — Brandan Health Platform</p>
+          <p className="text-sm text-muted-foreground">Global overview — Brandon Health Platform</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="rounded-xl gap-1.5 text-xs hidden md:flex">

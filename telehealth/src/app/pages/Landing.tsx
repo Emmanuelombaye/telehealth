@@ -68,7 +68,7 @@ export function LandingPage() {
             <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center">
               <Activity className="h-4 w-4 text-white" />
             </div>
-            <span className="font-bold text-base">Brandan Health</span>
+            <span className="font-bold text-base">Brandon Health</span>
           </div>
           <div className="flex items-center gap-2">
             {/* Language quick-switch */}
@@ -221,9 +221,9 @@ export function LandingPage() {
       <footer className="border-t border-border py-8 px-4 text-center text-sm text-muted-foreground">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Activity className="h-4 w-4 text-primary" />
-          <span className="font-semibold text-foreground">Brandan Health</span>
+          <span className="font-semibold text-foreground">Brandon Health</span>
         </div>
-        <p>© {new Date().getFullYear()} Brandan Health. HIPAA-compliant. Available in {LOCALES.length} languages.</p>
+        <p>© {new Date().getFullYear()} Brandon Health. HIPAA-compliant. Available in {LOCALES.length} languages.</p>
       </footer>
     </div>
   );

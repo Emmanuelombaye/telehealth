@@ -101,7 +101,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
             <Activity className="h-4 w-4 text-white" />
           </div>
           <div>
-            <p className="font-bold text-sm leading-tight">Brandan Health</p>
+            <p className="font-bold text-sm leading-tight">Brandon Health</p>
             <p className="text-[10px] text-muted-foreground leading-tight">{roleLabels[role]}</p>
           </div>
         </Link>
