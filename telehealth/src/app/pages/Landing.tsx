@@ -24,7 +24,7 @@ export function LandingPage() {
       href: "/doctor",
       gradient: "from-emerald-500 to-emerald-600",
       bg: "bg-emerald-50 dark:bg-emerald-950/30",
-      image: "/portalImages/doctorportal.png",
+      image: "/portalImages/doctor.png",
     },
     {
       title: t("portal.admin"),
@@ -33,7 +33,7 @@ export function LandingPage() {
       href: "/admin",
       gradient: "from-slate-600 to-slate-700",
       bg: "bg-slate-50 dark:bg-slate-950/30",
-      image: "/portalImages/adminportal.png",
+      image: "/portalImages/admin.png",
     },
     {
       title: "Pharmacy Portal",
@@ -51,7 +51,7 @@ export function LandingPage() {
       href: "/insurance",
       gradient: "from-blue-600 to-blue-700",
       bg: "bg-blue-50 dark:bg-blue-950/30",
-      image: "/portalImages/insuranceportal.png",
+      image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800",
     },
     {
       title: "Nurse Triage",
@@ -60,7 +60,7 @@ export function LandingPage() {
       href: "/nurse",
       gradient: "from-pink-500 to-pink-600",
       bg: "bg-pink-50 dark:bg-pink-950/30",
-      image: "/portalImages/nurseportal.png",
+      image: "/portalImages/nurse.png",
     },
     {
       title: "Corporate Portal",
@@ -69,7 +69,7 @@ export function LandingPage() {
       href: "/corporate",
       gradient: "from-indigo-600 to-indigo-700",
       bg: "bg-indigo-50 dark:bg-indigo-950/30",
-      image: "/portalImages/corporateportal.png",
+      image: "/portalImages/corporate.png",
     },
     {
       title: "Affiliate Portal",
@@ -78,7 +78,7 @@ export function LandingPage() {
       href: "/affiliate",
       gradient: "from-orange-500 to-orange-600",
       bg: "bg-orange-50 dark:bg-orange-950/30",
-      image: "/portalImages/affiliateportal.png",
+      image: "/portalImages/affliate%20portal.png",
     },
   ];
 
