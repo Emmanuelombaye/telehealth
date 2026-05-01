@@ -15,7 +15,7 @@ export function LandingPage() {
       href: "/patient",
       gradient: "from-blue-500 to-blue-600",
       bg: "bg-blue-50 dark:bg-blue-950/30",
-      image: "https://images.unsplash.com/photo-1511174511562-5f7f18bf270b?auto=format&fit=crop&q=80&w=800",
+      image: "/portalImages/patientportal.png",
     },
     {
       title: t("portal.doctor"),
@@ -24,7 +24,7 @@ export function LandingPage() {
       href: "/doctor",
       gradient: "from-emerald-500 to-emerald-600",
       bg: "bg-emerald-50 dark:bg-emerald-950/30",
-      image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=800",
+      image: "/portalImages/doctorportal.png",
     },
     {
       title: t("portal.admin"),
@@ -33,7 +33,7 @@ export function LandingPage() {
       href: "/admin",
       gradient: "from-slate-600 to-slate-700",
       bg: "bg-slate-50 dark:bg-slate-950/30",
-      image: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&q=80&w=800",
+      image: "/portalImages/adminportal.png",
     },
     {
       title: "Pharmacy Portal",
@@ -42,7 +42,7 @@ export function LandingPage() {
       href: "/pharmacy",
       gradient: "from-teal-500 to-teal-600",
       bg: "bg-teal-50 dark:bg-teal-950/30",
-      image: "https://images.unsplash.com/photo-1563213126-a4273aed2016?auto=format&fit=crop&q=80&w=800",
+      image: "/portalImages/pharmacyportal.png",
     },
     {
       title: "Insurance Portal",
@@ -51,7 +51,7 @@ export function LandingPage() {
       href: "/insurance",
       gradient: "from-blue-600 to-blue-700",
       bg: "bg-blue-50 dark:bg-blue-950/30",
-      image: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800",
+      image: "/portalImages/insuranceportal.png",
     },
     {
       title: "Nurse Triage",
@@ -60,7 +60,7 @@ export function LandingPage() {
       href: "/nurse",
       gradient: "from-pink-500 to-pink-600",
       bg: "bg-pink-50 dark:bg-pink-950/30",
-      image: "https://images.unsplash.com/photo-1584432810601-6c7f27d2362b?auto=format&fit=crop&q=80&w=800",
+      image: "/portalImages/nurseportal.png",
     },
     {
       title: "Corporate Portal",
@@ -69,7 +69,7 @@ export function LandingPage() {
       href: "/corporate",
       gradient: "from-indigo-600 to-indigo-700",
       bg: "bg-indigo-50 dark:bg-indigo-950/30",
-      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800",
+      image: "/portalImages/corporateportal.png",
     },
     {
       title: "Affiliate Portal",
@@ -78,7 +78,7 @@ export function LandingPage() {
       href: "/affiliate",
       gradient: "from-orange-500 to-orange-600",
       bg: "bg-orange-50 dark:bg-orange-950/30",
-      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800",
+      image: "/portalImages/affiliateportal.png",
     },
   ];
 
