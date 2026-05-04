@@ -1,6 +1,9 @@
 {
-  "buildCommand": "cd telehealth && npm install && npm run build",
-  "outputDirectory": "telehealth/dist",
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": "vite",
+  "nodeVersion": "22.x",
   "rewrites": [
     {
       "source": "/(.*)",
