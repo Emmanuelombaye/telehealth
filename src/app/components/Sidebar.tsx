@@ -19,7 +19,7 @@ interface SidebarProps {
   onMobileClose?: () => void;
 }
 
-const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?: number }[]> = {
+const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?: number; group?: string }[]> = {
   patient: [
     { icon: Home, label: "Overview", href: "/patient" },
     { icon: Package, label: "Shop Treatments", href: "/patient/shop" },
@@ -56,21 +56,17 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
     { icon: BookOpen, label: "Education", href: "/doctor/education" },
   ],
   admin: [
-    { icon: LayoutDashboard, label: "Home", href: "/admin" },
-    { icon: Heart, label: "Treatments", href: "/admin/treatments" },
-    { icon: Package, label: "Orders", href: "/admin/orders", badge: 5 },
-    { icon: MessageSquare, label: "Messages", href: "/admin/messages", badge: 8 },
-    { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
-    { icon: Wrench, label: "Tools & Services", href: "/admin/tools" },
-    { icon: HelpCircle, label: "Questionnaire", href: "/admin/questionnaire" },
-    { icon: Layers, label: "Products", href: "/admin/products" },
-    { icon: Settings, label: "Builders", href: "/admin/builders" },
-    { icon: CreditCard, label: "Finances", href: "/admin/finance" },
-    { icon: Tag, label: "Discounts", href: "/admin/discounts" },
-    { icon: Share2, label: "Affiliates", href: "/admin/affiliates" },
-    { icon: Users, label: "User Management", href: "/admin/users" },
-    { icon: ShieldCheck, label: "Audit Logs", href: "/admin/audit" },
-    { icon: Settings, label: "Settings", href: "/admin/settings" },
+    { group: "MANAGEMENT", icon: LayoutDashboard, label: "Home", href: "/admin" },
+    { group: "MANAGEMENT", icon: Users, label: "Patients", href: "/admin/patients" },
+    { group: "MANAGEMENT", icon: Heart, label: "Treatments", href: "/admin/treatments" },
+    { group: "MANAGEMENT", icon: Package, label: "Orders", href: "/admin/orders" },
+    { group: "MANAGEMENT", icon: MessageSquare, label: "Messenger", href: "/admin/messages", badge: 49 },
+    { group: "MANAGEMENT", icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
+    { group: "TOOLS & SERVICES", icon: HelpCircle, label: "Questionnaires", href: "/admin/questionnaires" },
+    { group: "TOOLS & SERVICES", icon: Layers, label: "Products", href: "/admin/products" },
+    { group: "TOOLS & SERVICES", icon: Settings, label: "Builders", href: "/admin/builders" },
+    { group: "SALES & CHANNELS", icon: CreditCard, label: "Finances", href: "/admin/finance" },
+    { group: "BOTTOM", icon: Settings, label: "Settings", href: "/admin/settings" },
   ],
   superadmin: [
     { icon: LayoutDashboard, label: "Overview", href: "/superadmin" },
@@ -105,10 +101,8 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
     <div className="flex h-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4 shrink-0 bg-sidebar">
-        <Link to="/" className="flex items-center gap-2.5" onClick={onMobileClose}>
-          <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center shrink-0 shadow-lg", roleColors[role])}>
-            <Activity className="h-4 w-4 text-white" />
-          </div>
+        <Link to="/" className="flex items-center gap-2.5 group" onClick={onMobileClose}>
+          <img src="/PeakHealthLogo.png" alt="Peak Health Logo" className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
           <div>
             <p className="font-bold text-sm leading-tight">{brand.name}</p>
             <p className="text-[10px] text-muted-foreground leading-tight">{roleLabels[role]}</p>
@@ -123,37 +117,52 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
-        {menu.map((item) => (
-          <NavLink
-            key={item.href}
-            to={item.href}
-            end={item.href === `/${role}`}
-            onClick={onMobileClose}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 group relative",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <div className="flex items-center gap-3 min-w-0">
-                  <item.icon className={cn("h-4 w-4 shrink-0 transition-colors", isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-sidebar-accent-foreground")} />
-                  <span className="truncate">{item.label}</span>
+        {menu.map((item, index) => {
+          const prevItem = index > 0 ? menu[index - 1] : null;
+          const showGroup = item.group && item.group !== "BOTTOM" && (!prevItem || prevItem.group !== item.group);
+          const isBottom = item.group === "BOTTOM" && (!prevItem || prevItem.group !== "BOTTOM");
+
+          return (
+            <div key={item.href} className="w-full">
+              {showGroup && (
+                <div className="px-3 pb-2 pt-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+                  {item.group}
                 </div>
-                {item.badge && item.badge > 0 && (
-                  <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm",
-                    isActive ? "bg-white/20 text-white" : "bg-primary text-primary-foreground")}>
-                    {item.badge}
-                  </span>
+              )}
+              {isBottom && (
+                <div className="h-px bg-sidebar-border/60 my-3 mx-2" />
+              )}
+              <NavLink
+                to={item.href}
+                end={item.href === `/${role}`}
+                onClick={onMobileClose}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center justify-between rounded-xl px-3 py-2.5 text-[14px] font-medium transition-all duration-200 group relative mb-0.5",
+                    isActive
+                      ? "bg-primary/10 text-primary font-semibold"
+                      : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <item.icon className={cn("h-5 w-5 shrink-0 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
+                      <span className="truncate">{item.label}</span>
+                    </div>
+                    {item.badge && item.badge > 0 && (
+                      <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm",
+                        isActive ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </NavLink>
-        ))}
+              </NavLink>
+            </div>
+          );
+        })}
       </nav>
 
       {/* User footer */}

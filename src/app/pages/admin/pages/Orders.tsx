@@ -1,70 +1,96 @@
-import { Package, Clock, CheckCircle2, XCircle, Search, Filter, Eye } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Search, Printer, ArrowDownUp, Columns, CloudDownload, RefreshCw, ChevronDown } from "lucide-react";
+import { Card } from "../../../components/ui/shared";
 
-const orders = [
-  { id: "ORD-2026-0892", patient: "Alice Thompson", treatment: "General Consultation", doctor: "Dr. Sarah Johnson", date: "May 19, 2026", amount: "$75", status: "confirmed" },
-  { id: "ORD-2026-0891", patient: "Robert Wilson", treatment: "Cardiology Assessment", doctor: "Dr. Michael Chen", date: "May 20, 2026", amount: "$200", status: "pending" },
-  { id: "ORD-2026-0890", patient: "Sarah Miller", treatment: "Mental Health Session", doctor: "Dr. Liu Wei", date: "May 18, 2026", amount: "$120", status: "completed" },
-  { id: "ORD-2026-0889", patient: "James Brown", treatment: "Dermatology Async", doctor: "Dr. Amira Hassan", date: "May 17, 2026", amount: "$60", status: "cancelled" },
-  { id: "ORD-2026-0888", patient: "Maria Garcia", treatment: "Cardiology Assessment", doctor: "Dr. Michael Chen", date: "May 16, 2026", amount: "$200", status: "completed" },
+const mockOrders = [
+  { id: "1", name: "Louis Della Badia", pharmacy: "VialsRX", date: "05/03/2026", mrn: "D31118621", status: "Succeeded" },
+  { id: "2", name: "Erin Kneer", pharmacy: "VialsRX", date: "05/02/2026", mrn: "S43385633", status: "Succeeded" },
+  { id: "3", name: "Ashley Shepherd", pharmacy: "VialsRX", date: "05/02/2026", mrn: "P05626967", status: "Succeeded" },
+  { id: "4", name: "Kyler Douglas", pharmacy: "VialsRX", date: "05/02/2026", mrn: "A31393595", status: "Partial Refund" },
+  { id: "5", name: "John Colvin", pharmacy: "VialsRX", date: "05/01/2026", mrn: "Q13037761", status: "Succeeded" },
+  { id: "6", name: "Teresa Bakehorn", pharmacy: "VialsRX", date: "05/01/2026", mrn: "R40900146", status: "Succeeded" },
+  { id: "7", name: "Chelsea Callahan", pharmacy: "VialsRX", date: "05/01/2026", mrn: "N11254965", status: "Succeeded" },
+  { id: "8", name: "Jackie Webb", pharmacy: "VialsRX", date: "04/27/2026", mrn: "W99586284", status: "Failed" },
 ];
 
-const statusConfig = {
-  confirmed: { color: "text-violet-600", bg: "bg-violet-100 dark:bg-violet-950/40", icon: Clock },
-  pending: { color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-950/40", icon: Clock },
-  completed: { color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-950/40", icon: CheckCircle2 },
-  cancelled: { color: "text-red-600", bg: "bg-red-100 dark:bg-red-950/40", icon: XCircle },
+const statusStyles: Record<string, string> = {
+  "Succeeded": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+  "Partial Refund": "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800",
+  "Failed": "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 border-red-200 dark:border-red-800"
 };
 
 export function AdminOrdersPage() {
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Orders</h1>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs"><Filter className="h-3.5 w-3.5" /> Filter</Button>
+    <div className="max-w-[1400px] mx-auto font-sans space-y-6">
+      <h1 className="text-2xl font-semibold">Orders</h1>
+
+      <Card className="border-border/60 shadow-sm overflow-hidden bg-background">
+        <div className="p-4 border-b border-border/60 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-2xl flex items-center">
+              <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by order number, affiliate order number, MRN, patient name, phone number, or id"
+                className="w-full pl-9 pr-4 py-2 bg-transparent border-none text-[14px] outline-none placeholder:text-muted-foreground/70"
+              />
+            </div>
+            
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <button className="p-2 hover:bg-muted rounded-md transition-colors"><Printer className="h-[18px] w-[18px]" /></button>
+              <button className="p-2 hover:bg-muted rounded-md transition-colors"><ArrowDownUp className="h-[18px] w-[18px]" /></button>
+              <button className="p-2 hover:bg-muted rounded-md transition-colors"><Columns className="h-[18px] w-[18px]" /></button>
+              <button className="p-2 hover:bg-muted rounded-md transition-colors"><CloudDownload className="h-[18px] w-[18px]" /></button>
+              <button className="p-2 hover:bg-muted rounded-md transition-colors"><RefreshCw className="h-[18px] w-[18px]" /></button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {[ "Payment Status", "Visit Status", "Order Status", "Product", "Pharmacies", "Pharmacy Status", "Extra Filters"].map((filter) => (
+                <button key={filter} className="flex items-center gap-1.5 px-3.5 py-1.5 border border-border/80 rounded-full text-[13px] font-medium hover:bg-muted/50 transition-colors">
+                  {filter} <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              ))}
+            </div>
+            <button className="text-[13px] font-medium border border-border/80 bg-muted/20 px-4 py-1.5 rounded-full hover:bg-muted/50 transition-colors">
+              Reset Filters
+            </button>
+          </div>
         </div>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[{ label: "Total Today", value: "47", color: "text-primary" }, { label: "Confirmed", value: "28", color: "text-violet-600" }, { label: "Completed", value: "15", color: "text-emerald-600" }, { label: "Cancelled", value: "4", color: "text-red-600" }].map((s, i) => (
-          <Card key={i} className="border-none bg-muted/50"><CardContent className="p-3 text-center"><p className={`text-xl font-extrabold ${s.color}`}>{s.value}</p><p className="text-[11px] text-muted-foreground">{s.label}</p></CardContent></Card>
-        ))}
-      </div>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input className="w-full pl-9 pr-4 py-2.5 bg-muted rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search orders..." />
-      </div>
-      <div className="space-y-2">
-        {orders.map(order => {
-          const cfg = statusConfig[order.status as keyof typeof statusConfig];
-          const Icon = cfg.icon;
-          return (
-            <Card key={order.id} className="hover:border-primary/40 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", cfg.bg)}>
-                    <Icon className={cn("h-5 w-5", cfg.color)} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-bold text-sm">{order.patient}</p>
-                      <span className="text-xs font-bold text-primary">{order.amount}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{order.treatment} · {order.doctor}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] text-muted-foreground">{order.id}</span>
-                      <span className="text-[10px] text-muted-foreground">·</span>
-                      <span className="text-[10px] text-muted-foreground">{order.date}</span>
-                      <Badge variant="outline" className={cn("text-[10px] ml-1", cfg.color)}>{order.status}</Badge>
-                    </div>
-                  </div>
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-xl shrink-0"><Eye className="h-4 w-4" /></Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-muted/20 border-b border-border/60 text-muted-foreground text-[13px]">
+              <tr>
+                <th className="font-medium py-3.5 px-6">Name</th>
+                <th className="font-medium py-3.5 px-4">Pharmacy</th>
+                <th className="font-medium py-3.5 px-4">Order Date</th>
+                <th className="font-medium py-3.5 px-4">MRN #</th>
+                <th className="font-medium py-3.5 px-4">Payment Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {mockOrders.map((item) => (
+                <tr key={item.id} className="hover:bg-muted/20 transition-colors group">
+                  <td className="py-4 px-6">
+                    <a href="#" className="font-medium underline underline-offset-4 decoration-border group-hover:decoration-foreground transition-colors">
+                      {item.name}
+                    </a>
+                  </td>
+                  <td className="py-4 px-4 text-foreground/80">{item.pharmacy}</td>
+                  <td className="py-4 px-4 text-foreground/80">{item.date}</td>
+                  <td className="py-4 px-4 text-foreground/80">{item.mrn}</td>
+                  <td className="py-4 px-4">
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusStyles[item.status]}`}>
+                      {item.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }

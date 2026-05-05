@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CheckCircle2, Circle, ChevronRight, AlertCircle } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { usePatientStore } from "../../../../lib/patient-store";
 
 const forms = [
   { id: 1, title: "General Health Intake", status: "completed", required: true, completedDate: "May 10, 2026" },
@@ -15,7 +16,108 @@ const steps = ["Personal Info", "Medical History", "Symptoms", "Medications", "R
 export function IntakeFormsPage() {
   const [activeForm, setActiveForm] = useState<number | null>(null);
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [viewMode, setViewMode] = useState(false);
+  
+  // Use centralized Zustand store instead of local state
+  const intakeFormData = usePatientStore(state => state.intakeFormData);
+  const setIntakeFormData = usePatientStore(state => state.setIntakeFormData);
+
+  // Read-only view for completed forms
+  if (activeForm !== null && viewMode) {
+    const form = forms.find(f => f.id === activeForm);
+    return (
+      <div className="max-w-2xl mx-auto space-y-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold">{form?.title}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Submitted {form?.completedDate}</p>
+          </div>
+          <Button variant="outline" size="sm" className="rounded-xl" onClick={() => {
+            setActiveForm(null);
+            setViewMode(false);
+          }}>
+            Back to Forms
+          </Button>
+        </div>
+
+        <Card>
+          <CardContent className="p-5 space-y-6">
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm border-b pb-2">Personal Information</h3>
+              <div className="grid gap-3">
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm text-muted-foreground">Full Legal Name</span>
+                  <span className="text-sm font-medium">John Doe</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm text-muted-foreground">Date of Birth</span>
+                  <span className="text-sm font-medium">06/15/1987</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm text-muted-foreground">Biological Sex</span>
+                  <span className="text-sm font-medium">Male</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm text-muted-foreground">Country of Residence</span>
+                  <span className="text-sm font-medium">United States</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm border-b pb-2">Medical History</h3>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Reported Conditions:</p>
+                <div className="flex flex-wrap gap-2">
+                  {["Hypertension", "Asthma"].map(c => (
+                    <Badge key={c} className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">{c}</Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm border-b pb-2">Symptoms Reported</h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Description</p>
+                  <p className="text-sm">Occasional chest discomfort, shortness of breath with exertion, mild fatigue.</p>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm text-muted-foreground">Pain Level</span>
+                  <span className="text-sm font-medium">4 / 10</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm text-muted-foreground">Duration</span>
+                  <span className="text-sm font-medium">1 week</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm border-b pb-2">Current Medications</h3>
+              <div className="space-y-3">
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="font-medium text-sm">Lisinopril 10mg</p>
+                  <p className="text-xs text-muted-foreground">Once daily</p>
+                </div>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="font-medium text-sm">Albuterol Inhaler</p>
+                  <p className="text-xs text-muted-foreground">As needed</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-xl p-4 text-center">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500 mx-auto mb-2" />
+              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Form submitted successfully</p>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">This record is encrypted and stored securely</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   if (activeForm !== null) {
     return (
@@ -164,9 +266,20 @@ export function IntakeFormsPage() {
                     {form.status === "completed" ? `Completed ${form.completedDate}` : form.status === "in-progress" ? "In progress — resume" : "Not started"}
                   </p>
                 </div>
-                {form.status !== "completed" && (
+                {form.status === "completed" ? (
+                  <Button size="sm" variant="ghost" className="rounded-xl text-xs shrink-0"
+                    onClick={() => {
+                      setActiveForm(form.id);
+                      setViewMode(true);
+                    }}>
+                    View Answers
+                  </Button>
+                ) : (
                   <Button size="sm" variant={form.status === "in-progress" ? "primary" : "outline"} className="rounded-xl text-xs shrink-0"
-                    onClick={() => setActiveForm(form.id)}>
+                    onClick={() => {
+                      setActiveForm(form.id);
+                      setViewMode(false);
+                    }}>
                     {form.status === "in-progress" ? "Resume" : "Start"}
                   </Button>
                 )}

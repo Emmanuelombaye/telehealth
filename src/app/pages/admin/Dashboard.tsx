@@ -1,212 +1,199 @@
 import { Link } from "react-router";
 import {
-  ShieldCheck, Users, Activity, Lock, Server, AlertTriangle,
-  TrendingUp, Package, MessageSquare, Heart, BarChart3, ArrowUpRight,
-  CheckCircle2, Database
+  Search, Clock, MessageSquare, Bell, Calendar,
+  MoreHorizontal, ArrowUpRight, ArrowDownRight, Info,
+  Package, CreditCard, DollarSign
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from "../../components/ui/shared";
+import { Card, CardContent } from "../../components/ui/shared";
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const systemLoad = [
-  { time: "00:00", load: 32 }, { time: "04:00", load: 25 }, { time: "08:00", load: 68 },
-  { time: "12:00", load: 85 }, { time: "16:00", load: 74 }, { time: "20:00", load: 45 }, { time: "Now", load: 52 },
+const salesData = [
+  { date: "Apr 28", current: 0, previous: 900 },
+  { date: "Apr 29", current: 400, previous: 700 },
+  { date: "Apr 30", current: 300, previous: 1400 },
+  { date: "May 1", current: 1800, previous: 700 },
+  { date: "May 2", current: 300, previous: 1300 },
+  { date: "May 3", current: 300, previous: 0 },
+  { date: "May 4", current: 0, previous: 900 },
+  { date: "May 5", current: 0, previous: 300 },
 ];
 
-const userDist = [
-  { name: "Patients", value: 4500, color: "#0066FF" },
-  { name: "Doctors", value: 240, color: "#10b981" },
-  { name: "Staff", value: 120, color: "#f59e0b" },
-];
-
-const recentLogs = [
-  { user: "Dr. Elena Rodriguez", action: "Record Access", target: "Patient #8492", time: "2m ago", severity: "info" },
-  { user: "Unknown IP", action: "Failed Login x50", target: "Admin Portal", time: "14m ago", severity: "critical" },
-  { user: "System", action: "Backup Completed", target: "Vault-Alpha", time: "1h ago", severity: "info" },
-  { user: "Nurse Chloe", action: "Prescription Created", target: "Patient #2210", time: "3h ago", severity: "medium" },
-];
-
-const quickLinks = [
-  { label: "Treatments", href: "/admin/treatments", icon: Heart, color: "bg-rose-100 text-rose-600 dark:bg-rose-950/40" },
-  { label: "Orders", href: "/admin/orders", icon: Package, color: "bg-violet-100 text-violet-600 dark:bg-violet-950/40", badge: 5 },
-  { label: "Analytics", href: "/admin/analytics", icon: BarChart3, color: "bg-purple-100 text-purple-600 dark:bg-purple-950/40" },
-  { label: "Finances", href: "/admin/finance", icon: TrendingUp, color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40" },
-  { label: "Messages", href: "/admin/messages", icon: MessageSquare, color: "bg-amber-100 text-amber-600 dark:bg-amber-950/40", badge: 8 },
-  { label: "Audit Logs", href: "/admin/audit", icon: ShieldCheck, color: "bg-slate-100 text-slate-600 dark:bg-slate-950/40" },
+const netRevenueData = [
+  { name: "Revenue", value: 2739, color: "#60a5fa" }, // Light blue
+  { name: "Empty", value: 1000, color: "#f1f5f9" }   // Gray/Empty
 ];
 
 export function AdminDashboard() {
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-[1400px] mx-auto font-sans">
+      {/* Header Area */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold">System Administration</h1>
-          <p className="text-sm text-muted-foreground">Global overview — Peak Health Platform</p>
+          <h1 className="text-2xl font-semibold flex items-center gap-2">
+            Good night, Leo <span className="text-sm font-normal text-muted-foreground mt-1">• Last updated: 11:20:47 PM</span>
+          </h1>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="rounded-xl gap-1.5 text-xs hidden md:flex">
-            <Database className="h-3.5 w-3.5" /> Backup
-          </Button>
-          <Button size="sm" className="rounded-xl gap-1.5 text-xs">
-            <ShieldCheck className="h-3.5 w-3.5" /> Security Audit
-          </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-sm shadow-sm cursor-pointer hover:bg-muted/50 transition">
+            <span className="font-medium text-foreground">Apr 28, 2026 - May 05, 2026</span>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </div>
         </div>
       </div>
 
-      {/* System Health */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "Active Nodes", value: "12 / 12", icon: Server, color: "text-emerald-500", bg: "bg-emerald-100 dark:bg-emerald-950/40" },
-          { label: "Total Users", value: "4,860", icon: Users, color: "text-violet-500", bg: "bg-violet-100 dark:bg-violet-950/40" },
-          { label: "API Latency", value: "42ms", icon: Activity, color: "text-purple-500", bg: "bg-purple-100 dark:bg-purple-950/40" },
-          { label: "Security Score", value: "98/100", icon: Lock, color: "text-amber-500", bg: "bg-amber-100 dark:bg-amber-950/40" },
-        ].map((s, i) => (
-          <Card key={i}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${s.bg}`}>
-                <s.icon className={`h-5 w-5 ${s.color}`} />
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Left Side (Charts and Stats) - takes 2 columns */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* Top 3 Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="shadow-sm border-border/60 hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <p className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">Total Sales</p>
+                  <span className="text-[11px] font-bold text-rose-600 bg-rose-100 dark:bg-rose-950/40 px-2 py-0.5 rounded-full">-54.52%</span>
+                </div>
+                <h2 className="text-3xl font-bold tracking-tight text-foreground">$2,792.00</h2>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-sm border-border/60 hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <p className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">Total Expenses</p>
+                  <span className="text-[11px] font-bold text-rose-600 bg-rose-100 dark:bg-rose-950/40 px-2 py-0.5 rounded-full">-49.83%</span>
+                </div>
+                <h2 className="text-3xl font-bold tracking-tight text-foreground">$2,090.82</h2>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm border-border/60 hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <p className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">Gross Income</p>
+                </div>
+                <h2 className="text-3xl font-bold tracking-tight text-foreground">$648.18</h2>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Chart */}
+          <Card className="shadow-sm border-border/60 pt-6">
+            <CardContent>
+              <div className="h-[320px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={salesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} tickFormatter={(value) => `$${value}`} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: "12px", border: "1px solid var(--border)", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" }} 
+                      formatter={(v: any) => [`$${v}`, "Amount"]} 
+                    />
+                    {/* Dashed line for previous period */}
+                    <Area type="monotone" dataKey="previous" stroke="#94a3b8" strokeDasharray="5 5" fill="transparent" strokeWidth={2} />
+                    {/* Solid line for current period */}
+                    <Area type="monotone" dataKey="current" stroke="#3b82f6" fillOpacity={1} fill="url(#colorCurrent)" strokeWidth={3} />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
-              <div>
-                <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wide">{s.label}</p>
-                <p className="text-lg font-bold">{s.value}</p>
+              <div className="mt-8 flex flex-col text-[13px] text-muted-foreground gap-1.5 border-t border-border/40 pt-4">
+                <p><span className="font-semibold text-foreground mr-2">Current Period:</span> Apr 28, 2026 - May 5, 2026</p>
+                <p><span className="font-semibold text-foreground mr-2">Previous Period:</span> Apr 20, 2026 - Apr 27, 2026</p>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        </div>
 
-      {/* Quick Links */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-        {quickLinks.map((link, i) => (
-          <Link key={i} to={link.href}>
-            <Card className="hover:border-primary/40 transition-colors cursor-pointer hover:-translate-y-0.5 hover:shadow-md">
-              <CardContent className="p-3 text-center relative">
-                {link.badge && <span className="absolute top-2 right-2 h-4 w-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">{link.badge}</span>}
-                <div className={`h-9 w-9 rounded-xl flex items-center justify-center mx-auto mb-1.5 ${link.color}`}>
-                  <link.icon className="h-4 w-4" />
-                </div>
-                <p className="text-[11px] font-semibold">{link.label}</p>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-4">
-        {/* System Load */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
-            <CardTitle className="text-sm">Global System Load</CardTitle>
-            <Badge className="bg-emerald-500 text-white text-[10px]">● All Systems Operational</Badge>
-          </CardHeader>
-          <CardContent className="px-2 pb-4">
-            <div className="h-[180px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={systemLoad}>
-                  <defs>
-                    <linearGradient id="load" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
-                  <YAxis hide />
-                  <Tooltip contentStyle={{ borderRadius: "12px", border: "none", fontSize: 12 }} formatter={(v: any) => [`${v}%`, "Load"]} />
-                  <Area type="monotone" dataKey="load" stroke="var(--primary)" fill="url(#load)" strokeWidth={2.5} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* User Distribution */}
-        <Card>
-          <CardHeader className="pb-2 pt-4 px-4"><CardTitle className="text-sm">User Distribution</CardTitle></CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="h-[120px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={userDist} innerRadius={35} outerRadius={55} paddingAngle={4} dataKey="value">
-                    {userDist.map((e, i) => <Cell key={i} fill={e.color} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: "12px", border: "none", fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-2 mt-2">
-              {userDist.map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs font-medium">{item.name}</span>
+        {/* Right Side (Live Summary & Net Revenue) - 1 column */}
+        <div className="space-y-6">
+          
+          {/* Live Summary */}
+          <Card className="shadow-sm border-border/60">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  Live Summary <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span>
+                </h3>
+                <a href="#" className="text-sm font-medium underline underline-offset-4 text-muted-foreground hover:text-foreground transition-colors">View more</a>
+              </div>
+              
+              <div className="flex justify-between items-center px-2">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-14 w-14 rounded-full border border-border flex items-center justify-center bg-muted/30 shadow-sm transition-transform hover:scale-105">
+                    <Package className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <span className="text-xs font-bold text-muted-foreground">{item.value.toLocaleString()}</span>
+                  <span className="text-2xl font-bold">0</span>
+                  <span className="text-xs font-medium text-muted-foreground text-center leading-tight">Active<br/>carts</span>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-4">
-        {/* Audit Logs */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Lock className="h-4 w-4 text-primary" /> Real-time Audit Logs
-            </CardTitle>
-            <Link to="/admin/audit">
-              <Button variant="ghost" size="sm" className="text-primary h-7 px-2 text-xs gap-1">
-                View All <ArrowUpRight className="h-3 w-3" />
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-2">
-            {recentLogs.map((log, i) => (
-              <div key={i} className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-muted/40 transition-colors">
-                <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${log.severity === "critical" ? "bg-red-500 animate-pulse" : log.severity === "medium" ? "bg-amber-500" : "bg-emerald-500"}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start">
-                    <p className="text-xs font-bold">{log.user}</p>
-                    <span className="text-[10px] text-muted-foreground">{log.time}</span>
+                
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-14 w-14 rounded-full border border-border flex items-center justify-center bg-muted/30 shadow-sm transition-transform hover:scale-105">
+                    <CreditCard className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">{log.action}:</span> {log.target}</p>
+                  <span className="text-2xl font-bold">0</span>
+                  <span className="text-xs font-medium text-muted-foreground text-center leading-tight">Checking<br/>out</span>
+                </div>
+                
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-14 w-14 rounded-full border border-border flex items-center justify-center bg-muted/30 shadow-sm transition-transform hover:scale-105">
+                    <DollarSign className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <span className="text-2xl font-bold">0</span>
+                  <span className="text-xs font-medium text-muted-foreground text-center leading-tight">Purchased</span>
                 </div>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Security Alerts */}
-        <Card className="border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/10">
-          <CardHeader className="pb-2 pt-4 px-4">
-            <div className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <CardTitle className="text-sm">Critical Security Alerts</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-3">
-            <div className="bg-card rounded-2xl border border-red-200 dark:border-red-900 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant="destructive" className="text-[10px]">Critical</Badge>
-                <span className="text-[10px] text-muted-foreground">14:02 UTC</span>
+          {/* Net Revenue */}
+          <Card className="shadow-sm border-border/60">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-semibold text-lg">Net Revenue</h3>
+                <button className="p-1.5 rounded-full hover:bg-muted transition-colors">
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </button>
               </div>
-              <h4 className="font-bold text-sm mb-1">Brute Force Attempt Detected</h4>
-              <p className="text-xs text-muted-foreground mb-3">IP 203.0.113.42 attempted 50+ failed logins on Admin Portal.</p>
-              <div className="flex gap-2">
-                <Button size="sm" variant="destructive" className="h-7 text-xs rounded-xl">Block IP</Button>
-                <Button size="sm" variant="outline" className="h-7 text-xs rounded-xl">Investigate</Button>
+              
+              <div className="h-[280px] relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie 
+                      data={netRevenueData} 
+                      cx="50%" 
+                      cy="50%" 
+                      innerRadius={80} 
+                      outerRadius={115} 
+                      startAngle={90} 
+                      endAngle={-270}
+                      dataKey="value"
+                      stroke="none"
+                      cornerRadius={4}
+                    >
+                      {netRevenueData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                
+                {/* Center Text for Doughnut */}
+                <div className="absolute flex flex-col items-center justify-center text-center">
+                  <span className="text-[13px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">Net Revenue</span>
+                  <span className="text-3xl font-bold tracking-tight text-foreground">$2,739.00</span>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-              <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
-              <div>
-                <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">All other systems secure</p>
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Last full scan: 30 minutes ago</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+          
+        </div>
       </div>
     </div>
   );

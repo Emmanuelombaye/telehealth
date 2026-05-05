@@ -1,57 +1,85 @@
-import { useState } from "react";
-import { Plus, Search, Edit2, Trash2, Heart, Activity } from "lucide-react";
-import { Card, CardContent, Button, Badge } from "../../../components/ui/shared";
+import { Search, Printer, ArrowDownUp, Columns, CloudDownload, RefreshCw, ChevronDown } from "lucide-react";
+import { Card } from "../../../components/ui/shared";
 
-const treatments = [
-  { id: 1, name: "General Consultation", category: "Primary Care", price: "$75", duration: "30 min", active: true, bookings: 1240 },
-  { id: 2, name: "Cardiology Assessment", category: "Specialist", price: "$200", duration: "60 min", active: true, bookings: 340 },
-  { id: 3, name: "Mental Health Session", category: "Psychiatry", price: "$120", duration: "50 min", active: true, bookings: 890 },
-  { id: 4, name: "Dermatology Async Review", category: "Dermatology", price: "$60", duration: "Async", active: true, bookings: 560 },
-  { id: 5, name: "Nutrition Counseling", category: "Wellness", price: "$90", duration: "45 min", active: false, bookings: 120 },
-  { id: 6, name: "Pediatric Check-up", category: "Pediatrics", price: "$85", duration: "30 min", active: true, bookings: 430 },
+const mockTreatments = [
+  { id: "1", name: "Ashley Shepherd", date: "05/02/2026", mrn: "P05626967", email: "ashepherd111@yahoo.com", phone: "(305) 304-9665", orders: "1" },
+  { id: "2", name: "John Colvin", date: "05/01/2026", mrn: "Q13037761", email: "johncolvin1976@gmail.com", phone: "(734) 417-2550", orders: "1" },
+  { id: "3", name: "Teresa Bakehorn", date: "05/01/2026", mrn: "R40900146", email: "teresabakehorn@yahoo.com", phone: "(765) 461-4340", orders: "1" },
+  { id: "4", name: "Chelsea Callahan", date: "05/01/2026", mrn: "N11254965", email: "ccallahan0450@yahoo.com", phone: "(561) 213-0450", orders: "1" },
+  { id: "5", name: "Jackie Webb", date: "04/27/2026", mrn: "W99586284", email: "jackielynnwebb@gmail.com", phone: "(269) 290-5187", orders: "1" },
 ];
 
 export function AdminTreatmentsPage() {
-  const [search, setSearch] = useState("");
-  const filtered = treatments.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
-
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Treatments</h1>
-        <Button size="sm" className="rounded-full gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" /> Add Treatment</Button>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[{ label: "Total", value: treatments.length, color: "text-primary" }, { label: "Active", value: treatments.filter(t => t.active).length, color: "text-emerald-600" }, { label: "Inactive", value: treatments.filter(t => !t.active).length, color: "text-muted-foreground" }, { label: "Total Bookings", value: "3,580", color: "text-amber-600" }].map((s, i) => (
-          <Card key={i} className="border-none bg-muted/50"><CardContent className="p-3 text-center"><p className={`text-xl font-extrabold ${s.color}`}>{s.value}</p><p className="text-[11px] text-muted-foreground">{s.label}</p></CardContent></Card>
-        ))}
-      </div>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-4 py-2.5 bg-muted rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search treatments..." />
-      </div>
-      <div className="space-y-2">
-        {filtered.map(t => (
-          <Card key={t.id} className="hover:border-primary/40 transition-colors">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"><Heart className="h-5 w-5 text-primary" /></div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-sm">{t.name}</p>
-                    <Badge variant={t.active ? "success" : "outline"} className="text-[10px]">{t.active ? "Active" : "Inactive"}</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{t.category} · {t.duration} · {t.price} · {t.bookings} bookings</p>
-                </div>
-                <div className="flex gap-1.5 shrink-0">
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-xl"><Edit2 className="h-3.5 w-3.5" /></Button>
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-xl text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+    <div className="max-w-[1400px] mx-auto font-sans space-y-6">
+      <h1 className="text-2xl font-semibold">Treatments</h1>
+
+      <Card className="border-border/60 shadow-sm overflow-hidden bg-background">
+        <div className="p-4 border-b border-border/60 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-2xl flex items-center">
+              <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by name, treatment ID, email, phone or MRN#"
+                className="w-full pl-9 pr-4 py-2 bg-transparent border-none text-[14px] outline-none placeholder:text-muted-foreground/70"
+              />
+            </div>
+            
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <button className="p-2 hover:bg-muted rounded-md transition-colors"><Printer className="h-[18px] w-[18px]" /></button>
+              <button className="p-2 hover:bg-muted rounded-md transition-colors"><ArrowDownUp className="h-[18px] w-[18px]" /></button>
+              <button className="p-2 hover:bg-muted rounded-md transition-colors"><Columns className="h-[18px] w-[18px]" /></button>
+              <button className="p-2 hover:bg-muted rounded-md transition-colors"><CloudDownload className="h-[18px] w-[18px]" /></button>
+              <button className="p-2 hover:bg-muted rounded-md transition-colors"><RefreshCw className="h-[18px] w-[18px]" /></button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {[ "Refills", "Check-in status", "Visit status", "Treatment status", "Extra Filters"].map((filter) => (
+                <button key={filter} className="flex items-center gap-1.5 px-3.5 py-1.5 border border-border/80 rounded-full text-[13px] font-medium hover:bg-muted/50 transition-colors">
+                  {filter} <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              ))}
+            </div>
+            <button className="text-[13px] font-medium border border-border/80 bg-muted/20 px-4 py-1.5 rounded-full hover:bg-muted/50 transition-colors">
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-muted/20 border-b border-border/60 text-muted-foreground text-[13px]">
+              <tr>
+                <th className="font-medium py-3.5 px-6">Name</th>
+                <th className="font-medium py-3.5 px-4">Start Date</th>
+                <th className="font-medium py-3.5 px-4">MRN #</th>
+                <th className="font-medium py-3.5 px-4">Email</th>
+                <th className="font-medium py-3.5 px-4">Phone number</th>
+                <th className="font-medium py-3.5 px-4">Order(s)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {mockTreatments.map((item) => (
+                <tr key={item.id} className="hover:bg-muted/20 transition-colors group">
+                  <td className="py-4 px-6">
+                    <a href="#" className="font-medium underline underline-offset-4 decoration-border group-hover:decoration-foreground transition-colors">
+                      {item.name}
+                    </a>
+                  </td>
+                  <td className="py-4 px-4 text-foreground/80">{item.date}</td>
+                  <td className="py-4 px-4 text-foreground/80">{item.mrn}</td>
+                  <td className="py-4 px-4 text-foreground/80">{item.email}</td>
+                  <td className="py-4 px-4 text-foreground/80">{item.phone}</td>
+                  <td className="py-4 px-4 text-foreground/80">{item.orders}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }

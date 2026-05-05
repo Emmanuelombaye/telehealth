@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import {
   Calendar, Clock, FileText, Activity, MessageSquare, Plus,
-  Droplets, Heart, ChevronRight, Video, Pill,
+  Droplets, Heart, ChevronRight, Video, Pill, Stethoscope,
   ShieldCheck, TrendingUp, Truck, CheckCircle2, Package, ShoppingBag, Hourglass, Building2, Copy
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, cn } from "../../components/ui/shared";
@@ -12,12 +12,11 @@ import {
 } from "../../../lib";
 
 const stepIcon: Record<string, any> = {
-  ordered: ShoppingBag,
-  intake_completed: CheckCircle2,
-  prescribed: Pill,
-  pharmacy: Package,
-  shipped: Truck,
-  delivered: CheckCircle2,
+  intake_submitted: FileText,
+  doctor_reviewing: Stethoscope,
+  prescribing: Pill,
+  shipping: Package,
+  tracking: Truck,
 };
 
 const subBrandTint: Record<string, string> = {
@@ -69,33 +68,8 @@ export function PatientDashboard() {
         {orders.map(order => {
           const currentIdx = getStepIndex(order.status);
           const tint = subBrandTint[order.subBrand] ?? subBrandTint.PeakHealth;
+          const statusLabel = ORDER_STEPS[currentIdx]?.label ?? "Processing";
 
-          // Awaiting-review card — compact, no pipeline
-          if (order.status === "awaiting_review") {
-            return (
-              <Link key={order.id} to="/patient/orders" className="block">
-                <Card className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <span className={cn("text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full", tint)}>
-                        {order.subBrand}
-                      </span>
-                      <Badge variant="outline" className="text-[10px] shrink-0 gap-1">
-                        <Hourglass className="h-3 w-3" /> Awaiting review
-                      </Badge>
-                    </div>
-                    <p className="font-bold text-sm">{order.medication}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Consultation submitted {order.consultationSubmittedDate ?? order.orderedDate}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          }
-
-          // Active prescription card — full pipeline
-          const statusLabel = ORDER_STEPS[currentIdx]?.label ?? "Ordered";
           return (
             <Link key={order.id} to="/patient/orders" className="block">
               <Card className="hover:shadow-md transition-shadow overflow-hidden">
@@ -109,7 +83,7 @@ export function PatientDashboard() {
                   <p className="font-bold text-sm">{order.medication}</p>
                   <p className="text-xs text-muted-foreground">{order.dosageInstructions}</p>
 
-                  {/* 6-step horizontal pipeline */}
+                  {/* 5-step horizontal pipeline */}
                   <div className="mt-4 flex items-start gap-1">
                     {ORDER_STEPS.map((step, i) => {
                       const Icon = stepIcon[step.key];

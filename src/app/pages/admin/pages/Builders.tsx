@@ -1,63 +1,82 @@
-import { Layers, Plus, Edit2, Eye, Copy, Workflow, FileText, Mail } from "lucide-react";
-import { Card, CardContent, Button, Badge } from "../../../components/ui/shared";
+import { Search, Plus, Filter, Download, Upload, LayoutTemplate } from "lucide-react";
+import { Card, Button } from "../../../components/ui/shared";
 
-const builders = [
-  { id: 1, type: "workflow", name: "New Patient Onboarding", steps: 6, status: "active", lastEdited: "May 10" },
-  { id: 2, type: "workflow", name: "Post-Visit Follow-up", steps: 4, status: "active", lastEdited: "May 8" },
-  { id: 3, type: "email", name: "Appointment Confirmation Email", steps: 1, status: "active", lastEdited: "Apr 30" },
-  { id: 4, type: "page", name: "Patient Welcome Page", steps: 3, status: "draft", lastEdited: "May 12" },
-  { id: 5, type: "workflow", name: "Lab Result Notification", steps: 3, status: "active", lastEdited: "May 5" },
-];
-
-const typeIcons = { workflow: Workflow, email: Mail, page: FileText };
-const typeColors = { workflow: "bg-violet-100 text-violet-600 dark:bg-violet-950/40", email: "bg-amber-100 text-amber-600 dark:bg-amber-950/40", page: "bg-purple-100 text-purple-600 dark:bg-purple-950/40" };
+const tabs = ["All", "Active", "Unactive"];
 
 export function AdminBuildersPage() {
   return (
-    <div className="space-y-5">
+    <div className="max-w-[1400px] mx-auto font-sans space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Builders</h1>
-        <Button size="sm" className="rounded-full gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" /> New Builder</Button>
+        <h1 className="text-2xl font-semibold">Landing pages</h1>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="rounded-lg gap-2">
+            <Download className="h-4 w-4" /> Import
+          </Button>
+          <Button variant="outline" className="rounded-lg gap-2">
+            <Upload className="h-4 w-4" /> Export
+          </Button>
+          <Button className="bg-primary hover:bg-primary/90 text-white rounded-lg gap-2">
+            <Plus className="h-4 w-4" /> Add New Page
+          </Button>
+        </div>
       </div>
-      <div className="grid grid-cols-3 gap-3">
-        {[{ label: "Workflows", count: 3, icon: Workflow }, { label: "Emails", count: 1, icon: Mail }, { label: "Pages", count: 1, icon: FileText }].map((s, i) => (
-          <Card key={i} className="border-none bg-muted/50 cursor-pointer hover:border-primary/40 transition-colors">
-            <CardContent className="p-3 text-center">
-              <s.icon className="h-5 w-5 text-primary mx-auto mb-1" />
-              <p className="text-lg font-extrabold">{s.count}</p>
-              <p className="text-[11px] text-muted-foreground">{s.label}</p>
-            </CardContent>
-          </Card>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-6 border-b border-border/60 pb-[1px]">
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            className={`pb-3 text-sm font-medium transition-colors relative ${
+              tab === "All"
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab}
+          </button>
         ))}
       </div>
-      <div className="space-y-2">
-        {builders.map(b => {
-          const Icon = typeIcons[b.type as keyof typeof typeIcons];
-          return (
-            <Card key={b.id} className="hover:border-primary/40 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${typeColors[b.type as keyof typeof typeColors]}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-sm">{b.name}</p>
-                      <Badge variant={b.status === "active" ? "success" : "secondary"} className="text-[10px]">{b.status}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground capitalize">{b.type} · {b.steps} steps · Edited {b.lastEdited}</p>
-                  </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-xl"><Eye className="h-3.5 w-3.5" /></Button>
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-xl"><Edit2 className="h-3.5 w-3.5" /></Button>
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-xl"><Copy className="h-3.5 w-3.5" /></Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+
+      <Card className="border-border/60 shadow-sm overflow-hidden bg-background min-h-[500px] flex flex-col">
+        <div className="p-4 border-b border-border/60 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-xl flex items-center">
+              <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search"
+                className="w-full pl-9 pr-4 py-2 bg-transparent border-none text-[14px] outline-none placeholder:text-muted-foreground/70"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button className="flex items-center gap-1.5 px-3.5 py-1.5 border border-border/80 rounded-full text-[13px] font-medium hover:bg-muted/50 transition-colors">
+                Date <Filter className="h-3.5 w-3.5 text-muted-foreground ml-1" />
+              </button>
+              <button className="flex items-center gap-1.5 px-3.5 py-1.5 border border-border/80 rounded-full text-[13px] font-medium hover:bg-muted/50 transition-colors">
+                Priority <Filter className="h-3.5 w-3.5 text-muted-foreground ml-1" />
+              </button>
+              <button className="flex items-center gap-1.5 px-3.5 py-1.5 border border-border/80 rounded-full text-[13px] font-medium hover:bg-muted/50 transition-colors">
+                Type <Filter className="h-3.5 w-3.5 text-muted-foreground ml-1" />
+              </button>
+              <button className="flex items-center gap-1.5 px-3.5 py-1.5 border border-border/80 rounded-full text-[13px] font-medium hover:bg-muted/50 transition-colors">
+                Category <Filter className="h-3.5 w-3.5 text-muted-foreground ml-1" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex-1 flex flex-col items-center justify-center py-20 px-4 text-center">
+          <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+            <LayoutTemplate className="h-8 w-8 text-muted-foreground/50" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-1">Your Landing Pages will appear here</h3>
+          <p className="text-sm text-muted-foreground max-w-md">
+            You currently do not have any landing pages configured. Click the "Add New Page" button to start building your first page.
+          </p>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -242,7 +242,7 @@ const gatewayConfig: Record<string, { label: string; icon: string; color: string
   klarna: { label: "Klarna · Pay in 4", icon: "🛍️", color: "border-pink-300 bg-pink-50 dark:bg-pink-950/30" },
 };
 
-type Stage = "catalog" | "questionnaire" | "payment" | "confirmed";
+type Stage = "catalog" | "questionnaire" | "payment" | "account_setup" | "verify_2fa" | "confirmed";
 
 export function PatientShopPage() {
   const [stage, setStage] = useState<Stage>("catalog");
@@ -252,6 +252,12 @@ export function PatientShopPage() {
   const [gateway, setGateway] = useState<string>("");
   const [orderRef] = useState(() => "RX-" + Math.random().toString(36).slice(2, 8).toUpperCase());
   const [activeCat, setActiveCat] = useState<typeof categories[number]>("All");
+  
+  // Account creation state
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+
   const filteredProducts = activeCat === "All" ? products : products.filter(p => p.category === activeCat);
 
   const startFlow = (product: typeof products[0]) => {
@@ -276,41 +282,132 @@ export function PatientShopPage() {
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
         <div>
-          <h2 className="text-xl font-bold">Order Confirmed!</h2>
-          <p className="text-sm text-muted-foreground mt-1">Your intake has been submitted for doctor review.</p>
+          <h2 className="text-xl font-bold">You're all set!</h2>
+          <p className="text-sm text-muted-foreground mt-1">Your account is created and intake is under review.</p>
         </div>
         <Card className="text-left">
           <CardContent className="p-4 space-y-2">
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Product</span><span className="font-semibold">{selected.name}</span></div>
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Order Ref</span><span className="font-mono font-bold text-primary">{orderRef}</span></div>
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Payment</span><span className="font-semibold">{gatewayConfig[gateway]?.label}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Amount</span><span className="font-bold">{selected.price}</span></div>
           </CardContent>
         </Card>
         <div className="bg-secondary/40 border border-secondary rounded-2xl p-4 text-sm text-secondary-foreground text-left">
           <p className="font-semibold mb-1">⏱ What happens next?</p>
           <ol className="space-y-1 text-xs list-decimal list-inside opacity-90">
-            <li>A licensed doctor reviews your intake (usually within 2–4 hrs)</li>
-            <li>If approved, your prescription is sent to our pharmacy</li>
-            <li>Medication ships within 1–2 business days with tracking</li>
+            <li>A licensed doctor reviews your intake (usually within 2–4 hrs).</li>
+            <li>If approved, your prescription is sent to our pharmacy.</li>
+            <li>Medication ships within 1–2 business days with tracking.</li>
           </ol>
         </div>
-        <div className="bg-accent/30 border border-accent rounded-2xl p-4 text-left">
-          <p className="font-bold text-sm">Create your account to track this order</p>
-          <p className="text-xs text-muted-foreground mt-0.5 mb-3">
-            Save your intake, message your doctor, and view shipping updates.
+        <Button className="w-full rounded-xl text-base h-12 font-bold" onClick={() => window.location.href = "/patient"}>
+          Go to Patient Dashboard
+        </Button>
+      </div>
+    );
+  }
+
+  if (stage === "verify_2fa" && selected) {
+    return (
+      <div className="max-w-md mx-auto space-y-6 pt-4">
+        <button onClick={() => setStage("account_setup")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold">Verify your phone</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            For your security and HIPAA compliance, we sent a 6-digit code to <strong>{phone}</strong>.
           </p>
-          <div className="grid grid-cols-2 gap-2">
-            <Button className="rounded-xl text-xs" onClick={() => { setStage("catalog"); setSelected(null); }}>
-              Create Account
-            </Button>
-            <Button variant="outline" className="rounded-xl text-xs" onClick={() => { setStage("catalog"); setSelected(null); }}>
-              Sign In
-            </Button>
+        </div>
+
+        <div className="flex justify-between gap-2">
+          {otp.map((digit, idx) => (
+            <input
+              key={idx}
+              type="text"
+              maxLength={1}
+              value={digit}
+              onChange={(e) => {
+                const newOtp = [...otp];
+                newOtp[idx] = e.target.value;
+                setOtp(newOtp);
+                // Auto-focus next input would go here
+              }}
+              className="w-12 h-14 text-center text-xl font-bold border-2 border-border rounded-xl bg-background focus:border-primary focus:outline-none"
+            />
+          ))}
+        </div>
+
+        <p className="text-sm text-center text-muted-foreground">
+          Didn't receive a code? <button className="text-primary font-semibold hover:underline">Resend</button>
+        </p>
+
+        <Button className="w-full rounded-xl h-12 text-base font-bold" 
+          disabled={otp.some(d => !d)}
+          onClick={() => setStage("confirmed")}>
+          Complete Setup
+        </Button>
+      </div>
+    );
+  }
+
+  if (stage === "account_setup" && selected) {
+    return (
+      <div className="max-w-md mx-auto space-y-6 pt-4">
+        <div>
+          <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-100 mb-4">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Payment Successful
+          </div>
+          <h1 className="text-2xl font-bold">Create your account</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Your payment is secured. Let's finish creating your account so you can track your prescription and message your doctor.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Email Address</label>
+            <input 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
+              placeholder="you@example.com" 
+            />
+          </div>
+          
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Phone Number (For 2FA)</label>
+            <input 
+              type="tel" 
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
+              placeholder="(555) 000-0000" 
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Create Password</label>
+            <input 
+              type="password" 
+              className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
+              placeholder="••••••••" 
+            />
           </div>
         </div>
-        <Button variant="ghost" className="w-full rounded-xl text-xs" onClick={() => { setStage("catalog"); setSelected(null); }}>
-          Continue as guest — Back to Shop
+
+        <div className="flex items-start gap-3 p-4 bg-muted/40 rounded-xl border border-border/50">
+          <Shield className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Your health data is stored securely in our HIPAA-compliant, military-grade encrypted database. We will never share your medical history.
+          </p>
+        </div>
+
+        <Button className="w-full rounded-xl h-12 text-base font-bold" 
+          disabled={!email || !phone}
+          onClick={() => setStage("verify_2fa")}>
+          Continue to 2FA <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
     );
@@ -351,8 +448,8 @@ export function PatientShopPage() {
           256-bit SSL encryption · HIPAA compliant · Cancel anytime
         </div>
         <Button className="w-full rounded-xl h-12 text-base font-bold" disabled={!gateway}
-          onClick={() => setStage("confirmed")}>
-          <CreditCard className="h-5 w-5 mr-2" /> Confirm & Pay {selected.price}
+          onClick={() => setStage("account_setup")}>
+          <CreditCard className="h-5 w-5 mr-2" /> Pay {selected.price} & Create Account
         </Button>
       </div>
     );

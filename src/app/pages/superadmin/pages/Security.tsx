@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Shield, AlertTriangle, Lock, Search, Filter,
-  CheckCircle2, XCircle, Eye, Ban, Globe, Clock
+  CheckCircle2, XCircle, Eye, Ban, Globe, Clock, Server, Cloud, Smartphone
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared";
 
@@ -28,7 +28,9 @@ const blockedIPs = [
 ];
 
 export function SuperAdminSecurityPage() {
-  const [tab, setTab] = useState<"threats" | "audit" | "blocked">("threats");
+  const [tab, setTab] = useState<"threats" | "audit" | "blocked" | "vaults" | "auth">("threats");
+  const [require2fa, setRequire2fa] = useState(true);
+  const [conditionalLogic, setConditionalLogic] = useState(true);
 
   return (
     <div className="space-y-5">
@@ -63,13 +65,15 @@ export function SuperAdminSecurityPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-muted rounded-2xl p-1 gap-1">
-        {(["threats", "audit", "blocked"] as const).map(t => (
+      <div className="flex bg-muted rounded-2xl p-1 gap-1 overflow-x-auto">
+        {(["threats", "audit", "blocked", "vaults", "auth"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={cn("flex-1 py-2 text-sm font-semibold rounded-xl transition-all capitalize",
+            className={cn("flex-1 whitespace-nowrap py-2 px-3 text-sm font-semibold rounded-xl transition-all capitalize",
               tab === t ? "bg-card shadow-sm text-foreground" : "text-muted-foreground")}>
             {t === "threats" ? `Threats (${threats.filter(x => x.status === "active").length})` :
-              t === "audit" ? "Audit Log" : "Blocked IPs"}
+              t === "audit" ? "Audit Log" : 
+              t === "vaults" ? "AWS S3 Vaults" : 
+              t === "auth" ? "2FA & Auth" : "Blocked IPs"}
           </button>
         ))}
       </div>
@@ -163,6 +167,116 @@ export function SuperAdminSecurityPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {tab === "vaults" && (
+        <div className="space-y-4">
+          <Card className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center shrink-0">
+                  <Shield className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">HIPAA Compliance Check Passed</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">All AWS S3 buckets strictly enforce AES-256 encryption at rest and TLS 1.2+ in transit.</p>
+                </div>
+              </div>
+              <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+            </CardContent>
+          </Card>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            {[
+              { name: "peakhealth-patient-vault", region: "us-east-1", files: "142,830", size: "1.2 TB", status: "Encrypted" },
+              { name: "peakhealth-audit-logs", region: "us-east-1", files: "4.2M", size: "840 GB", status: "WORM Enabled" },
+              { name: "peakhealth-prescriptions", region: "us-west-2", files: "89,102", size: "310 GB", status: "Encrypted" },
+              { name: "peakhealth-id-verify", region: "eu-central-1", files: "41,000", size: "120 GB", status: "Strict Access" },
+            ].map((bucket, i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Cloud className="h-4 w-4 text-violet-600" />
+                      <p className="font-mono font-bold text-sm">{bucket.name}</p>
+                    </div>
+                    <Badge variant="secondary" className="text-[10px] bg-violet-100 text-violet-700">{bucket.status}</Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <p className="text-muted-foreground uppercase tracking-wide text-[10px]">Region</p>
+                      <p className="font-semibold">{bucket.region}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground uppercase tracking-wide text-[10px]">Objects</p>
+                      <p className="font-semibold">{bucket.files}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground uppercase tracking-wide text-[10px]">Size</p>
+                      <p className="font-semibold">{bucket.size}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === "auth" && (
+        <div className="space-y-4 max-w-3xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-primary" /> Two-Factor Authentication (2FA) & Onboarding
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 border border-border rounded-xl">
+                <div>
+                  <p className="text-sm font-bold">Require 2FA for all new accounts</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Enforce SMS or Authenticator App validation during patient onboarding.</p>
+                </div>
+                <button onClick={() => setRequire2fa(!require2fa)} className="shrink-0 p-1">
+                  <div className={cn("w-10 h-6 rounded-full transition-colors flex items-center px-1", require2fa ? "bg-primary" : "bg-muted")}>
+                    <div className={cn("w-4 h-4 bg-white rounded-full transition-transform", require2fa ? "translate-x-4" : "translate-x-0")} />
+                  </div>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-3 border border-border rounded-xl">
+                <div>
+                  <p className="text-sm font-bold">Account creation strictly AFTER payment</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Prevent ghost accounts. Only generate auth credentials after Stripe/Payment gateway success.</p>
+                </div>
+                <div className="w-10 h-6 rounded-full bg-primary flex items-center px-1 shrink-0 opacity-50 cursor-not-allowed">
+                  <div className="w-4 h-4 bg-white rounded-full translate-x-4" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Lock className="h-4 w-4 text-primary" /> Conditional Logic & Forms
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 border border-border rounded-xl">
+                <div>
+                  <p className="text-sm font-bold">Per-Product Medical Questionnaires</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Dynamically load different intake forms based on the exact product added to the cart.</p>
+                </div>
+                <button onClick={() => setConditionalLogic(!conditionalLogic)} className="shrink-0 p-1">
+                  <div className={cn("w-10 h-6 rounded-full transition-colors flex items-center px-1", conditionalLogic ? "bg-primary" : "bg-muted")}>
+                    <div className={cn("w-4 h-4 bg-white rounded-full transition-transform", conditionalLogic ? "translate-x-4" : "translate-x-0")} />
+                  </div>
+                </button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

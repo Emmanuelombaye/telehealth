@@ -39,6 +39,7 @@ import { DoctorBillingPage } from "./pages/doctor/pages/Billing";
 import { DoctorEducationPage } from "./pages/doctor/pages/Education";
 
 // Admin pages
+import { AdminPatientsPage } from "./pages/admin/pages/Patients";
 import { AdminTreatmentsPage } from "./pages/admin/pages/Treatments";
 import { AdminOrdersPage } from "./pages/admin/pages/Orders";
 import { AdminMessagesPage } from "./pages/admin/pages/Messages";
@@ -122,6 +123,7 @@ export const router = createBrowserRouter([
         path: "admin",
         children: [
           { index: true, Component: AdminDashboard },
+          { path: "patients", Component: AdminPatientsPage },
           { path: "treatments", Component: AdminTreatmentsPage },
           { path: "orders", Component: AdminOrdersPage },
           { path: "messages", Component: AdminMessagesPage },

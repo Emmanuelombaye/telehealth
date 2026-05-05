@@ -33,10 +33,10 @@ export function DoctorDashboard() {
           <p className="text-sm text-muted-foreground mt-0.5">14 patients scheduled today</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/doctor/schedule">
+          <Link to="/doctor/availability">
             <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
               <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("nav.schedule")}</span>
+              <span className="hidden sm:inline">Availability</span>
             </Button>
           </Link>
           <Link to="/doctor/consult">
@@ -122,9 +122,9 @@ export function DoctorDashboard() {
               ))}
             </div>
             <div className="p-3 border-t border-border/50 text-center">
-              <Link to="/doctor/patients">
+              <Link to="/doctor/queue">
                 <Button variant="ghost" size="sm" className="text-xs text-primary gap-1">
-                  View Full Patient List <ChevronRight className="h-3.5 w-3.5" />
+                  Open Patient Queue <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             </div>
@@ -164,9 +164,9 @@ export function DoctorDashboard() {
             </CardHeader>
             <CardContent className="space-y-2 pb-4">
               {[
+                { label: "Patient Queue", icon: Users, href: "/doctor/queue" },
                 { label: "Prescription Builder", icon: FileText, href: "/doctor/consult" },
                 { label: "Lab Requests", icon: Clock, href: "/doctor/labs" },
-                { label: "Patient Messaging", icon: MessageSquare, href: "/doctor/messages" },
               ].map((tool, i) => (
                 <Link key={i} to={tool.href}>
                   <Button variant="outline" className="w-full justify-between text-sm h-10 px-3 rounded-xl">

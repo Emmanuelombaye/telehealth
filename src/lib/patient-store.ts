@@ -1,4 +1,7 @@
-// Centralized mock store for the patient portal.
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+
+// Centralized reactive Zustand store for the patient portal.
 // Source of truth for: brand config (white-label), active order pipeline,
 // doctor availability, and prescription state. All UI surfaces (Dashboard,
 // OrderTracking, Appointments, Shop) read from here so updates stay in sync.
@@ -7,21 +10,18 @@
 // pre-pipeline state (consultation submitted, doctor hasn't responded yet)
 // and is rendered as a compact card without the stepper.
 export type OrderStatus =
-  | "awaiting_review"
-  | "ordered"
-  | "intake_completed"
-  | "prescribed"
-  | "pharmacy"
-  | "shipped"
-  | "delivered";
+  | "intake_submitted"
+  | "doctor_reviewing"
+  | "prescribing"
+  | "shipping"
+  | "tracking";
 
-export const ORDER_STEPS: { key: Exclude<OrderStatus, "awaiting_review">; label: string; desc: string }[] = [
-  { key: "ordered", label: "Ordered", desc: "Payment received and order placed" },
-  { key: "intake_completed", label: "Intake Completed", desc: "Health questionnaire reviewed by our clinical team" },
-  { key: "prescribed", label: "Prescribed", desc: "Prescription approved and sent to pharmacy" },
-  { key: "pharmacy", label: "At Pharmacy", desc: "Medication being prepared for shipment" },
-  { key: "shipped", label: "Shipped", desc: "On its way to you" },
-  { key: "delivered", label: "Delivered", desc: "Package delivered successfully" },
+export const ORDER_STEPS: { key: OrderStatus; label: string; desc: string }[] = [
+  { key: "intake_submitted", label: "Intake Submitted", desc: "Health questionnaire received by our clinical team" },
+  { key: "doctor_reviewing", label: "Doctor Reviewing", desc: "A physician is reviewing your medical profile" },
+  { key: "prescribing", label: "Prescribing", desc: "Prescription approved and sent to pharmacy" },
+  { key: "shipping", label: "Shipping", desc: "Medication being prepared and shipped" },
+  { key: "tracking", label: "Tracking", desc: "On its way to you" },
 ];
 
 export type Order = {
@@ -51,7 +51,7 @@ export const orders: Order[] = [
     medication: "Tretinoin 0.05%",
     dosageInstructions: "Apply a pea-sized amount nightly to clean, dry skin",
     category: "Skincare",
-    status: "prescribed",
+    status: "prescribing",
     orderedDate: "Apr 30, 2026",
     pharmacy: "Truepill Pharmacy",
     amount: "$45",
@@ -62,9 +62,9 @@ export const orders: Order[] = [
     trackingUrl: null,
     estimatedDelivery: "May 6, 2026",
     timeline: [
-      { status: "ordered", date: "Apr 30, 9:14 AM" },
-      { status: "intake_completed", date: "Apr 30, 11:02 AM" },
-      { status: "prescribed", date: "May 1, 2:45 PM" },
+      { status: "intake_submitted", date: "Apr 30, 9:14 AM" },
+      { status: "doctor_reviewing", date: "Apr 30, 11:02 AM" },
+      { status: "prescribing", date: "May 1, 2:45 PM" },
     ],
   },
   {
@@ -73,7 +73,7 @@ export const orders: Order[] = [
     medication: "Minoxidil Foam 5%",
     dosageInstructions: "Apply twice daily to affected areas",
     category: "Hair",
-    status: "shipped",
+    status: "tracking",
     orderedDate: "Apr 21, 2026",
     pharmacy: "Truepill Pharmacy",
     amount: "$19",
@@ -84,11 +84,11 @@ export const orders: Order[] = [
     trackingUrl: "https://www.ups.com/track",
     estimatedDelivery: "May 5, 2026",
     timeline: [
-      { status: "ordered", date: "Apr 21, 8:30 AM" },
-      { status: "intake_completed", date: "Apr 21, 10:15 AM" },
-      { status: "prescribed", date: "Apr 22, 1:20 PM" },
-      { status: "pharmacy", date: "Apr 22, 5:00 PM" },
-      { status: "shipped", date: "Apr 24, 9:10 AM" },
+      { status: "intake_submitted", date: "Apr 21, 8:30 AM" },
+      { status: "doctor_reviewing", date: "Apr 21, 10:15 AM" },
+      { status: "prescribing", date: "Apr 22, 1:20 PM" },
+      { status: "shipping", date: "Apr 22, 5:00 PM" },
+      { status: "tracking", date: "Apr 24, 9:10 AM" },
     ],
   },
   {
@@ -97,7 +97,7 @@ export const orders: Order[] = [
     medication: "Finasteride 1mg",
     dosageInstructions: "One tablet daily, with or without food",
     category: "Hair",
-    status: "awaiting_review",
+    status: "doctor_reviewing",
     orderedDate: "Apr 28, 2026",
     consultationSubmittedDate: "Apr 28, 2026",
     pharmacy: "Truepill Pharmacy",
@@ -109,22 +109,22 @@ export const orders: Order[] = [
     trackingUrl: null,
     estimatedDelivery: null,
     timeline: [
-      { status: "ordered", date: "Apr 28, 7:42 AM" },
+      { status: "intake_submitted", date: "Apr 28, 7:42 AM" },
+      { status: "doctor_reviewing", date: "Apr 28, 8:00 AM" },
     ],
   },
 ];
 
 export function getStepIndex(status: OrderStatus) {
-  if (status === "awaiting_review") return -1;
   return ORDER_STEPS.findIndex((s) => s.key === status);
 }
 
 export function getActiveOrder() {
-  return orders.find((o) => o.status !== "delivered") ?? orders[0];
+  return orders.find((o) => o.status !== "tracking") ?? orders[0];
 }
 
 export function getAwaitingReviewCount() {
-  return orders.filter((o) => o.status === "awaiting_review").length;
+  return orders.filter((o) => o.status === "intake_submitted" || o.status === "doctor_reviewing").length;
 }
 
 // Authenticated patient — single source of truth for greeting and profile.
@@ -162,3 +162,59 @@ export const brand = {
   supportEmail: "support@peakhealth.com",
   tagline: "Global TeleHealth, HIPAA-compliant",
 };
+
+// Zustand Store Definition
+interface PatientState {
+  orders: Order[];
+  doctorAvailability: DoctorAvailability[];
+  intakeFormData: Record<string, any>;
+  addOrder: (order: Order) => void;
+  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  setIntakeFormData: (data: Record<string, any>) => void;
+  updateDoctorAvailability: (doctorId: number, available: boolean) => void;
+}
+
+export const usePatientStore = create<PatientState>()(
+  devtools(
+    (set) => ({
+      orders: orders,
+      doctorAvailability: doctorAvailability,
+      intakeFormData: {},
+
+      addOrder: (order: Order) =>
+        set((state) => ({
+          orders: [...state.orders, order]
+        })),
+
+      updateOrderStatus: (orderId: string, status: OrderStatus) =>
+        set((state) => ({
+          orders: state.orders.map(order =>
+            order.id === orderId
+              ? {
+                  ...order,
+                  status,
+                  timeline: [
+                    ...order.timeline,
+                    { status, date: new Date().toLocaleString() }
+                  ]
+                }
+              : order
+          )
+        })),
+
+      setIntakeFormData: (data: Record<string, any>) =>
+        set((state) => ({
+          intakeFormData: { ...state.intakeFormData, ...data }
+        })),
+
+      updateDoctorAvailability: (doctorId: number, available: boolean) =>
+        set((state) => ({
+          doctorAvailability: state.doctorAvailability.map(doctor =>
+            doctor.id === doctorId
+              ? { ...doctor, available }
+              : doctor
+          )
+        })),
+    })
+  )
+);

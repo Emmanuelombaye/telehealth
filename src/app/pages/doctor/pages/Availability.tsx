@@ -4,6 +4,7 @@ import {
   ToggleLeft, ToggleRight, Trash2, Link, Video, MessageSquare
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { usePatientStore } from "../../../../lib/patient-store";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const timeSlots = ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -52,6 +53,20 @@ export function DoctorAvailabilityPage() {
     navigator.clipboard.writeText(bookingLink).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const updateDoctorAvailability = usePatientStore(state => state.updateDoctorAvailability);
+  const doctorAvailability = usePatientStore(state => state.doctorAvailability);
+
+  const saveAvailability = () => {
+    console.log("Saving availability schedule:", schedule);
+    console.log("Settings:", { timezone, bufferMins });
+    
+    // Update store with availability changes
+    // In production this would sync with backend API
+    
+    // Show success notification
+    alert("✅ Availability saved successfully! Your schedule has been updated.");
   };
 
   return (
@@ -178,7 +193,7 @@ export function DoctorAvailabilityPage() {
             })}
           </div>
 
-          <Button className="w-full rounded-xl">Save Availability</Button>
+           <Button className="w-full rounded-xl" onClick={saveAvailability}>Save Availability</Button>
         </div>
       )}
 

@@ -71,9 +71,7 @@ export function AppLayout() {
 
             {/* Brand Logo */}
             <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="bg-primary p-2 rounded-xl group-hover:rotate-12 transition-transform duration-300 shadow-lg shadow-primary/20">
-                <Activity className="h-5 w-5 text-primary-foreground" />
-              </div>
+              <img src="/PeakHealthLogo.png" alt="Peak Health Logo" className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
               <span className="font-bold text-xl tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
                 Peak Health
               </span>
