@@ -213,33 +213,101 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* 6. How It Works (Exact Yucca Structure) */}
-      <section id="how-it-works" className="py-32 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-5xl md:text-6xl font-black text-[#0A0D14] text-center mb-24 leading-[0.9]">Four simple steps.</h2>
+      {/* 6. How It Works — Premium Animated Section */}
+      <section id="how-it-works" className="py-24 md:py-32 bg-white overflow-hidden">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-emerald-100 mb-6">
+              <CheckCircle2 className="h-3 w-3" /> Simple Process
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black text-[#0A0D14] leading-[0.95]">
+              From click to <span className="text-emerald-600 font-serif italic font-medium">clinic.</span>
+            </h2>
+            <p className="text-slate-500 text-lg mt-4 max-w-xl mx-auto">Four steps. No waiting rooms. No phone calls. Just results.</p>
+          </div>
 
-          <div className="relative space-y-32">
-             {/* Progress line */}
-            <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-slate-100 hidden lg:block" />
+          {/* Connected Timeline */}
+          <div className="relative">
+            {/* Horizontal connector line (desktop) */}
+            <div className="hidden md:block absolute top-[72px] left-[10%] right-[10%] h-[2px]">
+              <div className="w-full h-full bg-gradient-to-r from-emerald-200 via-emerald-400 to-emerald-200 rounded-full" />
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-300 via-emerald-500 to-emerald-300 rounded-full animate-pulse opacity-40" />
+            </div>
 
-            {[
-              { step: "01", title: "Select Treatment", desc: "Browse our clinically-vetted protocols and select the treatment plan that fits your biology.", img: IMG("1515377659639-6e3e157771de") },
-              { step: "02", title: "Checkout & Verify", desc: "Complete payment and securely verify your identity. Our platform is 100% HIPAA and SOC2 compliant.", img: IMG("1556740738-f6a1c57b4474") },
-              { step: "03", title: "Doctor Review", desc: "A U.S. licensed clinician reviews your intake within 24 hours. No appointments or awkward calls required.", img: IMG("1576091160399-112ba8d25d1d") },
-              { step: "04", title: "Home Delivery", desc: "Your prescription is shipped in discreet packaging via free expedited shipping. Track everything in your portal.", img: IMG("1586769852044-692d6e3703f0") },
-            ].map((s, i) => (
-              <div key={i} className={cn("flex flex-col lg:flex-row items-center gap-16 relative", i % 2 !== 0 && "lg:flex-row-reverse")}>
-                <div className="lg:w-1/2 space-y-6">
-                  <div className="text-7xl font-black text-slate-100 leading-none">{s.step}</div>
-                  <h3 className="text-4xl font-black text-[#0A0D14] leading-tight">{s.title}</h3>
-                  <p className="text-lg text-slate-500 font-medium leading-relaxed">{s.desc}</p>
+            <div className="grid md:grid-cols-4 gap-8 md:gap-6 relative z-10">
+              {[
+                { 
+                  step: "01", 
+                  title: "Choose Treatment", 
+                  desc: "Browse our catalog of clinically-vetted protocols. Select what fits your biology.", 
+                  icon: Pill,
+                  color: "from-emerald-400 to-emerald-600",
+                  bg: "bg-emerald-50",
+                  delay: "0ms"
+                },
+                { 
+                  step: "02", 
+                  title: "Medical Intake", 
+                  desc: "Answer a quick, product-specific medical questionnaire reviewed by our AI pre-screener.", 
+                  icon: Stethoscope,
+                  color: "from-blue-400 to-blue-600",
+                  bg: "bg-blue-50",
+                  delay: "150ms"
+                },
+                { 
+                  step: "03", 
+                  title: "Pay & Verify", 
+                  desc: "Secure checkout with Stripe. Create your HIPAA-compliant account with 2FA identity verification.", 
+                  icon: Shield,
+                  color: "from-violet-400 to-violet-600",
+                  bg: "bg-violet-50",
+                  delay: "300ms"
+                },
+                { 
+                  step: "04", 
+                  title: "Get Treatment", 
+                  desc: "A U.S. licensed provider reviews within 24hrs. If approved, medication ships free to your door.", 
+                  icon: ArrowRight,
+                  color: "from-amber-400 to-orange-500",
+                  bg: "bg-amber-50",
+                  delay: "450ms"
+                },
+              ].map((s, i) => (
+                <div 
+                  key={i} 
+                  className="group relative"
+                  style={{ animationDelay: s.delay }}
+                >
+                  {/* Step Circle */}
+                  <div className="flex justify-center mb-8">
+                    <div className={cn("relative h-[88px] w-[88px] rounded-full bg-gradient-to-br shadow-lg flex items-center justify-center group-hover:scale-110 group-hover:shadow-xl transition-all duration-500", s.color)}>
+                      <s.icon className="h-8 w-8 text-white" />
+                      <div className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-[#0A0D14] text-white text-[10px] font-black flex items-center justify-center shadow-md border-2 border-white">
+                        {s.step}
+                      </div>
+                      {/* Pulse ring */}
+                      <div className={cn("absolute inset-0 rounded-full bg-gradient-to-br opacity-0 group-hover:opacity-30 group-hover:scale-150 transition-all duration-700", s.color)} />
+                    </div>
+                  </div>
+
+                  {/* Content Card */}
+                  <div className={cn("p-6 rounded-3xl border border-slate-100 text-center group-hover:border-slate-200 group-hover:shadow-lg group-hover:-translate-y-1 transition-all duration-500", s.bg)}>
+                    <h3 className="text-xl font-black text-[#0A0D14] mb-3">{s.title}</h3>
+                    <p className="text-sm text-slate-500 font-medium leading-relaxed">{s.desc}</p>
+                  </div>
                 </div>
-                <div className="lg:w-1/2 relative">
-                  <div className="absolute inset-0 bg-emerald-50 rounded-[40px] scale-95 -rotate-2" />
-                  <img src={s.img} alt={s.title} className="relative z-10 rounded-[40px] shadow-2xl h-[400px] w-full object-cover" />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="mt-16 text-center">
+            <Link to="/patient/shop">
+              <Button size="lg" className="rounded-full bg-[#0A0D14] text-white hover:bg-[#1A1D24] h-14 px-10 text-sm font-black shadow-xl shadow-slate-900/10 group">
+                START YOUR JOURNEY <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+            <p className="mt-4 text-xs text-slate-400 font-medium">No appointments needed · Cancel anytime</p>
           </div>
         </div>
       </section>
