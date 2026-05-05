@@ -288,36 +288,117 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#0A0D14] text-slate-500 py-24 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16 mb-24">
-          <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center gap-3 mb-8">
-              <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain brightness-0 invert" />
+      {/* 6. Elite Footer (Yucca-Style) */}
+      <footer className="bg-white border-t border-slate-100 pt-24 pb-12 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
+            {/* Column 1: Brand & Badges */}
+            <div className="space-y-10">
+              <img src="/originallogo.png" alt="Peak Health" className="h-14 object-contain" />
+              <p className="text-[13px] text-slate-400 font-medium">
+                © {new Date().getFullYear()} Peak Health Technology Group, Inc. All rights reserved.
+              </p>
+              
+              {/* Certification Badges */}
+              <div className="flex items-center gap-4 py-2">
+                <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2">
+                  <img src="https://www.legitscript.com/wp-content/themes/legitscript/assets/images/seal-healthcare.png" alt="LegitScript" className="h-full object-contain grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2 text-[10px] font-black text-center leading-tight opacity-40 uppercase">
+                  USA Made
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2 opacity-40">
+                  <ShieldCheck className="h-6 w-6" />
+                </div>
+              </div>
+
+              {/* Social Icons */}
+              <div className="flex items-center gap-6">
+                {["instagram", "facebook", "linkedin", "twitter"].map(s => (
+                  <a key={s} href="#" className="text-slate-300 hover:text-[#0A0D14] transition-colors">
+                    <div className="h-5 w-5 bg-current rounded-sm" />
+                  </a>
+                ))}
+                <div className="flex items-center gap-1.5 text-slate-400 font-black text-[11px] uppercase tracking-widest ml-4">
+                   <Star className="h-3 w-3 fill-slate-400" /> Trustpilot
+                </div>
+              </div>
             </div>
-            <p className="max-w-sm mb-10 leading-relaxed font-medium">
-              Medical-grade wellness protocols delivered to your door. The future of healthcare is <span className="text-emerald-400 font-serif italic">personalized.</span>
+
+            {/* Column 2: Treatments */}
+            <div className="space-y-8">
+              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">Treatments</h4>
+              <ul className="space-y-6">
+                {[
+                  { name: "Personalized Tirzepatide+", sub: "Weight Loss", href: "/treatments/weight-loss" },
+                  { name: "Personalized Semaglutide+", sub: "Weight Loss", href: "/treatments/weight-loss" },
+                  { name: "NAD+ Longevity", sub: "Metabolic Support", href: "/treatments/longevity" },
+                  { name: "Sermorelin Program", sub: "Muscle Recovery", href: "/treatments/muscle-recovery" }
+                ].map(item => (
+                  <li key={item.name}>
+                    <Link to={item.href} className="group block">
+                      <p className="text-lg font-black text-[#0A0D14] group-hover:text-emerald-600 transition-colors leading-tight">{item.name}</p>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">{item.sub}</p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 3: Brand Nav */}
+            <div className="space-y-8">
+              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">Peak Health</h4>
+              <ul className="space-y-5">
+                {[
+                  { name: "How It Works", href: "#how-it-works" },
+                  { name: "Log In", href: "/patient" },
+                  { name: "Get Started", href: "/patient/shop" },
+                  { name: "Referral Program 🎁", href: "/patient/referrals" },
+                  { name: "Clinical FAQ", href: "/faq" },
+                  { name: "The Bio-Blog", href: "/blog" }
+                ].map(item => (
+                  <li key={item.name}>
+                    <Link to={item.href} className="text-lg font-black text-[#0A0D14] hover:text-emerald-600 transition-colors">
+                      {item.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 4: Medical */}
+            <div className="space-y-8">
+              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">Medical</h4>
+              <ul className="space-y-5">
+                {[
+                  { name: "Safety Information", href: "/safety" },
+                  { name: "Consent to Telehealth", href: "/consent" },
+                  { name: "Physician Code of Conduct", href: "/conduct" },
+                  { name: "Pharmacy Partners", href: "/pharmacy-info" },
+                  { name: "Terms of Service", href: "/terms" },
+                  { name: "Privacy Policy", href: "/privacy" }
+                ].map(item => (
+                  <li key={item.name}>
+                    <Link to={item.href} className="text-lg font-black text-[#0A0D14] hover:text-emerald-600 transition-colors leading-tight">
+                      {item.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Bar with Stylized Signature */}
+          <div className="pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-end gap-8">
+            <p className="text-[10px] text-slate-400 max-w-2xl leading-relaxed font-medium uppercase tracking-widest">
+              *DISCLAIMER: The information provided on this site is not a substitute for professional medical advice. Always consult your physician before beginning any treatment program. Prescriptions are provided at the sole discretion of the treating provider.
             </p>
+            <div className="text-right shrink-0">
+               <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-[#0A0D14]">
+                 it's about <span className="text-emerald-500 font-serif italic font-medium">you.</span>
+               </h2>
+            </div>
           </div>
-          <div>
-            <h4 className="text-white font-black uppercase tracking-[0.2em] text-xs mb-8">Treatments</h4>
-            <ul className="space-y-4 text-sm font-bold">
-              {treatments.map(t => (
-                <li key={t.name}><Link to={t.href} className="hover:text-emerald-400 transition-colors">{t.name}</Link></li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-black uppercase tracking-[0.2em] text-xs mb-8">Portal</h4>
-            <ul className="space-y-4 text-sm font-bold">
-              <li><Link to="/patient" className="hover:text-emerald-400 transition-colors">Patient Portal</Link></li>
-              <li><Link to="/doctor" className="hover:text-emerald-400 transition-colors">Doctor Portal</Link></li>
-              <li><Link to="/admin" className="hover:text-emerald-400 transition-colors">Admin Dashboard</Link></li>
-            </ul>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto pt-12 border-t border-white/5 text-[10px] uppercase font-black tracking-widest text-center">
-          <p>© {new Date().getFullYear()} PEAK HEALTH TECHNOLOGY GROUP LLC. All rights reserved.</p>
         </div>
       </footer>
     </div>
