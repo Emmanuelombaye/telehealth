@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { 
-  ClipboardList, Package, Truck, FlaskConical, 
+  ClipboardList, Package, Truck, FlaskConical, Pill,
   AlertTriangle, CheckCircle2, Search, Filter,
   ArrowUpRight, Clock, Box, ShieldAlert, 
   ChevronRight, MoreHorizontal, Printer, Mail
