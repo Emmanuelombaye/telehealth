@@ -53,7 +53,7 @@ export function LandingPage() {
         scrolled ? "bg-white/90 backdrop-blur-xl border-b border-slate-100 py-3 shadow-sm" : "bg-transparent py-6")}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-10 object-contain group-hover:scale-105 transition-transform duration-300" />
+            <img src="/originallogo.png" alt="Peak Health" className="h-12 md:h-14 object-contain group-hover:scale-105 transition-transform duration-300" />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-10">
@@ -381,7 +381,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16 mb-24">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-8">
-              <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-12 object-contain brightness-0 invert" />
+              <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain brightness-0 invert" />
             </div>
             <p className="max-w-sm mb-10 leading-relaxed font-medium">
               Medical-grade wellness protocols delivered to your door. The future of healthcare is <span className="text-emerald-400 font-serif italic">personalized.</span>

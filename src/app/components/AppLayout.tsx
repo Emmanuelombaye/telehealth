@@ -71,11 +71,8 @@ export function AppLayout() {
             )}
 
             {/* Brand Logo */}
-            <Link to="/" className="flex items-center gap-2.5 group">
-              <img src="/PeakHealthLogo.png" alt="Peak Health Logo" className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
-              <span className="font-bold text-xl tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Peak Health
-              </span>
+            <Link to="/" className="flex items-center gap-3 group py-1">
+              <img src="/originallogo.png" alt="Peak Health Logo" className="h-12 md:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
             </Link>
           </div>
 
