@@ -52,11 +52,8 @@ export function LandingPage() {
       <header className={cn("sticky top-0 z-50 transition-all duration-500", 
         scrolled ? "bg-white/90 backdrop-blur-xl border-b border-slate-100 py-3 shadow-sm" : "bg-transparent py-6")}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="h-9 w-9 rounded-full bg-[#0A0D14] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <Activity className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-black text-2xl tracking-tighter text-[#0A0D14]">PEAK HEALTH</span>
+          <Link to="/" className="flex items-center gap-3 group">
+            <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-10 object-contain group-hover:scale-105 transition-transform duration-300" />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-10">
@@ -315,11 +312,8 @@ export function LandingPage() {
       <footer className="bg-[#0A0D14] text-slate-500 py-24 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16 mb-24">
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center gap-2.5 mb-8">
-              <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center">
-                <Activity className="h-6 w-6 text-[#0A0D14]" />
-              </div>
-              <span className="font-black text-2xl tracking-tighter text-white uppercase">PEAK HEALTH</span>
+            <div className="flex items-center gap-3 mb-8">
+              <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-12 object-contain brightness-0 invert" />
             </div>
             <p className="max-w-sm mb-10 leading-relaxed font-medium">
               Medical-grade wellness protocols delivered to your door. The future of healthcare is <span className="text-emerald-400 font-serif italic">personalized.</span>
