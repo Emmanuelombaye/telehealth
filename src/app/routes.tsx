@@ -64,6 +64,12 @@ import { SuperAdminUsersPage } from "./pages/superadmin/pages/Users";
 import { SuperAdminFinancePage } from "./pages/superadmin/pages/Finance";
 import { SuperAdminSecurityPage } from "./pages/superadmin/pages/Security";
 
+// Pharmacy pages
+import { 
+  PharmacyDashboard, PharmacyOrdersPage, PharmacyShippingPage, 
+  PharmacyInventoryPage, PharmacySettingsPage 
+} from "./pages/pharmacy/pages";
+
 import { NotFoundPage } from "./pages/NotFound";
 
 export const router = createBrowserRouter([
@@ -129,7 +135,7 @@ export const router = createBrowserRouter([
           { path: "messages", Component: AdminMessagesPage },
           { path: "analytics", Component: AdminAnalyticsPage },
           { path: "tools", Component: AdminToolsPage },
-          { path: "questionnaire", Component: AdminQuestionnairePage },
+          { path: "questionnaires", Component: AdminQuestionnairePage },
           { path: "products", Component: AdminProductsPage },
           { path: "builders", Component: AdminBuildersPage },
           { path: "finance", Component: AdminFinancePage },
@@ -153,6 +159,21 @@ export const router = createBrowserRouter([
           { path: "users", Component: SuperAdminUsersPage },
           { path: "finance", Component: SuperAdminFinancePage },
           { path: "security", Component: SuperAdminSecurityPage },
+        ],
+      },
+
+      // Pharmacy portal
+      {
+        path: "pharmacy",
+        children: [
+          { index: true, Component: PharmacyDashboard },
+          { path: "orders", Component: PharmacyOrdersPage },
+          { path: "pickup", Component: PharmacyOrdersPage }, // Using same component for now
+          { path: "shipping", Component: PharmacyShippingPage },
+          { path: "compounding", Component: PharmacyInventoryPage }, // Using same component for now
+          { path: "inventory", Component: PharmacyInventoryPage },
+          { path: "audit", Component: PharmacyInventoryPage }, // Using same component for now
+          { path: "settings", Component: PharmacySettingsPage },
         ],
       },
 

@@ -1,18 +1,24 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { useState, useEffect, useRef } from "react";
 import { 
   ArrowLeft, Video, Mic, MicOff, VideoOff, MessageSquare, 
-  Pill, Zap, ShieldCheck, Activity, Users, 
-  Sparkles, CheckCircle2, MoreHorizontal
+  Pill, FileText, Zap, ShieldCheck, Activity, Users, 
+  Send, Bot, Sparkles, CheckCircle2, MoreHorizontal
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
 
-export function DoctorConsultPage() {
+interface Message {
+  id: string;
+  role: "doctor" | "patient" | "ai";
+  content: string;
+  timestamp: string;
+}
+
+export function DoctorConsultationPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScribeActive, setIsScribeActive] = useState(true);
   const [transcription, setTranscription] = useState<string[]>([]);
-  const [soapNotes] = useState({
+  const [soapNotes, setSoapNotes] = useState({
     subjective: "Patient reports increasing difficulty with weight management despite diet. Energy levels are down.",
     objective: "BMI 31.4. No acute distress. BP 122/80.",
     assessment: "Class 1 Obesity. Candidate for GLP-1 therapy.",
@@ -46,25 +52,25 @@ export function DoctorConsultPage() {
   }, [isScribeActive]);
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col gap-4 overflow-hidden -mt-2">
+    <div className="h-[calc(100vh-120px)] flex flex-col gap-4 overflow-hidden -mt-2">
       {/* Header */}
       <div className="flex items-center justify-between px-2">
         <div className="flex items-center gap-3">
-          <Link to="/doctor/queue" className="h-8 w-8 rounded-full hover:bg-muted flex items-center justify-center transition-colors">
+          <button className="h-8 w-8 rounded-full hover:bg-muted flex items-center justify-center">
             <ArrowLeft className="h-4 w-4" />
-          </Link>
+          </button>
           <div>
             <h1 className="text-lg font-black text-[#0A0D14]">Sophie Bennett</h1>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ongoing Consultation · Weight Loss</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Ongoing Consultation · Weight Loss</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="rounded-full bg-emerald-50 text-emerald-700 border-emerald-100 gap-1.5 py-1 text-[10px] font-black">
+          <Badge variant="outline" className="rounded-full bg-emerald-50 text-emerald-700 border-emerald-100 gap-1.5 py-1">
             <ShieldCheck className="h-3 w-3" /> HIPAA SECURE
           </Badge>
           <div className="h-8 w-[1px] bg-slate-200 mx-2" />
-          <Button variant="outline" size="sm" className="rounded-xl h-9 text-xs font-bold">
-            <Users className="h-3.5 w-3.5 mr-2" /> Invite Specialist
+          <Button variant="outline" size="sm" className="rounded-xl h-9">
+            <Users className="h-4 w-4 mr-2" /> Invite Specialist
           </Button>
         </div>
       </div>
@@ -119,7 +125,7 @@ export function DoctorConsultPage() {
           </div>
 
           {/* AI Scribe Transcription */}
-          <Card className="h-40 border-none bg-emerald-50/50 dark:bg-emerald-950/20 overflow-hidden shrink-0">
+          <Card className="h-48 border-none bg-emerald-50/50 dark:bg-emerald-950/20 overflow-hidden">
             <CardContent className="p-4 flex flex-col h-full">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -131,9 +137,9 @@ export function DoctorConsultPage() {
                 </Button>
               </div>
               <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                {transcription.length === 0 && <p className="text-xs text-slate-400 italic">Listening to conversation...</p>}
+                {transcription.length === 0 && <p className="text-sm text-slate-400 italic">Listening to conversation...</p>}
                 {transcription.map((line, idx) => (
-                  <p key={idx} className="text-xs text-slate-700 font-medium animate-in fade-in slide-in-from-left-2 duration-500">
+                  <p key={idx} className="text-sm text-slate-700 font-medium animate-in fade-in slide-in-from-left-2 duration-500">
                     {line.startsWith("Doctor:") ? <span className="font-black text-primary">Dr:</span> : <span className="font-black text-slate-900">Pt:</span>} {line.split(": ")[1]}
                   </p>
                 ))}
@@ -143,31 +149,31 @@ export function DoctorConsultPage() {
         </div>
 
         {/* Right Column: SOAP Notes & E-Prescribing */}
-        <div className="w-[380px] flex flex-col gap-4 overflow-hidden shrink-0">
+        <div className="w-[400px] flex flex-col gap-4 overflow-hidden">
           {/* AI SOAP Notes Panel */}
-          <Card className="flex-1 overflow-hidden border-slate-200 shadow-xl flex flex-col">
+          <Card className="flex-1 overflow-hidden border-slate-200 shadow-xl">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
-                <h3 className="font-black text-xs uppercase tracking-widest">Clinical Documentation</h3>
+                <h3 className="font-black text-sm uppercase tracking-widest">Clinical Documentation</h3>
               </div>
-              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[9px] font-black uppercase tracking-tight">AI ASSISTED</Badge>
+              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">AI ASSISTED</Badge>
             </div>
-            <CardContent className="p-0 overflow-y-auto flex-1 custom-scrollbar">
+            <CardContent className="p-0 overflow-y-auto h-[calc(100%-53px)] custom-scrollbar">
               <div className="p-4 space-y-6">
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between">
                     Subjective
                     <Button variant="ghost" size="sm" className="h-5 text-[9px] px-1 underline">Edit</Button>
                   </p>
-                  <p className="text-xs font-medium leading-relaxed bg-white border border-slate-100 p-3 rounded-xl shadow-sm italic text-slate-600">
+                  <p className="text-sm font-medium leading-relaxed bg-white border border-slate-100 p-3 rounded-xl shadow-sm italic text-slate-600">
                     {soapNotes.subjective}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Objective</p>
-                  <p className="text-xs font-medium leading-relaxed text-slate-700">
+                  <p className="text-sm font-medium leading-relaxed text-slate-700">
                     {soapNotes.objective}
                   </p>
                 </div>
@@ -175,13 +181,13 @@ export function DoctorConsultPage() {
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Assessment</p>
                   <div className="bg-primary/5 border border-primary/20 p-3 rounded-xl">
-                    <p className="text-xs font-bold text-primary">{soapNotes.assessment}</p>
+                    <p className="text-sm font-bold text-primary">{soapNotes.assessment}</p>
                   </div>
                 </div>
 
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Plan</p>
-                  <p className="text-xs font-medium leading-relaxed text-slate-700">
+                  <p className="text-sm font-medium leading-relaxed text-slate-700">
                     {soapNotes.plan}
                   </p>
                 </div>
@@ -190,11 +196,11 @@ export function DoctorConsultPage() {
           </Card>
 
           {/* E-Prescribing Panel */}
-          <Card className="border-emerald-200 shadow-xl overflow-hidden bg-emerald-50/20 shrink-0">
+          <Card className="border-emerald-200 shadow-xl overflow-hidden bg-emerald-50/20">
             <div className="p-4 bg-emerald-500 text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Pill className="h-4 w-4" />
-                <h3 className="font-black text-xs uppercase tracking-widest">E-Prescribing</h3>
+                <h3 className="font-black text-sm uppercase tracking-widest">E-Prescribing</h3>
               </div>
               <Badge variant="outline" className="bg-white/20 border-white/30 text-white text-[9px] font-black">LEGITSCRIPT APPROVED</Badge>
             </div>
@@ -209,7 +215,7 @@ export function DoctorConsultPage() {
                 </div>
               </div>
               
-              <Button className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 h-11 font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-600/20">
+              <Button className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 h-12 font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-600/20">
                 Finalize & Send to Pharmacy
               </Button>
               <p className="text-center text-[9px] font-black text-emerald-700/60 uppercase tracking-widest">Sent to: VialsRX Pharmacy (California)</p>

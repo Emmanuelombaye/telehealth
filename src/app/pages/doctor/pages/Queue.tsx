@@ -137,10 +137,12 @@ export function DoctorQueuePage() {
         </Card>
 
         <div className="flex gap-2">
-          <Button className="flex-1 rounded-xl gap-1.5">
-            <Video className="h-4 w-4" /> Start Video Call
-          </Button>
-          <Button variant="outline" className="rounded-xl gap-1.5">
+          <Link to="/doctor/consult" className="flex-1">
+            <Button className="w-full rounded-xl gap-1.5 h-11">
+              <Video className="h-4 w-4" /> Start Video Call
+            </Button>
+          </Link>
+          <Button variant="outline" className="rounded-xl gap-1.5 h-11">
             <Phone className="h-4 w-4" /> Call
           </Button>
           <Button variant="outline" className="rounded-xl gap-1.5 text-destructive border-destructive/30">
@@ -251,9 +253,11 @@ export function DoctorQueuePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-primary">
-                      <Video className="h-3.5 w-3.5" />
-                    </Button>
+                    <Link to="/doctor/consult">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-primary">
+                        <Video className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl">
                       <MessageSquare className="h-3.5 w-3.5" />
                     </Button>

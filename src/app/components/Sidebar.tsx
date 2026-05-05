@@ -11,7 +11,7 @@ import {
 import { cn } from "./ui/shared";
 import { useI18n, brand } from "../../lib";
 
-type Role = "patient" | "doctor" | "admin" | "superadmin";
+type Role = "patient" | "doctor" | "admin" | "superadmin" | "pharmacy";
 
 interface SidebarProps {
   role: Role;
@@ -77,6 +77,16 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
     { icon: ShieldCheck, label: "Security", href: "/superadmin/security" },
     { icon: Settings, label: "Platform Settings", href: "/superadmin/settings" },
   ],
+  pharmacy: [
+    { icon: LayoutDashboard, label: "Dispensary Overview", href: "/pharmacy" },
+    { icon: ClipboardList, label: "Incoming Rx", href: "/pharmacy/orders", badge: 12 },
+    { icon: Truck, label: "Ready for Pickup", href: "/pharmacy/pickup" },
+    { icon: Package, label: "Shipping Queue", href: "/pharmacy/shipping", badge: 5 },
+    { icon: FlaskConical, label: "Compounding Log", href: "/pharmacy/compounding" },
+    { icon: Layers, label: "Inventory Mgmt", href: "/pharmacy/inventory" },
+    { icon: FileText, label: "Audit Reports", href: "/pharmacy/audit" },
+    { icon: Settings, label: "Pharmacy Settings", href: "/pharmacy/settings" },
+  ],
 };
 
 const roleColors: Record<Role, string> = {
@@ -84,6 +94,7 @@ const roleColors: Record<Role, string> = {
   doctor: "bg-sage-500",
   admin: "bg-peach-700",
   superadmin: "bg-lavender-700",
+  pharmacy: "bg-emerald-600",
 };
 
 const roleLabels: Record<Role, string> = {
@@ -91,6 +102,7 @@ const roleLabels: Record<Role, string> = {
   doctor: "Doctor Portal",
   admin: "System Administration",
   superadmin: "Super Admin",
+  pharmacy: "Pharmacy Portal",
 };
 
 export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {

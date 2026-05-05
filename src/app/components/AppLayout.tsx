@@ -19,9 +19,10 @@ export function AppLayout() {
   const isProfessional = !isPatient && !isLanding;
 
   // Determine Role for Sidebar
-  let role: "doctor" | "admin" | "superadmin" = "doctor";
+  let role: "doctor" | "admin" | "superadmin" | "pharmacy" = "doctor";
   if (path.startsWith("/admin")) role = "admin";
   if (path.startsWith("/superadmin")) role = "superadmin";
+  if (path.startsWith("/pharmacy")) role = "pharmacy";
 
   // Breadcrumb/Back support
   const canGoBack = path.split("/").filter(Boolean).length > 1;
