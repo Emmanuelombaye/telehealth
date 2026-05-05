@@ -6,7 +6,7 @@ import {
   HelpCircle, Tag, Share2, BarChart3, Layers, Home,
   Bell, User, Heart, FolderOpen, Pill, TestTube, UserCheck,
   FileCheck, Receipt, BookOpen, Building2,
-  Image as ImageIcon, ArrowRightLeft
+  Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse
 } from "lucide-react";
 import { cn } from "./ui/shared";
 import { useI18n } from "../../lib";
