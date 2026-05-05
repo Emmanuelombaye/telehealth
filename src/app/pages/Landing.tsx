@@ -13,8 +13,8 @@ export function LandingPage() {
       description: t("portal.patient.desc"),
       icon: User,
       href: "/patient",
-      gradient: "from-violet-500 to-violet-600",
-      bg: "bg-violet-50 dark:bg-violet-950/30",
+      gradient: "from-lavender-300 to-lavender-700",
+      bg: "bg-lavender-50 dark:bg-lavender-900/30",
       image: "/portalImages/patientportal.png",
     },
     {
@@ -22,8 +22,8 @@ export function LandingPage() {
       description: t("portal.doctor.desc"),
       icon: Stethoscope,
       href: "/doctor",
-      gradient: "from-emerald-500 to-emerald-600",
-      bg: "bg-emerald-50 dark:bg-emerald-950/30",
+      gradient: "from-sage-300 to-sage-700",
+      bg: "bg-sage-50 dark:bg-sage-900/30",
       image: "/portalImages/doctor.png",
     },
     {
@@ -31,8 +31,8 @@ export function LandingPage() {
       description: t("portal.admin.desc"),
       icon: ShieldCheck,
       href: "/admin",
-      gradient: "from-slate-600 to-slate-700",
-      bg: "bg-slate-50 dark:bg-slate-950/30",
+      gradient: "from-peach-300 to-peach-700",
+      bg: "bg-peach-50 dark:bg-peach-900/30",
       image: "/portalImages/admin.png",
     },
     {
@@ -40,8 +40,8 @@ export function LandingPage() {
       description: "Platform-wide control: all brands, analytics, users, finance & security.",
       icon: Shield,
       href: "/superadmin",
-      gradient: "from-violet-600 to-purple-700",
-      bg: "bg-violet-50 dark:bg-violet-950/30",
+      gradient: "from-lavender-700 to-lavender-900",
+      bg: "bg-lavender-100 dark:bg-lavender-900/40",
       image: "/portalImages/admin.png",
     },
   ];
@@ -103,13 +103,13 @@ export function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/15 via-background to-accent/20 pt-16 pb-20 px-4">
+      <section className="relative overflow-hidden bg-hero-yucca pt-16 pb-20 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
             <Globe className="h-3.5 w-3.5" />
             Available in {LOCALES.length} languages worldwide
           </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-primary via-violet-400 to-accent bg-clip-text text-transparent leading-tight">
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 text-gradient-yucca leading-tight">
             {t("landing.hero")}
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">

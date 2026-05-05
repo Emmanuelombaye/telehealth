@@ -31,6 +31,26 @@
   --chart-4: #8f87ad;
   --chart-5: #c59467;
   --radius: 0.75rem;
+  --brand-lavender-50: #f3eeff;
+  --brand-lavender-100: #DCCEFF;
+  --brand-lavender-300: #B9A9FE;
+  --brand-lavender-500: #9b8ae0;
+  --brand-lavender-700: #7c6bc4;
+  --brand-lavender-900: #4a3a8a;
+  --brand-sage-50: #F2FFF8;
+  --brand-sage-100: #c2e3bd;
+  --brand-sage-300: #A8D7A1;
+  --brand-sage-500: #91b88c;
+  --brand-sage-700: #7e9d79;
+  --brand-sage-900: #677E64;
+  --brand-peach-50: #ffead4;
+  --brand-peach-100: #ffe0c2;
+  --brand-peach-300: #FFCB9B;
+  --brand-peach-500: #e0ae7f;
+  --brand-peach-700: #c59467;
+  --brand-peach-900: #A5774B;
+  --brand-sky-50: #D6F0FF;
+  --brand-hero: linear-gradient(129deg, #DCCEFF -12.49%, #F2FFF8 47.91%, #D6F0FF 101.73%);
   --sidebar: #ffffff;
   --sidebar-foreground: #1a1530;
   --sidebar-primary: #B9A9FE;
@@ -111,6 +131,25 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-lavender-50: var(--brand-lavender-50);
+  --color-lavender-100: var(--brand-lavender-100);
+  --color-lavender-300: var(--brand-lavender-300);
+  --color-lavender-500: var(--brand-lavender-500);
+  --color-lavender-700: var(--brand-lavender-700);
+  --color-lavender-900: var(--brand-lavender-900);
+  --color-sage-50: var(--brand-sage-50);
+  --color-sage-100: var(--brand-sage-100);
+  --color-sage-300: var(--brand-sage-300);
+  --color-sage-500: var(--brand-sage-500);
+  --color-sage-700: var(--brand-sage-700);
+  --color-sage-900: var(--brand-sage-900);
+  --color-peach-50: var(--brand-peach-50);
+  --color-peach-100: var(--brand-peach-100);
+  --color-peach-300: var(--brand-peach-300);
+  --color-peach-500: var(--brand-peach-500);
+  --color-peach-700: var(--brand-peach-700);
+  --color-peach-900: var(--brand-peach-900);
+  --color-sky-soft: var(--brand-sky-50);
 }
 
 @layer base {
@@ -126,4 +165,36 @@
   h1 { font-size: var(--text-2xl); font-weight: 700; line-height: 1.3; }
   h2 { font-size: var(--text-xl); font-weight: 600; line-height: 1.4; }
   h3 { font-size: var(--text-lg); font-weight: 600; line-height: 1.5; }
+}
+
+@layer utilities {
+  .bg-hero-yucca { background: var(--brand-hero); }
+  .bg-mesh-lavender {
+    background:
+      radial-gradient(ellipse at 15% -10%, var(--brand-lavender-100) 0%, transparent 60%),
+      radial-gradient(ellipse at 90% 110%, var(--brand-lavender-700) 0%, transparent 55%),
+      radial-gradient(ellipse at 55% 40%, var(--brand-lavender-500) 0%, transparent 50%),
+      linear-gradient(180deg, var(--brand-lavender-100) 0%, var(--brand-lavender-900) 100%);
+  }
+  .bg-mesh-sage {
+    background:
+      radial-gradient(ellipse at 15% -10%, var(--brand-sage-100) 0%, transparent 60%),
+      radial-gradient(ellipse at 90% 110%, var(--brand-sage-700) 0%, transparent 55%),
+      radial-gradient(ellipse at 55% 40%, var(--brand-sage-500) 0%, transparent 50%),
+      linear-gradient(180deg, var(--brand-sage-100) 0%, var(--brand-sage-900) 100%);
+  }
+  .bg-mesh-peach {
+    background:
+      radial-gradient(ellipse at 15% -10%, var(--brand-peach-100) 0%, transparent 60%),
+      radial-gradient(ellipse at 90% 110%, var(--brand-peach-700) 0%, transparent 55%),
+      radial-gradient(ellipse at 55% 40%, var(--brand-peach-500) 0%, transparent 50%),
+      linear-gradient(180deg, var(--brand-peach-100) 0%, var(--brand-peach-900) 100%);
+  }
+  .text-gradient-yucca {
+    background: linear-gradient(90deg, var(--brand-lavender-700) 0%, var(--brand-lavender-300) 50%, var(--brand-peach-300) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
 }
