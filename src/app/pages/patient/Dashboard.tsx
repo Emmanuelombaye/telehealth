@@ -45,7 +45,7 @@ export function PatientDashboard() {
       <div className="grid grid-cols-2 gap-3">
         {[
           { label: t("label.heartRate"), value: "72 bpm", icon: Heart, color: "text-rose-500", bg: "bg-rose-50 dark:bg-rose-950/40", trend: "+2%" },
-          { label: t("label.bloodSugar"), value: "98 mg/dL", icon: Droplets, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/40", trend: "Normal" },
+          { label: t("label.bloodSugar"), value: "98 mg/dL", icon: Droplets, color: "text-violet-500", bg: "bg-violet-50 dark:bg-violet-950/40", trend: "Normal" },
           { label: t("label.steps"), value: "8,432", icon: Activity, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/40", trend: "84%" },
           { label: t("label.sleep"), value: "7h 20m", icon: Clock, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-950/40", trend: "Good" },
         ].map((stat, i) => (
@@ -133,7 +133,7 @@ export function PatientDashboard() {
       </div>
 
       {/* Need Help */}
-      <Card className="bg-gradient-to-r from-primary to-blue-600 text-white border-none">
+      <Card className="bg-gradient-to-r from-primary to-violet-600 text-white border-none">
         <CardContent className="p-5 flex items-center gap-4">
           <div className="flex-1">
             <h3 className="font-bold mb-1">{t("label.needHelp")}</h3>

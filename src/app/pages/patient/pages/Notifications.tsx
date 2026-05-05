@@ -11,7 +11,7 @@ const notifications = [
 ];
 
 const typeColors: Record<string, string> = {
-  appointment: "bg-blue-100 text-blue-600 dark:bg-blue-950/40",
+  appointment: "bg-violet-100 text-violet-600 dark:bg-violet-950/40",
   lab: "bg-purple-100 text-purple-600 dark:bg-purple-950/40",
   message: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40",
   prescription: "bg-amber-100 text-amber-600 dark:bg-amber-950/40",

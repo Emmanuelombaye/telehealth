@@ -77,7 +77,7 @@ export function SuperAdminDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Platform MRR", value: "$318,600", change: "+24%", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
-          { label: "Total Patients", value: "40,700", change: "+18%", icon: Users, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/40" },
+          { label: "Total Patients", value: "40,700", change: "+18%", icon: Users, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
           { label: "Active Brands", value: "4", change: "+1 this mo", icon: Building2, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
           { label: "Uptime", value: "99.98%", change: "All systems", icon: Activity, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
         ].map((s, i) => (

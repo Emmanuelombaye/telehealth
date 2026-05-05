@@ -51,7 +51,7 @@ export function SuperAdminSecurityPage() {
           { label: "Security Score", value: "94/100", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
           { label: "Active Threats", value: "2", color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/40" },
           { label: "Blocked IPs", value: "3", color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
-          { label: "Last Full Scan", value: "30m ago", color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/40" },
+          { label: "Last Full Scan", value: "30m ago", color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
         ].map((s, i) => (
           <Card key={i} className="border-none">
             <CardContent className={`p-4 rounded-xl ${s.bg}`}>

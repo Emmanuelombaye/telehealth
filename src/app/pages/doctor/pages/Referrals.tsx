@@ -16,7 +16,7 @@ export function DoctorReferralsPage() {
 
       <div className="grid md:grid-cols-3 gap-4">
         {[
-          { title: "Active Outbound", value: "12", icon: ArrowRightLeft, color: "text-blue-500" },
+          { title: "Active Outbound", value: "12", icon: ArrowRightLeft, color: "text-violet-500" },
           { title: "Incoming Referrals", value: "3", icon: Users, color: "text-emerald-500" },
           { title: "Pending Consults", value: "5", icon: RefreshCw, color: "text-amber-500" },
         ].map((stat, i) => (
@@ -58,7 +58,7 @@ export function DoctorReferralsPage() {
               <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
                 <div className="flex gap-4 items-center">
                   <div className={`px-2.5 py-1 rounded-md text-xs font-bold ${
-                    ref.dir === 'Outbound' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
+                    ref.dir === 'Outbound' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'
                   }`}>
                     {ref.dir}
                   </div>

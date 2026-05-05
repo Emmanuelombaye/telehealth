@@ -13,8 +13,8 @@ export function LandingPage() {
       description: t("portal.patient.desc"),
       icon: User,
       href: "/patient",
-      gradient: "from-blue-500 to-blue-600",
-      bg: "bg-blue-50 dark:bg-blue-950/30",
+      gradient: "from-violet-500 to-violet-600",
+      bg: "bg-violet-50 dark:bg-violet-950/30",
       image: "/portalImages/patientportal.png",
     },
     {
@@ -109,7 +109,7 @@ export function LandingPage() {
             <Globe className="h-3.5 w-3.5" />
             Available in {LOCALES.length} languages worldwide
           </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-primary via-blue-500 to-emerald-500 bg-clip-text text-transparent leading-tight">
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-primary via-violet-500 to-emerald-500 bg-clip-text text-transparent leading-tight">
             {t("landing.hero")}
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
@@ -211,7 +211,7 @@ export function LandingPage() {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-gradient-to-r from-primary to-blue-600 py-14 px-4 text-white text-center">
+      <section className="bg-gradient-to-r from-primary to-violet-600 py-14 px-4 text-white text-center">
         <h2 className="text-2xl md:text-3xl font-bold mb-3">Ready to transform healthcare?</h2>
         <p className="text-white/80 mb-6 max-w-xl mx-auto">Join 2.4 million patients and 18,000 doctors on the world's most advanced telehealth platform.</p>
         <Link to="/patient">

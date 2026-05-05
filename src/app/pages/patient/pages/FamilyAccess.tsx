@@ -20,9 +20,9 @@ export function FamilyAccessPage() {
         </Button>
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 flex items-start gap-3">
-        <Shield className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-        <p className="text-xs text-blue-800 dark:text-blue-300">
+      <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-2xl p-4 flex items-start gap-3">
+        <Shield className="h-5 w-5 text-violet-600 shrink-0 mt-0.5" />
+        <p className="text-xs text-violet-800 dark:text-violet-300">
           Family members can only access what you explicitly allow. All access is logged for HIPAA compliance.
         </p>
       </div>

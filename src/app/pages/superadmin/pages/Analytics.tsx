@@ -69,7 +69,7 @@ export function SuperAdminAnalyticsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Platform MRR", value: "$318,600", change: "+24%", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
-          { label: "Total Patients", value: "40,700", change: "+18%", icon: Users, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/40" },
+          { label: "Total Patients", value: "40,700", change: "+18%", icon: Users, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
           { label: "Total Orders", value: "10,220", change: "+31%", icon: Package, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
           { label: "Avg Conversion", value: "38%", change: "+4pts", icon: TrendingUp, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
         ].map((s, i) => (

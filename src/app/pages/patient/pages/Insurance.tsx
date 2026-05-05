@@ -19,7 +19,7 @@ export function InsurancePage() {
       </div>
 
       {/* Active Plan */}
-      <Card className="bg-gradient-to-br from-primary to-blue-600 text-white border-none">
+      <Card className="bg-gradient-to-br from-primary to-violet-600 text-white border-none">
         <CardContent className="p-5">
           <div className="flex items-start justify-between">
             <div>

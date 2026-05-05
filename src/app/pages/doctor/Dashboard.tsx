@@ -51,7 +51,7 @@ export function DoctorDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Patients Today", value: "14", sub: "+12% from yesterday", icon: Users, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/40" },
+          { label: "Patients Today", value: "14", sub: "+12% from yesterday", icon: Users, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
           { label: "Avg. Wait Time", value: "8m 20s", sub: "−2m since last week", icon: Clock, color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/40" },
           { label: "Completed Visits", value: "128", sub: "Monthly target reached", icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
         ].map((s, i) => (

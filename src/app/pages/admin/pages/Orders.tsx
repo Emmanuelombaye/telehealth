@@ -10,7 +10,7 @@ const orders = [
 ];
 
 const statusConfig = {
-  confirmed: { color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-950/40", icon: Clock },
+  confirmed: { color: "text-violet-600", bg: "bg-violet-100 dark:bg-violet-950/40", icon: Clock },
   pending: { color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-950/40", icon: Clock },
   completed: { color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-950/40", icon: CheckCircle2 },
   cancelled: { color: "text-red-600", bg: "bg-red-100 dark:bg-red-950/40", icon: XCircle },
@@ -26,7 +26,7 @@ export function AdminOrdersPage() {
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[{ label: "Total Today", value: "47", color: "text-primary" }, { label: "Confirmed", value: "28", color: "text-blue-600" }, { label: "Completed", value: "15", color: "text-emerald-600" }, { label: "Cancelled", value: "4", color: "text-red-600" }].map((s, i) => (
+        {[{ label: "Total Today", value: "47", color: "text-primary" }, { label: "Confirmed", value: "28", color: "text-violet-600" }, { label: "Completed", value: "15", color: "text-emerald-600" }, { label: "Cancelled", value: "4", color: "text-red-600" }].map((s, i) => (
           <Card key={i} className="border-none bg-muted/50"><CardContent className="p-3 text-center"><p className={`text-xl font-extrabold ${s.color}`}>{s.value}</p><p className="text-[11px] text-muted-foreground">{s.label}</p></CardContent></Card>
         ))}
       </div>

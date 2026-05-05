@@ -10,7 +10,7 @@ const users = [
   { id: 6, name: "Nurse Maria Lopez", email: "m.lopez@brandonhealth.com", role: "staff", status: "active", joined: "Jan 8, 2026", country: "🇪🇸" },
 ];
 
-const roleColors = { patient: "bg-blue-100 text-blue-700 dark:bg-blue-950/40", doctor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40", staff: "bg-purple-100 text-purple-700 dark:bg-purple-950/40", admin: "bg-slate-100 text-slate-700 dark:bg-slate-950/40" };
+const roleColors = { patient: "bg-violet-100 text-violet-700 dark:bg-violet-950/40", doctor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40", staff: "bg-purple-100 text-purple-700 dark:bg-purple-950/40", admin: "bg-slate-100 text-slate-700 dark:bg-slate-950/40" };
 
 export function AdminUsersPage() {
   return (
@@ -20,7 +20,7 @@ export function AdminUsersPage() {
         <Button size="sm" className="rounded-full gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> Invite User</Button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[{ label: "Total Users", value: "4,860", color: "text-primary" }, { label: "Patients", value: "4,500", color: "text-blue-600" }, { label: "Doctors", value: "240", color: "text-emerald-600" }, { label: "Staff", value: "120", color: "text-purple-600" }].map((s, i) => (
+        {[{ label: "Total Users", value: "4,860", color: "text-primary" }, { label: "Patients", value: "4,500", color: "text-violet-600" }, { label: "Doctors", value: "240", color: "text-emerald-600" }, { label: "Staff", value: "120", color: "text-purple-600" }].map((s, i) => (
           <Card key={i} className="border-none bg-muted/50"><CardContent className="p-3 text-center"><p className={`text-xl font-extrabold ${s.color}`}>{s.value}</p><p className="text-[11px] text-muted-foreground">{s.label}</p></CardContent></Card>
         ))}
       </div>

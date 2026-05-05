@@ -63,8 +63,8 @@ export function DoctorBillingPage() {
                 />
               </div>
               <div className="flex gap-2 flex-wrap">
-                <Badge variant="secondary" className="px-3 py-1 text-sm bg-blue-50 text-blue-700 border-blue-200 cursor-pointer">
-                  I10 (Hypertension) <span className="ml-2 text-blue-400">×</span>
+                <Badge variant="secondary" className="px-3 py-1 text-sm bg-violet-50 text-violet-700 border-violet-200 cursor-pointer">
+                  I10 (Hypertension) <span className="ml-2 text-violet-400">×</span>
                 </Badge>
               </div>
             </div>

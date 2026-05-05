@@ -111,7 +111,7 @@ export function AppointmentsPage() {
           </div>
 
           {bookMode === "async" && (
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 text-sm text-blue-800 dark:text-blue-300">
+            <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-2xl p-4 text-sm text-violet-800 dark:text-violet-300">
               <p className="font-semibold mb-1">📨 Asynchronous Consultation</p>
               <p className="text-xs opacity-80">Send your symptoms and questions. The doctor reviews and responds within 24 hours — no scheduling needed.</p>
             </div>
@@ -129,7 +129,7 @@ export function AppointmentsPage() {
               <Card key={doc.id} className="hover:border-primary/40 transition-colors cursor-pointer">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center font-bold text-white text-sm shrink-0">
+                    <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center font-bold text-white text-sm shrink-0">
                       {doc.avatar}
                     </div>
                     <div className="flex-1 min-w-0">

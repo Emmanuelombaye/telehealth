@@ -45,7 +45,7 @@ export function SuperAdminFinancePage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Platform MRR", value: "$318,600", change: "+24%", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
-          { label: "Platform ARR", value: "$3.82M", change: "+24%", color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/40" },
+          { label: "Platform ARR", value: "$3.82M", change: "+24%", color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
           { label: "Total Commission", value: "$31,860", change: "10% rate", color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
           { label: "Pending Payouts", value: "$86,400", change: "2 brands", color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
         ].map((s, i) => (

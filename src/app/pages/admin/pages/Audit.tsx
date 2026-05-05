@@ -13,7 +13,7 @@ const logs = [
 ];
 
 const severityConfig = {
-  info: { color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-950/40", dot: "bg-blue-500", icon: Info },
+  info: { color: "text-violet-600", bg: "bg-violet-100 dark:bg-violet-950/40", dot: "bg-violet-500", icon: Info },
   medium: { color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-950/40", dot: "bg-amber-500", icon: AlertCircle },
   high: { color: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-950/40", dot: "bg-orange-500", icon: AlertTriangle },
   critical: { color: "text-red-600", bg: "bg-red-100 dark:bg-red-950/40", dot: "bg-red-500 animate-pulse", icon: AlertTriangle },
@@ -38,7 +38,7 @@ export function AdminAuditPage() {
           { label: "Total Events", value: "12,840", color: "text-primary" },
           { label: "Critical", value: "3", color: "text-red-600" },
           { label: "High", value: "18", color: "text-orange-600" },
-          { label: "PHI Accesses", value: "2,340", color: "text-blue-600" },
+          { label: "PHI Accesses", value: "2,340", color: "text-violet-600" },
         ].map((s, i) => (
           <Card key={i} className="border-none bg-muted/50">
             <CardContent className="p-3 text-center">

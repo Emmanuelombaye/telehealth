@@ -118,7 +118,7 @@ export function SuperAdminBrandsPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: "MRR", value: `$${(selected.mrr / 1000).toFixed(0)}k`, icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
-            { label: "Patients", value: selected.patients.toLocaleString(), icon: Users, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/40" },
+            { label: "Patients", value: selected.patients.toLocaleString(), icon: Users, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
             { label: "Doctors", value: selected.doctors, icon: Stethoscope, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
             { label: "Growth", value: `+${selected.growth}%`, icon: BarChart3, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
           ].map((s, i) => (
@@ -173,7 +173,7 @@ export function SuperAdminBrandsPage() {
               {[
                 { label: "Total", value: selected.orders.total, color: "text-primary" },
                 { label: "Pending", value: selected.orders.pending, color: "text-amber-600" },
-                { label: "Shipped", value: selected.orders.shipped, color: "text-blue-600" },
+                { label: "Shipped", value: selected.orders.shipped, color: "text-violet-600" },
                 { label: "Completed", value: selected.orders.completed, color: "text-emerald-600" },
               ].map((o, i) => (
                 <div key={i} className="bg-muted/50 rounded-xl p-3 text-center">
@@ -249,7 +249,7 @@ export function SuperAdminBrandsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Total MRR", value: "$318,600", color: "text-emerald-600" },
-          { label: "Total Patients", value: "40,700", color: "text-blue-600" },
+          { label: "Total Patients", value: "40,700", color: "text-violet-600" },
           { label: "Total Doctors", value: "329", color: "text-violet-600" },
           { label: "Active Brands", value: "3 / 4", color: "text-amber-600" },
         ].map((s, i) => (

@@ -84,7 +84,7 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
 };
 
 const roleColors: Record<Role, string> = {
-  patient: "bg-blue-500",
+  patient: "bg-violet-500",
   doctor: "bg-emerald-500",
   admin: "bg-slate-700",
   superadmin: "bg-violet-600",

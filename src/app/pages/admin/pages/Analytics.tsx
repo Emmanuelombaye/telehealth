@@ -34,7 +34,7 @@ export function AdminAnalyticsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Monthly Revenue", value: "$67,000", change: "+18%", icon: DollarSign, color: "text-emerald-600" },
-          { label: "New Patients", value: "580", change: "+26%", icon: Users, color: "text-blue-600" },
+          { label: "New Patients", value: "580", change: "+26%", icon: Users, color: "text-violet-600" },
           { label: "Consultations", value: "1,240", change: "+12%", icon: Activity, color: "text-purple-600" },
           { label: "Avg Rating", value: "4.87", change: "+0.03", icon: TrendingUp, color: "text-amber-600" },
         ].map((s, i) => (

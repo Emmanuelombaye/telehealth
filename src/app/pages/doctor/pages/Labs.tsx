@@ -11,7 +11,7 @@ const labOrders = [
 const statusConfig = {
   "results-ready": { color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-950/40", icon: CheckCircle2, label: "Results Ready" },
   "pending": { color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-950/40", icon: Clock, label: "Pending" },
-  "in-progress": { color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-950/40", icon: TestTube, label: "In Progress" },
+  "in-progress": { color: "text-violet-600", bg: "bg-violet-100 dark:bg-violet-950/40", icon: TestTube, label: "In Progress" },
 };
 
 const priorityColors = { routine: "bg-muted text-muted-foreground", urgent: "bg-amber-100 text-amber-700", stat: "bg-red-100 text-red-700" };
@@ -24,7 +24,7 @@ export function DoctorLabsPage() {
         <Button size="sm" className="rounded-full gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" /> New Order</Button>
       </div>
       <div className="grid grid-cols-3 gap-3">
-        {[{ label: "Results Ready", count: 1, color: "text-emerald-600" }, { label: "Pending", count: 2, color: "text-amber-600" }, { label: "In Progress", count: 1, color: "text-blue-600" }].map((s, i) => (
+        {[{ label: "Results Ready", count: 1, color: "text-emerald-600" }, { label: "Pending", count: 2, color: "text-amber-600" }, { label: "In Progress", count: 1, color: "text-violet-600" }].map((s, i) => (
           <Card key={i} className="border-none bg-muted/50">
             <CardContent className="p-3 text-center">
               <p className={`text-xl font-extrabold ${s.color}`}>{s.count}</p>

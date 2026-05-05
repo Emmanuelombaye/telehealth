@@ -16,7 +16,7 @@ export function AdminAffiliatesPage() {
         <Button size="sm" className="rounded-full gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" /> Add Partner</Button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[{ label: "Active Partners", value: "3", icon: Users, color: "text-primary" }, { label: "Total Referrals", value: "533", icon: Share2, color: "text-blue-600" }, { label: "Revenue Generated", value: "$18.5K", icon: TrendingUp, color: "text-emerald-600" }, { label: "Commissions Paid", value: "$2.04K", icon: DollarSign, color: "text-amber-600" }].map((s, i) => (
+        {[{ label: "Active Partners", value: "3", icon: Users, color: "text-primary" }, { label: "Total Referrals", value: "533", icon: Share2, color: "text-violet-600" }, { label: "Revenue Generated", value: "$18.5K", icon: TrendingUp, color: "text-emerald-600" }, { label: "Commissions Paid", value: "$2.04K", icon: DollarSign, color: "text-amber-600" }].map((s, i) => (
           <Card key={i}>
             <CardContent className="p-4">
               <s.icon className={`h-4 w-4 ${s.color} mb-2`} />

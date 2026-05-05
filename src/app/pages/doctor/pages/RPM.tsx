@@ -24,7 +24,7 @@ export function DoctorRPMPage() {
 
       <div className="grid md:grid-cols-4 gap-4">
         {[
-          { title: "Active Devices", value: "342", icon: Watch, color: "text-blue-500" },
+          { title: "Active Devices", value: "342", icon: Watch, color: "text-violet-500" },
           { title: "Critical Alerts", value: "4", icon: AlertCircle, color: "text-red-500" },
           { title: "Stable Patients", value: "89%", icon: Activity, color: "text-emerald-500" },
           { title: "App Syncs", value: "1.2k", icon: Smartphone, color: "text-purple-500" },

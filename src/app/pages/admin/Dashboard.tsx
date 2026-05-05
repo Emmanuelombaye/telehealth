@@ -27,7 +27,7 @@ const recentLogs = [
 
 const quickLinks = [
   { label: "Treatments", href: "/admin/treatments", icon: Heart, color: "bg-rose-100 text-rose-600 dark:bg-rose-950/40" },
-  { label: "Orders", href: "/admin/orders", icon: Package, color: "bg-blue-100 text-blue-600 dark:bg-blue-950/40", badge: 5 },
+  { label: "Orders", href: "/admin/orders", icon: Package, color: "bg-violet-100 text-violet-600 dark:bg-violet-950/40", badge: 5 },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3, color: "bg-purple-100 text-purple-600 dark:bg-purple-950/40" },
   { label: "Finances", href: "/admin/finance", icon: TrendingUp, color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40" },
   { label: "Messages", href: "/admin/messages", icon: MessageSquare, color: "bg-amber-100 text-amber-600 dark:bg-amber-950/40", badge: 8 },
@@ -56,7 +56,7 @@ export function AdminDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Active Nodes", value: "12 / 12", icon: Server, color: "text-emerald-500", bg: "bg-emerald-100 dark:bg-emerald-950/40" },
-          { label: "Total Users", value: "4,860", icon: Users, color: "text-blue-500", bg: "bg-blue-100 dark:bg-blue-950/40" },
+          { label: "Total Users", value: "4,860", icon: Users, color: "text-violet-500", bg: "bg-violet-100 dark:bg-violet-950/40" },
           { label: "API Latency", value: "42ms", icon: Activity, color: "text-purple-500", bg: "bg-purple-100 dark:bg-purple-950/40" },
           { label: "Security Score", value: "98/100", icon: Lock, color: "text-amber-500", bg: "bg-amber-100 dark:bg-amber-950/40" },
         ].map((s, i) => (

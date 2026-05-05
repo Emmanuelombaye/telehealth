@@ -10,7 +10,7 @@ const builders = [
 ];
 
 const typeIcons = { workflow: Workflow, email: Mail, page: FileText };
-const typeColors = { workflow: "bg-blue-100 text-blue-600 dark:bg-blue-950/40", email: "bg-amber-100 text-amber-600 dark:bg-amber-950/40", page: "bg-purple-100 text-purple-600 dark:bg-purple-950/40" };
+const typeColors = { workflow: "bg-violet-100 text-violet-600 dark:bg-violet-950/40", email: "bg-amber-100 text-amber-600 dark:bg-amber-950/40", page: "bg-purple-100 text-purple-600 dark:bg-purple-950/40" };
 
 export function AdminBuildersPage() {
   return (

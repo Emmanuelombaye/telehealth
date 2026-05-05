@@ -19,7 +19,7 @@ const users = [
 ];
 
 const roleColors: Record<string, string> = {
-  patient: "bg-blue-100 text-blue-700 dark:bg-blue-950/40",
+  patient: "bg-violet-100 text-violet-700 dark:bg-violet-950/40",
   doctor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40",
   admin: "bg-violet-100 text-violet-700 dark:bg-violet-950/40",
   staff: "bg-amber-100 text-amber-700 dark:bg-amber-950/40",
@@ -27,7 +27,7 @@ const roleColors: Record<string, string> = {
 
 const brandColors: Record<string, string> = {
   "Brand A": "bg-purple-100 text-purple-700 dark:bg-purple-950/40",
-  "Brand B": "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40",
+  "Brand B": "bg-violet-100 text-violet-700 dark:bg-violet-950/40",
   "Brand C": "bg-pink-100 text-pink-700 dark:bg-pink-950/40",
   "Brand D": "bg-orange-100 text-orange-700 dark:bg-orange-950/40",
 };
@@ -69,7 +69,7 @@ export function SuperAdminUsersPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
           { label: "Total", value: counts.total, color: "text-primary" },
-          { label: "Patients", value: counts.patients, color: "text-blue-600" },
+          { label: "Patients", value: counts.patients, color: "text-violet-600" },
           { label: "Doctors", value: counts.doctors, color: "text-emerald-600" },
           { label: "Admins", value: counts.admins, color: "text-violet-600" },
           { label: "Suspended", value: counts.suspended, color: "text-red-600" },

@@ -12,13 +12,13 @@ type AvailabilityStatus = "available" | "busy" | "break" | "offline";
 const availabilityConfig: Record<AvailabilityStatus, { label: string; color: string; dot: string }> = {
   available: { label: "Available", color: "text-emerald-600", dot: "bg-emerald-500" },
   busy: { label: "In Consult", color: "text-amber-600", dot: "bg-amber-500" },
-  break: { label: "On Break", color: "text-blue-600", dot: "bg-blue-500" },
+  break: { label: "On Break", color: "text-violet-600", dot: "bg-violet-500" },
   offline: { label: "Offline", color: "text-muted-foreground", dot: "bg-gray-400" },
 };
 
 const queueStatusConfig: Record<QueueStatus, { label: string; color: string; bg: string }> = {
   waiting: { label: "Waiting", color: "text-amber-700", bg: "bg-amber-100 dark:bg-amber-950/40" },
-  in_consult: { label: "In Consult", color: "text-blue-700", bg: "bg-blue-100 dark:bg-blue-950/40" },
+  in_consult: { label: "In Consult", color: "text-violet-700", bg: "bg-violet-100 dark:bg-violet-950/40" },
   awaiting_rx: { label: "Awaiting Rx", color: "text-purple-700", bg: "bg-purple-100 dark:bg-purple-950/40" },
   completed: { label: "Completed", color: "text-emerald-700", bg: "bg-emerald-100 dark:bg-emerald-950/40" },
   no_show: { label: "No Show", color: "text-red-700", bg: "bg-red-100 dark:bg-red-950/40" },

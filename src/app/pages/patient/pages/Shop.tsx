@@ -60,8 +60,8 @@ const products = [
 ];
 
 const gatewayConfig: Record<string, { label: string; icon: string; color: string }> = {
-  stripe: { label: "Credit / Debit Card", icon: "💳", color: "border-blue-400 bg-blue-50 dark:bg-blue-950/30" },
-  paypal: { label: "PayPal", icon: "🅿️", color: "border-sky-400 bg-sky-50 dark:bg-sky-950/30" },
+  stripe: { label: "Credit / Debit Card", icon: "💳", color: "border-violet-400 bg-violet-50 dark:bg-violet-950/30" },
+  paypal: { label: "PayPal", icon: "🅿️", color: "border-violet-400 bg-violet-50 dark:bg-violet-950/30" },
   apple_pay: { label: "Apple Pay", icon: "🍎", color: "border-gray-400 bg-gray-50 dark:bg-gray-950/30" },
   google_pay: { label: "Google Pay", icon: "🔵", color: "border-green-400 bg-green-50 dark:bg-green-950/30" },
 };
@@ -109,7 +109,7 @@ export function PatientShopPage() {
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Amount</span><span className="font-bold">{selected.price}</span></div>
           </CardContent>
         </Card>
-        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 text-sm text-blue-800 dark:text-blue-300 text-left">
+        <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-2xl p-4 text-sm text-violet-800 dark:text-violet-300 text-left">
           <p className="font-semibold mb-1">⏱ What happens next?</p>
           <ol className="space-y-1 text-xs list-decimal list-inside opacity-90">
             <li>A licensed doctor reviews your intake (usually within 2–4 hrs)</li>

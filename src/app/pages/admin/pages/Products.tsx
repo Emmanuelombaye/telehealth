@@ -155,9 +155,9 @@ export function AdminProductsPage() {
         <Button size="sm" className="rounded-full gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" /> Add Product</Button>
       </div>
 
-      <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl px-4 py-3">
-        <Globe className="h-4 w-4 text-blue-600 shrink-0" />
-        <p className="text-xs text-blue-800 dark:text-blue-300 font-medium">
+      <div className="flex items-center gap-2 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-2xl px-4 py-3">
+        <Globe className="h-4 w-4 text-violet-600 shrink-0" />
+        <p className="text-xs text-violet-800 dark:text-violet-300 font-medium">
           Each product can have its own intake questionnaire and payment gateways for international markets
         </p>
       </div>

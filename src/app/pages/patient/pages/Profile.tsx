@@ -19,7 +19,7 @@ export function ProfilePage() {
         <CardContent className="p-5">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+              <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center text-white text-2xl font-bold">
                 JD
               </div>
               {editing && (
