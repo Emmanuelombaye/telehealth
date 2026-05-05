@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { 
-  ArrowRight, ShieldCheck, Zap, Activity, Users, 
+import { motion } from "framer-motion";
+import {
+  ArrowRight, ShieldCheck, Zap, Activity, Users,
   Menu, X, Star, CheckCircle2, ChevronDown,
   Pill, Heart, Sparkles, Layout, Lock
 } from "lucide-react";
