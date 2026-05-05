@@ -103,13 +103,13 @@ export function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-emerald-500/5 pt-16 pb-20 px-4">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/15 via-background to-accent/20 pt-16 pb-20 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
             <Globe className="h-3.5 w-3.5" />
             Available in {LOCALES.length} languages worldwide
           </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-primary via-violet-500 to-emerald-500 bg-clip-text text-transparent leading-tight">
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-primary via-violet-400 to-accent bg-clip-text text-transparent leading-tight">
             {t("landing.hero")}
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
