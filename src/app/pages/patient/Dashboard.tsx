@@ -1,23 +1,29 @@
 import { Link } from "react-router";
 import {
   Calendar, Clock, FileText, Activity, MessageSquare, Plus,
-  ArrowRight, Droplets, Heart, ChevronRight, Video, Pill,
-  ShieldCheck, TrendingUp, Bell, Truck, Stethoscope, CheckCircle2, Package
+  Droplets, Heart, ChevronRight, Video, Pill,
+  ShieldCheck, TrendingUp, Truck, CheckCircle2, Package, ShoppingBag, Hourglass, Building2, Copy
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, cn } from "../../components/ui/shared";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
-  useI18n, getGreeting,
-  ORDER_STEPS, getActiveOrder, getStepIndex, doctorAvailability,
+  useI18n,
+  ORDER_STEPS, orders, getStepIndex, getAwaitingReviewCount, doctorAvailability, patientUser,
 } from "../../../lib";
 
 const stepIcon: Record<string, any> = {
-  intake_submitted: CheckCircle2,
-  doctor_review: Stethoscope,
+  ordered: ShoppingBag,
+  intake_completed: CheckCircle2,
   prescribed: Pill,
   pharmacy: Package,
   shipped: Truck,
   delivered: CheckCircle2,
+};
+
+const subBrandTint: Record<string, string> = {
+  GlowRx: "bg-[var(--brand-peach-100)] text-[var(--brand-peach-900)]",
+  VitalCare: "bg-[var(--brand-sage-100)] text-[var(--brand-sage-900)]",
+  PeakHealth: "bg-[var(--brand-lavender-100)] text-[var(--brand-lavender-900)]",
 };
 
 const healthData = [
@@ -27,84 +33,136 @@ const healthData = [
 
 export function PatientDashboard() {
   const { t } = useI18n();
-  const greeting = getGreeting(t);
-  const activeOrder = getActiveOrder();
-  const activeIdx = getStepIndex(activeOrder.status);
-  const activeProgress = Math.round(((activeIdx + 1) / ORDER_STEPS.length) * 100);
+  const awaitingReview = getAwaitingReviewCount();
   const availableDoctors = doctorAvailability.filter(d => d.available);
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between pt-1">
-        <div>
-          <p className="text-sm text-muted-foreground">{greeting},</p>
-          <h1 className="text-xl font-bold">Alex Sterling 👋</h1>
+      {/* Welcome header */}
+      <div className="flex items-start justify-between pt-1 gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold">Welcome, {patientUser.firstName}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Here's the status of your prescriptions and consultations.
+          </p>
         </div>
         <Link to="/patient/appointments">
-          <Button className="rounded-full h-10 px-4 shadow-md shadow-primary/20 text-sm gap-1.5">
+          <Button className="rounded-full h-10 px-4 shadow-md shadow-primary/20 text-sm gap-1.5 shrink-0">
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">{t("action.bookVisit")}</span>
           </Button>
         </Link>
       </div>
 
-      {/* Alert banner */}
-      <div className="flex items-center gap-3 bg-accent/30 border border-accent rounded-2xl px-4 py-3">
-        <Bell className="h-4 w-4 text-[var(--brand-peach-900)] shrink-0" />
-        <p className="text-sm text-[var(--brand-peach-900)] font-medium">
-          Lab results from May 12 are ready. <Link to="/patient/labs" className="underline">View now</Link>
-        </p>
-      </div>
+      {/* Awaiting-review banner */}
+      {awaitingReview > 0 && (
+        <div className="flex items-center gap-3 bg-[var(--brand-peach-50)] border border-[var(--brand-peach-300)] rounded-2xl px-4 py-3">
+          <Hourglass className="h-4 w-4 text-[var(--brand-peach-900)] shrink-0" />
+          <p className="text-sm text-[var(--brand-peach-900)] font-medium">
+            You have {awaitingReview} consultation{awaitingReview > 1 ? "s" : ""} awaiting doctor review.
+          </p>
+        </div>
+      )}
 
-      {/* Active Treatment Status — pipeline */}
-      <Link to="/patient/orders" className="block">
-        <Card className="border-l-4 border-l-primary overflow-hidden hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-primary">Active Treatment</p>
-                <p className="font-bold text-sm truncate">{activeOrder.product}</p>
-                <p className="text-xs text-muted-foreground">{activeOrder.id} · {activeOrder.doctor}</p>
-              </div>
-              <Badge variant="secondary" className="text-[10px] shrink-0 capitalize">
-                {ORDER_STEPS[activeIdx].label}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-1 mb-2">
-              {ORDER_STEPS.map((step, i) => {
-                const Icon = stepIcon[step.key];
-                const done = i <= activeIdx;
-                return (
-                  <div key={step.key} className="flex-1 flex flex-col items-center gap-1">
-                    <div className={cn("h-7 w-7 rounded-full flex items-center justify-center transition-all",
-                      done ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
-                      <Icon className="h-3.5 w-3.5" />
+      {/* Prescriptions & consultations list */}
+      <div className="space-y-3">
+        {orders.map(order => {
+          const currentIdx = getStepIndex(order.status);
+          const tint = subBrandTint[order.subBrand] ?? subBrandTint.PeakHealth;
+
+          // Awaiting-review card — compact, no pipeline
+          if (order.status === "awaiting_review") {
+            return (
+              <Link key={order.id} to="/patient/orders" className="block">
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <span className={cn("text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full", tint)}>
+                        {order.subBrand}
+                      </span>
+                      <Badge variant="outline" className="text-[10px] shrink-0 gap-1">
+                        <Hourglass className="h-3 w-3" /> Awaiting review
+                      </Badge>
                     </div>
-                    {i < ORDER_STEPS.length - 1 && (
-                      <div className={cn("h-0.5 w-full -mt-4 -z-10", done && i < activeIdx ? "bg-primary" : "bg-border")} />
+                    <p className="font-bold text-sm">{order.medication}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Consultation submitted {order.consultationSubmittedDate ?? order.orderedDate}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          }
+
+          // Active prescription card — full pipeline
+          const statusLabel = ORDER_STEPS[currentIdx]?.label ?? "Ordered";
+          return (
+            <Link key={order.id} to="/patient/orders" className="block">
+              <Card className="hover:shadow-md transition-shadow overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <span className={cn("text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full", tint)}>
+                      {order.subBrand}
+                    </span>
+                    <Badge variant="secondary" className="text-[10px] shrink-0">{statusLabel}</Badge>
+                  </div>
+                  <p className="font-bold text-sm">{order.medication}</p>
+                  <p className="text-xs text-muted-foreground">{order.dosageInstructions}</p>
+
+                  {/* 6-step horizontal pipeline */}
+                  <div className="mt-4 flex items-start gap-1">
+                    {ORDER_STEPS.map((step, i) => {
+                      const Icon = stepIcon[step.key];
+                      const done = i <= currentIdx;
+                      const active = i === currentIdx;
+                      return (
+                        <div key={step.key} className="flex-1 flex flex-col items-center gap-1 relative">
+                          <div className="flex items-center w-full">
+                            <div className={cn("h-0.5 flex-1", i === 0 ? "opacity-0" : done ? "bg-primary" : "bg-border")} />
+                            <div className={cn("h-7 w-7 rounded-full flex items-center justify-center shrink-0 transition-all",
+                              done ? "bg-primary text-white" : "bg-muted text-muted-foreground",
+                              active && "ring-2 ring-primary/30 ring-offset-2 ring-offset-background")}>
+                              <Icon className="h-3.5 w-3.5" />
+                            </div>
+                            <div className={cn("h-0.5 flex-1", i === ORDER_STEPS.length - 1 ? "opacity-0" : i < currentIdx ? "bg-primary" : "bg-border")} />
+                          </div>
+                          <span className={cn("text-[9px] font-semibold text-center leading-tight",
+                            active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground")}>
+                            {step.label}
+                            {active && <span className="block text-[8px] font-bold text-primary">Current</span>}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Meta row */}
+                  <div className="mt-4 pt-3 border-t border-border grid grid-cols-2 gap-y-1.5 gap-x-3 text-xs">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Ordered</p>
+                      <p className="font-semibold">{order.orderedDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pharmacy</p>
+                      <p className="font-semibold flex items-center gap-1"><Building2 className="h-3 w-3" /> {order.pharmacy}</p>
+                    </div>
+                    {order.tracking && (
+                      <div className="col-span-2">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Tracking</p>
+                        <div className="flex items-center gap-1.5">
+                          <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span className="font-mono font-semibold truncate">{order.tracking}</span>
+                          <Copy className="h-3 w-3 text-muted-foreground ml-auto shrink-0" />
+                        </div>
+                      </div>
                     )}
                   </div>
-                );
-              })}
-            </div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">{ORDER_STEPS[activeIdx].desc}</p>
-              <span className="text-[10px] font-bold text-primary">{activeProgress}%</span>
-            </div>
-            {activeOrder.tracking && (
-              <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border text-xs">
-                <Truck className="h-3.5 w-3.5 text-primary" />
-                <span className="text-muted-foreground">Tracking:</span>
-                <span className="font-mono font-semibold">{activeOrder.tracking}</span>
-                {activeOrder.estimatedDelivery && (
-                  <span className="ml-auto text-muted-foreground">ETA {activeOrder.estimatedDelivery}</span>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </Link>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
+      </div>
 
       {/* Doctor Availability strip */}
       <div>

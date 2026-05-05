@@ -6,7 +6,9 @@ export {
   orders,
   getStepIndex,
   getActiveOrder,
+  getAwaitingReviewCount,
   doctorAvailability,
   brand,
+  patientUser,
 } from "./patient-store";
 export type { Order, OrderStatus, DoctorAvailability } from "./patient-store";
