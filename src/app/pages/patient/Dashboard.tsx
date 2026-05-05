@@ -2,11 +2,23 @@ import { Link } from "react-router";
 import {
   Calendar, Clock, FileText, Activity, MessageSquare, Plus,
   ArrowRight, Droplets, Heart, ChevronRight, Video, Pill,
-  ShieldCheck, TrendingUp, Bell
+  ShieldCheck, TrendingUp, Bell, Truck, Stethoscope, CheckCircle2, Package
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from "../../components/ui/shared";
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge, cn } from "../../components/ui/shared";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { useI18n, getGreeting } from "../../../lib";
+import {
+  useI18n, getGreeting,
+  ORDER_STEPS, getActiveOrder, getStepIndex, doctorAvailability,
+} from "../../../lib";
+
+const stepIcon: Record<string, any> = {
+  intake_submitted: CheckCircle2,
+  doctor_review: Stethoscope,
+  prescribed: Pill,
+  pharmacy: Package,
+  shipped: Truck,
+  delivered: CheckCircle2,
+};
 
 const healthData = [
   { day: "Mon", bpm: 72 }, { day: "Tue", bpm: 75 }, { day: "Wed", bpm: 68 },
@@ -16,6 +28,10 @@ const healthData = [
 export function PatientDashboard() {
   const { t } = useI18n();
   const greeting = getGreeting(t);
+  const activeOrder = getActiveOrder();
+  const activeIdx = getStepIndex(activeOrder.status);
+  const activeProgress = Math.round(((activeIdx + 1) / ORDER_STEPS.length) * 100);
+  const availableDoctors = doctorAvailability.filter(d => d.available);
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto">
@@ -34,11 +50,88 @@ export function PatientDashboard() {
       </div>
 
       {/* Alert banner */}
-      <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3">
-        <Bell className="h-4 w-4 text-amber-600 shrink-0" />
-        <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
+      <div className="flex items-center gap-3 bg-accent/30 border border-accent rounded-2xl px-4 py-3">
+        <Bell className="h-4 w-4 text-[var(--brand-peach-900)] shrink-0" />
+        <p className="text-sm text-[var(--brand-peach-900)] font-medium">
           Lab results from May 12 are ready. <Link to="/patient/labs" className="underline">View now</Link>
         </p>
+      </div>
+
+      {/* Active Treatment Status — pipeline */}
+      <Link to="/patient/orders" className="block">
+        <Card className="border-l-4 border-l-primary overflow-hidden hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-primary">Active Treatment</p>
+                <p className="font-bold text-sm truncate">{activeOrder.product}</p>
+                <p className="text-xs text-muted-foreground">{activeOrder.id} · {activeOrder.doctor}</p>
+              </div>
+              <Badge variant="secondary" className="text-[10px] shrink-0 capitalize">
+                {ORDER_STEPS[activeIdx].label}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-1 mb-2">
+              {ORDER_STEPS.map((step, i) => {
+                const Icon = stepIcon[step.key];
+                const done = i <= activeIdx;
+                return (
+                  <div key={step.key} className="flex-1 flex flex-col items-center gap-1">
+                    <div className={cn("h-7 w-7 rounded-full flex items-center justify-center transition-all",
+                      done ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                      <Icon className="h-3.5 w-3.5" />
+                    </div>
+                    {i < ORDER_STEPS.length - 1 && (
+                      <div className={cn("h-0.5 w-full -mt-4 -z-10", done && i < activeIdx ? "bg-primary" : "bg-border")} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">{ORDER_STEPS[activeIdx].desc}</p>
+              <span className="text-[10px] font-bold text-primary">{activeProgress}%</span>
+            </div>
+            {activeOrder.tracking && (
+              <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border text-xs">
+                <Truck className="h-3.5 w-3.5 text-primary" />
+                <span className="text-muted-foreground">Tracking:</span>
+                <span className="font-mono font-semibold">{activeOrder.tracking}</span>
+                {activeOrder.estimatedDelivery && (
+                  <span className="ml-auto text-muted-foreground">ETA {activeOrder.estimatedDelivery}</span>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </Link>
+
+      {/* Doctor Availability strip */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-bold text-sm">Doctors available now</h2>
+          <Link to="/patient/appointments" className="text-xs text-primary font-semibold">{t("action.viewAll")}</Link>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {availableDoctors.map(doc => (
+            <Link key={doc.id} to="/patient/appointments" className="shrink-0">
+              <div className="w-40 p-3 rounded-2xl bg-card border border-border hover:border-primary/40 transition-colors">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="relative h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-xs">
+                    {doc.avatar}
+                    <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[var(--brand-sage-300)] border-2 border-card" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold truncate">{doc.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{doc.specialty}</p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-[var(--brand-sage-900)] font-semibold">● {doc.wait}</p>
+                <p className="text-[10px] text-muted-foreground">{doc.nextSlot}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -133,7 +226,7 @@ export function PatientDashboard() {
       </div>
 
       {/* Need Help */}
-      <Card className="bg-gradient-to-r from-primary to-violet-600 text-white border-none">
+      <Card className="bg-gradient-to-r from-primary via-[var(--brand-lavender-500)] to-[var(--brand-lavender-700)] text-white border-none">
         <CardContent className="p-5 flex items-center gap-4">
           <div className="flex-1">
             <h3 className="font-bold mb-1">{t("label.needHelp")}</h3>

@@ -63,7 +63,7 @@ export function DoctorImagingPage() {
               <p>Study Date: 2026-05-01</p>
             </div>
             <div className="absolute top-4 right-4 text-xs text-white/70 font-mono space-y-1 text-right z-10 drop-shadow-md">
-              <p>Institution: Brandon Health Center</p>
+              <p>Institution: Peak Health Center</p>
               <p>Modality: CR (Chest)</p>
               <p>W: 2048 L: 2048</p>
             </div>

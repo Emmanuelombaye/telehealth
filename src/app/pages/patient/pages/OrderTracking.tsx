@@ -1,58 +1,24 @@
 import { useState } from "react";
 import {
-  Package, CheckCircle2, Clock, Stethoscope, Pill, Truck,
+  Package, CheckCircle2, Stethoscope, Pill, Truck,
   ChevronRight, Search, MapPin, ExternalLink, MessageSquare, Copy
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { ORDER_STEPS, orders, getStepIndex, type Order } from "../../../../lib";
 
-type OrderStatus = "intake_submitted" | "doctor_review" | "prescribed" | "pharmacy" | "shipped" | "delivered";
+const stepIcon: Record<string, any> = {
+  intake_submitted: CheckCircle2,
+  doctor_review: Stethoscope,
+  prescribed: Pill,
+  pharmacy: Package,
+  shipped: Truck,
+  delivered: CheckCircle2,
+};
 
-const statusSteps: { key: OrderStatus; label: string; icon: any; desc: string }[] = [
-  { key: "intake_submitted", label: "Intake Submitted", icon: CheckCircle2, desc: "Your health questionnaire was received" },
-  { key: "doctor_review", label: "Doctor Review", icon: Stethoscope, desc: "A licensed physician is reviewing your case" },
-  { key: "prescribed", label: "Prescribed", icon: Pill, desc: "Prescription approved and sent to pharmacy" },
-  { key: "pharmacy", label: "At Pharmacy", icon: Package, desc: "Medication being prepared for shipment" },
-  { key: "shipped", label: "Shipped", icon: Truck, desc: "On its way to you" },
-  { key: "delivered", label: "Delivered", icon: CheckCircle2, desc: "Package delivered successfully" },
-];
-
-const orders = [
-  {
-    id: "RX-A7K2M9", product: "Weight Loss Program", category: "GLP-1 / Metabolic",
-    status: "shipped" as OrderStatus, date: "May 19, 2026", amount: "$199",
-    doctor: "Dr. Sarah Johnson", doctorNote: "Approved. Starting dose: 0.25mg weekly. Follow up in 4 weeks.",
-    tracking: "1Z999AA10123456784", carrier: "UPS",
-    trackingUrl: "https://www.ups.com/track",
-    estimatedDelivery: "May 22, 2026",
-    timeline: [
-      { status: "intake_submitted", date: "May 19, 9:02 AM" },
-      { status: "doctor_review", date: "May 19, 11:30 AM" },
-      { status: "prescribed", date: "May 19, 2:15 PM" },
-      { status: "pharmacy", date: "May 19, 4:00 PM" },
-      { status: "shipped", date: "May 20, 8:45 AM" },
-    ],
-  },
-  {
-    id: "RX-B3N8P1", product: "ED Treatment", category: "Men's Health",
-    status: "doctor_review" as OrderStatus, date: "May 20, 2026", amount: "$49",
-    doctor: "Dr. Marcus Thorne", doctorNote: null,
-    tracking: null, carrier: null, trackingUrl: null,
-    estimatedDelivery: null,
-    timeline: [
-      { status: "intake_submitted", date: "May 20, 8:00 AM" },
-      { status: "doctor_review", date: "May 20, 10:00 AM" },
-    ],
-  },
-];
-
-const statusOrder = statusSteps.map(s => s.key);
-
-function getStepIndex(status: OrderStatus) {
-  return statusOrder.indexOf(status);
-}
+const statusSteps = ORDER_STEPS.map(s => ({ ...s, icon: stepIcon[s.key] }));
 
 export function PatientOrderTrackingPage() {
-  const [selected, setSelected] = useState<typeof orders[0] | null>(null);
+  const [selected, setSelected] = useState<Order | null>(null);
   const [copied, setCopied] = useState(false);
 
   const copyTracking = (num: string) => {

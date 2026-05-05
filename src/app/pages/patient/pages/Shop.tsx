@@ -109,7 +109,7 @@ export function PatientShopPage() {
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Amount</span><span className="font-bold">{selected.price}</span></div>
           </CardContent>
         </Card>
-        <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-2xl p-4 text-sm text-violet-800 dark:text-violet-300 text-left">
+        <div className="bg-secondary/40 border border-secondary rounded-2xl p-4 text-sm text-secondary-foreground text-left">
           <p className="font-semibold mb-1">⏱ What happens next?</p>
           <ol className="space-y-1 text-xs list-decimal list-inside opacity-90">
             <li>A licensed doctor reviews your intake (usually within 2–4 hrs)</li>
@@ -117,8 +117,22 @@ export function PatientShopPage() {
             <li>Medication ships within 1–2 business days with tracking</li>
           </ol>
         </div>
-        <Button className="w-full rounded-xl" onClick={() => { setStage("catalog"); setSelected(null); }}>
-          Back to Shop
+        <div className="bg-accent/30 border border-accent rounded-2xl p-4 text-left">
+          <p className="font-bold text-sm">Create your account to track this order</p>
+          <p className="text-xs text-muted-foreground mt-0.5 mb-3">
+            Save your intake, message your doctor, and view shipping updates.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button className="rounded-xl text-xs" onClick={() => { setStage("catalog"); setSelected(null); }}>
+              Create Account
+            </Button>
+            <Button variant="outline" className="rounded-xl text-xs" onClick={() => { setStage("catalog"); setSelected(null); }}>
+              Sign In
+            </Button>
+          </div>
+        </div>
+        <Button variant="ghost" className="w-full rounded-xl text-xs" onClick={() => { setStage("catalog"); setSelected(null); }}>
+          Continue as guest — Back to Shop
         </Button>
       </div>
     );
