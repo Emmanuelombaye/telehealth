@@ -6,8 +6,8 @@ export function NotFoundPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="text-center max-w-md">
-        <div className="h-20 w-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-          <Activity className="h-10 w-10 text-primary" />
+        <div className="flex justify-center mb-10">
+          <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
         <h1 className="text-6xl font-extrabold text-primary mb-2">404</h1>
         <h2 className="text-xl font-bold mb-3">Page Not Found</h2>

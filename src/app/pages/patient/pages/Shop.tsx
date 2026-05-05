@@ -278,6 +278,9 @@ export function PatientShopPage() {
   if (stage === "confirmed" && selected) {
     return (
       <div className="max-w-md mx-auto text-center space-y-5 pt-8">
+        <div className="flex justify-center mb-8">
+           <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-10 object-contain" />
+        </div>
         <div className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center mx-auto">
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
@@ -310,6 +313,9 @@ export function PatientShopPage() {
   if (stage === "verify_2fa" && selected) {
     return (
       <div className="max-w-md mx-auto space-y-6 pt-4">
+        <div className="flex justify-center mb-4">
+           <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-10 object-contain" />
+        </div>
         <button onClick={() => setStage("account_setup")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
@@ -354,6 +360,9 @@ export function PatientShopPage() {
   if (stage === "account_setup" && selected) {
     return (
       <div className="max-w-md mx-auto space-y-6 pt-4">
+        <div className="flex justify-center mb-4">
+           <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-10 object-contain" />
+        </div>
         <div>
           <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-100 mb-4">
             <CheckCircle2 className="h-3.5 w-3.5" /> Payment Successful
@@ -416,6 +425,9 @@ export function PatientShopPage() {
   if (stage === "payment" && selected) {
     return (
       <div className="max-w-md mx-auto space-y-5">
+        <div className="flex justify-center mb-6">
+           <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-10 object-contain" />
+        </div>
         <button onClick={() => setStage("questionnaire")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
@@ -458,6 +470,9 @@ export function PatientShopPage() {
   if (stage === "questionnaire" && selected && currentQ) {
     return (
       <div className="max-w-md mx-auto space-y-5">
+        <div className="flex justify-center mb-6">
+           <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-10 object-contain" />
+        </div>
         <button onClick={() => qStep === 0 ? setStage("catalog") : setQStep(q => q - 1)}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back

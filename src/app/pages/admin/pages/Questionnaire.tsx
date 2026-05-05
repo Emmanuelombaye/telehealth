@@ -163,8 +163,8 @@ export function AdminQuestionnairePage() {
           <div className="w-1/2 bg-muted/30 flex items-center justify-center p-6 overflow-y-auto">
             <div className="relative w-[340px] h-[680px] bg-white dark:bg-black rounded-[40px] shadow-2xl border-[8px] border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
               {/* Fake Mobile Header */}
-              <div className="bg-primary px-4 pt-10 pb-4 text-white text-center shadow-md z-10 relative">
-                <p className="text-xs opacity-80 uppercase tracking-widest mb-1">Peak Health</p>
+              <div className="bg-primary px-4 pt-10 pb-4 text-white text-center shadow-md z-10 relative flex flex-col items-center gap-2">
+                <img src="/PeakHealthLogo.png" alt="Logo" className="h-6 object-contain brightness-0 invert" />
                 <h3 className="font-bold text-lg leading-tight">{formName}</h3>
               </div>
               
