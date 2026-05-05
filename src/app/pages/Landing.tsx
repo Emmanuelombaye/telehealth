@@ -288,38 +288,36 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* 6. Elite Footer (Yucca-Style) */}
-      <footer className="bg-white border-t border-slate-100 pt-24 pb-12 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
+      {/* 6. Ultimate Global Footer (Elite Tier) */}
+      <footer className="bg-white border-t border-slate-100 pt-32 pb-12 px-6">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-12 mb-24">
             {/* Column 1: Brand & Badges */}
-            <div className="space-y-10">
+            <div className="lg:col-span-1 space-y-10">
               <img src="/originallogo.png" alt="Peak Health" className="h-14 object-contain" />
-              <p className="text-[13px] text-slate-400 font-medium">
-                © {new Date().getFullYear()} Peak Health Technology Group, Inc. All rights reserved.
+              <p className="text-[13px] text-slate-400 font-medium leading-relaxed">
+                Empowering individuals through clinical rigor and personalized wellness protocols. The future of healthcare is biological.
               </p>
               
               {/* Certification Badges */}
-              <div className="flex items-center gap-4 py-2">
-                <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2">
-                  <img src="https://www.legitscript.com/wp-content/themes/legitscript/assets/images/seal-healthcare.png" alt="LegitScript" className="h-full object-contain grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2">
+                  <img src="https://www.legitscript.com/wp-content/themes/legitscript/assets/images/seal-healthcare.png" alt="LegitScript" className="h-full object-contain grayscale opacity-60" />
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2 text-[10px] font-black text-center leading-tight opacity-40 uppercase">
-                  USA Made
+                <div className="h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2 text-[8px] font-black text-center leading-tight opacity-40 uppercase">
+                  Made in USA
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2 opacity-40">
-                  <ShieldCheck className="h-6 w-6" />
+                <div className="h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2 opacity-40">
+                  <ShieldCheck className="h-5 w-5" />
                 </div>
               </div>
 
               {/* Social Icons */}
-              <div className="flex items-center gap-6">
-                {["instagram", "facebook", "linkedin", "twitter"].map(s => (
-                  <a key={s} href="#" className="text-slate-300 hover:text-[#0A0D14] transition-colors">
-                    <div className="h-5 w-5 bg-current rounded-sm" />
-                  </a>
+              <div className="flex items-center gap-5">
+                {[1, 2, 3, 4].map(s => (
+                  <div key={s} className="h-4 w-4 bg-slate-200 rounded-sm hover:bg-emerald-500 transition-colors cursor-pointer" />
                 ))}
-                <div className="flex items-center gap-1.5 text-slate-400 font-black text-[11px] uppercase tracking-widest ml-4">
+                <div className="flex items-center gap-1.5 text-slate-400 font-black text-[10px] uppercase tracking-[0.15em] ml-2">
                    <Star className="h-3 w-3 fill-slate-400" /> Trustpilot
                 </div>
               </div>
@@ -327,38 +325,39 @@ export function LandingPage() {
 
             {/* Column 2: Treatments */}
             <div className="space-y-8">
-              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">Treatments</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Treatments</h4>
               <ul className="space-y-6">
                 {[
-                  { name: "Personalized Tirzepatide+", sub: "Weight Loss", href: "/treatments/weight-loss" },
-                  { name: "Personalized Semaglutide+", sub: "Weight Loss", href: "/treatments/weight-loss" },
-                  { name: "NAD+ Longevity", sub: "Metabolic Support", href: "/treatments/longevity" },
-                  { name: "Sermorelin Program", sub: "Muscle Recovery", href: "/treatments/muscle-recovery" }
+                  { name: "Tirzepatide+", sub: "Weight Loss", href: "/treatments/weight-loss" },
+                  { name: "Semaglutide+", sub: "Weight Loss", href: "/treatments/weight-loss" },
+                  { name: "NAD+ Therapy", sub: "Longevity", href: "/treatments/longevity" },
+                  { name: "Hair Regrowth", sub: "Clinical Hair", href: "/treatments/hair-loss" },
+                  { name: "ED Treatments", sub: "Sexual Wellness", href: "/treatments/sexual-wellness" }
                 ].map(item => (
                   <li key={item.name}>
                     <Link to={item.href} className="group block">
-                      <p className="text-lg font-black text-[#0A0D14] group-hover:text-emerald-600 transition-colors leading-tight">{item.name}</p>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">{item.sub}</p>
+                      <p className="text-[15px] font-black text-[#0A0D14] group-hover:text-emerald-600 transition-colors leading-tight">{item.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{item.sub}</p>
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Column 3: Brand Nav */}
+            {/* Column 3: Platform */}
             <div className="space-y-8">
-              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">Peak Health</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Platform</h4>
               <ul className="space-y-5">
                 {[
                   { name: "How It Works", href: "#how-it-works" },
-                  { name: "Log In", href: "/patient" },
-                  { name: "Get Started", href: "/patient/shop" },
-                  { name: "Referral Program 🎁", href: "/patient/referrals" },
-                  { name: "Clinical FAQ", href: "/faq" },
-                  { name: "The Bio-Blog", href: "/blog" }
+                  { name: "Medical Team", href: "#medical-team" },
+                  { name: "Clinical FAQ", href: "/support-hub" },
+                  { name: "The Bio-Blog", href: "/blog" },
+                  { name: "Patient Login", href: "/patient" },
+                  { name: "Doctor Login", href: "/doctor" }
                 ].map(item => (
                   <li key={item.name}>
-                    <Link to={item.href} className="text-lg font-black text-[#0A0D14] hover:text-emerald-600 transition-colors">
+                    <Link to={item.href} className="text-[15px] font-black text-[#0A0D14] hover:text-emerald-600 transition-colors">
                       {item.name}
                     </Link>
                   </li>
@@ -366,20 +365,41 @@ export function LandingPage() {
               </ul>
             </div>
 
-            {/* Column 4: Medical */}
+            {/* Column 4: Authority */}
             <div className="space-y-8">
-              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">Medical</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Authority</h4>
               <ul className="space-y-5">
                 {[
-                  { name: "Safety Information", href: "/safety" },
-                  { name: "Consent to Telehealth", href: "/consent" },
-                  { name: "Physician Code of Conduct", href: "/conduct" },
-                  { name: "Pharmacy Partners", href: "/pharmacy-info" },
-                  { name: "Terms of Service", href: "/terms" },
-                  { name: "Privacy Policy", href: "/privacy" }
+                  { name: "Clinical Research", href: "/clinical-research" },
+                  { name: "Safety Info", href: "/support-hub" },
+                  { name: "Patient Rights", href: "/support-hub" },
+                  { name: "HIPAA Privacy", href: "/support-hub" },
+                  { name: "Pharmacy Network", href: "/support-hub" },
+                  { name: "Code of Conduct", href: "/support-hub" }
                 ].map(item => (
                   <li key={item.name}>
-                    <Link to={item.href} className="text-lg font-black text-[#0A0D14] hover:text-emerald-600 transition-colors leading-tight">
+                    <Link to={item.href} className="text-[15px] font-black text-[#0A0D14] hover:text-emerald-600 transition-colors leading-tight">
+                      {item.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 5: Support & Growth */}
+            <div className="space-y-8">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Support</h4>
+              <ul className="space-y-5">
+                {[
+                  { name: "Contact Support", href: "/support-hub" },
+                  { name: "Referral Program", href: "/patient/referrals" },
+                  { name: "Affiliate Portal", href: "/support-hub" },
+                  { name: "Careers", href: "/support-hub" },
+                  { name: "Press & Media", href: "/support-hub" },
+                  { name: "Partnerships", href: "/support-hub" }
+                ].map(item => (
+                  <li key={item.name}>
+                    <Link to={item.href} className="text-[15px] font-black text-[#0A0D14] hover:text-emerald-600 transition-colors leading-tight">
                       {item.name}
                     </Link>
                   </li>
@@ -389,12 +409,17 @@ export function LandingPage() {
           </div>
 
           {/* Bottom Bar with Stylized Signature */}
-          <div className="pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-end gap-8">
-            <p className="text-[10px] text-slate-400 max-w-2xl leading-relaxed font-medium uppercase tracking-widest">
-              *DISCLAIMER: The information provided on this site is not a substitute for professional medical advice. Always consult your physician before beginning any treatment program. Prescriptions are provided at the sole discretion of the treating provider.
-            </p>
+          <div className="pt-12 border-t border-slate-100 flex flex-col lg:flex-row justify-between items-end gap-12">
+            <div className="space-y-6 max-w-3xl">
+               <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest leading-loose">
+                 © {new Date().getFullYear()} Peak Health Technology Group, Inc. All rights reserved.
+               </p>
+               <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
+                 *DISCLAIMER: The information provided on this site is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. Prescriptions are provided at the sole discretion of the treating provider.
+               </p>
+            </div>
             <div className="text-right shrink-0">
-               <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-[#0A0D14]">
+               <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-[#0A0D14] leading-none">
                  it's about <span className="text-emerald-500 font-serif italic font-medium">you.</span>
                </h2>
             </div>

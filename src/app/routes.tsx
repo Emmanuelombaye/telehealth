@@ -5,6 +5,8 @@ import { PatientDashboard } from "./pages/patient/Dashboard";
 import { DoctorDashboard } from "./pages/doctor/Dashboard";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { WeightLossPage, SexualWellnessPage, HairLossPage, LongevityPage } from "./pages/treatments";
+import { ClinicalResearchPage } from "./pages/authority/ClinicalResearch";
+import { SupportHubPage } from "./pages/SupportHub";
 
 // Patient pages
 import { PatientShopPage } from "./pages/patient/pages/Shop";
@@ -83,6 +85,8 @@ export const router = createBrowserRouter([
       { path: "treatments/sexual-wellness", Component: SexualWellnessPage },
       { path: "treatments/hair-loss", Component: HairLossPage },
       { path: "treatments/longevity", Component: LongevityPage },
+      { path: "clinical-research", Component: ClinicalResearchPage },
+      { path: "support-hub", Component: SupportHubPage },
 
       // Patient portal
       {
