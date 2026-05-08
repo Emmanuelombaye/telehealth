@@ -116,12 +116,23 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
 
   const displayRole = authRole?.replace('_', ' ') || role;
 
+  const isAdminPortal = role === "admin" || role === "superadmin";
+
   const SidebarContent = () => (
-    <div className="flex h-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
+    <div className={cn(
+      "flex h-full flex-col overflow-hidden text-sidebar-foreground border-r",
+      isAdminPortal ? "bg-[#0c120f] border-[#1a2620]" : "bg-sidebar border-sidebar-border"
+    )}>
       {/* Logo */}
-      <div className="flex h-32 items-center justify-between border-b border-sidebar-border px-4 shrink-0 bg-sidebar">
+      <div className={cn(
+        "flex h-32 items-center justify-between border-b px-4 shrink-0",
+        isAdminPortal ? "bg-[#0c120f] border-[#1a2620]" : "bg-sidebar border-sidebar-border"
+      )}>
         <Link to="/" className="flex items-center justify-center w-full py-4 px-2 group transition-all" onClick={onMobileClose}>
-          <img src="/originallogo.png" alt="Peak Health Logo" className="h-24 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
+          <img src="/originallogo.png" alt="Peak Health Logo" className={cn(
+            "h-24 w-auto object-contain transition-transform duration-300 group-hover:scale-105",
+            isAdminPortal ? "brightness-110" : ""
+          )} />
         </Link>
         {onMobileClose && (
           <button onClick={onMobileClose} className="md:hidden p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors">
@@ -140,12 +151,15 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
           return (
             <div key={item.href} className="w-full">
               {showGroup && (
-                <div className="px-3 pb-2 pt-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+                <div className={cn(
+                  "px-3 pb-2 pt-4 text-[11px] font-bold uppercase tracking-widest",
+                  isAdminPortal ? "text-[#4f6458]" : "text-muted-foreground"
+                )}>
                   {item.group}
                 </div>
               )}
               {isBottom && (
-                <div className="h-px bg-sidebar-border/60 my-3 mx-2" />
+                <div className={cn("h-px my-3 mx-2", isAdminPortal ? "bg-[#1a2620]" : "bg-sidebar-border/60")} />
               )}
               <NavLink
                 to={item.href}
@@ -155,20 +169,28 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                   cn(
                     "flex items-center justify-between rounded-xl px-3 py-2.5 text-[14px] font-medium transition-all duration-200 group relative mb-0.5",
                     isActive
-                      ? "bg-primary/10 text-primary font-semibold"
-                      : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+                      ? isAdminPortal ? "bg-[#22c55e]/10 text-[#22c55e] font-bold" : "bg-primary/10 text-primary font-semibold"
+                      : isAdminPortal ? "text-[#7f9488] hover:bg-[#1a2620] hover:text-[#e2e8f0]" : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
                     <div className="flex items-center gap-3 min-w-0">
-                      <item.icon className={cn("h-5 w-5 shrink-0 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
+                      <item.icon className={cn(
+                        "h-5 w-5 shrink-0 transition-colors", 
+                        isActive 
+                          ? isAdminPortal ? "text-[#22c55e]" : "text-primary" 
+                          : isAdminPortal ? "text-[#4f6458] group-hover:text-[#22c55e]" : "text-muted-foreground group-hover:text-foreground"
+                      )} />
                       <span className="truncate">{item.label}</span>
                     </div>
                     {item.badge && item.badge > 0 && (
                       <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm",
-                        isActive ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")}>
+                        isActive 
+                          ? isAdminPortal ? "bg-[#22c55e] text-black" : "bg-primary text-primary-foreground" 
+                          : isAdminPortal ? "bg-[#22c55e]/20 text-[#22c55e]" : "bg-primary/10 text-primary"
+                      )}>
                         {item.badge}
                       </span>
                     )}
@@ -181,18 +203,28 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
       </nav>
 
       {/* User footer */}
-      <div className="p-4 border-t border-sidebar-border shrink-0 space-y-2 bg-sidebar/50">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-sidebar-accent/50 border border-sidebar-border">
-          <div className={cn("h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-inner", roleColors[role])}>
-            {role === "doctor" ? "HV" : role === "admin" ? "AV" : role === "patient" ? "AS" : "US"}
+      <div className={cn(
+        "p-4 border-t shrink-0 space-y-2",
+        isAdminPortal ? "bg-[#0c120f]/50 border-[#1a2620]" : "bg-sidebar/50 border-sidebar-border"
+      )}>
+        <div className={cn(
+          "flex items-center gap-3 px-3 py-2.5 rounded-2xl border",
+          isAdminPortal ? "bg-[#1a2620] border-[#22c55e]/10" : "bg-sidebar-accent/50 border-sidebar-border"
+        )}>
+          <div className={cn(
+            "h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-inner", 
+            isAdminPortal ? "bg-[#d4c4a8] text-black" : roleColors[role],
+            isAdminPortal ? "" : "text-white"
+          )}>
+            {fullName.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold truncate">
+            <p className={cn("text-xs font-bold truncate", isAdminPortal ? "text-[#e2e8f0]" : "")}>
               {fullName}
             </p>
             <p className="text-[10px] text-muted-foreground capitalize font-medium">{displayRole} · Online</p>
           </div>
-          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <div className={cn("h-2 w-2 rounded-full animate-pulse shrink-0", isAdminPortal ? "bg-[#22c55e]" : "bg-emerald-500")} />
         </div>
         <button 
           onClick={() => {
