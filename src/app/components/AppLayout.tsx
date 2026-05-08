@@ -100,6 +100,32 @@ export function AppLayout() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
+            {/* DEV PORTAL SWITCHER — for easy testing of all "real" portals */}
+            <div className="hidden lg:flex items-center gap-1 bg-slate-100 p-1 rounded-xl mr-2">
+              {[
+                { r: 'patient', l: 'P', path: '/patient' },
+                { r: 'doctor', l: 'D', path: '/doctor' },
+                { r: 'brand_admin', l: 'A', path: '/admin' },
+                { r: 'super_admin', l: 'S', path: '/superadmin' }
+              ].map(p => (
+                <button
+                  key={p.r}
+                  onClick={() => {
+                    localStorage.setItem('peak_health_dev_role', p.r);
+                    window.location.href = p.path;
+                  }}
+                  className={cn(
+                    "h-7 w-7 rounded-lg text-[10px] font-black transition-all",
+                    (authRole === p.r || (authRole === 'super_admin' && p.r === 'brand_admin')) 
+                      ? "bg-white text-primary shadow-sm shadow-black/5" 
+                      : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  {p.l}
+                </button>
+              ))}
+            </div>
+
             <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl hover:bg-primary/5 group">
               <Bell className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-destructive border-2 border-background animate-pulse" />

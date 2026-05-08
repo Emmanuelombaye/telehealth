@@ -43,12 +43,16 @@ export function AuthPage({ portal }: { portal: Portal }) {
       if (mode === 'login') {
         // Backdoor — staff portals only
         if (portal !== 'patient' && email.toLowerCase() === BACKDOOR_EMAIL && password === BACKDOOR_PASSWORD) {
+          const targetRole = portal === 'doctor' ? 'doctor' : portal === 'admin' ? 'brand_admin' : 'super_admin';
+          localStorage.setItem('peak_health_dev_role', targetRole);
+          
           useAuthStore.setState({
             user: { id: 'master-admin-uuid', email: BACKDOOR_EMAIL } as any,
-            role: 'super_admin',
+            role: targetRole,
             session: { access_token: 'mock-token', user: { id: 'master-admin-uuid' } } as any,
             isLoading: false
           });
+          
           if (portal === 'doctor') navigate("/doctor", { replace: true });
           else if (portal === 'admin') navigate("/admin", { replace: true });
           else navigate("/superadmin", { replace: true });
