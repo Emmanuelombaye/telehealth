@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { motion } from "framer-motion";
 import {
-  ArrowRight, ShieldCheck, Zap, Activity, Users,
-  Menu, X, Star, CheckCircle2, ChevronDown,
+  ArrowRight, ShieldCheck, Zap, Activity,
+  Menu, X, Star, ChevronDown,
   Pill, Heart, Sparkles, Layout, Lock
 } from "lucide-react";
-import { Button, Card, CardContent, Badge, cn } from "../components/ui/shared";
+import { Button, Card, CardContent, cn } from "../components/ui/shared";
 import { Reveal } from "../components/ui/Reveal";
+import { PatientShopPage } from "./patient/pages/Shop";
 
 const treatments = [
   { 
@@ -40,6 +41,14 @@ export function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [showTreatments, setShowTreatments] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (shopOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [shopOpen]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -49,6 +58,25 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white font-sans text-[#0A0D14] selection:bg-emerald-100 selection:text-emerald-900">
+
+      {/* ===== FULL-SCREEN SHOP MODAL ===== */}
+      {shopOpen && (
+        <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
+          <div className="sticky top-0 z-10 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm">
+            <img src="/originallogo.png" alt="Peak Health" className="h-10 object-contain" />
+            <button
+              onClick={() => setShopOpen(false)}
+              className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors px-4 py-2 rounded-full border border-slate-200 hover:border-slate-400"
+            >
+              <X className="h-4 w-4" /> Close
+            </button>
+          </div>
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <PatientShopPage />
+          </div>
+        </div>
+      )}
+
       {/* 1. Announcement Ticker */}
       <div className="bg-[#0A0D14] text-white py-2 overflow-hidden whitespace-nowrap">
         <div className="animate-marquee-fast flex gap-12 items-center text-[10px] font-black uppercase tracking-[0.2em]">
@@ -112,14 +140,14 @@ export function LandingPage() {
           </div>
 
           <div className="flex items-center gap-4 md:gap-6">
-            <Link to="/patient" className="hidden sm:block text-[12px] font-black uppercase tracking-widest text-slate-600 hover:text-[#0A0D14]">
+            <Link to="/patient/login" className="hidden sm:block text-[12px] font-black uppercase tracking-widest text-slate-600 hover:text-[#0A0D14]">
               Sign In
             </Link>
-            <Link to="/patient/shop">
+            <button onClick={() => setShopOpen(true)}>
               <Button className="rounded-full bg-[#0A0D14] text-white hover:bg-[#1A1D24] px-8 py-6 font-black text-xs tracking-widest shadow-xl shadow-slate-900/10 active:scale-95 transition-all">
                 GET STARTED
               </Button>
-            </Link>
+            </button>
             <button className="lg:hidden" onClick={() => setMobileMenu(!mobileMenu)}>
               {mobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -157,12 +185,12 @@ export function LandingPage() {
 
             <Reveal direction="right" delay={0.5}>
               <div className="flex flex-col sm:flex-row gap-5 pt-4 justify-center lg:justify-start">
-                <Link to="/patient/shop">
+                <button onClick={() => setShopOpen(true)}>
                   <Button className="h-16 px-10 rounded-2xl bg-[#0A0D14] text-white hover:bg-[#1A1D24] font-black uppercase text-xs tracking-widest shadow-2xl shadow-slate-900/30 group">
-                    View Treatments <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    View All Treatments <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
-                </Link>
-                <Link to="/patient">
+                </button>
+                <Link to="/patient/login">
                   <Button variant="outline" className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black uppercase text-xs tracking-widest hover:bg-slate-50">
                     Patient Login
                   </Button>
@@ -199,20 +227,26 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* 4. Treatments Grid (Full Page Sections) */}
+      {/* 4. Treatments Grid — opens the full shop modal */}
       <section id="treatments" className="py-32 bg-[#F8FAF9]">
         <div className="max-w-7xl mx-auto px-6">
           <Reveal>
-            <div className="text-center mb-24 space-y-4">
+            <div className="text-center mb-20 space-y-4">
               <h2 className="text-5xl md:text-6xl font-black tracking-tight">Our Specialty Programs</h2>
               <p className="text-lg text-slate-500 font-medium">Clinically backed treatments for your most important health goals.</p>
+              <button onClick={() => setShopOpen(true)} className="inline-flex items-center gap-2 mt-4 text-emerald-600 font-black text-sm uppercase tracking-widest hover:gap-3 transition-all">
+                View All 12 Treatments <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
           </Reveal>
 
           <div className="grid md:grid-cols-3 gap-8">
             {treatments.map((t, i) => (
               <Reveal key={t.name} delay={0.2 * i} direction="up">
-                <Card className="border-none bg-white rounded-[48px] overflow-hidden shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group">
+                <Card
+                  className="border-none bg-white rounded-[48px] overflow-hidden shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group cursor-pointer"
+                  onClick={() => setShopOpen(true)}
+                >
                   <CardContent className="p-0">
                     <div className={cn("h-48 flex items-center justify-center group-hover:scale-105 transition-transform duration-700", t.bg)}>
                       <t.icon className={cn("h-20 w-20 opacity-20", t.color)} />
@@ -220,11 +254,9 @@ export function LandingPage() {
                     <div className="p-10 space-y-6">
                       <h3 className="text-3xl font-black">{t.name}</h3>
                       <p className="text-slate-500 font-medium leading-relaxed">{t.desc}</p>
-                      <Link to={t.href} className="block">
-                        <Button variant="outline" className="w-full h-14 rounded-2xl border-2 border-slate-100 font-black uppercase text-[10px] tracking-widest group-hover:border-primary group-hover:text-primary transition-all">
-                          Learn More <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </Link>
+                      <Button className="w-full h-14 rounded-2xl bg-[#0A0D14] text-white font-black uppercase text-[10px] tracking-widest group-hover:bg-emerald-600 transition-all">
+                        Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -354,8 +386,8 @@ export function LandingPage() {
                   { name: "Medical Team", href: "#medical-team" },
                   { name: "Clinical FAQ", href: "/support-hub" },
                   { name: "The Bio-Blog", href: "/blog" },
-                  { name: "Patient Login", href: "/patient" },
-                  { name: "Doctor Login", href: "/doctor" }
+                  { name: "Patient Login", href: "/patient/login" },
+                  { name: "Doctor Login", href: "/doctor/login" }
                 ].map(item => (
                   <li key={item.name}>
                     <Link to={item.href} className="text-[15px] font-black text-[#0A0D14] hover:text-emerald-600 transition-colors">
