@@ -116,7 +116,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
 
   const displayRole = authRole?.replace('_', ' ') || role;
 
-  const isAdminPortal = role === "admin" || role === "superadmin";
+  const isAdminPortal = role === "admin" || role === "superadmin" || role === "doctor";
 
   const SidebarContent = () => (
     <div className={cn(
