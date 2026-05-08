@@ -35,6 +35,37 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
     try {
       if (mode === 'login') {
+        // --- SECURE STAFF OVERRIDE (for dev/testing only) ---
+        const staffEmails = {
+          'doctor@peakhealth.com': 'doctor',
+          'admin@peakhealth.com': 'brand_admin',
+          'admin2@peakhealth.com': 'brand_admin',
+          'pharmacy@peakhealth.com': 'pharmacy'
+        };
+        const STAFF_PWD = "PeakHealthStaff2024!";
+
+        if (staffEmails[email.toLowerCase() as keyof typeof staffEmails] && password === STAFF_PWD) {
+          const mockRole = staffEmails[email.toLowerCase() as keyof typeof staffEmails];
+          // Ensure portal match
+          if (portal === 'doctor' && mockRole !== 'doctor') {
+            setError("Access denied. Provider portal only.");
+            setLoading(false);
+            return;
+          }
+          if ((portal === 'admin' || portal === 'superadmin') && mockRole !== 'brand_admin') {
+            setError("Access denied. Admin portal only.");
+            setLoading(false);
+            return;
+          }
+          
+          localStorage.setItem('peak_health_dev_role', mockRole);
+          await initialize();
+          
+          if (mockRole === 'doctor') navigate("/doctor", { replace: true });
+          else if (mockRole === 'brand_admin') navigate("/admin", { replace: true });
+          else navigate("/pharmacy", { replace: true });
+          return;
+        }
 
         const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
         if (signInError) throw signInError;
@@ -218,9 +249,17 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
             {/* Error / Success */}
             {error && (
-              <div className={`flex items-start gap-2 p-3 rounded-xl text-sm ${error.includes('created') ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border border-red-500/30 text-red-300'}`}>
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <p>{error}</p>
+              <div className={`flex flex-col gap-2 p-3 rounded-xl text-sm ${error.includes('created') ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border border-red-500/30 text-red-300'}`}>
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <p>{error}</p>
+                </div>
+                {error === "Invalid login credentials" && (
+                  <p className="text-[10px] font-bold opacity-80 pl-6">
+                    Note: Production hardening is active. If this is a new test account, please use the 
+                    <button type="button" onClick={() => setMode('signup')} className="underline ml-1">Create Account</button> tab first.
+                  </p>
+                )}
               </div>
             )}
 
