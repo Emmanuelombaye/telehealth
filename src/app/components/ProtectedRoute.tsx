@@ -1,37 +1,58 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, Outlet } from 'react-router';
 import { useAuthStore, Role } from '../../lib/auth-store';
+
+const portalLoginUrl = (path: string) => {
+  if (path.startsWith('/doctor')) return '/doctor/login';
+  if (path.startsWith('/admin')) return '/admin/login';
+  if (path.startsWith('/superadmin')) return '/superadmin/login';
+  return '/patient/login';
+};
+
+function AuthLoadingScreen() {
+  return (
+    <div className="fixed inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center gap-6 z-50">
+      <img src="/originallogo.png" alt="Peak Health" className="h-14 object-contain opacity-90" />
+      <div className="flex items-center gap-3">
+        <span className="h-5 w-5 border-2 border-white/20 border-t-emerald-400 rounded-full animate-spin" />
+        <span className="text-white/50 text-sm font-medium tracking-wide">Verifying credentials...</span>
+      </div>
+    </div>
+  );
+}
 
 export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
   const { user, role, isLoading } = useAuthStore();
   const navigate = useNavigate();
+  const redirected = useRef(false);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!user) {
-        const path = window.location.pathname;
-        if (path.startsWith('/doctor')) navigate('/doctor/login', { replace: true });
-        else if (path.startsWith('/admin')) navigate('/admin/login', { replace: true });
-        else if (path.startsWith('/superadmin')) navigate('/superadmin/login', { replace: true });
-        else navigate('/patient/login', { replace: true });
-      } else if (allowedRoles && role && !allowedRoles.includes(role)) {
-        // User is logged in but doesn't have the right role
-        // Redirect them to their proper dashboard
-        switch (role) {
-          case 'doctor': navigate('/doctor', { replace: true }); break;
-          case 'brand_admin': navigate('/admin', { replace: true }); break;
-          case 'super_admin': navigate('/superadmin', { replace: true }); break;
-          case 'patient':
-          default: navigate('/patient', { replace: true }); break;
-        }
-      }
+    if (isLoading || redirected.current) return;
+
+    if (!user) {
+      redirected.current = true;
+      navigate(portalLoginUrl(window.location.pathname), { replace: true });
+      return;
+    }
+
+    if (allowedRoles && role && !allowedRoles.includes(role)) {
+      redirected.current = true;
+      // Kick them to their actual portal
+      if (role === 'doctor') navigate('/doctor', { replace: true });
+      else if (role === 'brand_admin' || role === 'super_admin') navigate('/admin', { replace: true });
+      else navigate('/patient', { replace: true });
     }
   }, [user, role, isLoading, navigate, allowedRoles]);
 
-  if (isLoading) {
-    return <div className="h-screen w-screen flex items-center justify-center">Loading...</div>;
-  }
+  // Show branded loading screen while auth is resolving
+  if (isLoading) return <AuthLoadingScreen />;
 
-  // If user exists and role is allowed, render the nested routes
-  return user && (!allowedRoles || allowedRoles.includes(role)) ? <Outlet /> : null;
+  // Not logged in — show nothing while redirect fires
+  if (!user) return <AuthLoadingScreen />;
+
+  // Logged in but wrong role — show nothing while redirect fires
+  if (allowedRoles && role && !allowedRoles.includes(role)) return <AuthLoadingScreen />;
+
+  // ✅ Authenticated + correct role — render the portal
+  return <Outlet />;
 }
