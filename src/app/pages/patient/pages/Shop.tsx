@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import {
   ChevronRight, CheckCircle2, CreditCard,
   Star, Shield, Clock, Package, ArrowLeft, Globe, Zap, Loader2,
@@ -6,6 +7,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
 import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib";
 
 const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=600&q=80`;
 
@@ -247,6 +249,8 @@ const gatewayConfig: Record<string, { label: string; icon: string; color: string
 type Stage = "catalog" | "questionnaire" | "scheduling" | "account_setup" | "payment" | "confirmed";
 
 export function PatientShopPage() {
+  const navigate = useNavigate();
+  const { initialize } = useAuthStore();
   const [dbProducts, setDbProducts] = useState<typeof localProductsWithQuestionnaires>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
@@ -398,19 +402,20 @@ export function PatientShopPage() {
       // Don't block confirmation if DB insert fails (order can be retried)
       if (insertError) console.warn("Order insert warning:", insertError.message);
 
-      // 3. Auto sign-in — use session from signUp if available (email confirm OFF)
-      //    Otherwise, signInWithPassword (email confirm ON but still works after signup)
+      // 3. Auto sign-in + refresh auth store
       if (authData.session) {
-        // Email confirmation is disabled — user is immediately active
         await supabase.auth.setSession(authData.session);
       } else {
-        // Try to sign in — if email confirmation required this will fail silently
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password
+        });
         if (signInError) {
-          // Email confirmation is ON — tell user to check inbox but still show confirmed
           console.warn("Auto-login pending email confirmation:", signInError.message);
         }
       }
+      // Re-initialize auth store so ProtectedRoute sees the new session immediately
+      await initialize();
 
       setStage("confirmed");
     } catch (err: any) {
@@ -450,7 +455,9 @@ export function PatientShopPage() {
             <li>Medication ships within 1–2 business days with tracking.</li>
           </ol>
         </div>
-        <Button className="w-full rounded-xl text-base h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => window.location.href = "/patient"}>
+        <Button
+          className="w-full rounded-xl text-base h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+          onClick={() => navigate('/patient')}>
           Enter My Patient Portal →
         </Button>
         <p className="text-xs text-muted-foreground">
@@ -625,13 +632,28 @@ export function PatientShopPage() {
           </span>
         </label>
 
-        <div className="flex items-start gap-3 p-4 bg-muted/40 rounded-xl border border-border/50">
-          <Shield className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          <p className="text-xs text-muted-foreground leading-relaxed">Your health data is stored securely in our HIPAA-compliant, military-grade encrypted database. We will never share your medical history.</p>
+        <div className="flex items-start gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+          <Shield className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+          <p className="text-xs text-emerald-800 leading-relaxed">Your health data is stored securely in our HIPAA-compliant, military-grade encrypted database. We will never share your medical history.</p>
         </div>
 
-        <Button className="w-full rounded-xl h-12 text-base font-bold"
-          disabled={!email || !phone || !password || password.length < 6 || !dob || !sex || !heightFt || !weight || !agreedToTerms}
+        {/* Show missing required fields */}
+        {(() => {
+          const missing: string[] = [];
+          if (!firstName || !lastName) missing.push("Full name");
+          if (!email || !email.includes('@')) missing.push("Valid email address");
+          if (!password || password.length < 6) missing.push("Password (min 6 characters)");
+          if (!agreedToTerms) missing.push("Agreement to Terms of Service");
+          return missing.length > 0 ? (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 space-y-1">
+              <p className="font-bold">Please complete the following:</p>
+              {missing.map(m => <p key={m} className="flex items-center gap-1.5">• {m}</p>)}
+            </div>
+          ) : null;
+        })()}
+
+        <Button className="w-full rounded-xl h-12 text-base font-bold bg-primary hover:bg-primary/90 text-white"
+          disabled={!firstName || !lastName || !email || !email.includes('@') || !password || password.length < 6 || !agreedToTerms}
           onClick={() => setStage("payment")}>
           Continue to Payment <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
