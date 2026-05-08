@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Input } from "../../components/ui/shared";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { useI18n, getGreeting } from "../../../lib";
+import { useI18n, getGreeting, usePatientStore, useAuthStore } from "../../../lib";
 import { Link } from "react-router";
 
 const statsData = [
@@ -22,15 +22,28 @@ const patientQueue = [
 export function DoctorDashboard() {
   const { t } = useI18n();
   const greeting = getGreeting(t);
+  
+  const user = useAuthStore(state => state.user);
+  const doctorName = user?.user_metadata?.first_name 
+    ? `Dr. ${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+    : "Doctor 👨‍⚕️";
+
+  const orders = usePatientStore(state => state.orders);
+  
+  // Real metrics from database
+  const pendingConsults = orders.filter(o => o.status === "order_submitted");
+  const completedVisits = orders.filter(o => o.status !== "order_submitted" && o.status !== "doctor_reviewing").length;
+  
+  const patientsToday = pendingConsults.length;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto animate-fade-in-up">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">{greeting},</p>
-          <h1 className="text-2xl font-bold">Dr. Harrison Vance 👨‍⚕️</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">14 patients scheduled today</p>
+          <h1 className="text-2xl font-bold">{doctorName}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{patientsToday} patients in queue today</p>
         </div>
         <div className="flex items-center gap-2">
           <Link to="/doctor/availability">
@@ -51,9 +64,9 @@ export function DoctorDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Patients Today", value: "14", sub: "+12% from yesterday", icon: Users, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
+          { label: "Pending Consults", value: patientsToday, sub: "Live updates", icon: Users, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
           { label: "Avg. Wait Time", value: "8m 20s", sub: "−2m since last week", icon: Clock, color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/40" },
-          { label: "Completed Visits", value: "128", sub: "Monthly target reached", icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
+          { label: "Completed Visits", value: completedVisits, sub: "All time total", icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
         ].map((s, i) => (
           <Card key={i}>
             <CardContent className="p-5 flex items-center justify-between">
@@ -90,25 +103,25 @@ export function DoctorDashboard() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-border/50">
-              {patientQueue.map((patient) => (
-                <div key={patient.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+              {pendingConsults.slice(0, 4).map((order) => (
+                <div key={order.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
                   <div className="relative shrink-0">
                     <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center font-bold text-[11px] text-primary">
-                      {patient.avatar}
+                      {order.patientName.charAt(0)}
                     </div>
-                    {patient.urgent && (
+                    {order.urgent && (
                       <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-red-500 ring-2 ring-card" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">{patient.name}</p>
-                    <p className="text-xs text-muted-foreground">{patient.time} · {patient.type}</p>
+                    <p className="text-sm font-semibold truncate">{order.patientName}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(order.orderedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {order.medication}</p>
                   </div>
                   <Badge
-                    variant={patient.status === "Ready" ? "success" : patient.status === "In Lobby" ? "secondary" : "default"}
+                    variant="secondary"
                     className="text-[10px] shrink-0 hidden sm:flex"
                   >
-                    {patient.status}
+                    Awaiting Review
                   </Badge>
                   <div className="flex items-center gap-1 shrink-0">
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-primary">
@@ -120,6 +133,11 @@ export function DoctorDashboard() {
                   </div>
                 </div>
               ))}
+              {pendingConsults.length === 0 && (
+                <div className="p-8 text-center text-muted-foreground text-sm">
+                  No patients currently in queue.
+                </div>
+              )}
             </div>
             <div className="p-3 border-t border-border/50 text-center">
               <Link to="/doctor/queue">

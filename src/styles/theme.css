@@ -2,26 +2,26 @@
 
 :root {
   --font-size: 16px;
-  --background: #faf9ff;
-  --foreground: #1a1530;
+  --background: #ffffff;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #1a1530;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #1a1530;
+  --popover-foreground: #0f172a;
   --primary: #B9A9FE;
   --primary-foreground: #ffffff;
-  --secondary: #DCCEFF;
-  --secondary-foreground: #4a3a8a;
-  --muted: #f3eeff;
-  --muted-foreground: #736B94;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
   --accent: #FFCB9B;
   --accent-foreground: #A5774B;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #e7defc;
+  --border: #f1f5f9;
   --input: #ffffff;
-  --input-background: #faf9ff;
-  --switch-background: #d4cfe7;
+  --input-background: #ffffff;
+  --switch-background: #e2e8f0;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --ring: #B9A9FE;
@@ -199,7 +199,7 @@
   }
 }
 
-/* Landing Page Animations */
+/* Landing Page & Core Animations */
 @keyframes marquee-fast {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
@@ -208,10 +208,17 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
+@keyframes fade-in-up {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 
 .animate-marquee-fast {
   animation: marquee-fast 30s linear infinite;
 }
 .animate-bounce-slow {
   animation: bounce-slow 3s ease-in-out infinite;
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

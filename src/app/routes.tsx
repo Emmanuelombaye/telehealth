@@ -71,6 +71,8 @@ import {
 } from "./pages/pharmacy/pages";
 
 import { NotFoundPage } from "./pages/NotFound";
+import { LoginPage } from "./pages/auth/Login";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 export const router = createBrowserRouter([
   {
@@ -78,13 +80,17 @@ export const router = createBrowserRouter([
     Component: AppLayout,
     children: [
       { index: true, Component: LandingPage },
+      { path: "login", Component: LoginPage },
+      
+      // Public patient route (Shopping)
+      { path: "patient/shop", Component: PatientShopPage },
 
-      // Patient portal
+      // Protected Patient portal
       {
         path: "patient",
+        element: <ProtectedRoute allowedRoles={['patient']} />,
         children: [
           { index: true, Component: PatientDashboard },
-          { path: "shop", Component: PatientShopPage },
           { path: "orders", Component: PatientOrderTrackingPage },
           { path: "appointments", Component: AppointmentsPage },
           { path: "intake", Component: IntakeFormsPage },
@@ -102,9 +108,10 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // Doctor portal
+      // Protected Doctor portal
       {
         path: "doctor",
+        element: <ProtectedRoute allowedRoles={['doctor', 'super_admin']} />,
         children: [
           { index: true, Component: DoctorDashboard },
           { path: "patients", Component: DoctorPatientsPage },
@@ -124,9 +131,10 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // Admin portal
+      // Protected Admin portal
       {
         path: "admin",
+        element: <ProtectedRoute allowedRoles={['brand_admin', 'super_admin']} />,
         children: [
           { index: true, Component: AdminDashboard },
           { path: "patients", Component: AdminPatientsPage },

@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChevronRight, CheckCircle2, CreditCard,
-  Star, Shield, Clock, Package, ArrowLeft, Globe, Zap
+  Star, Shield, Clock, Package, ArrowLeft, Globe, Zap, Loader2
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { supabase } from "../../../../lib/supabaseClient";
 
 const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=600&q=80`;
 
-const products = [
+const localProductsWithQuestionnaires = [
   {
     id: 1, name: "Semaglutide (GLP-1)", category: "Weight Loss",
     tagline: "Weekly subcutaneous injection · 0.25–2.4 mg", price: "$199/mo", priceUSD: 199,
@@ -242,23 +243,71 @@ const gatewayConfig: Record<string, { label: string; icon: string; color: string
   klarna: { label: "Klarna · Pay in 4", icon: "🛍️", color: "border-pink-300 bg-pink-50 dark:bg-pink-950/30" },
 };
 
-type Stage = "catalog" | "questionnaire" | "payment" | "account_setup" | "verify_2fa" | "confirmed";
+type Stage = "catalog" | "questionnaire" | "scheduling" | "payment" | "account_setup" | "verify_2fa" | "confirmed";
 
 export function PatientShopPage() {
+  const [dbProducts, setDbProducts] = useState<typeof localProductsWithQuestionnaires>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const { data, error } = await supabase.from('products').select('*');
+        if (error) throw error;
+        
+        // Merge DB products with local questionnaire arrays
+        const merged = (data || []).map(dbProduct => {
+          const localMatch = localProductsWithQuestionnaires.find(p => p.name.includes(dbProduct.name.split(' ')[0]));
+          return {
+            id: dbProduct.id,
+            name: dbProduct.name,
+            category: dbProduct.category,
+            tagline: dbProduct.tagline,
+            description: dbProduct.description,
+            price: `$${dbProduct.price_usd}/mo`,
+            priceUSD: Number(dbProduct.price_usd),
+            rating: 4.9,
+            reviews: 500,
+            badge: dbProduct.popular ? "Popular" : "",
+            image: dbProduct.image_url || IMG("1584308666744-24d5c474f2ae"),
+            questionnaire: localMatch?.questionnaire || localProductsWithQuestionnaires[0].questionnaire,
+            gateways: ["stripe"]
+          };
+        });
+        
+        setDbProducts(merged.length > 0 ? merged : localProductsWithQuestionnaires);
+      } catch (err) {
+        console.error("Failed to load products from DB:", err);
+        setDbProducts(localProductsWithQuestionnaires);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    }
+    fetchProducts();
+  }, []);
+
   const [stage, setStage] = useState<Stage>("catalog");
-  const [selected, setSelected] = useState<typeof products[0] | null>(null);
+  const [selected, setSelected] = useState<any | null>(null);
   const [qStep, setQStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [gateway, setGateway] = useState<string>("");
+  const [consultationTime, setConsultationTime] = useState<string>("");
   const [orderRef] = useState(() => "RX-" + Math.random().toString(36).slice(2, 8).toUpperCase());
-  const [activeCat, setActiveCat] = useState<typeof categories[number]>("All");
+  const [activeCat, setActiveCat] = useState("All");
   
   // Account creation state
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [password, setPassword] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
 
-  const filteredProducts = activeCat === "All" ? products : products.filter(p => p.category === activeCat);
+  const filteredProducts = activeCat === "All" ? dbProducts : dbProducts.filter(p => p.category === activeCat);
+  const categories = ["All", ...Array.from(new Set(dbProducts.map(p => p.category)))];
 
   const startFlow = (product: typeof products[0]) => {
     setSelected(product);
@@ -274,6 +323,68 @@ export function PatientShopPage() {
 
   const currentQ = selected?.questionnaire[qStep];
   const totalQ = selected?.questionnaire.length ?? 0;
+
+  const handleCompleteSetup = async () => {
+    if (!selected) return;
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // 1. Create the user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName || 'New',
+            last_name: lastName || 'Patient',
+            role: 'patient',
+          }
+        }
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Failed to create account");
+
+      // 2. Insert the real order into the database!
+      const newOrder = {
+        order_number: orderRef,
+        patient_name: `${firstName} ${lastName}`.trim() || "New Patient",
+        patient_avatar: (firstName[0] || "") + (lastName[0] || ""),
+        patient_age: 30, // Mock for now
+        patient_country: "🇺🇸 US",
+        sub_brand: brand.name,
+        medication: selected.name,
+        dosage_instructions: selected.tagline,
+        category: selected.category,
+        status: "order_submitted",
+        ordered_date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        amount: selected.priceUSD,
+        user_id: authData.user.id,
+        intake_complete: true,
+        intake_notes: Object.entries(answers).map(([k,v]) => `${k}: ${v}`).join(', '),
+        intake_answers: answers,
+        consultation_time: consultationTime,
+        timeline: [
+          { status: "order_submitted", date: new Date().toLocaleDateString() }
+        ]
+      };
+
+      const { error: insertError } = await supabase
+        .from('orders')
+        .insert([newOrder]);
+
+      if (insertError) throw insertError;
+
+      // 3. Move to confirmed stage
+      setStage("confirmed");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Something went wrong.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (stage === "confirmed" && selected) {
     return (
@@ -326,6 +437,12 @@ export function PatientShopPage() {
           </p>
         </div>
 
+        {error && (
+          <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-semibold">
+            {error}
+          </div>
+        )}
+
         <div className="flex justify-between gap-2">
           {otp.map((digit, idx) => (
             <input
@@ -337,7 +454,6 @@ export function PatientShopPage() {
                 const newOtp = [...otp];
                 newOtp[idx] = e.target.value;
                 setOtp(newOtp);
-                // Auto-focus next input would go here
               }}
               className="w-12 h-14 text-center text-xl font-bold border-2 border-border rounded-xl bg-background focus:border-primary focus:outline-none"
             />
@@ -349,9 +465,9 @@ export function PatientShopPage() {
         </p>
 
         <Button className="w-full rounded-xl h-12 text-base font-bold" 
-          disabled={otp.some(d => !d)}
-          onClick={() => setStage("confirmed")}>
-          Complete Setup
+          disabled={otp.some(d => !d) || isSubmitting}
+          onClick={handleCompleteSetup}>
+          {isSubmitting ? "Creating Account..." : "Complete Setup"}
         </Button>
       </div>
     );
@@ -374,6 +490,29 @@ export function PatientShopPage() {
         </div>
 
         <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">First Name</label>
+              <input 
+                type="text" 
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
+                placeholder="First" 
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Last Name</label>
+              <input 
+                type="text" 
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
+                placeholder="Last" 
+              />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Email Address</label>
             <input 
@@ -400,6 +539,8 @@ export function PatientShopPage() {
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Create Password</label>
             <input 
               type="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
               placeholder="••••••••" 
             />
@@ -414,7 +555,7 @@ export function PatientShopPage() {
         </div>
 
         <Button className="w-full rounded-xl h-12 text-base font-bold" 
-          disabled={!email || !phone}
+          disabled={!email || !phone || !password}
           onClick={() => setStage("verify_2fa")}>
           Continue to 2FA <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
@@ -455,13 +596,49 @@ export function PatientShopPage() {
             </button>
           ))}
         </div>
+
+        {gateway === 'stripe' && (
+          <Card className="border-primary/20 bg-primary/5 animate-in fade-in slide-in-from-top-4">
+            <CardContent className="p-4 space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase text-muted-foreground">Card Number</label>
+                <div className="relative">
+                  <CreditCard className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <input type="text" placeholder="0000 0000 0000 0000" className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">Expiry</label>
+                  <input type="text" placeholder="MM/YY" className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">CVC</label>
+                  <input type="text" placeholder="123" className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Shield className="h-3.5 w-3.5 text-emerald-500" />
           256-bit SSL encryption · HIPAA compliant · Cancel anytime
         </div>
-        <Button className="w-full rounded-xl h-12 text-base font-bold" disabled={!gateway}
-          onClick={() => setStage("account_setup")}>
-          <CreditCard className="h-5 w-5 mr-2" /> Pay {selected.price} & Create Account
+        <Button className="w-full rounded-xl h-12 text-base font-bold relative overflow-hidden" 
+          disabled={!gateway || isPaying}
+          onClick={() => {
+            setIsPaying(true);
+            setTimeout(() => {
+              setIsPaying(false);
+              setStage("account_setup");
+            }, 1500);
+          }}>
+          {isPaying ? (
+            <span className="flex items-center gap-2">Processing Payment... <Zap className="h-4 w-4 animate-pulse" /></span>
+          ) : (
+            <><CreditCard className="h-5 w-5 mr-2" /> Pay {selected.price} & Create Account</>
+          )}
         </Button>
       </div>
     );
@@ -530,8 +707,66 @@ export function PatientShopPage() {
           </CardContent>
         </Card>
         <Button className="w-full rounded-xl"
-          onClick={() => qStep < totalQ - 1 ? setQStep(q => q + 1) : setStage("payment")}>
-          {qStep < totalQ - 1 ? "Continue" : "Review & Pay"} <ChevronRight className="h-4 w-4 ml-1" />
+          onClick={() => qStep < totalQ - 1 ? setQStep(q => q + 1) : setStage("scheduling")}>
+          {qStep < totalQ - 1 ? "Continue" : "Schedule Consultation"} <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
+    );
+  }
+
+  if (stage === "scheduling" && selected) {
+    const dates = ["Today", "Tomorrow", "Wednesday", "Thursday", "Friday"];
+    const times = ["9:00 AM", "10:30 AM", "1:00 PM", "2:45 PM", "4:00 PM"];
+    return (
+      <div className="max-w-md mx-auto space-y-5">
+        <div className="flex justify-center mb-6">
+           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+        </div>
+        <button onClick={() => setStage("questionnaire")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Back to Questionnaire
+        </button>
+        <div>
+          <h1 className="text-xl font-bold">Schedule Video Consult</h1>
+          <p className="text-sm text-muted-foreground">Select a time for your required medical review</p>
+        </div>
+        
+        <Card>
+          <CardContent className="p-4 space-y-4">
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase text-muted-foreground tracking-wide">Select Date</p>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {dates.map(d => (
+                  <button key={d} className="shrink-0 px-4 py-2 border rounded-xl text-sm font-semibold hover:border-primary focus:border-primary focus:bg-primary/5 transition-all">
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase text-muted-foreground tracking-wide">Select Time (EST)</p>
+              <div className="grid grid-cols-2 gap-2">
+                {times.map(t => (
+                  <button key={t} 
+                    onClick={() => setConsultationTime(`${dates[0]} at ${t}`)}
+                    className={cn("px-4 py-2 border rounded-xl text-sm font-semibold transition-all", consultationTime.includes(t) ? "border-primary bg-primary text-white" : "hover:border-primary")}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="bg-amber-50 text-amber-900 text-xs p-3 rounded-lg flex gap-2 items-start border border-amber-200">
+              <Clock className="h-4 w-4 shrink-0 mt-0.5" />
+              <p>Your Zoom link will be provided in your Patient Dashboard immediately after checkout.</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button className="w-full rounded-xl h-12 text-base"
+          disabled={!consultationTime}
+          onClick={() => setStage("payment")}>
+          Review & Pay <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
     );
@@ -571,8 +806,15 @@ export function PatientShopPage() {
         ))}
       </div>
 
-      {/* Product grid — 2-col cards with images */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {isLoadingProducts ? (
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+          <Loader2 className="h-8 w-8 animate-spin mb-4" />
+          <p>Loading medical catalog securely...</p>
+        </div>
+      ) : (
+        <>
+          {/* Product grid — 2-col cards with images */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {filteredProducts.map(product => (
           <Card key={product.id} className="group hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer overflow-hidden border-border"
             onClick={() => startFlow(product)}>
@@ -610,16 +852,17 @@ export function PatientShopPage() {
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {filteredProducts.length === 0 && (
+        {filteredProducts.length === 0 && (
         <div className="text-center py-12 text-sm text-muted-foreground">
           No products in this category yet.
         </div>
       )}
-
       {/* Trust strip */}
+      </>
+      )}
       <div className="grid grid-cols-3 gap-3 pt-2">
         {[
           { icon: Shield, label: "HIPAA Secure", sub: "End-to-end encrypted" },

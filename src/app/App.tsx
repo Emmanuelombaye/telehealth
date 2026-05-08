@@ -1,8 +1,25 @@
+import { useEffect } from 'react';
 import { RouterProvider } from 'react-router';
 import { router } from './routes';
 import { Toaster } from 'sonner';
+import { usePatientStore, useAuthStore } from '../lib';
 
 export default function App() {
+  const fetchOrders = usePatientStore(state => state.fetchOrders);
+  const initializeAuth = useAuthStore(state => state.initialize);
+  const isLoading = useAuthStore(state => state.isLoading);
+  const user = useAuthStore(state => state.user);
+
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      fetchOrders();
+    }
+  }, [isLoading, user, fetchOrders]);
+
   return (
     <>
       <RouterProvider router={router} />

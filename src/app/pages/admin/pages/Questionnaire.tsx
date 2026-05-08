@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { Search, Plus, Filter, FileText, ArrowLeft, Smartphone, Trash2, GripVertical, Settings2 } from "lucide-react";
 import { Card, Button, Badge, cn } from "../../../components/ui/shared";
+import { AdminDataTable, StatusText, ActionBadge } from "../../../components/ui/shared/AdminDataTable";
 
 const mockQuestionnaires = [
-  { id: "6839", name: "Methylene Blue", date: "12/05/2025", questions: "61", products: "1" },
-  { id: "6601", name: "ED Intake", date: "11/20/2025", questions: "64", products: "1" },
-  { id: "6600", name: "Sermorelin Intake", date: "11/20/2025", questions: "64", products: "2" },
-  { id: "6586", name: "Hair Loss Intake", date: "11/19/2025", questions: "98", products: "3" },
-  { id: "6584", name: "Anti Aging Intake", date: "11/19/2025", questions: "42", products: "5" },
+  { id: "6839", name: "Methylene Blue", date: "12/05/2025", questions: "61", products: "1", checkoutPages: "13", domain: "https://go.trygenesis.com", slug: "methylene-blue", review: "Unpublish", status: "Approved", mode: "Test", intake: "-", lastUsed: "5/7/2026" },
+  { id: "6601", name: "ED Intake", date: "11/20/2025", questions: "64", products: "1", checkoutPages: "1", domain: "https://go.trygenesis.com", slug: "ed-intake", review: "Unpublish", status: "Approved", mode: "Test", intake: "-", lastUsed: "5/4/2026" },
+  { id: "6600", name: "Sermorelin Intake", date: "11/20/2025", questions: "64", products: "2", checkoutPages: "13", domain: "https://go.trygenesis.com", slug: "sermorelin-intake", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "5/7/2026" },
+  { id: "6586", name: "Hair Loss Intake", date: "11/19/2025", questions: "98", products: "3", checkoutPages: "8", domain: "https://go.trygenesis.com", slug: "hairloss-intake", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "12/5/2025" },
+  { id: "6584", name: "Anti Aging Intake", date: "11/19/2025", questions: "42", products: "5", checkoutPages: "5", domain: "https://go.trygenesis.com", slug: "anti-aging-intake", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "5/7/2026" },
+  { id: "5189", name: "Personalized WL Membershi", date: "7/31/2025", questions: "97", products: "0", checkoutPages: "4", domain: "https://go.trygenesis.com", slug: "personalized-weightloss-ex", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "5/6/2026" },
+  { id: "4413", name: "Personalized Weight Loss Me", date: "5/22/2025", questions: "97", products: "0", checkoutPages: "4", domain: "https://go.trygenesis.com", slug: "weight-loss-memberships", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "5/7/2026" },
+  { id: "4367", name: "Weight Loss Memberships 2r", date: "5/20/2025", questions: "82", products: "0", checkoutPages: "9", domain: "https://go.trygenesis.com", slug: "wl-m", review: "Publish", status: "Draft", mode: "Test", intake: "-", lastUsed: "5/20/2025" },
+  { id: "4254", name: "Weight Loss Memberships 2r", date: "5/12/2025", questions: "81", products: "4", checkoutPages: "11", domain: "https://go.trygenesis.com", slug: "weight-loss-memberships-2r", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "12/12/2025" },
+  { id: "4202", name: "New Questionnaire Template", date: "5/8/2025", questions: "119", products: "0", checkoutPages: "20", domain: "https://go.trygenesis.com", slug: "template-new", review: "Publish", status: "Draft", mode: "Test", intake: "-", lastUsed: "-" },
 ];
-
-const tabs = ["All", "Active", "Inactive"];
 
 type QuestionType = "text" | "choice" | "yes_no";
 
@@ -224,86 +228,44 @@ export function AdminQuestionnairePage() {
   }
 
   // STANDARD LIST VIEW
+  const columns = [
+    { header: "Name", accessorKey: "name", cell: (item: any) => (
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground mr-1">...</span>
+        <a href="#" className="font-semibold underline underline-offset-4 decoration-border hover:decoration-foreground transition-colors">{item.name}</a>
+      </div>
+    )},
+    { header: "#ID", accessorKey: "id" },
+    { header: "Created Date", accessorKey: "date" },
+    { header: "Questions", accessorKey: "questions" },
+    { header: "Products", accessorKey: "products" },
+    { header: "Checkout Pages", accessorKey: "checkoutPages" },
+    { header: "Domain", accessorKey: "domain" },
+    { header: "Slug", accessorKey: "slug" },
+    { header: "Review", accessorKey: "review", cell: (item: any) => (
+      <ActionBadge label={item.review} variant={item.review === "Publish" ? "blue" : "red"} />
+    )},
+    { header: "Status", accessorKey: "status", cell: (item: any) => <StatusText status={item.status} /> },
+    { header: "Mode", accessorKey: "mode", cell: (item: any) => <StatusText status={item.mode} /> },
+    { header: "Intake Questionnaire", accessorKey: "intake" },
+    { header: "last used date", accessorKey: "lastUsed" },
+  ];
+
   return (
-    <div className="max-w-[1400px] mx-auto font-sans space-y-6">
+    <div className="max-w-[1500px] mx-auto font-sans space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Questionnaires</h1>
-        <Button onClick={() => setIsBuilding(true)} className="bg-primary hover:bg-primary/90 text-white rounded-lg gap-2">
-          <Plus className="h-4 w-4" /> Add new
+        <Button onClick={() => setIsBuilding(true)} className="bg-primary hover:bg-primary/90 text-white rounded-lg gap-2 text-[13px] h-9 px-4">
+          Add new
         </Button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-6 border-b border-border/60 pb-[1px]">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            className={`pb-3 text-sm font-medium transition-colors relative ${
-              tab === "All"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      <Card className="border-border/60 shadow-sm overflow-hidden bg-background">
-        <div className="p-4 border-b border-border/60 space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="relative flex-1 max-w-xl flex items-center">
-              <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search by questionnaire name, slug, or ID"
-                className="w-full pl-9 pr-4 py-2 bg-transparent border-none text-[14px] outline-none placeholder:text-muted-foreground/70"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button className="flex items-center gap-1.5 px-3.5 py-1.5 border border-border/80 rounded-full text-[13px] font-medium hover:bg-muted/50 transition-colors">
-                Extra Filters <Filter className="h-3.5 w-3.5 text-muted-foreground ml-1" />
-              </button>
-              <button className="text-[13px] font-medium border border-border/80 bg-muted/20 px-4 py-1.5 rounded-full hover:bg-muted/50 transition-colors">
-                Reset Filters
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-muted/20 border-b border-border/60 text-muted-foreground text-[13px]">
-              <tr>
-                <th className="font-medium py-3.5 px-6">Name</th>
-                <th className="font-medium py-3.5 px-4">#ID</th>
-                <th className="font-medium py-3.5 px-4">Created Date</th>
-                <th className="font-medium py-3.5 px-4">Questions</th>
-                <th className="font-medium py-3.5 px-4">Products</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40">
-              {mockQuestionnaires.map((item) => (
-                <tr key={item.id} className="hover:bg-muted/20 transition-colors group cursor-pointer" onClick={() => setIsBuilding(true)}>
-                  <td className="py-4 px-6 flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                      <FileText className="h-4 w-4 text-blue-500" />
-                    </div>
-                    <span className="font-medium">{item.name}</span>
-                  </td>
-                  <td className="py-4 px-4 text-foreground/80">{item.id}</td>
-                  <td className="py-4 px-4 text-foreground/80">{item.date}</td>
-                  <td className="py-4 px-4 text-foreground/80">{item.questions}</td>
-                  <td className="py-4 px-4 text-foreground/80">
-                    <span className="bg-muted px-2.5 py-1 rounded-full text-xs font-medium">{item.products}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <AdminDataTable 
+        data={mockQuestionnaires} 
+        columns={columns} 
+        searchPlaceholder="Search by questionnaire name, slug, or ID"
+        onRowClick={() => setIsBuilding(true)}
+      />
     </div>
   );
 }

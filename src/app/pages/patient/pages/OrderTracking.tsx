@@ -1,17 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Package, CheckCircle2, Stethoscope, Pill, Truck, ShoppingBag, Hourglass, FileText,
-  ChevronRight, Search, MapPin, ExternalLink, MessageSquare, Copy, Building2
+  ChevronRight, Search, MapPin, ExternalLink, MessageSquare, Copy
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
-import { ORDER_STEPS, orders, getStepIndex, type Order } from "../../../../lib";
+import { ORDER_STEPS, getStepIndex, type Order } from "../../../../lib/patient-store";
+import { supabase } from "../../../../lib/supabaseClient";
 
 const stepIcon: Record<string, any> = {
-  intake_submitted: FileText,
+  order_submitted: FileText,
   doctor_reviewing: Stethoscope,
-  prescribing: Pill,
-  shipping: Package,
-  tracking: Truck,
+  rx_sent: Pill,
+  shipped: Package,
+  delivered: CheckCircle2,
 };
 
 const statusSteps = ORDER_STEPS.map(s => ({ ...s, icon: stepIcon[s.key] }));
@@ -20,14 +21,46 @@ export function PatientOrderTrackingPage() {
   const [selected, setSelected] = useState<Order | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const [orders, setOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchOrders() {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setOrders(data || []);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+      }
+    }
+    fetchOrders();
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+        fetchOrders();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const copyTracking = (num: string) => {
     navigator.clipboard.writeText(num).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (selected) {
-    const currentIdx = getStepIndex(selected.status);
+  // Keep the selected order state in sync if it updates
+  const activeSelected = selected ? orders.find(o => o.id === selected.id) || selected : null;
+
+  if (activeSelected) {
+    const currentIdx = getStepIndex(activeSelected.status);
     return (
       <div className="max-w-lg mx-auto space-y-5">
         <button onClick={() => setSelected(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
@@ -36,12 +69,12 @@ export function PatientOrderTrackingPage() {
 
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-primary">{selected.subBrand}</p>
-            <h1 className="text-xl font-bold">{selected.medication}</h1>
-            <p className="text-xs text-muted-foreground">{selected.id} · Ordered {selected.orderedDate}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{selected.dosageInstructions}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-primary">{activeSelected.sub_brand || activeSelected.subBrand}</p>
+            <h1 className="text-xl font-bold">{activeSelected.medication}</h1>
+            <p className="text-xs text-muted-foreground">{activeSelected.id.substring(0,8)} · Ordered {activeSelected.ordered_date || activeSelected.orderedDate}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{activeSelected.dosage_instructions || activeSelected.dosageInstructions}</p>
           </div>
-          <span className="font-extrabold text-primary shrink-0">{selected.amount}</span>
+          <span className="font-extrabold text-primary shrink-0">{typeof activeSelected.amount === 'number' ? `$${activeSelected.amount}` : activeSelected.amount}</span>
         </div>
 
         {/* Pipeline stepper */}
@@ -51,7 +84,7 @@ export function PatientOrderTrackingPage() {
               {statusSteps.map((step, i) => {
                 const done = i <= currentIdx;
                 const active = i === currentIdx;
-                const timelineEntry = selected.timeline.find(t => t.status === step.key);
+                const timelineEntry = activeSelected.timeline.find(t => t.status === step.key);
                 return (
                   <div key={step.key} className="flex gap-3">
                     <div className="flex flex-col items-center">
@@ -80,26 +113,15 @@ export function PatientOrderTrackingPage() {
           </CardContent>
         </Card>
 
-        {/* Pharmacy */}
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <Building2 className="h-4 w-4 text-primary shrink-0" />
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Pharmacy</p>
-              <p className="text-sm font-semibold">{selected.pharmacy}</p>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Doctor note */}
-        {selected.doctorNote && (
+        {activeSelected.doctorNote && (
           <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <Stethoscope className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{selected.doctor}</p>
-                  <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">{selected.doctorNote}</p>
+                  <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{activeSelected.doctor}</p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">{activeSelected.doctorNote}</p>
                 </div>
               </div>
             </CardContent>
@@ -107,39 +129,43 @@ export function PatientOrderTrackingPage() {
         )}
 
         {/* Tracking */}
-        {selected.tracking && (
+        {activeSelected.tracking && (
           <Card>
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="font-bold text-sm flex items-center gap-2">
                   <Truck className="h-4 w-4 text-primary" /> Shipment Tracking
                 </p>
-                <Badge variant="secondary" className="text-[10px]">{selected.carrier}</Badge>
+                <Badge variant="secondary" className="text-[10px]">{activeSelected.carrier}</Badge>
               </div>
               <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-2">
-                <span className="font-mono text-sm flex-1">{selected.tracking}</span>
-                <button onClick={() => copyTracking(selected.tracking!)}
+                <span className="font-mono text-sm flex-1">{activeSelected.tracking}</span>
+                <button onClick={() => copyTracking(activeSelected.tracking!)}
                   className="text-muted-foreground hover:text-foreground transition-colors">
                   <Copy className="h-4 w-4" />
                 </button>
                 {copied && <span className="text-xs text-emerald-600 font-semibold">Copied!</span>}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5" />
-                Estimated delivery: <span className="font-semibold text-foreground">{selected.estimatedDelivery}</span>
-              </div>
-              <a href={selected.trackingUrl!} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm" className="w-full rounded-xl text-xs gap-1.5">
-                  <ExternalLink className="h-3.5 w-3.5" /> Track on {selected.carrier}
-                </Button>
-              </a>
+              {activeSelected.estimatedDelivery && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5" />
+                  Estimated delivery: <span className="font-semibold text-foreground">{activeSelected.estimatedDelivery}</span>
+                </div>
+              )}
+              {activeSelected.trackingUrl && (
+                <a href={activeSelected.trackingUrl} target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" size="sm" className="w-full rounded-xl text-xs gap-1.5 mt-2">
+                    <ExternalLink className="h-3.5 w-3.5" /> Track on {activeSelected.carrier}
+                  </Button>
+                </a>
+              )}
             </CardContent>
           </Card>
         )}
 
         {/* Message doctor */}
         <Button variant="outline" className="w-full rounded-xl gap-2">
-          <MessageSquare className="h-4 w-4" /> Message {selected.doctor}
+          <MessageSquare className="h-4 w-4" /> Message {activeSelected.doctor}
         </Button>
       </div>
     );
@@ -174,11 +200,11 @@ export function PatientOrderTrackingPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{order.subBrand}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{order.sub_brand || order.subBrand}</p>
                         <p className="font-bold text-sm truncate">{order.medication}</p>
-                        <p className="text-xs text-muted-foreground">{order.id} · Ordered {order.orderedDate}</p>
+                        <p className="text-xs text-muted-foreground">{order.id.substring(0,8)} · Ordered {order.ordered_date || order.orderedDate || new Date(order.created_at).toLocaleDateString()}</p>
                       </div>
-                      <span className="font-bold text-primary text-sm shrink-0">{order.amount}</span>
+                      <span className="font-bold text-primary text-sm shrink-0">{typeof order.amount === 'number' ? `$${order.amount}` : order.amount}</span>
                     </div>
                     <div className="mt-2 space-y-1.5">
                       <div className="flex items-center justify-between">
