@@ -38,7 +38,11 @@ export function DoctorQueuePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Filter orders for the queue
-  const queue = orders.filter(o => o.status === "order_submitted" || o.status === "doctor_reviewing");
+  const queue = orders.filter(o => {
+    const isNew = o.status === "order_submitted" || o.status === "doctor_reviewing";
+    const needsRefill = o.nextRefillAt && new Date(o.nextRefillAt) <= new Date();
+    return isNew || needsRefill;
+  });
   const selected = queue.find(o => o.id === selectedId) || null;
 
   useEffect(() => {

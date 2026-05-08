@@ -246,7 +246,7 @@ const gatewayConfig: Record<string, { label: string; icon: string; color: string
   klarna: { label: "Klarna · Pay in 4", icon: "🛍️", color: "border-pink-300 bg-pink-50 dark:bg-pink-950/30" },
 };
 
-type Stage = "catalog" | "questionnaire" | "scheduling" | "account_setup" | "payment" | "confirmed";
+type Stage = "catalog" | "payment" | "account_setup" | "questionnaire" | "scheduling" | "confirmed";
 
 export function PatientShopPage() {
   const navigate = useNavigate();
@@ -309,7 +309,7 @@ export function PatientShopPage() {
     setQStep(0);
     setAnswers({});
     setGateway("");
-    setStage("questionnaire");
+    setStage("payment");
   };
 
   const handleAnswer = (id: string, val: string) => {
@@ -510,17 +510,17 @@ export function PatientShopPage() {
         </div>
 
         {/* ─── SECTION 1: Identity ─── */}
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Personal Information</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Secure Your Account</p>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">First Name</label>
-              <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="First" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Last Name</label>
-              <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="Last" />
-            </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Create Password</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="Min 6 characters" />
+            {password.length > 0 && password.length < 6 && (
+              <p className="text-xs text-amber-500 font-semibold flex items-center gap-1">⚠ Password must be at least 6 characters ({6 - password.length} more needed)</p>
+            )}
+            {password.length >= 6 && (
+              <p className="text-xs text-emerald-600 font-semibold">✓ Password strength OK</p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -536,22 +536,8 @@ export function PatientShopPage() {
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Email Address</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="you@example.com" />
-          </div>
-          <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Phone Number</label>
             <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="(555) 000-0000" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Create Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="Min 6 characters" />
-            {password.length > 0 && password.length < 6 && (
-              <p className="text-xs text-amber-500 font-semibold flex items-center gap-1">⚠ Password must be at least 6 characters ({6 - password.length} more needed)</p>
-            )}
-            {password.length >= 6 && (
-              <p className="text-xs text-emerald-600 font-semibold">✓ Password strength OK</p>
-            )}
           </div>
         </div>
 
@@ -677,9 +663,9 @@ export function PatientShopPage() {
         })()}
 
         <Button className="w-full rounded-xl h-12 text-base font-bold bg-primary hover:bg-primary/90 text-white"
-          disabled={!firstName || !lastName || !email || !email.includes('@') || !password || password.length < 6 || !agreedToTerms}
-          onClick={() => setStage("payment")}>
-          Continue to Payment <ChevronRight className="h-4 w-4 ml-1" />
+          disabled={!dob || !sex || !password || password.length < 6 || !agreedToTerms}
+          onClick={() => setStage("questionnaire")}>
+          Continue to Medical Questionnaire <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
     );
@@ -700,6 +686,16 @@ export function PatientShopPage() {
         <button onClick={() => setStage("account_setup")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
+
+        {/* Basic Info Collection for Payment linking */}
+        <div className="space-y-4 mb-4">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contact Information</p>
+          <div className="grid grid-cols-2 gap-3">
+             <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white" />
+             <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white" />
+          </div>
+          <input type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white" />
+        </div>
 
         {/* Order summary */}
         <Card>
@@ -826,20 +822,20 @@ export function PatientShopPage() {
 
         <Button
           className="w-full rounded-xl h-12 text-base font-bold relative overflow-hidden bg-emerald-600 hover:bg-emerald-700 text-white"
-          disabled={!cardReady || isPaying || isSubmitting}
+          disabled={!cardReady || isPaying || !firstName || !lastName || !email.includes('@')}
           onClick={() => {
             setIsPaying(true);
             setTimeout(() => {
               setIsPaying(false);
-              handleCompleteSetup();
+              setStage("account_setup");
             }, 1500);
           }}>
-          {isPaying || isSubmitting ? (
+          {isPaying ? (
             <span className="flex items-center gap-2">
-              Creating your account... <Zap className="h-4 w-4 animate-pulse" />
+              Processing Payment... <Zap className="h-4 w-4 animate-pulse" />
             </span>
           ) : (
-            <><CreditCard className="h-5 w-5 mr-2" /> Pay {selected.price} &amp; Activate Account</>
+            <><CreditCard className="h-5 w-5 mr-2" /> Pay {selected.price} &amp; Continue</>
           )}
         </Button>
 
@@ -916,8 +912,13 @@ export function PatientShopPage() {
           </CardContent>
         </Card>
         <Button className="w-full rounded-xl"
-          onClick={() => qStep < totalQ - 1 ? setQStep(q => q + 1) : setStage("scheduling")}
-        >
+          onClick={() => {
+            if (qStep < totalQ - 1) {
+              setQStep(s => s + 1);
+            } else {
+              setStage("scheduling");
+            }
+          }}>
           {qStep < totalQ - 1 ? "Continue" : "Next: Consultation Preference"} <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
@@ -1007,16 +1008,26 @@ export function PatientShopPage() {
           </Card>
         )}
 
-        {zoomWanted === false && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
-            ✓ Your doctor will review your intake asynchronously and send your prescription via the patient portal.
+        <div className="p-4 bg-muted/20 border border-border rounded-xl space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">ID Verification Required</p>
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+               <ShieldCheck className="h-6 w-6 text-emerald-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-medium text-foreground">Upload a photo of your government ID</p>
+              <input type="file" className="mt-2 text-xs" onChange={(e) => setIdFile(e.target.files?.[0] || null)} />
+            </div>
           </div>
-        )}
+          {idFile && (
+            <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 italic">✓ {idFile.name} attached</p>
+          )}
+        </div>
 
-        <Button className="w-full rounded-xl h-12 text-base font-bold"
-          disabled={zoomWanted === null || (zoomWanted === true && !consultationTime)}
-          onClick={() => setStage("account_setup")}>
-          Continue to Account Setup <ChevronRight className="h-4 w-4 ml-1" />
+        <Button className="w-full rounded-xl h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+          disabled={zoomWanted === null || (zoomWanted === true && !consultationTime) || !idFile || isSubmitting}
+          onClick={() => handleCompleteSetup()}>
+          {isSubmitting ? "Finishing..." : "Complete Enrollment →"}
         </Button>
       </div>
     );

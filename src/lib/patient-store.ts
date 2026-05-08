@@ -58,6 +58,19 @@ export type Order = {
   zoom_doctor_message?: string | null;
   zoom_rescheduled_time?: string | null;
   consultation_time?: string | null;
+  lastApprovedAt?: string | null;
+  nextRefillAt?: string | null;
+  refillIntervalDays?: number;
+};
+
+// Helper: Generate a unique Medical Record Number (MRN)
+export const generateMRN = () => {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const nums = "0123456789";
+  const prefix = letters.charAt(Math.floor(Math.random() * letters.length));
+  const middle = Array.from({ length: 4 }, () => nums.charAt(Math.floor(Math.random() * nums.length))).join("");
+  const suffix = Array.from({ length: 3 }, () => nums.charAt(Math.floor(Math.random() * nums.length))).join("");
+  return `${prefix}${middle}${suffix}`;
 };
 
 // Removed mock initialOrders to enforce strict backend data fetching
@@ -112,6 +125,7 @@ interface AppState {
   updateOrderRx: (orderId: string, medication: string, dosage: string, note: string) => Promise<void>;
   setIntakeFormData: (data: Record<string, any>) => void;
   updateDoctorAvailability: (doctorId: number, available: boolean) => Promise<void>;
+  approveRefill: (orderId: string) => Promise<void>;
   resetStore: () => void;
 }
 
@@ -187,7 +201,10 @@ export const usePatientStore = create<AppState>()(
             intakeNotes: d.intake_notes,
             waitMins: d.wait_mins,
             time: d.time,
-            mrn: d.mrn
+            mrn: d.mrn || generateMRN(),
+            lastApprovedAt: d.last_approved_at,
+            nextRefillAt: d.next_refill_at,
+            refillIntervalDays: d.refill_interval_days
           }));
           set({ orders: mappedOrders });
         } catch (error) {
@@ -219,8 +236,10 @@ export const usePatientStore = create<AppState>()(
             intake_notes: order.intakeNotes,
             wait_mins: order.waitMins,
             time: order.time,
-            mrn: order.mrn,
-            timeline: order.timeline
+            mrn: order.mrn || generateMRN(),
+            timeline: order.timeline,
+            last_approved_at: order.lastApprovedAt,
+            refill_interval_days: order.refillIntervalDays || 30
           }]);
         } catch (error) {
           console.error('Error adding order to Supabase:', error);
@@ -267,39 +286,34 @@ export const usePatientStore = create<AppState>()(
               status: 'rx_sent',
               medication: medication,
               dosage_instructions: dosage,
-              doctor_note: note
+              doctor_note: note,
+              last_approved_at: new Date().toISOString()
             })
             .eq('order_number', orderId);
             
           if (error) throw error;
-          
-          await get().fetchOrders(); // Refresh local state
-          
+          await get().fetchOrders();
         } catch (error) {
           console.error("Failed to update rx:", error);
         }
       },
 
-      setIntakeFormData: (data: Record<string, any>) =>
-        set((state) => ({
-          intakeFormData: { ...state.intakeFormData, ...data }
-        })),
-
-      updateDoctorAvailability: async (doctorId: number, available: boolean) => {
-        set((state) => ({
-          doctorAvailability: state.doctorAvailability.map(doctor =>
-            doctor.id === doctorId
-              ? { ...doctor, available }
-              : doctor
-          )
-        }));
+      approveRefill: async (orderId: string) => {
         try {
-          await supabase.from('doctor_availability').update({ available }).eq('id', doctorId);
+          const { error } = await supabase
+            .from('orders')
+            .update({
+              status: 'rx_sent',
+              last_approved_at: new Date().toISOString()
+            })
+            .eq('order_number', orderId);
+          if (error) throw error;
+          await get().fetchOrders();
         } catch (error) {
-          console.error('Error updating doctor availability:', error);
+          console.error("Failed to approve refill:", error);
         }
       },
-        
+
       resetStore: () => set({ orders: [], intakeFormData: {} }),
     })
   )

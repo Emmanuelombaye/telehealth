@@ -38,7 +38,11 @@ export function DoctorDashboard() {
   const orders = usePatientStore(state => state.orders);
   
   // Real metrics from database
-  const pendingConsults = orders.filter(o => o.status === "order_submitted" || o.status === "doctor_reviewing");
+  const pendingConsults = orders.filter(o => {
+    const isNew = o.status === "order_submitted" || o.status === "doctor_reviewing";
+    const needsRefill = o.nextRefillAt && new Date(o.nextRefillAt) <= new Date();
+    return isNew || needsRefill;
+  });
   const completedVisits = orders.filter(o => o.status !== "order_submitted" && o.status !== "doctor_reviewing").length;
   const patientsToday = pendingConsults.length;
 
