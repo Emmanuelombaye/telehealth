@@ -81,8 +81,15 @@ export function PatientDashboard() {
       {/* Welcome header */}
       <div className="flex items-start justify-between pt-1 gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold">Welcome, {firstName}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h1 className="text-xl font-bold">Welcome, {firstName}</h1>
+            {orders[0]?.mrn && (
+              <span className="text-[10px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                MRN: {orders[0].mrn}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
             Here's the status of your prescriptions and consultations.
           </p>
         </div>
