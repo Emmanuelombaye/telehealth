@@ -14,11 +14,11 @@ import {
 import { supabase } from "../../../lib/supabaseClient";
 
 const stepIcon: Record<string, any> = {
-  intake_submitted: FileText,
+  order_submitted: FileText,
   doctor_reviewing: Stethoscope,
-  prescribing: Pill,
-  shipping: Package,
-  tracking: Truck,
+  rx_sent: Pill,
+  shipped: Package,
+  delivered: Truck,
 };
 
 const subBrandTint: Record<string, string> = {
