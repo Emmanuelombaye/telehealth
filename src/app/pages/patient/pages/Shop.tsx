@@ -484,21 +484,21 @@ export function PatientShopPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">First Name</label>
-              <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="First" />
+              <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="First" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Last Name</label>
-              <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="Last" />
+              <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="Last" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Date of Birth</label>
-              <input type="date" value={dob} onChange={e => setDob(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" />
+              <input type="date" value={dob} onChange={e => setDob(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Sex at Birth</label>
-              <select value={sex} onChange={e => setSex(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary">
+              <select value={sex} onChange={e => setSex(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary">
                 <option value="">Select...</option>
                 <option>Male</option><option>Female</option><option>Intersex</option>
               </select>
@@ -506,15 +506,15 @@ export function PatientShopPage() {
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Email Address</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="you@example.com" />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="you@example.com" />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Phone Number</label>
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="(555) 000-0000" />
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="(555) 000-0000" />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Create Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="Min 6 characters" />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="Min 6 characters" />
             {password.length > 0 && password.length < 6 && (
               <p className="text-xs text-amber-500 font-semibold flex items-center gap-1">⚠ Password must be at least 6 characters ({6 - password.length} more needed)</p>
             )}
@@ -530,15 +530,15 @@ export function PatientShopPage() {
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Height (ft)</label>
-              <input type="number" value={heightFt} onChange={e => setHeightFt(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="5" min="3" max="8" />
+              <input type="number" value={heightFt} onChange={e => setHeightFt(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="5" min="3" max="8" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Height (in)</label>
-              <input type="number" value={heightIn} onChange={e => setHeightIn(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="8" min="0" max="11" />
+              <input type="number" value={heightIn} onChange={e => setHeightIn(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="8" min="0" max="11" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Weight (lbs)</label>
-              <input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="165" />
+              <input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="165" />
             </div>
           </div>
           {heightFt && heightIn && weight && (
@@ -550,14 +550,14 @@ export function PatientShopPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Hair Color</label>
-              <select value={hairColor} onChange={e => setHairColor(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary">
+              <select value={hairColor} onChange={e => setHairColor(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary">
                 <option value="">Select...</option>
                 {["Black","Dark Brown","Brown","Light Brown","Blonde","Red","Auburn","Grey","White","Bald/None"].map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Eye Color</label>
-              <select value={eyeColor} onChange={e => setEyeColor(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary">
+              <select value={eyeColor} onChange={e => setEyeColor(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary">
                 <option value="">Select...</option>
                 {["Brown","Hazel","Green","Blue","Grey","Amber","Other"].map(c => <option key={c}>{c}</option>)}
               </select>
@@ -565,7 +565,7 @@ export function PatientShopPage() {
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Blood Type</label>
-            <select value={bloodType} onChange={e => setBloodType(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary">
+            <select value={bloodType} onChange={e => setBloodType(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary">
               <option value="">Select or unknown...</option>
               {["A+","A−","B+","B−","AB+","AB−","O+","O−","Unknown"].map(b => <option key={b}>{b}</option>)}
             </select>
@@ -577,11 +577,11 @@ export function PatientShopPage() {
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Known Allergies</label>
-            <input type="text" value={allergies} onChange={e => setAllergies(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="Penicillin, Sulfa, Latex... or None" />
+            <input type="text" value={allergies} onChange={e => setAllergies(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="Penicillin, Sulfa, Latex... or None" />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Current Medications & Supplements</label>
-            <textarea rows={2} value={currentMeds} onChange={e => setCurrentMeds(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary resize-none" placeholder="List all current medications and supplements..." />
+            <textarea rows={2} value={currentMeds} onChange={e => setCurrentMeds(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary resize-none" placeholder="List all current medications and supplements..." />
           </div>
         </div>
 
@@ -590,20 +590,20 @@ export function PatientShopPage() {
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Street Address</label>
-            <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="123 Main St" />
+            <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="123 Main St" />
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5 col-span-1">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">City</label>
-              <input type="text" value={city} onChange={e => setCity(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="City" />
+              <input type="text" value={city} onChange={e => setCity(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="City" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">State</label>
-              <input type="text" value={state} onChange={e => setState(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="CA" maxLength={2} />
+              <input type="text" value={state} onChange={e => setState(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="CA" maxLength={2} />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">ZIP</label>
-              <input type="text" value={zip} onChange={e => setZip(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="90210" />
+              <input type="text" value={zip} onChange={e => setZip(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="90210" />
             </div>
           </div>
         </div>
@@ -724,7 +724,7 @@ export function PatientShopPage() {
                       value={formattedCard}
                       onChange={e => setCardNum(e.target.value.replace(/\D/g, '').slice(0, 16))}
                       placeholder="0000 0000 0000 0000"
-                      className="w-full pl-10 pr-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background tracking-widest"
+                      className="w-full pl-10 pr-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-white text-gray-900 tracking-widest"
                     />
                     {cardNum.length === 16 && <CheckCircle2 className="absolute right-3 top-3 h-4 w-4 text-emerald-500" />}
                   </div>
@@ -835,19 +835,19 @@ export function PatientShopPage() {
               {currentQ.required && <span className="text-red-500 ml-1">*</span>}
             </p>
             {currentQ.type === "text" && (
-              <input className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary"
+              <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
                 placeholder="Your answer..." onChange={e => handleAnswer(currentQ.id, e.target.value)} />
             )}
             {currentQ.type === "number" && (
-              <input type="number" className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary"
+              <input type="number" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
                 placeholder="0" onChange={e => handleAnswer(currentQ.id, e.target.value)} />
             )}
             {currentQ.type === "textarea" && (
-              <textarea rows={4} className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary resize-none"
+              <textarea rows={4} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary resize-none"
                 placeholder="Describe in detail..." onChange={e => handleAnswer(currentQ.id, e.target.value)} />
             )}
             {currentQ.type === "select" && (
-              <select className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary"
+              <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
                 onChange={e => handleAnswer(currentQ.id, e.target.value)}>
                 <option value="">Select an option...</option>
                 {currentQ.options?.map(o => <option key={o} value={o}>{o}</option>)}
