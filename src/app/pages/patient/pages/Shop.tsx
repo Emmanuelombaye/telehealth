@@ -250,40 +250,8 @@ export function PatientShopPage() {
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
   useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const { data, error } = await supabase.from('products').select('*');
-        if (error) throw error;
-        
-        // Merge DB products with local questionnaire arrays
-        const merged = (data || []).map(dbProduct => {
-          const localMatch = localProductsWithQuestionnaires.find(p => p.name.includes(dbProduct.name.split(' ')[0]));
-          return {
-            id: dbProduct.id,
-            name: dbProduct.name,
-            category: dbProduct.category,
-            tagline: dbProduct.tagline,
-            description: dbProduct.description,
-            price: `$${dbProduct.price_usd}/mo`,
-            priceUSD: Number(dbProduct.price_usd),
-            rating: 4.9,
-            reviews: 500,
-            badge: dbProduct.popular ? "Popular" : "",
-            image: dbProduct.image_url || IMG("1584308666744-24d5c474f2ae"),
-            questionnaire: localMatch?.questionnaire || localProductsWithQuestionnaires[0].questionnaire,
-            gateways: ["stripe"]
-          };
-        });
-        
-        setDbProducts(merged.length > 0 ? merged : localProductsWithQuestionnaires);
-      } catch (err) {
-        console.error("Failed to load products from DB:", err);
-        setDbProducts(localProductsWithQuestionnaires);
-      } finally {
-        setIsLoadingProducts(false);
-      }
-    }
-    fetchProducts();
+    setDbProducts(localProductsWithQuestionnaires);
+    setIsLoadingProducts(false);
   }, []);
 
   const [stage, setStage] = useState<Stage>("catalog");

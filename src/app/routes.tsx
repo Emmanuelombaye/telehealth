@@ -74,7 +74,7 @@ import {
 } from "./pages/pharmacy/pages";
 
 import { NotFoundPage } from "./pages/NotFound";
-import { LoginPage } from "./pages/auth/Login";
+import { AuthPage } from "./pages/auth/AuthPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 export const router = createBrowserRouter([
@@ -90,7 +90,10 @@ export const router = createBrowserRouter([
       { path: "clinical-research", Component: ClinicalResearchPage },
       { path: "support-hub", Component: SupportHubPage },
       
-      { path: "login", Component: LoginPage },
+      { path: "patient/login", element: <AuthPage portal="patient" /> },
+      { path: "doctor/login", element: <AuthPage portal="doctor" /> },
+      { path: "admin/login", element: <AuthPage portal="admin" /> },
+      { path: "superadmin/login", element: <AuthPage portal="superadmin" /> },
       
       // Public patient route (Shopping)
       { path: "patient/shop", Component: PatientShopPage },

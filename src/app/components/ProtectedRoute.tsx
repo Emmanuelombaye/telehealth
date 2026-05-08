@@ -9,7 +9,11 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        navigate('/login', { replace: true });
+        const path = window.location.pathname;
+        if (path.startsWith('/doctor')) navigate('/doctor/login', { replace: true });
+        else if (path.startsWith('/admin')) navigate('/admin/login', { replace: true });
+        else if (path.startsWith('/superadmin')) navigate('/superadmin/login', { replace: true });
+        else navigate('/patient/login', { replace: true });
       } else if (allowedRoles && role && !allowedRoles.includes(role)) {
         // User is logged in but doesn't have the right role
         // Redirect them to their proper dashboard
