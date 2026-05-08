@@ -270,6 +270,19 @@ export function PatientShopPage() {
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [dob, setDob] = useState("");
+  const [sex, setSex] = useState("");
+  const [heightFt, setHeightFt] = useState("");
+  const [heightIn, setHeightIn] = useState("");
+  const [weight, setWeight] = useState("");
+  const [hairColor, setHairColor] = useState("");
+  const [eyeColor, setEyeColor] = useState("");
+  const [bloodType, setBloodType] = useState("");
+  const [allergies, setAllergies] = useState("");
+  const [currentMeds, setCurrentMeds] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zip, setZip] = useState("");
   const [idFile, setIdFile] = useState<File | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -298,32 +311,27 @@ export function PatientShopPage() {
     if (!selected) return;
     setIsSubmitting(true);
     setError(null);
+    const heightInches = (parseInt(heightFt || '0') * 12) + parseInt(heightIn || '0');
+    const weightNum = parseFloat(weight || '0');
+    const bmi = heightInches > 0 && weightNum > 0 ? ((weightNum / (heightInches * heightInches)) * 703).toFixed(1) : 'N/A';
+    const age = dob ? new Date().getFullYear() - new Date(dob).getFullYear() : 30;
+    const patientVitals = { dob, sex, height: `${heightFt}'${heightIn}"`, weight: `${weight} lbs`, bmi, hairColor, eyeColor, bloodType, allergies: allergies || 'None', currentMeds: currentMeds || 'None', address: `${address}, ${city}, ${state} ${zip}`, phone, email };
 
     try {
       // 1. Create Supabase Auth account
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName || 'New',
-            last_name: lastName || 'Patient',
-            date_of_birth: dob,
-            phone,
-            role: 'patient',
-          }
-        }
+        email, password,
+        options: { data: { first_name: firstName || 'New', last_name: lastName || 'Patient', date_of_birth: dob, phone, role: 'patient' } }
       });
-
       if (authError) throw authError;
       if (!authData.user) throw new Error("Failed to create account");
 
-      // 2. Insert order into Supabase
+      // 2. Insert order with full patient vitals
       const { error: insertError } = await supabase.from('orders').insert([{
         order_number: orderRef,
         patient_name: `${firstName} ${lastName}`.trim() || "New Patient",
         patient_avatar: (firstName[0] || "") + (lastName[0] || ""),
-        patient_age: dob ? new Date().getFullYear() - new Date(dob).getFullYear() : 30,
+        patient_age: age,
         patient_country: "🇺🇸 US",
         sub_brand: "Peak Health",
         medication: selected.name,
@@ -334,20 +342,18 @@ export function PatientShopPage() {
         amount: selected.priceUSD,
         user_id: authData.user.id,
         intake_complete: true,
-        intake_notes: Object.entries(answers).map(([k,v]) => `${k}: ${v}`).join(', '),
+        intake_notes: `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Blood: ${bloodType} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
         intake_answers: answers,
+        patient_vitals: patientVitals,
         consultation_time: consultationTime,
         timeline: [{ status: "order_submitted", date: new Date().toLocaleDateString() }]
       }]);
-
       if (insertError) throw insertError;
 
-      // 3. Auto sign-in so patient lands directly in portal
+      // 3. Auto sign-in → patient lands directly in portal
       await supabase.auth.signInWithPassword({ email, password });
-
       setStage("confirmed");
     } catch (err: any) {
-      console.error(err);
       setError(err.message || "Something went wrong.");
     } finally {
       setIsSubmitting(false);
@@ -407,83 +413,138 @@ export function PatientShopPage() {
           </p>
         </div>
 
+        {/* ─── SECTION 1: Identity ─── */}
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Personal Information</p>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">First Name</label>
-              <input 
-                type="text" 
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
-                placeholder="First" 
-              />
+              <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="First" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Last Name</label>
-              <input 
-                type="text" 
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
-                placeholder="Last" 
-              />
+              <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="Last" />
             </div>
           </div>
-
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Date of Birth</label>
+              <input type="date" value={dob} onChange={e => setDob(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Sex at Birth</label>
+              <select value={sex} onChange={e => setSex(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary">
+                <option value="">Select...</option>
+                <option>Male</option><option>Female</option><option>Intersex</option>
+              </select>
+            </div>
+          </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Email Address</label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
-              placeholder="you@example.com" 
-            />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="you@example.com" />
           </div>
-          
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Phone Number (For 2FA)</label>
-            <input 
-              type="tel" 
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
-              placeholder="(555) 000-0000" 
-            />
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Phone Number</label>
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="(555) 000-0000" />
           </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Date of Birth</label>
-            <input 
-              type="date" 
-              value={dob}
-              onChange={(e) => setDob(e.target.value)}
-              className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
-            />
-          </div>
-
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Create Password</label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
-              placeholder="Min 6 characters" 
-            />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="Min 6 characters" />
           </div>
+        </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Government-Issued ID <span className="text-muted-foreground/60 normal-case font-medium">(Driver's License or Passport)</span></label>
-            <label className="flex items-center gap-3 w-full border-2 border-dashed border-border rounded-xl px-4 py-4 cursor-pointer hover:border-primary transition-colors">
-              <Shield className="h-5 w-5 text-muted-foreground shrink-0" />
-              <span className="text-sm text-muted-foreground">
-                {idFile ? <span className="text-emerald-600 font-semibold">✓ {idFile.name}</span> : "Click to upload ID photo"}
-              </span>
-              <input type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => setIdFile(e.target.files?.[0] || null)} />
-            </label>
+        {/* ─── SECTION 2: Physical Vitals ─── */}
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground pt-2">Physical Vitals</p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Height (ft)</label>
+              <input type="number" value={heightFt} onChange={e => setHeightFt(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="5" min="3" max="8" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Height (in)</label>
+              <input type="number" value={heightIn} onChange={e => setHeightIn(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="8" min="0" max="11" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Weight (lbs)</label>
+              <input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="165" />
+            </div>
           </div>
+          {heightFt && heightIn && weight && (
+            <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-700">
+              <CheckCircle2 className="h-4 w-4" />
+              BMI: {(((parseFloat(weight)) / Math.pow((parseInt(heightFt)*12 + parseInt(heightIn)), 2)) * 703).toFixed(1)} — auto-calculated for your clinician
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Hair Color</label>
+              <select value={hairColor} onChange={e => setHairColor(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary">
+                <option value="">Select...</option>
+                {["Black","Dark Brown","Brown","Light Brown","Blonde","Red","Auburn","Grey","White","Bald/None"].map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Eye Color</label>
+              <select value={eyeColor} onChange={e => setEyeColor(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary">
+                <option value="">Select...</option>
+                {["Brown","Hazel","Green","Blue","Grey","Amber","Other"].map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Blood Type</label>
+            <select value={bloodType} onChange={e => setBloodType(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary">
+              <option value="">Select or unknown...</option>
+              {["A+","A−","B+","B−","AB+","AB−","O+","O−","Unknown"].map(b => <option key={b}>{b}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* ─── SECTION 3: Medical History ─── */}
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground pt-2">Medical History</p>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Known Allergies</label>
+            <input type="text" value={allergies} onChange={e => setAllergies(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="Penicillin, Sulfa, Latex... or None" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Current Medications & Supplements</label>
+            <textarea rows={2} value={currentMeds} onChange={e => setCurrentMeds(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary resize-none" placeholder="List all current medications and supplements..." />
+          </div>
+        </div>
+
+        {/* ─── SECTION 4: Shipping Address ─── */}
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground pt-2">Shipping Address</p>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Street Address</label>
+            <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="123 Main St" />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1.5 col-span-1">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">City</label>
+              <input type="text" value={city} onChange={e => setCity(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="City" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">State</label>
+              <input type="text" value={state} onChange={e => setState(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="CA" maxLength={2} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">ZIP</label>
+              <input type="text" value={zip} onChange={e => setZip(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="90210" />
+            </div>
+          </div>
+        </div>
+
+        {/* ─── SECTION 5: ID + Terms ─── */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Government-Issued ID <span className="text-muted-foreground/60 normal-case font-medium">(Driver's License or Passport)</span></label>
+          <label className="flex items-center gap-3 w-full border-2 border-dashed border-border rounded-xl px-4 py-4 cursor-pointer hover:border-primary transition-colors">
+            <Shield className="h-5 w-5 text-muted-foreground shrink-0" />
+            <span className="text-sm text-muted-foreground">{idFile ? <span className="text-emerald-600 font-semibold">✓ {idFile.name}</span> : "Click to upload ID photo"}</span>
+            <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => setIdFile(e.target.files?.[0] || null)} />
+          </label>
         </div>
 
         <label className="flex items-start gap-3 cursor-pointer">
@@ -495,13 +556,11 @@ export function PatientShopPage() {
 
         <div className="flex items-start gap-3 p-4 bg-muted/40 rounded-xl border border-border/50">
           <Shield className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Your health data is stored securely in our HIPAA-compliant, military-grade encrypted database. We will never share your medical history.
-          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">Your health data is stored securely in our HIPAA-compliant, military-grade encrypted database. We will never share your medical history.</p>
         </div>
 
         <Button className="w-full rounded-xl h-12 text-base font-bold"
-          disabled={!email || !phone || !password || !dob || !agreedToTerms}
+          disabled={!email || !phone || !password || !dob || !sex || !heightFt || !weight || !agreedToTerms}
           onClick={() => setStage("payment")}>
           Continue to Payment <ChevronRight className="h-4 w-4 ml-1" />
         </Button>

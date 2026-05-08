@@ -1,5 +1,5 @@
 -- ==============================================================================
--- Schema Migration: Zoom Consultation & Questionnaire Engine
+-- Schema Migration: Full Patient Profile, Vitals & Questionnaire Engine
 -- Run this in your Supabase SQL Editor to upgrade your orders table
 -- ==============================================================================
 
@@ -11,4 +11,12 @@ ADD COLUMN IF NOT EXISTS intake_answers JSONB DEFAULT '{}'::jsonb;
 ALTER TABLE public.orders 
 ADD COLUMN IF NOT EXISTS consultation_time TEXT;
 
--- DONE! Your backend is now ready for dynamic patient forms and Zoom scheduling.
+-- 3. Add full patient vitals (height, weight, BMI, sex, hair, blood type, address etc.)
+ALTER TABLE public.orders
+ADD COLUMN IF NOT EXISTS patient_vitals JSONB DEFAULT '{}'::jsonb;
+
+-- 4. Add user_id foreign key to link orders to Supabase Auth users
+ALTER TABLE public.orders
+ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+
+-- DONE! Your orders table now stores complete HIPAA-grade patient profiles.

@@ -136,25 +136,64 @@ export function DoctorQueuePage() {
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5"><FileText className="h-4 w-4" /> Intake Questionnaire Answers</p>
               <div className="space-y-4">
-                {/* Clinical Vitals */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
-                  <div>
-                    <p className="text-[10px] text-slate-500 uppercase font-bold">Date of Birth</p>
-                    <p className="text-sm font-semibold text-slate-800">10/14/1992</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-500 uppercase font-bold">Height</p>
-                    <p className="text-sm font-semibold text-slate-800">5'8"</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-500 uppercase font-bold">Weight</p>
-                    <p className="text-sm font-semibold text-slate-800">214 lbs</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-500 uppercase font-bold">BMI</p>
-                    <p className="text-sm font-semibold text-rose-600 bg-rose-50 inline-px px-2 rounded">32.5</p>
-                  </div>
-                </div>
+                {/* Clinical Vitals — from patient_vitals JSONB */}
+                {(() => {
+                  const v = selected.patient_vitals || selected.patientVitals || {};
+                  const hasVitals = v.height || v.weight || v.dob;
+                  return hasVitals ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">DOB / Sex</p>
+                          <p className="text-sm font-semibold text-slate-800">{v.dob || '—'} · {v.sex || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Height</p>
+                          <p className="text-sm font-semibold text-slate-800">{v.height || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Weight</p>
+                          <p className="text-sm font-semibold text-slate-800">{v.weight || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">BMI</p>
+                          <p className={`text-sm font-semibold ${parseFloat(v.bmi) >= 30 ? 'text-rose-600' : parseFloat(v.bmi) >= 25 ? 'text-amber-600' : 'text-emerald-600'}`}>{v.bmi || '—'}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Blood Type</p>
+                          <p className="text-sm font-semibold text-slate-800">{v.bloodType || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Hair · Eye</p>
+                          <p className="text-sm font-semibold text-slate-800">{v.hairColor || '—'} · {v.eyeColor || '—'}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Shipping Address</p>
+                          <p className="text-sm font-semibold text-slate-800">{v.address || '—'}</p>
+                        </div>
+                      </div>
+                      {(v.allergies || v.currentMeds) && (
+                        <div className="grid grid-cols-2 gap-3 p-3 bg-rose-50 rounded-xl border border-rose-100">
+                          <div>
+                            <p className="text-[10px] text-rose-700 uppercase font-bold">⚠ Allergies</p>
+                            <p className="text-sm font-semibold text-rose-800">{v.allergies || 'None reported'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-slate-500 uppercase font-bold">Current Meds</p>
+                            <p className="text-sm font-semibold text-slate-800">{v.currentMeds || 'None'}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                      <div><p className="text-[10px] text-slate-500 uppercase font-bold">Age</p><p className="text-sm font-semibold text-slate-800">{selected.patient_age || selected.patientAge || '—'}</p></div>
+                      <div><p className="text-[10px] text-slate-500 uppercase font-bold">Country</p><p className="text-sm font-semibold text-slate-800">{selected.patient_country || selected.patientCountry || '—'}</p></div>
+                    </div>
+                  );
+                })()}
 
                 {/* Patient Answers */}
                 <div className="space-y-3 pt-2">
