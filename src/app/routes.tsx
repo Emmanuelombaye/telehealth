@@ -90,12 +90,8 @@ export const router = createBrowserRouter([
       { path: "clinical-research", Component: ClinicalResearchPage },
       { path: "support-hub", Component: SupportHubPage },
       
-      { path: "patient/login", element: <AuthPage portal="patient" /> },
-      { path: "doctor/login", element: <AuthPage portal="doctor" /> },
-      { path: "admin/login", element: <AuthPage portal="admin" /> },
-      { path: "superadmin/login", element: <AuthPage portal="superadmin" /> },
       
-      // Public patient route (Shopping)
+      // Public patient route (Shopping - inside AppLayout for nav)
       { path: "patient/shop", Component: PatientShopPage },
 
       // Protected Patient portal
@@ -201,4 +197,9 @@ export const router = createBrowserRouter([
       { path: "*", Component: NotFoundPage },
     ],
   },
+  // ===== ISOLATED PORTAL LOGIN PAGES (NO LAYOUT - fully standalone) =====
+  { path: "/patient/login", element: <AuthPage portal="patient" /> },
+  { path: "/doctor/login", element: <AuthPage portal="doctor" /> },
+  { path: "/admin/login", element: <AuthPage portal="admin" /> },
+  { path: "/superadmin/login", element: <AuthPage portal="superadmin" /> },
 ]);

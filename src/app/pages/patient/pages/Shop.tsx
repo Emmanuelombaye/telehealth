@@ -288,6 +288,10 @@ export function PatientShopPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+  // Payment card fields
+  const [cardNum, setCardNum] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
 
   const filteredProducts = activeCat === "All" ? dbProducts : dbProducts.filter(p => p.category === activeCat);
   const categories = ["All", ...Array.from(new Set(dbProducts.map(p => p.category)))];
@@ -673,21 +677,42 @@ export function PatientShopPage() {
                 <label className="text-xs font-bold uppercase text-muted-foreground">Card Number</label>
                 <div className="relative">
                   <CreditCard className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <input type="text" placeholder="0000 0000 0000 0000" className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background" />
+                  <input
+                    type="text"
+                    value={cardNum}
+                    onChange={e => setCardNum(e.target.value.replace(/\D/g, '').slice(0, 16))}
+                    placeholder="0000 0000 0000 0000"
+                    className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold uppercase text-muted-foreground">Expiry</label>
-                  <input type="text" placeholder="MM/YY" className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background" />
+                  <input type="text" value={cardExpiry}
+                    onChange={e => {
+                      let v = e.target.value.replace(/\D/g,'').slice(0,4);
+                      if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2);
+                      setCardExpiry(v);
+                    }}
+                    placeholder="MM/YY" className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold uppercase text-muted-foreground">CVC</label>
-                  <input type="text" placeholder="123" className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background" />
+                  <input type="text" value={cardCvc}
+                    onChange={e => setCardCvc(e.target.value.replace(/\D/g,'').slice(0,3))}
+                    placeholder="123" className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background" />
                 </div>
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Non-stripe gateway helper */}
+        {gateway && gateway !== 'stripe' && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700 font-medium">
+            ✓ You'll be redirected to complete payment with {gatewayConfig[gateway].label} after account setup.
+          </div>
         )}
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -695,7 +720,7 @@ export function PatientShopPage() {
           256-bit SSL encryption · HIPAA compliant · Cancel anytime
         </div>
         <Button className="w-full rounded-xl h-12 text-base font-bold relative overflow-hidden bg-emerald-600 hover:bg-emerald-700 text-white"
-          disabled={!gateway || isPaying || isSubmitting}
+          disabled={!gateway || isPaying || isSubmitting || (gateway === 'stripe' && (cardNum.length < 16 || cardExpiry.length < 5 || cardCvc.length < 3))}
           onClick={() => {
             setIsPaying(true);
             setTimeout(() => {
@@ -709,6 +734,9 @@ export function PatientShopPage() {
             <><CreditCard className="h-5 w-5 mr-2" /> Pay {selected.price} &amp; Activate Account</>
           )}
         </Button>
+        {gateway === 'stripe' && cardNum.length > 0 && cardNum.length < 16 && (
+          <p className="text-amber-500 text-xs text-center">Enter a complete 16-digit card number</p>
+        )}
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
       </div>
     );
