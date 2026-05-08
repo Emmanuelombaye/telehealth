@@ -314,16 +314,6 @@ export function PatientShopPage() {
   const handleCompleteSetup = async () => {
     if (!selected) return;
 
-    // --- Client-side validation before hitting Supabase ---
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-    if (!email.includes("@")) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
     setIsSubmitting(true);
     setError(null);
 
@@ -518,6 +508,12 @@ export function PatientShopPage() {
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Create Password</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" placeholder="Min 6 characters" />
+            {password.length > 0 && password.length < 6 && (
+              <p className="text-xs text-amber-500 font-semibold flex items-center gap-1">⚠ Password must be at least 6 characters ({6 - password.length} more needed)</p>
+            )}
+            {password.length >= 6 && (
+              <p className="text-xs text-emerald-600 font-semibold">✓ Password strength OK</p>
+            )}
           </div>
         </div>
 
@@ -628,7 +624,7 @@ export function PatientShopPage() {
         </div>
 
         <Button className="w-full rounded-xl h-12 text-base font-bold"
-          disabled={!email || !phone || !password || !dob || !sex || !heightFt || !weight || !agreedToTerms}
+          disabled={!email || !phone || !password || password.length < 6 || !dob || !sex || !heightFt || !weight || !agreedToTerms}
           onClick={() => setStage("payment")}>
           Continue to Payment <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
