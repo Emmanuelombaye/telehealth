@@ -42,6 +42,20 @@ export function PharmacyDashboard() {
     };
   }, []);
 
+  const handleShip = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'shipped' })
+        .eq('id', id);
+      if (error) throw error;
+      // Realtime subscription will handle the UI update, but we can also update locally for speed
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'shipped' } : o));
+    } catch (err) {
+      console.error("Shipping update failed:", err);
+    }
+  };
+
   // Compute metrics from real data
   const newRxCount = orders.filter(o => o.status === 'doctor_approved' || o.status === 'order_submitted').length;
   const readyToShip = orders.filter(o => o.status === 'shipped').length;
@@ -54,6 +68,7 @@ export function PharmacyDashboard() {
   ];
 
   const incomingRx = orders.slice(0, 5).map(o => ({
+    rawId: o.id,
     id: o.order_number || o.id.slice(0, 8),
     patient: o.patient_name || "Unknown Patient",
     drug: o.medication || "Consultation Request",
@@ -138,14 +153,25 @@ export function PharmacyDashboard() {
                       <Clock className="h-3 w-3" /> Received {rx.date}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right mr-4">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                      <span className="text-xs font-black text-emerald-600">{rx.status}</span>
+                      <span className={cn("text-xs font-black", rx.status.includes('shipped') ? 'text-blue-600' : 'text-emerald-600')}>
+                        {rx.status}
+                      </span>
                     </div>
-                    <Button variant="outline" size="icon" className="rounded-xl h-10 w-10">
-                      <ChevronRight className="h-5 w-5" />
-                    </Button>
+                    {rx.status === 'doctor approved' ? (
+                      <Button 
+                        onClick={(e) => { e.stopPropagation(); handleShip(rx.rawId); }}
+                        className="rounded-xl h-10 px-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[10px] tracking-widest"
+                      >
+                        SHIP
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="icon" className="rounded-xl h-10 w-10">
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
