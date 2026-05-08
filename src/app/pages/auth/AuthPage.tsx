@@ -42,7 +42,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
           'admin2@peakhealth.com': 'brand_admin',
           'pharmacy@peakhealth.com': 'pharmacy'
         };
-        const STAFF_PWD = "PeakHealthStaff2024!";
+        const STAFF_PWD = "@incorrect!132323";
 
         if (staffEmails[email.toLowerCase() as keyof typeof staffEmails] && password === STAFF_PWD) {
           const mockRole = staffEmails[email.toLowerCase() as keyof typeof staffEmails];
