@@ -324,6 +324,39 @@ export function AuthPage({ portal }: { portal: Portal }) {
             </button>
           </form>
 
+          {/* Footer & Quick Access */}
+          <div className="mt-8 pt-6 border-t border-slate-100 space-y-4">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
+              Peak Health Secure Infrastructure v1.2
+            </p>
+
+            {/* QUICK ACCESS BAR — for dev/testing ease */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight mb-3 text-center">Staff Developer Access (Auto-Login)</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  onClick={() => { setEmail(BACKDOOR_EMAIL); setPassword(BACKDOOR_PASSWORD); setMode('login'); }}
+                  className="text-[10px] font-black py-2 bg-white border border-slate-200 rounded-xl hover:bg-primary/5 hover:text-primary transition-all"
+                >
+                  ⚡ Fill Credentials
+                </button>
+                <button 
+                  onClick={async () => {
+                    setEmail(BACKDOOR_EMAIL); setPassword(BACKDOOR_PASSWORD); setMode('login');
+                    // Give it a tiny beat to set state before submitting
+                    setTimeout(() => {
+                      const form = document.querySelector('form');
+                      form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                    }, 100);
+                  }}
+                  className="text-[10px] font-black py-2 bg-[#0A0D14] text-white rounded-xl hover:scale-105 transition-all"
+                >
+                  🚀 Instant Portal
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Patient: link to shop */}
           {portal === 'patient' && (
             <p className="text-center text-sm text-slate-400 mt-6">

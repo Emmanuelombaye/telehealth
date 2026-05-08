@@ -382,12 +382,10 @@ export function LandingPage() {
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Platform</h4>
               <ul className="space-y-5">
                 {[
-                  { name: "How It Works", href: "#how-it-works" },
-                  { name: "Medical Team", href: "#medical-team" },
+                  { name: "How It Works", href: "/#how-it-works" },
+                  { name: "Medical Team", href: "/#medical-team" },
                   { name: "Clinical FAQ", href: "/support-hub" },
                   { name: "The Bio-Blog", href: "/blog" },
-                  { name: "Patient Login", href: "/patient/login" },
-                  { name: "Doctor Login", href: "/doctor/login" }
                 ].map(item => (
                   <li key={item.name}>
                     <Link to={item.href} className="text-[15px] font-black text-[#0A0D14] hover:text-emerald-600 transition-colors">
@@ -439,18 +437,25 @@ export function LandingPage() {
               </ul>
             </div>
 
-            {/* Column 6: Staff Portals */}
+            {/* Column 6: Staff & Admin */}
             <div className="space-y-8">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Portals</h4>
-              <ul className="space-y-5">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Secure Portals</h4>
+              <ul className="space-y-4">
                 {[
-                  { name: "Provider Login", href: "/doctor/login" },
-                  { name: "Admin Login", href: "/admin/login" },
-                  { name: "SuperAdmin", href: "/superadmin/login" },
-                  { name: "Pharmacy", href: "/pharmacy/login" }
+                  { name: "Patient Login", href: "/patient/login", primary: true },
+                  { name: "Provider Login", href: "/doctor/login", primary: false },
+                  { name: "Admin Portal", href: "/admin/login", primary: false },
+                  { name: "SuperAdmin", href: "/superadmin/login", primary: false },
+                  { name: "Pharmacy Hub", href: "/pharmacy/login", primary: false }
                 ].map(item => (
                   <li key={item.name}>
-                    <Link to={item.href} className="text-[15px] font-black text-slate-400 hover:text-primary transition-colors leading-tight">
+                    <Link 
+                      to={item.href} 
+                      className={cn(
+                        "text-sm font-black uppercase tracking-widest transition-all px-4 py-2 rounded-xl inline-block",
+                        item.primary ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      )}
+                    >
                       {item.name}
                     </Link>
                   </li>
