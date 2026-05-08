@@ -15,46 +15,52 @@ interface AuthState {
   setSession: (session: Session | null) => void;
 }
 
-/** Fetch the role from profiles table, with graceful fallback.
- *  - If the profile row doesn't exist yet (new user, trigger not run), returns 'patient'
- *  - If there's a network/RLS error, returns 'patient' and logs a warning (never throws)
+/**
+ * Get role — reads from JWT user_metadata FIRST (instant, no DB query, no 500s).
+ * Falls back to profiles table only if metadata has no role.
+ * This is the correct production approach.
  */
-async function fetchRole(userId: string): Promise<{ role: Role; brandId: string | null }> {
-  try {
-    const { data, error, status } = await supabase
-      .from('profiles')
-      .select('role, brand_id')
-      .eq('id', userId)
-      .maybeSingle(); // maybeSingle returns null instead of error when row missing
+function getRoleFromSession(session: Session): { role: Role; brandId: string | null } {
+  const meta = session.user.user_metadata || {};
+  const appMeta = (session.user as any).app_metadata || {};
 
-    if (error) {
-      // 500 = RLS issue / table missing — degrade gracefully
-      if (status === 500 || status === 404) {
-        console.warn(`[auth-store] profiles fetch returned ${status} — defaulting to patient role`);
-        // Attempt to create the missing profile row (include email to satisfy NOT NULL)
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        await supabase.from('profiles').upsert({
-          id: userId,
-          role: 'patient',
-          email: currentUser?.email || null,
-        }, { onConflict: 'id' });
-        return { role: 'patient', brandId: null };
-      }
-      console.warn('[auth-store] profiles fetch error:', error.message);
-      return { role: 'patient', brandId: null };
-    }
+  // Priority: app_metadata (set server-side) > user_metadata (set at signup)
+  const role = (appMeta.role || meta.role || 'patient') as Role;
+  const brandId = appMeta.brand_id || meta.brand_id || null;
 
-    return {
-      role: (data?.role as Role) || 'patient',
-      brandId: data?.brand_id || null,
-    };
-  } catch (err) {
-    console.warn('[auth-store] fetchRole threw:', err);
-    return { role: 'patient', brandId: null };
-  }
+  return { role, brandId };
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+/**
+ * Background sync: try to read/create the profile row.
+ * We do this silently — it NEVER blocks or throws.
+ */
+async function syncProfile(session: Session): Promise<{ role: Role; brandId: string | null }> {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role, brand_id')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
+    if (!error && data) {
+      // Profile table has an override (e.g. promoted to doctor)
+      return { role: (data.role as Role) || 'patient', brandId: data.brand_id || null };
+    }
+
+    if (error) {
+      // Log but don't throw — JWT role is already being used
+      console.warn('[auth-store] profiles sync skipped:', error.message, '(status:', (error as any).status, ')');
+    }
+  } catch (err) {
+    console.warn('[auth-store] syncProfile error (non-fatal):', err);
+  }
+
+  // Fall back to what JWT says
+  return getRoleFromSession(session);
+}
+
+export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   user: null,
   role: null,
@@ -66,17 +72,33 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
-        const { role, brandId } = await fetchRole(session.user.id);
+        // 1. Set role immediately from JWT — no DB, no latency, no 500s
+        const { role, brandId } = getRoleFromSession(session);
         set({ session, user: session.user, role, brandId, isLoading: false });
+
+        // 2. Background: try profiles table for any server-side role overrides
+        syncProfile(session).then(({ role: dbRole, brandId: dbBrandId }) => {
+          // Only update if profile table returned a different (promoted) role
+          if (dbRole && dbRole !== get().role) {
+            set({ role: dbRole, brandId: dbBrandId });
+          }
+        });
       } else {
         set({ session: null, user: null, role: null, brandId: null, isLoading: false });
       }
 
-      // Listen for auth state changes (login/logout/token refresh)
+      // Listen for auth state changes
       supabase.auth.onAuthStateChange(async (_event, newSession) => {
         if (newSession?.user) {
-          const { role, brandId } = await fetchRole(newSession.user.id);
+          const { role, brandId } = getRoleFromSession(newSession);
           set({ session: newSession, user: newSession.user, role, brandId, isLoading: false });
+
+          // Background profile sync for role promotions
+          syncProfile(newSession).then(({ role: dbRole, brandId: dbBrandId }) => {
+            if (dbRole && dbRole !== get().role) {
+              set({ role: dbRole, brandId: dbBrandId });
+            }
+          });
         } else {
           set({ session: null, user: null, role: null, brandId: null, isLoading: false });
         }
