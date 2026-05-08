@@ -243,7 +243,7 @@ const gatewayConfig: Record<string, { label: string; icon: string; color: string
   klarna: { label: "Klarna · Pay in 4", icon: "🛍️", color: "border-pink-300 bg-pink-50 dark:bg-pink-950/30" },
 };
 
-type Stage = "catalog" | "questionnaire" | "scheduling" | "payment" | "account_setup" | "verify_2fa" | "confirmed";
+type Stage = "catalog" | "questionnaire" | "scheduling" | "account_setup" | "payment" | "confirmed";
 
 export function PatientShopPage() {
   const [dbProducts, setDbProducts] = useState<typeof localProductsWithQuestionnaires>([]);
@@ -269,7 +269,9 @@ export function PatientShopPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [dob, setDob] = useState("");
+  const [idFile, setIdFile] = useState<File | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
@@ -298,7 +300,7 @@ export function PatientShopPage() {
     setError(null);
 
     try {
-      // 1. Create the user in Supabase Auth
+      // 1. Create Supabase Auth account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -306,6 +308,8 @@ export function PatientShopPage() {
           data: {
             first_name: firstName || 'New',
             last_name: lastName || 'Patient',
+            date_of_birth: dob,
+            phone,
             role: 'patient',
           }
         }
@@ -314,14 +318,14 @@ export function PatientShopPage() {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Failed to create account");
 
-      // 2. Insert the real order into the database!
-      const newOrder = {
+      // 2. Insert order into Supabase
+      const { error: insertError } = await supabase.from('orders').insert([{
         order_number: orderRef,
         patient_name: `${firstName} ${lastName}`.trim() || "New Patient",
         patient_avatar: (firstName[0] || "") + (lastName[0] || ""),
-        patient_age: 30, // Mock for now
+        patient_age: dob ? new Date().getFullYear() - new Date(dob).getFullYear() : 30,
         patient_country: "🇺🇸 US",
-        sub_brand: brand.name,
+        sub_brand: "Peak Health",
         medication: selected.name,
         dosage_instructions: selected.tagline,
         category: selected.category,
@@ -333,18 +337,14 @@ export function PatientShopPage() {
         intake_notes: Object.entries(answers).map(([k,v]) => `${k}: ${v}`).join(', '),
         intake_answers: answers,
         consultation_time: consultationTime,
-        timeline: [
-          { status: "order_submitted", date: new Date().toLocaleDateString() }
-        ]
-      };
-
-      const { error: insertError } = await supabase
-        .from('orders')
-        .insert([newOrder]);
+        timeline: [{ status: "order_submitted", date: new Date().toLocaleDateString() }]
+      }]);
 
       if (insertError) throw insertError;
 
-      // 3. Move to confirmed stage
+      // 3. Auto sign-in so patient lands directly in portal
+      await supabase.auth.signInWithPassword({ email, password });
+
       setStage("confirmed");
     } catch (err: any) {
       console.error(err);
@@ -382,64 +382,14 @@ export function PatientShopPage() {
             <li>Medication ships within 1–2 business days with tracking.</li>
           </ol>
         </div>
-        <Button className="w-full rounded-xl text-base h-12 font-bold" onClick={() => window.location.href = "/patient"}>
-          Go to Patient Dashboard
+        <Button className="w-full rounded-xl text-base h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => window.location.href = "/patient"}>
+          Enter My Patient Portal →
         </Button>
       </div>
     );
   }
 
-  if (stage === "verify_2fa" && selected) {
-    return (
-      <div className="max-w-md mx-auto space-y-6 pt-4">
-        <div className="flex justify-center mb-4">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
-        </div>
-        <button onClick={() => setStage("account_setup")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold">Verify your phone</h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            For your security and HIPAA compliance, we sent a 6-digit code to <strong>{phone}</strong>.
-          </p>
-        </div>
 
-        {error && (
-          <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-semibold">
-            {error}
-          </div>
-        )}
-
-        <div className="flex justify-between gap-2">
-          {otp.map((digit, idx) => (
-            <input
-              key={idx}
-              type="text"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => {
-                const newOtp = [...otp];
-                newOtp[idx] = e.target.value;
-                setOtp(newOtp);
-              }}
-              className="w-12 h-14 text-center text-xl font-bold border-2 border-border rounded-xl bg-background focus:border-primary focus:outline-none"
-            />
-          ))}
-        </div>
-
-        <p className="text-sm text-center text-muted-foreground">
-          Didn't receive a code? <button className="text-primary font-semibold hover:underline">Resend</button>
-        </p>
-
-        <Button className="w-full rounded-xl h-12 text-base font-bold" 
-          disabled={otp.some(d => !d) || isSubmitting}
-          onClick={handleCompleteSetup}>
-          {isSubmitting ? "Creating Account..." : "Complete Setup"}
-        </Button>
-      </div>
-    );
-  }
 
   if (stage === "account_setup" && selected) {
     return (
@@ -504,16 +454,44 @@ export function PatientShopPage() {
           </div>
 
           <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Date of Birth</label>
+            <input 
+              type="date" 
+              value={dob}
+              onChange={(e) => setDob(e.target.value)}
+              className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Create Password</label>
             <input 
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-primary" 
-              placeholder="••••••••" 
+              placeholder="Min 6 characters" 
             />
           </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Government-Issued ID <span className="text-muted-foreground/60 normal-case font-medium">(Driver's License or Passport)</span></label>
+            <label className="flex items-center gap-3 w-full border-2 border-dashed border-border rounded-xl px-4 py-4 cursor-pointer hover:border-primary transition-colors">
+              <Shield className="h-5 w-5 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground">
+                {idFile ? <span className="text-emerald-600 font-semibold">✓ {idFile.name}</span> : "Click to upload ID photo"}
+              </span>
+              <input type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => setIdFile(e.target.files?.[0] || null)} />
+            </label>
+          </div>
         </div>
+
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
+          <span className="text-xs text-muted-foreground leading-relaxed">
+            I agree to Peak Health's <span className="text-primary font-semibold underline">Terms of Service</span> and <span className="text-primary font-semibold underline">HIPAA Privacy Policy</span>. I consent to telehealth services and electronic prescriptions.
+          </span>
+        </label>
 
         <div className="flex items-start gap-3 p-4 bg-muted/40 rounded-xl border border-border/50">
           <Shield className="h-5 w-5 text-primary shrink-0 mt-0.5" />
@@ -522,10 +500,10 @@ export function PatientShopPage() {
           </p>
         </div>
 
-        <Button className="w-full rounded-xl h-12 text-base font-bold" 
-          disabled={!email || !phone || !password}
-          onClick={() => setStage("verify_2fa")}>
-          Continue to 2FA <ChevronRight className="h-4 w-4 ml-1" />
+        <Button className="w-full rounded-xl h-12 text-base font-bold"
+          disabled={!email || !phone || !password || !dob || !agreedToTerms}
+          onClick={() => setStage("payment")}>
+          Continue to Payment <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
     );
@@ -593,21 +571,22 @@ export function PatientShopPage() {
           <Shield className="h-3.5 w-3.5 text-emerald-500" />
           256-bit SSL encryption · HIPAA compliant · Cancel anytime
         </div>
-        <Button className="w-full rounded-xl h-12 text-base font-bold relative overflow-hidden" 
-          disabled={!gateway || isPaying}
+        <Button className="w-full rounded-xl h-12 text-base font-bold relative overflow-hidden bg-emerald-600 hover:bg-emerald-700 text-white"
+          disabled={!gateway || isPaying || isSubmitting}
           onClick={() => {
             setIsPaying(true);
             setTimeout(() => {
               setIsPaying(false);
-              setStage("account_setup");
+              handleCompleteSetup();
             }, 1500);
           }}>
-          {isPaying ? (
-            <span className="flex items-center gap-2">Processing Payment... <Zap className="h-4 w-4 animate-pulse" /></span>
+          {isPaying || isSubmitting ? (
+            <span className="flex items-center gap-2">Creating your account... <Zap className="h-4 w-4 animate-pulse" /></span>
           ) : (
-            <><CreditCard className="h-5 w-5 mr-2" /> Pay {selected.price} & Create Account</>
+            <><CreditCard className="h-5 w-5 mr-2" /> Pay {selected.price} &amp; Activate Account</>
           )}
         </Button>
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
       </div>
     );
   }
@@ -675,7 +654,8 @@ export function PatientShopPage() {
           </CardContent>
         </Card>
         <Button className="w-full rounded-xl"
-          onClick={() => qStep < totalQ - 1 ? setQStep(q => q + 1) : setStage("scheduling")}>
+          onClick={() => qStep < totalQ - 1 ? setQStep(q => q + 1) : setStage("scheduling")}
+        >
           {qStep < totalQ - 1 ? "Continue" : "Schedule Consultation"} <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
