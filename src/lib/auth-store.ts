@@ -31,8 +31,13 @@ async function fetchRole(userId: string): Promise<{ role: Role; brandId: string 
       // 500 = RLS issue / table missing — degrade gracefully
       if (status === 500 || status === 404) {
         console.warn(`[auth-store] profiles fetch returned ${status} — defaulting to patient role`);
-        // Attempt to create the missing profile row
-        await supabase.from('profiles').insert({ id: userId, role: 'patient' }).select().maybeSingle();
+        // Attempt to create the missing profile row (include email to satisfy NOT NULL)
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        await supabase.from('profiles').upsert({
+          id: userId,
+          role: 'patient',
+          email: currentUser?.email || null,
+        }, { onConflict: 'id' });
         return { role: 'patient', brandId: null };
       }
       console.warn('[auth-store] profiles fetch error:', error.message);
