@@ -1,212 +1,229 @@
-import { useState } from "react";
-import { Link } from "react-router";
-import { Calendar, Clock, Video, MessageSquare, Plus, ChevronRight, Filter, MapPin, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, Clock, Video, MessageSquare, Plus, ChevronRight, AlertCircle, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib";
 
-const upcoming = [
-  { id: 1, doctor: "Dr. Sarah Johnson", specialty: "General Practice", date: "Today", time: "10:30 AM", type: "video", status: "confirmed", avatar: "SJ" },
-  { id: 2, doctor: "Dr. Michael Chen", specialty: "Cardiology", date: "May 20", time: "2:00 PM", type: "video", status: "pending", avatar: "MC" },
-  { id: 3, doctor: "Dr. Amira Hassan", specialty: "Dermatology", date: "May 25", time: "11:00 AM", type: "async", status: "confirmed", avatar: "AH" },
-];
-
-const past = [
-  { id: 4, doctor: "Dr. Sarah Johnson", specialty: "General Practice", date: "May 1", time: "9:00 AM", type: "video", status: "completed", avatar: "SJ", rating: 5 },
-  { id: 5, doctor: "Dr. Liu Wei", specialty: "Psychiatry", date: "Apr 22", time: "3:00 PM", type: "async", status: "completed", avatar: "LW", rating: 4 },
-];
-
-const doctors = [
-  { id: 1, name: "Dr. Sarah Johnson", specialty: "General Practice", rating: 4.9, reviews: 312, wait: "< 5 min", avatar: "SJ", available: true },
-  { id: 2, name: "Dr. Michael Chen", specialty: "Cardiology", rating: 4.8, reviews: 198, wait: "< 15 min", avatar: "MC", available: true },
-  { id: 3, name: "Dr. Amira Hassan", specialty: "Dermatology", rating: 4.9, reviews: 445, wait: "Async only", avatar: "AH", available: false },
-  { id: 4, name: "Dr. Carlos Rivera", specialty: "Endocrinology", rating: 4.7, reviews: 156, wait: "< 30 min", avatar: "CR", available: true },
-];
+// Real-time zoom status config
+const zoomStatusConfig: Record<string, { label: string; icon: React.ReactNode; card: string; badge: string }> = {
+  not_requested: {
+    label: "No Zoom Scheduled",
+    icon: <MessageSquare className="h-5 w-5 text-slate-400" />,
+    card: "bg-slate-50 border-slate-200",
+    badge: "bg-slate-100 text-slate-500",
+  },
+  requested: {
+    label: "Zoom Requested — Awaiting Confirmation",
+    icon: <Clock className="h-5 w-5 text-amber-500 animate-pulse" />,
+    card: "bg-amber-50 border-amber-200",
+    badge: "bg-amber-100 text-amber-700",
+  },
+  confirmed: {
+    label: "Zoom Confirmed ✓",
+    icon: <CheckCircle2 className="h-5 w-5 text-emerald-600" />,
+    card: "bg-emerald-50 border-emerald-200",
+    badge: "bg-emerald-100 text-emerald-700",
+  },
+  rescheduled: {
+    label: "Zoom Rescheduled by Doctor",
+    icon: <RefreshCw className="h-5 w-5 text-blue-600" />,
+    card: "bg-blue-50 border-blue-200",
+    badge: "bg-blue-100 text-blue-700",
+  },
+  cancelled: {
+    label: "Zoom Cancelled",
+    icon: <XCircle className="h-5 w-5 text-red-500" />,
+    card: "bg-red-50 border-red-200",
+    badge: "bg-red-100 text-red-600",
+  },
+};
 
 export function AppointmentsPage() {
-  const [tab, setTab] = useState<"upcoming" | "book" | "past">("upcoming");
-  const [bookMode, setBookMode] = useState<"instant" | "async">("instant");
-  const [bookingDoctor, setBookingDoctor] = useState<number | null>(null);
+  const { user } = useAuthStore();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const fetchOrders = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('id, order_number, medication, consultation_time, zoom_status, zoom_doctor_message, zoom_rescheduled_time, status, ordered_date')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setOrders(data || []);
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error("Appointments fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+
+    // Real-time subscription — any change to patient's orders instantly reflects here
+    const channel = supabase
+      .channel('patient-appointments-live')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'orders',
+      }, (payload) => {
+        console.log('Live appointment update:', payload.new);
+        setOrders(prev => prev.map(o => o.id === payload.new.id ? { ...o, ...payload.new } : o));
+        setLastUpdated(new Date());
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  const zoomOrders = orders.filter(o => o.zoom_status && o.zoom_status !== 'not_requested');
+  const noZoomOrders = orders.filter(o => !o.zoom_status || o.zoom_status === 'not_requested');
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-4 animate-pulse">
+        <div className="h-8 bg-muted rounded-xl w-48" />
+        {[1,2,3].map(i => <div key={i} className="h-28 bg-muted rounded-2xl" />)}
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Appointments</h1>
-        <Button size="sm" className="rounded-full gap-1.5" onClick={() => setTab("book")}>
-          <Plus className="h-4 w-4" /> Book
-        </Button>
+        <div>
+          <h1 className="text-xl font-bold">Appointments</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {lastUpdated ? `Live · Updated ${lastUpdated.toLocaleTimeString()}` : "Loading..."}
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse ml-1.5" />
+          </p>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex bg-muted rounded-2xl p-1 gap-1">
-        {(["upcoming", "book", "past"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={cn("flex-1 py-2 text-sm font-semibold rounded-xl transition-all capitalize",
-              tab === t ? "bg-card shadow-sm text-foreground" : "text-muted-foreground")}>
-            {t === "book" ? "Book New" : t.charAt(0).toUpperCase() + t.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* Upcoming */}
-      {tab === "upcoming" && (
+      {/* Live zoom consultations */}
+      {zoomOrders.length > 0 && (
         <div className="space-y-3">
-          {upcoming.map(appt => (
-            <Card key={appt.id} className={cn("overflow-hidden", appt.status === "confirmed" && "border-l-4 border-l-primary")}>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shrink-0">
-                    {appt.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
+          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Video Consultations</p>
+          {zoomOrders.map(order => {
+            const status = order.zoom_status || 'not_requested';
+            const cfg = zoomStatusConfig[status] || zoomStatusConfig.not_requested;
+            const displayTime = order.zoom_rescheduled_time || order.consultation_time;
+
+            return (
+              <Card key={order.id} className={`border-2 ${cfg.card}`}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-11 w-11 rounded-2xl bg-white border border-border flex items-center justify-center shrink-0">
+                        {cfg.icon}
+                      </div>
                       <div>
-                        <p className="font-bold text-sm">{appt.doctor}</p>
-                        <p className="text-xs text-muted-foreground">{appt.specialty}</p>
-                      </div>
-                      <Badge variant={appt.status === "confirmed" ? "success" : "secondary"} className="text-[10px] shrink-0">
-                        {appt.status}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-3 mt-2">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />{appt.date}
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />{appt.time}
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        {appt.type === "video" ? <Video className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
-                        {appt.type === "video" ? "Video" : "Async"}
+                        <p className="font-bold text-sm">{order.medication}</p>
+                        <p className="text-xs text-muted-foreground">Order #{order.order_number}</p>
                       </div>
                     </div>
-                    {appt.status === "confirmed" && appt.date === "Today" && (
-                      <div className="flex gap-2 mt-3">
-                        <Button size="sm" className="rounded-xl text-xs h-8 gap-1.5"
-                          onClick={() => window.open('https://zoom.us/j/5551234567', '_blank')}>
-                          <Video className="h-3.5 w-3.5" /> Join Zoom
-                        </Button>
-                        <Button size="sm" variant="outline" className="rounded-xl text-xs h-8">Reschedule</Button>
-                      </div>
-                    )}
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>
+                      {cfg.label}
+                    </span>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
 
-      {/* Book New */}
-      {tab === "book" && (
-        <div className="space-y-4">
-          {/* Mode toggle */}
-          <div className="bg-muted rounded-2xl p-1 flex gap-1">
-            <button onClick={() => setBookMode("instant")}
-              className={cn("flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2",
-                bookMode === "instant" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground")}>
-              <Video className="h-4 w-4" /> Instant / Scheduled
-            </button>
-            <button onClick={() => setBookMode("async")}
-              className={cn("flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2",
-                bookMode === "async" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground")}>
-              <MessageSquare className="h-4 w-4" /> Async Message
-            </button>
-          </div>
+                  {/* Time display */}
+                  {displayTime && (
+                    <div className="flex items-center gap-2 p-3 bg-white/70 rounded-xl border border-white">
+                      <Video className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        {order.zoom_rescheduled_time && (
+                          <p className="text-[10px] text-blue-600 font-bold">RESCHEDULED BY DOCTOR</p>
+                        )}
+                        <p className="text-sm font-bold">{displayTime}</p>
+                        {order.zoom_rescheduled_time && order.consultation_time && (
+                          <p className="text-[10px] text-muted-foreground line-through">{order.consultation_time}</p>
+                        )}
+                      </div>
+                      {status === 'confirmed' && (
+                        <Button className="ml-auto h-8 px-3 text-xs rounded-xl bg-blue-600 hover:bg-blue-700 text-white gap-1.5">
+                          <Video className="h-3 w-3" /> Join Zoom
+                        </Button>
+                      )}
+                    </div>
+                  )}
 
-          {bookMode === "async" && (
-            <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-2xl p-4 text-sm text-violet-800 dark:text-violet-300">
-              <p className="font-semibold mb-1">📨 Asynchronous Consultation</p>
-              <p className="text-xs opacity-80">Send your symptoms and questions. The doctor reviews and responds within 24 hours — no scheduling needed.</p>
-            </div>
-          )}
+                  {/* Doctor's message */}
+                  {order.zoom_doctor_message && (
+                    <div className="flex items-start gap-2 p-3 bg-white/80 border border-white rounded-xl">
+                      <MessageSquare className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-0.5">Message from your doctor</p>
+                        <p className="text-sm text-foreground">{order.zoom_doctor_message}</p>
+                      </div>
+                    </div>
+                  )}
 
-          {bookingDoctor ? (
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
-              <Button variant="ghost" size="sm" onClick={() => setBookingDoctor(null)} className="gap-1.5 text-muted-foreground hover:text-foreground">
-                <ChevronRight className="h-4 w-4 rotate-180" /> Back to Doctors
-              </Button>
-              <Card className="overflow-hidden border-none shadow-md">
-                {/* Calendly Inline Widget */}
-                <iframe 
-                  src={`https://calendly.com/calendly-demo?hide_event_type_details=1&hide_gdpr_banner=1`} 
-                  width="100%" 
-                  height="700" 
-                  frameBorder="0" 
-                  title="Calendly Scheduling"
-                  className="w-full bg-white rounded-2xl"
-                />
+                  {/* Status-specific guidance */}
+                  {status === 'requested' && (
+                    <p className="text-xs text-amber-700 flex items-center gap-1.5">
+                      <Clock className="h-3 w-3" />
+                      Your doctor will confirm or reschedule this time. You'll see it update here automatically.
+                    </p>
+                  )}
+                  {status === 'cancelled' && (
+                    <p className="text-xs text-red-600 flex items-center gap-1.5">
+                      <AlertCircle className="h-3 w-3" />
+                      Zoom was cancelled. Your doctor will complete the review asynchronously.
+                    </p>
+                  )}
+                  {status === 'rescheduled' && (
+                    <p className="text-xs text-blue-700 flex items-center gap-1.5">
+                      <RefreshCw className="h-3 w-3" />
+                      Your doctor has proposed a new time. Please check your messages for details.
+                    </p>
+                  )}
+                </CardContent>
               </Card>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold">Available Doctors</p>
-                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-                  <Filter className="h-3.5 w-3.5" /> Filter
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {doctors.filter(d => bookMode === "async" || d.available).map(doc => (
-                  <Card key={doc.id} className="hover:border-primary/40 transition-colors cursor-pointer" onClick={() => setBookingDoctor(doc.id)}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center font-bold text-white text-sm shrink-0">
-                          {doc.avatar}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm">{doc.name}</p>
-                          <p className="text-xs text-muted-foreground">{doc.specialty}</p>
-                          <div className="flex items-center gap-3 mt-1">
-                            <div className="flex items-center gap-0.5">
-                              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                              <span className="text-xs font-semibold">{doc.rating}</span>
-                              <span className="text-xs text-muted-foreground">({doc.reviews})</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-emerald-600">
-                              <Clock className="h-3 w-3" />{doc.wait}
-                            </div>
-                          </div>
-                        </div>
-                        <Button size="sm" className="rounded-xl text-xs shrink-0" onClick={(e) => { e.stopPropagation(); setBookingDoctor(doc.id); }}>
-                          {bookMode === "async" ? "Message" : "Book"}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-          )}
+            );
+          })}
         </div>
       )}
 
-      {/* Past */}
-      {tab === "past" && (
+      {/* Async orders (no zoom) */}
+      {noZoomOrders.length > 0 && (
         <div className="space-y-3">
-          {past.map(appt => (
-            <Card key={appt.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-11 w-11 rounded-2xl bg-muted flex items-center justify-center font-bold text-muted-foreground text-sm shrink-0">
-                    {appt.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm">{appt.doctor}</p>
-                    <p className="text-xs text-muted-foreground">{appt.specialty} · {appt.date}</p>
-                    <div className="flex items-center gap-0.5 mt-1">
-                      {Array.from({ length: appt.rating }).map((_, i) => (
-                        <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Button size="sm" variant="outline" className="rounded-xl text-xs h-7">Summary</Button>
-                    <Button size="sm" variant="outline" className="rounded-xl text-xs h-7">Rebook</Button>
-                  </div>
+          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Async Reviews (No Video Needed)</p>
+          {noZoomOrders.map(order => (
+            <Card key={order.id} className="border-border">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-muted flex items-center justify-center shrink-0">
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
                 </div>
+                <div className="flex-1">
+                  <p className="font-bold text-sm">{order.medication}</p>
+                  <p className="text-xs text-muted-foreground">#{order.order_number} · Doctor reviewing async</p>
+                </div>
+                <span className="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-1 rounded-full">
+                  Async
+                </span>
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {orders.length === 0 && (
+        <div className="text-center py-16 space-y-3">
+          <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+            <Calendar className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <p className="font-bold text-foreground">No appointments yet</p>
+          <p className="text-sm text-muted-foreground">Start a treatment to schedule your first consultation.</p>
+          <a href="/" className="inline-block mt-2">
+            <Button className="rounded-xl gap-2"><Plus className="h-4 w-4" /> Shop Treatments</Button>
+          </a>
         </div>
       )}
     </div>

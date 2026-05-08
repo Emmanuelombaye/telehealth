@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import {
   ChevronRight, CheckCircle2, CreditCard,
-  Star, Shield, Clock, Package, ArrowLeft, Globe, Zap, Loader2
+  Star, Shield, Clock, Package, ArrowLeft, Globe, Zap, Loader2,
+  Video, MessageSquare
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
 import { supabase } from "../../../../lib/supabaseClient";
@@ -260,6 +261,9 @@ export function PatientShopPage() {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [gateway, setGateway] = useState<string>("");
   const [consultationTime, setConsultationTime] = useState<string>("");
+  const [zoomWanted, setZoomWanted] = useState<boolean | null>(null);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
   const [orderRef] = useState(() => "RX-" + Math.random().toString(36).slice(2, 8).toUpperCase());
   const [activeCat, setActiveCat] = useState("All");
   
@@ -384,7 +388,10 @@ export function PatientShopPage() {
         intake_notes: `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Blood: ${bloodType} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
         intake_answers: answers,
         patient_vitals: patientVitals,
-        consultation_time: consultationTime,
+        consultation_time: consultationTime || null,
+        zoom_status: zoomWanted && consultationTime ? 'requested' : 'not_requested',
+        zoom_doctor_message: null,
+        zoom_rescheduled_time: null,
         timeline: [{ status: "order_submitted", date: new Date().toLocaleDateString() }]
       }]);
 
@@ -865,65 +872,105 @@ export function PatientShopPage() {
         <Button className="w-full rounded-xl"
           onClick={() => qStep < totalQ - 1 ? setQStep(q => q + 1) : setStage("scheduling")}
         >
-          {qStep < totalQ - 1 ? "Continue" : "Schedule Consultation"} <ChevronRight className="h-4 w-4 ml-1" />
+          {qStep < totalQ - 1 ? "Continue" : "Next: Consultation Preference"} <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
     );
   }
 
   if (stage === "scheduling" && selected) {
-    const dates = ["Today", "Tomorrow", "Wednesday", "Thursday", "Friday"];
-    const times = ["9:00 AM", "10:30 AM", "1:00 PM", "2:45 PM", "4:00 PM"];
+    const dates = ["Today", "Tomorrow", "Wed", "Thu", "Fri", "Sat"];
+    const times = ["9:00 AM", "10:30 AM", "12:00 PM", "1:00 PM", "2:45 PM", "4:00 PM"];
     return (
       <div className="max-w-md mx-auto space-y-5">
         <div className="flex justify-center mb-6">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
         <button onClick={() => setStage("questionnaire")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back to Questionnaire
+          <ArrowLeft className="h-4 w-4" /> Back
         </button>
         <div>
-          <h1 className="text-xl font-bold">Schedule Video Consult</h1>
-          <p className="text-sm text-muted-foreground">Select a time for your required medical review</p>
+          <h1 className="text-xl font-bold">Zoom Consultation</h1>
+          <p className="text-sm text-muted-foreground">Would you like a video consultation with your doctor?</p>
         </div>
-        
-        <Card>
-          <CardContent className="p-4 space-y-4">
-            <div className="space-y-2">
-              <p className="text-xs font-bold uppercase text-muted-foreground tracking-wide">Select Date</p>
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {dates.map(d => (
-                  <button key={d} className="shrink-0 px-4 py-2 border rounded-xl text-sm font-semibold hover:border-primary focus:border-primary focus:bg-primary/5 transition-all">
-                    {d}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <p className="text-xs font-bold uppercase text-muted-foreground tracking-wide">Select Time (EST)</p>
-              <div className="grid grid-cols-2 gap-2">
-                {times.map(t => (
-                  <button key={t} 
-                    onClick={() => setConsultationTime(`${dates[0]} at ${t}`)}
-                    className={cn("px-4 py-2 border rounded-xl text-sm font-semibold transition-all", consultationTime.includes(t) ? "border-primary bg-primary text-white" : "hover:border-primary")}>
-                    {t}
-                  </button>
-                ))}
-              </div>
+        {/* Zoom preference choice */}
+        <div className="space-y-3">
+          <button onClick={() => { setZoomWanted(true); }}
+            className={cn("w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all",
+              zoomWanted === true ? "border-primary bg-primary/5" : "border-border hover:border-primary/40")}>
+            <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+              <Video className="h-5 w-5 text-blue-600" />
             </div>
-            
-            <div className="bg-amber-50 text-amber-900 text-xs p-3 rounded-lg flex gap-2 items-start border border-amber-200">
-              <Clock className="h-4 w-4 shrink-0 mt-0.5" />
-              <p>Your Zoom link will be provided in your Patient Dashboard immediately after checkout.</p>
+            <div>
+              <p className="font-bold text-sm">Yes, I want a Zoom consultation</p>
+              <p className="text-xs text-muted-foreground">Choose a date and time for your video visit with the doctor</p>
             </div>
-          </CardContent>
-        </Card>
+            {zoomWanted === true && <CheckCircle2 className="h-5 w-5 text-primary ml-auto shrink-0" />}
+          </button>
 
-        <Button className="w-full rounded-xl h-12 text-base"
-          disabled={!consultationTime}
-          onClick={() => setStage("payment")}>
-          Review & Pay <ChevronRight className="h-4 w-4 ml-1" />
+          <button onClick={() => { setZoomWanted(false); setConsultationTime(""); setSelectedDate(""); setSelectedTime(""); }}
+            className={cn("w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all",
+              zoomWanted === false ? "border-emerald-500 bg-emerald-50" : "border-border hover:border-emerald-400/40")}>
+            <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+              <MessageSquare className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="font-bold text-sm">No, asynchronous review is fine</p>
+              <p className="text-xs text-muted-foreground">Doctor reviews your intake and sends prescription — no meeting needed</p>
+            </div>
+            {zoomWanted === false && <CheckCircle2 className="h-5 w-5 text-emerald-500 ml-auto shrink-0" />}
+          </button>
+        </div>
+
+        {/* Date/time picker — only when zoom wanted */}
+        {zoomWanted === true && (
+          <Card className="border-primary/20">
+            <CardContent className="p-4 space-y-4">
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase text-muted-foreground tracking-wide">Select Date</p>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {dates.map(d => (
+                    <button key={d} onClick={() => { setSelectedDate(d); setConsultationTime(selectedTime ? `${d} at ${selectedTime}` : ""); }}
+                      className={cn("shrink-0 px-4 py-2 border rounded-xl text-sm font-semibold transition-all",
+                        selectedDate === d ? "border-primary bg-primary text-white" : "hover:border-primary")}>
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase text-muted-foreground tracking-wide">Select Time (EST)</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {times.map(t => (
+                    <button key={t} onClick={() => { setSelectedTime(t); setConsultationTime(selectedDate ? `${selectedDate} at ${t}` : `at ${t}`); }}
+                      className={cn("px-3 py-2 border rounded-xl text-xs font-semibold transition-all",
+                        selectedTime === t ? "border-primary bg-primary text-white" : "hover:border-primary")}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {consultationTime && (
+                <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs font-bold text-blue-700">
+                  <Video className="h-4 w-4" />
+                  Zoom requested: {consultationTime} — doctor will confirm
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {zoomWanted === false && (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
+            ✓ Your doctor will review your intake asynchronously and send your prescription via the patient portal.
+          </div>
+        )}
+
+        <Button className="w-full rounded-xl h-12 text-base font-bold"
+          disabled={zoomWanted === null || (zoomWanted === true && !consultationTime)}
+          onClick={() => setStage("account_setup")}>
+          Continue to Account Setup <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
     );

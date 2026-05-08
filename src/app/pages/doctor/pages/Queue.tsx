@@ -38,6 +38,11 @@ export function DoctorQueuePage() {
 
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  // Zoom management state
+  const [zoomAction, setZoomAction] = useState<'confirm' | 'reschedule' | 'cancel' | null>(null);
+  const [zoomRescheduleTime, setZoomRescheduleTime] = useState("");
+  const [zoomMessage, setZoomMessage] = useState("");
+  const [zoomSaving, setZoomSaving] = useState(false);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -83,12 +88,41 @@ export function DoctorQueuePage() {
         .update({ status: 'doctor_approved', doctor_note: rxNote })
         .eq('id', selected.id);
       if (error) throw error;
-      
-      // Update local state optimistic UI
       setOrders(orders.map(o => o.id === selected.id ? { ...o, status: 'doctor_approved' } : o));
       setSelected(null);
     } catch (err) {
       console.error("Failed to approve Rx:", err);
+    }
+  };
+
+  const handleZoomAction = async () => {
+    if (!selected || !zoomAction) return;
+    setZoomSaving(true);
+    const times = ["9:00 AM","10:30 AM","12:00 PM","1:00 PM","2:45 PM","4:00 PM","5:00 PM"];
+    const dates = ["Today","Tomorrow","Wednesday","Thursday","Friday"];
+    try {
+      const update: Record<string, any> = { zoom_doctor_message: zoomMessage || null };
+      if (zoomAction === 'confirm') {
+        update.zoom_status = 'confirmed';
+      } else if (zoomAction === 'reschedule') {
+        update.zoom_status = 'rescheduled';
+        update.zoom_rescheduled_time = zoomRescheduleTime;
+      } else if (zoomAction === 'cancel') {
+        update.zoom_status = 'cancelled';
+      }
+      const { error } = await supabase.from('orders').update(update).eq('id', selected.id);
+      if (error) throw error;
+      // Update local optimistic state so UI refreshes immediately
+      const updated = { ...selected, ...update };
+      setSelected(updated);
+      setOrders(orders.map(o => o.id === selected.id ? updated : o));
+      setZoomAction(null);
+      setZoomRescheduleTime("");
+      setZoomMessage("");
+    } catch (err) {
+      console.error("Zoom update failed:", err);
+    } finally {
+      setZoomSaving(false);
     }
   };
 
@@ -228,25 +262,144 @@ export function DoctorQueuePage() {
               <p className="text-sm bg-amber-50 text-amber-900 p-3 rounded-xl border border-amber-100">{selected.intakeNotes}</p>
             </div>
             
-            {selected.consultationTime && (
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Required Consultation</p>
-                <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Video className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-slate-800">Zoom Call Scheduled</p>
-                      <p className="text-xs text-primary font-semibold">{selected.consultationTime}</p>
-                    </div>
+            {/* Zoom Management Panel */}
+            {(() => {
+              const zoomStatus = selected.zoom_status || 'not_requested';
+              const reqTime = selected.consultation_time;
+              const reschedTime = selected.zoom_rescheduled_time;
+              const docMsg = selected.zoom_doctor_message;
+              const zoomDates = ["Today","Tomorrow","Wednesday","Thursday","Friday"];
+              const zoomTimes = ["9:00 AM","10:30 AM","12:00 PM","1:00 PM","2:45 PM","4:00 PM"];
+
+              const statusBadge: Record<string, { label: string; cls: string }> = {
+                requested:    { label: "Zoom Requested", cls: "bg-amber-100 text-amber-700 border-amber-200" },
+                confirmed:    { label: "Zoom Confirmed ✓", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+                rescheduled:  { label: "Rescheduled", cls: "bg-blue-100 text-blue-700 border-blue-200" },
+                cancelled:    { label: "Zoom Cancelled", cls: "bg-slate-100 text-slate-500 border-slate-200" },
+                not_requested:{ label: "No Zoom Requested", cls: "bg-slate-100 text-slate-500 border-slate-200" },
+              };
+              const badge = statusBadge[zoomStatus] || statusBadge.not_requested;
+
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Video Consultation</p>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${badge.cls}`}>{badge.label}</span>
                   </div>
-                  <Button className="rounded-xl h-10 px-4 text-sm gap-2">
-                    Join Zoom
-                  </Button>
+
+                  {/* Show patient's requested time */}
+                  {reqTime && zoomStatus !== 'not_requested' && (
+                    <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                      <Video className="h-4 w-4 text-amber-600 shrink-0" />
+                      <div>
+                        <p className="text-xs text-amber-700 font-bold">Patient requested</p>
+                        <p className="text-sm font-semibold text-amber-900">{reqTime}</p>
+                      </div>
+                      {zoomStatus === 'confirmed' && (
+                        <Button className="ml-auto h-8 px-3 text-xs rounded-xl bg-blue-600 hover:bg-blue-700 text-white">Join Zoom</Button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Show rescheduled time */}
+                  {reschedTime && (
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                      <Video className="h-4 w-4 text-blue-600 shrink-0" />
+                      <div>
+                        <p className="text-xs text-blue-700 font-bold">New time (rescheduled by you)</p>
+                        <p className="text-sm font-semibold text-blue-900">{reschedTime}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Doctor's message if any */}
+                  {docMsg && (
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
+                      <p className="font-bold text-slate-700 mb-0.5">Your message to patient:</p>
+                      <p>{docMsg}</p>
+                    </div>
+                  )}
+
+                  {/* Action buttons — only for requested/rescheduled */}
+                  {(zoomStatus === 'requested' || zoomStatus === 'rescheduled') && (
+                    <div className="flex gap-2">
+                      <button onClick={() => setZoomAction('confirm')}
+                        className={`flex-1 text-xs font-bold py-2 rounded-xl border-2 transition-all ${zoomAction === 'confirm' ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-emerald-400 text-emerald-700 hover:bg-emerald-50'}`}>
+                        ✓ Confirm
+                      </button>
+                      <button onClick={() => setZoomAction('reschedule')}
+                        className={`flex-1 text-xs font-bold py-2 rounded-xl border-2 transition-all ${zoomAction === 'reschedule' ? 'bg-blue-600 border-blue-600 text-white' : 'border-blue-400 text-blue-700 hover:bg-blue-50'}`}>
+                        ↻ Reschedule
+                      </button>
+                      <button onClick={() => setZoomAction('cancel')}
+                        className={`flex-1 text-xs font-bold py-2 rounded-xl border-2 transition-all ${zoomAction === 'cancel' ? 'bg-red-500 border-red-500 text-white' : 'border-slate-300 text-slate-500 hover:bg-slate-50'}`}>
+                        ✕ Cancel
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Confirmed — allow rescheduling */}
+                  {zoomStatus === 'confirmed' && (
+                    <button onClick={() => setZoomAction('reschedule')}
+                      className="w-full text-xs font-bold py-2 rounded-xl border-2 border-blue-300 text-blue-600 hover:bg-blue-50 transition-all">
+                      ↻ Reschedule This Meeting
+                    </button>
+                  )}
+
+                  {/* Not requested — doctor can propose a zoom */}
+                  {zoomStatus === 'not_requested' && (
+                    <button onClick={() => setZoomAction('confirm')}
+                      className="w-full text-xs font-bold py-2 rounded-xl border-2 border-primary/40 text-primary hover:bg-primary/5 transition-all">
+                      + Initiate Zoom Meeting
+                    </button>
+                  )}
+
+                  {/* Reschedule picker */}
+                  {zoomAction === 'reschedule' && (
+                    <div className="space-y-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                      <p className="text-xs font-bold text-blue-700">Select new date & time:</p>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {zoomDates.map(d => (
+                          <button key={d} onClick={() => setZoomRescheduleTime(zoomRescheduleTime.includes(d) ? zoomRescheduleTime : zoomRescheduleTime.split(' at ')[1] ? `${d} at ${zoomRescheduleTime.split(' at ')[1]}` : d)}
+                            className={`text-xs font-semibold px-2 py-1 rounded-lg border transition-all ${zoomRescheduleTime.startsWith(d) ? 'bg-blue-600 border-blue-600 text-white' : 'border-blue-300 text-blue-700 bg-white'}`}>
+                            {d}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {zoomTimes.map(t => (
+                          <button key={t} onClick={() => { const d = zoomRescheduleTime.split(' at ')[0] || 'TBD'; setZoomRescheduleTime(`${d} at ${t}`); }}
+                            className={`text-xs font-semibold px-2 py-1 rounded-lg border transition-all ${zoomRescheduleTime.endsWith(t) ? 'bg-blue-600 border-blue-600 text-white' : 'border-blue-300 text-blue-700 bg-white'}`}>
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Message field — always shown when action selected */}
+                  {zoomAction && (
+                    <div className="space-y-2">
+                      <textarea
+                        value={zoomMessage}
+                        onChange={e => setZoomMessage(e.target.value)}
+                        rows={2}
+                        placeholder={zoomAction === 'cancel' ? "Reason for cancelling (shown to patient)..." : zoomAction === 'reschedule' ? "Message to patient about new time..." : "Optional message to patient..."}
+                        className="w-full border border-border rounded-xl px-3 py-2 text-xs bg-background focus:outline-none focus:border-primary resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <Button onClick={handleZoomAction} disabled={zoomSaving || (zoomAction === 'reschedule' && !zoomRescheduleTime)}
+                          className="flex-1 h-9 text-xs rounded-xl bg-slate-800 hover:bg-slate-900 text-white">
+                          {zoomSaving ? "Saving..." : "Save & Notify Patient"}
+                        </Button>
+                        <Button variant="outline" onClick={() => { setZoomAction(null); setZoomRescheduleTime(""); setZoomMessage(""); }}
+                          className="h-9 text-xs rounded-xl">Cancel</Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </CardContent>
         </Card>
 
