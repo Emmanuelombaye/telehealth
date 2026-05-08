@@ -1,50 +1,49 @@
 -- ==============================================================================
--- Peak Health: Profiles — EMERGENCY FIX + CLEAN REBUILD
--- Run this ENTIRE script in your Supabase SQL Editor NOW
+-- Peak Health: Profiles — EMERGENCY FIX v4 (schema-safe)
+-- Run this ENTIRE script in your Supabase SQL Editor
 -- ==============================================================================
 
--- STEP 1: EMERGENCY — Disable RLS immediately to stop all 500 errors
--- (We will re-enable it with correct policies below)
+-- STEP 1: Disable RLS immediately (stops all 500 errors right now)
 ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
 
--- STEP 2: Make email nullable (actual Supabase schema has email NOT NULL)
-DO $$
-BEGIN
+-- STEP 2: Add ALL missing columns safely (idempotent — safe to re-run)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email     TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS brand_id  TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role      TEXT NOT NULL DEFAULT 'patient';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+
+-- STEP 3: Make email nullable (in case it has NOT NULL constraint)
+DO $$ BEGIN
   ALTER TABLE public.profiles ALTER COLUMN email DROP NOT NULL;
-EXCEPTION WHEN OTHERS THEN
-  NULL; -- column may not exist yet, that's fine
+EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
--- STEP 3: Add missing columns safely
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS full_name TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS brand_id TEXT;
-
--- STEP 4: Drop ALL existing policies (clean slate)
+-- STEP 4: Drop ALL existing RLS policies (clean slate — no duplicates)
 DO $$
-DECLARE
-  pol RECORD;
+DECLARE pol RECORD;
 BEGIN
-  FOR pol IN SELECT policyname FROM pg_policies WHERE tablename = 'profiles' AND schemaname = 'public' LOOP
+  FOR pol IN
+    SELECT policyname FROM pg_policies
+    WHERE tablename = 'profiles' AND schemaname = 'public'
+  LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', pol.policyname);
   END LOOP;
 END $$;
 
--- STEP 5: Re-enable RLS with CORRECT non-recursive policies
+-- STEP 5: Re-enable RLS with correct, non-recursive policies
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Users read/update their own row only (no self-referencing subquery)
 CREATE POLICY "profiles_select_own"
   ON public.profiles FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "profiles_update_own"
   ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
--- Open insert for service role + trigger (SECURITY DEFINER bypasses RLS anyway)
 CREATE POLICY "profiles_insert_open"
   ON public.profiles FOR INSERT WITH CHECK (true);
 
--- STEP 6: Rebuild trigger — always includes email, never fails signup
+-- STEP 6: Rebuild trigger function — includes email, never fails signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -60,13 +59,11 @@ BEGIN
     NULLIF(TRIM(COALESCE(NEW.raw_user_meta_data->>'brand_id', '')), '')
   )
   ON CONFLICT (id) DO UPDATE
-    SET email      = EXCLUDED.email,
-        updated_at = now();
+    SET email = EXCLUDED.email;
   RETURN NEW;
 EXCEPTION WHEN OTHERS THEN
-  -- NEVER block signup even if profile insert fails
-  RAISE WARNING '[handle_new_user] profile insert failed for %: %', NEW.id, SQLERRM;
-  RETURN NEW;
+  RAISE WARNING '[handle_new_user] failed for %: %', NEW.id, SQLERRM;
+  RETURN NEW; -- NEVER block signup
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -75,7 +72,7 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- STEP 7: Backfill all existing auth users into profiles
+-- STEP 7: Backfill all existing auth users (no updated_at reference)
 INSERT INTO public.profiles (id, role, email)
 SELECT
   u.id,
@@ -83,19 +80,13 @@ SELECT
   u.email
 FROM auth.users u
 ON CONFLICT (id) DO UPDATE
-  SET email = EXCLUDED.email,
-      updated_at = now();
+  SET email = EXCLUDED.email;
 
--- STEP 8: Verify everything looks correct
--- Run this SELECT to confirm (should show all your users with email + role):
-SELECT id, email, role, created_at FROM public.profiles ORDER BY created_at DESC;
+-- STEP 8: Verify — should show all users with role + email
+SELECT id, email, role FROM public.profiles ORDER BY id;
 
 -- ==============================================================================
--- PROMOTE A USER (run individually):
---
---   UPDATE public.profiles SET role = 'doctor'
---   WHERE email = 'doctor@peakhealth.com';
---
---   UPDATE public.profiles SET role = 'super_admin'
---   WHERE email = 'admin@peakhealth.com';
+-- PROMOTE USERS (run individually):
+--   UPDATE public.profiles SET role = 'doctor'     WHERE email = 'dr@example.com';
+--   UPDATE public.profiles SET role = 'super_admin' WHERE email = 'sa@example.com';
 -- ==============================================================================
