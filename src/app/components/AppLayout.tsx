@@ -1,8 +1,9 @@
 import { Outlet, useLocation, Link, useNavigate } from "react-router";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
-import { Activity, Bell, Search, User, Menu, ChevronLeft } from "lucide-react";
+import { Activity, Bell, Search, User, Menu, ChevronLeft, LogOut } from "lucide-react";
 import { Button } from "./ui/shared.tsx";
+import { useAuthStore } from "../../lib";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { useState } from "react";
 import { cn } from "./ui/utils";
@@ -11,55 +12,65 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname;
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  // Determine role and portal context
+  const { user, role: authRole, signOut } = useAuthStore();
+
+  // Determine portal context
   const isLanding = path === "/";
-  const isPatient = path.startsWith("/patient");
+  const isTreatment = path.startsWith("/treatments");
+  const isSupport = path.startsWith("/support-hub") || path.startsWith("/clinical-research");
+  const isShop = path.startsWith("/patient/shop");
+  
+  // Public pages that should NOT have the portal shell (sidebar/header)
+  const isPublic = isLanding || isTreatment || isSupport || isShop;
 
   // Determine Role for Sidebar
-  let role: "patient" | "doctor" | "admin" | "superadmin" | "pharmacy" = "doctor";
-  if (isPatient) role = "patient";
-  if (path.startsWith("/admin")) role = "admin";
-  if (path.startsWith("/superadmin")) role = "superadmin";
-  if (path.startsWith("/pharmacy")) role = "pharmacy";
+  let sidebarRole: "patient" | "doctor" | "admin" | "superadmin" | "pharmacy" = "doctor";
+  if (path.startsWith("/patient")) sidebarRole = "patient";
+  if (path.startsWith("/admin")) sidebarRole = "admin";
+  if (path.startsWith("/superadmin")) sidebarRole = "superadmin";
+  if (path.startsWith("/pharmacy")) sidebarRole = "pharmacy";
+
+  // Dynamic user info
+  const fullName = user?.user_metadata?.first_name 
+    ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`
+    : user?.email || "Guest User";
+  
+  const displayRole = authRole === "super_admin" ? "Super Admin" : 
+                     authRole === "brand_admin" ? "Administrator" : 
+                     authRole === "doctor" ? "Provider" : "Patient";
 
   // Breadcrumb/Back support
   const canGoBack = path.split("/").filter(Boolean).length > 1;
 
-  if (isLanding) {
+  if (isPublic) {
     return <Outlet />;
   }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background font-sans antialiased text-foreground">
       {/* Desktop Sidebar (Left) */}
-      {!isLanding && (
-        <div className="hidden md:block h-full">
-          <Sidebar role={role} />
-        </div>
-      )}
+      <div className="hidden md:block h-full">
+        <Sidebar role={sidebarRole} />
+      </div>
 
       <div className="flex flex-1 flex-col overflow-hidden relative">
         {/* Header - Glassmorphic Design */}
         <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 md:px-6 shadow-sm">
           <div className="flex items-center gap-3">
             {/* Mobile Sidebar Trigger */}
-            {!isLanding && (
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden h-10 w-10 rounded-xl hover:bg-primary/5 active:scale-95 transition-all">
-                    <Menu className="h-6 w-6 text-primary" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-72 border-r-0 shadow-2xl">
-                  <Sidebar role={role} onMobileClose={() => setIsMobileMenuOpen(false)} />
-                </SheetContent>
-              </Sheet>
-            )}
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden h-10 w-10 rounded-xl hover:bg-primary/5 active:scale-95 transition-all">
+                  <Menu className="h-6 w-6 text-primary" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-72 border-r-0 shadow-2xl">
+                <Sidebar role={sidebarRole} onMobileClose={() => setIsMobileMenuOpen(false)} />
+              </SheetContent>
+            </Sheet>
 
             {/* Back Button (For Deep Pages) */}
-            {canGoBack && isPatient && (
+            {canGoBack && sidebarRole === "patient" && (
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -97,14 +108,17 @@ export function AppLayout() {
 
             <div className="flex items-center gap-3 pl-1">
               <div className="hidden sm:flex flex-col text-right">
-                <span className="text-xs font-bold leading-tight">Dr. Harrison Vance</span>
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">Chief Medical</span>
+                <span className="text-xs font-bold leading-tight">{fullName}</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">{displayRole}</span>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 p-[1px] shadow-md shadow-primary/20">
-                 <div className="h-full w-full rounded-[11px] bg-background flex items-center justify-center">
-                    <User className="h-5 w-5 text-primary" />
-                 </div>
-              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => signOut()}
+                className="h-10 w-10 rounded-xl bg-primary/5 text-primary hover:bg-destructive/10 hover:text-destructive transition-colors"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
             </div>
           </div>
         </header>

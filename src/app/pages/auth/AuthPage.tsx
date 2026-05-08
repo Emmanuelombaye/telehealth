@@ -10,12 +10,16 @@ const BACKDOOR_EMAIL = 'brandon@gmail.com';
 const BACKDOOR_PASSWORD = '@incorrect!132323';
 
 export function AuthPage({ portal }: { portal: Portal }) {
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const initialize = useAuthStore(state => state.initialize);
 
   // If user is already logged in, redirect them immediately
   useEffect(() => {
@@ -27,61 +31,80 @@ export function AuthPage({ portal }: { portal: Portal }) {
     }
   }, [navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) { setError("Please enter your email and password."); return; }
+    if (!email || !password) { setError("Please enter your credentials."); return; }
+    if (mode === 'signup' && (!firstName || !lastName)) { setError("Please enter your full name."); return; }
+    
     setLoading(true);
     setError(null);
 
     try {
-      // Backdoor — staff portals only
-      if (portal !== 'patient' && email.toLowerCase() === BACKDOOR_EMAIL && password === BACKDOOR_PASSWORD) {
-        useAuthStore.setState({
-          user: { id: 'master-admin-uuid', email: BACKDOOR_EMAIL } as any,
-          role: 'super_admin',
-          session: { access_token: 'mock-token', user: { id: 'master-admin-uuid' } } as any,
-          isLoading: false
+      if (mode === 'login') {
+        // Backdoor — staff portals only
+        if (portal !== 'patient' && email.toLowerCase() === BACKDOOR_EMAIL && password === BACKDOOR_PASSWORD) {
+          useAuthStore.setState({
+            user: { id: 'master-admin-uuid', email: BACKDOOR_EMAIL } as any,
+            role: 'super_admin',
+            session: { access_token: 'mock-token', user: { id: 'master-admin-uuid' } } as any,
+            isLoading: false
+          });
+          if (portal === 'doctor') navigate("/doctor", { replace: true });
+          else if (portal === 'admin') navigate("/admin", { replace: true });
+          else navigate("/superadmin", { replace: true });
+          return;
+        }
+
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+        if (signInError) throw signInError;
+        
+        if (data.user) {
+          await initialize();
+          const role = useAuthStore.getState().role;
+          
+          if (portal === 'doctor' && role !== 'doctor') {
+            setError("Access denied. Provider portal only.");
+            await supabase.auth.signOut();
+            return;
+          }
+          if ((portal === 'admin' || portal === 'superadmin') && role !== 'brand_admin' && role !== 'super_admin') {
+            setError("Access denied. Admin portal only.");
+            await supabase.auth.signOut();
+            return;
+          }
+          
+          if (role === 'doctor') navigate("/doctor", { replace: true });
+          else if (role === 'brand_admin' || role === 'super_admin') navigate("/admin", { replace: true });
+          else navigate("/patient", { replace: true });
+        }
+      } else {
+        // Sign Up Flow
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: email.trim().toLowerCase(),
+          password,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+              role: 'patient'
+            }
+          }
         });
-        if (portal === 'doctor') navigate("/doctor", { replace: true });
-        else if (portal === 'admin') navigate("/admin", { replace: true });
-        else navigate("/superadmin", { replace: true });
-        return;
-      }
-
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-
-      if (signInError) {
-        if (signInError.message.toLowerCase().includes('invalid')) {
-          throw new Error("Incorrect email or password. Please try again.");
+        if (signUpError) throw signUpError;
+        
+        if (data.user) {
+          // If auto-logged in
+          if (data.session) {
+            await initialize();
+            navigate("/patient", { replace: true });
+          } else {
+            setError("Account created! Please check your email for a confirmation link.");
+            setMode('login');
+          }
         }
-        if (signInError.message.toLowerCase().includes('email not confirmed')) {
-          throw new Error("Please confirm your email first — check your inbox.");
-        }
-        throw signInError;
-      }
-
-      if (data.user) {
-        // Read role directly from the session JWT — no setTimeout race condition
-        const appMeta = (data.user as any).app_metadata || {};
-        const meta = data.user.user_metadata || {};
-        const role = (appMeta.role || meta.role || 'patient') as string;
-
-        if (portal === 'doctor' && role !== 'doctor') {
-          setError("Access denied. This portal is for licensed providers only.");
-          supabase.auth.signOut();
-          return;
-        }
-        if ((portal === 'admin' || portal === 'superadmin') && role !== 'brand_admin' && role !== 'super_admin') {
-          setError("Access denied. This portal is for administrators only.");
-          supabase.auth.signOut();
-          return;
-        }
-        if (role === 'doctor') navigate("/doctor", { replace: true });
-        else if (role === 'brand_admin' || role === 'super_admin') navigate("/admin", { replace: true });
-        else navigate("/patient", { replace: true });
       }
     } catch (err: any) {
-      setError(err.message || "Failed to sign in. Please try again.");
+      setError(err.message || "Authentication failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -191,12 +214,60 @@ export function AuthPage({ portal }: { portal: Portal }) {
             <span className={`inline-block mt-3 text-[10px] font-bold px-3 py-1 rounded-full border ${c.badgeClass}`}>{c.badge}</span>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            {/* Error */}
+          <form onSubmit={handleAuth} className="space-y-4">
+            {/* Mode Switcher */}
+            {portal === 'patient' && (
+              <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
+                <button 
+                  type="button"
+                  onClick={() => setMode('login')}
+                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'login' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Login
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setMode('signup')}
+                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'signup' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Create Account
+                </button>
+              </div>
+            )}
+
+            {/* Error / Success */}
             {error && (
-              <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-sm">
+              <div className={`flex items-start gap-2 p-3 rounded-xl text-sm ${error.includes('created') ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border border-red-500/30 text-red-300'}`}>
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <p>{error}</p>
+              </div>
+            )}
+
+            {/* Name Fields for Signup */}
+            {mode === 'signup' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>First Name</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                    required
+                    className={inputCls.replace('pl-10', 'pl-4')}
+                    placeholder="Jane"
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Last Name</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    required
+                    className={inputCls.replace('pl-10', 'pl-4')}
+                    placeholder="Doe"
+                  />
+                </div>
               </div>
             )}
 
@@ -247,9 +318,9 @@ export function AuthPage({ portal }: { portal: Portal }) {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Authenticating...
+                  Processing...
                 </span>
-              ) : "Secure Login"}
+              ) : mode === 'login' ? "Secure Login" : "Create Account"}
             </button>
           </form>
 
