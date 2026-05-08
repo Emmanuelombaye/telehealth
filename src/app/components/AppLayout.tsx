@@ -7,8 +7,24 @@ import { useAuthStore } from "../../lib";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { useState } from "react";
 import { cn } from "./ui/utils";
+import { usePatientStore } from "../../lib";
+import { useEffect } from "react";
 
 export function AppLayout() {
+  const { fetchOrders, fetchDoctorAvailability } = usePatientStore();
+  
+  useEffect(() => {
+    fetchOrders();
+    fetchDoctorAvailability();
+    
+    // Refresh every minute to keep badges accurate
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 60000);
+    
+    return () => clearInterval(interval);
+  }, [fetchOrders, fetchDoctorAvailability]);
+
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname;

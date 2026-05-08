@@ -3,572 +3,393 @@ import { Link } from "react-router";
 import {
   Users, Clock, Video, MessageSquare, FileText, ChevronRight,
   CheckCircle2, AlertCircle, Circle, Stethoscope, Pill,
-  Phone, ToggleLeft, ToggleRight, Search, Filter, Bell, Zap
+  Phone, ToggleLeft, ToggleRight, Search, Filter, Bell, Zap,
+  Activity, HeartPulse, ShieldCheck, Database, Layers, ArrowUpRight,
+  Sparkles, FlaskConical, Bot, Command, Globe
 } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
-import { OrderStatus, Order } from "../../../../lib/patient-store";
+import { Card, CardContent, Button, Badge } from "../../../components/ui/shared.tsx";
+import { OrderStatus, Order, usePatientStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
+import { cn } from "../../../components/ui/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 type AvailabilityStatus = "available" | "busy" | "break" | "offline";
 
-const availabilityConfig: Record<AvailabilityStatus, { label: string; color: string; dot: string }> = {
-  available: { label: "Available", color: "text-emerald-600", dot: "bg-emerald-500" },
-  busy: { label: "In Consult", color: "text-amber-600", dot: "bg-amber-500" },
-  break: { label: "On Break", color: "text-violet-600", dot: "bg-violet-500" },
-  offline: { label: "Offline", color: "text-muted-foreground", dot: "bg-gray-400" },
+const availabilityConfig: Record<AvailabilityStatus, { label: string; color: string; dot: string; bg: string }> = {
+  available: { label: "Available", color: "text-[#22c55e]", dot: "bg-[#22c55e]", bg: "bg-[#22c55e]/10" },
+  busy: { label: "In Consult", color: "text-amber-500", dot: "bg-amber-500", bg: "bg-amber-500/10" },
+  break: { label: "On Break", color: "text-violet-500", dot: "bg-violet-500", bg: "bg-violet-500/10" },
+  offline: { label: "Offline", color: "text-[#7f9488]", dot: "bg-gray-600", bg: "bg-white/5" },
 };
 
 const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg: string }> = {
-  order_submitted: { label: "Waiting Review", color: "text-amber-700", bg: "bg-amber-100 dark:bg-amber-950/40" },
-  doctor_reviewing: { label: "In Review", color: "text-violet-700", bg: "bg-violet-100 dark:bg-violet-950/40" },
-  rx_sent: { label: "Rx Sent", color: "text-emerald-700", bg: "bg-emerald-100 dark:bg-emerald-950/40" },
-  shipped: { label: "Shipped", color: "text-blue-700", bg: "bg-blue-100 dark:bg-blue-950/40" },
-  delivered: { label: "Delivered", color: "text-gray-700", bg: "bg-gray-100 dark:bg-gray-950/40" },
+  order_submitted: { label: "Awaiting Review", color: "text-amber-500", bg: "bg-amber-500/10" },
+  doctor_reviewing: { label: "Active Review", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
+  rx_sent: { label: "Rx Dispatched", color: "text-[#22c55e]", bg: "bg-[#22c55e]/20" },
+  shipped: { label: "In Transit", color: "text-blue-500", bg: "bg-blue-500/10" },
+  delivered: { label: "Delivered", color: "text-[#7f9488]", bg: "bg-white/5" },
 };
 
 export function DoctorQueuePage() {
+  const { orders, updateOrderStatus, updateOrderRx, fetchOrders } = usePatientStore();
   const [availability, setAvailability] = useState<AvailabilityStatus>("available");
-  const [autoAccept, setAutoAccept] = useState(true);
-  const [selected, setSelected] = useState<Order | null>(null);
-  
-  // Rx Form State
-  const [rxDrug, setRxDrug] = useState("");
-  const [rxDosage, setRxDosage] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rxNote, setRxNote] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
-  // Zoom management state
-  const [zoomAction, setZoomAction] = useState<'confirm' | 'reschedule' | 'cancel' | null>(null);
-  const [zoomRescheduleTime, setZoomRescheduleTime] = useState("");
-  const [zoomMessage, setZoomMessage] = useState("");
-  const [zoomSaving, setZoomSaving] = useState(false);
+  // Filter orders for the queue
+  const queue = orders.filter(o => o.status === "order_submitted" || o.status === "doctor_reviewing");
+  const selected = queue.find(o => o.id === selectedId) || null;
 
   useEffect(() => {
-    async function fetchOrders() {
-      try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        setOrders(data || []);
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-      } finally {
-        setLoadingOrders(false);
-      }
+    if (queue.length > 0 && !selectedId) {
+      setSelectedId(queue[0].id);
     }
-    fetchOrders();
+  }, [queue, selectedId]);
 
-    // Set up Realtime subscription for live queue updates!
-    const channel = supabase
-      .channel('schema-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
-        console.log('Live order update received!', payload);
-        fetchOrders();
-      })
-      .subscribe();
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchOrders();
+    setIsRefreshing(false);
+  };
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const queue = orders.filter(o => o.status === "order_submitted" || o.status === "doctor_reviewing");
+  const theme = {
+    bg: "bg-[#060807]",
+    card: "bg-[#0c120f]/80",
+    cardSolid: "bg-[#0c120f]",
+    border: "border-[#1a2620]",
+    textMain: "text-[#e2e8f0]",
+    textMuted: "text-[#7f9488]",
+    textGreen: "text-[#22c55e]",
+    textBeige: "text-[#d4c4a8]",
+  };
 
   const avail = availabilityConfig[availability];
-  const activeCount = queue.length;
-  
-  const updateOrderStatus = async (id: string, status: OrderStatus) => {
-    try {
-      const { error } = await supabase.from('orders').update({ status }).eq('id', id);
-      if (error) throw error;
-      setOrders(orders.map(o => o.id === id ? { ...o, status } : o));
-    } catch (err) {
-      console.error("Failed to update order status:", err);
-    }
-  };
-
-  const handleSendRx = async () => {
-    if (!selected) return;
-    try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: 'doctor_approved', doctor_note: rxNote })
-        .eq('id', selected.id);
-      if (error) throw error;
-      setOrders(orders.map(o => o.id === selected.id ? { ...o, status: 'doctor_approved' } : o));
-      setSelected(null);
-    } catch (err) {
-      console.error("Failed to approve Rx:", err);
-    }
-  };
-
-  const handleZoomAction = async () => {
-    if (!selected || !zoomAction) return;
-    setZoomSaving(true);
-    const times = ["9:00 AM","10:30 AM","12:00 PM","1:00 PM","2:45 PM","4:00 PM","5:00 PM"];
-    const dates = ["Today","Tomorrow","Wednesday","Thursday","Friday"];
-    try {
-      const update: Record<string, any> = { zoom_doctor_message: zoomMessage || null };
-      if (zoomAction === 'confirm') {
-        update.zoom_status = 'confirmed';
-      } else if (zoomAction === 'reschedule') {
-        update.zoom_status = 'rescheduled';
-        update.zoom_rescheduled_time = zoomRescheduleTime;
-      } else if (zoomAction === 'cancel') {
-        update.zoom_status = 'cancelled';
-      }
-      const { error } = await supabase.from('orders').update(update).eq('id', selected.id);
-      if (error) throw error;
-      // Update local optimistic state so UI refreshes immediately
-      const updated = { ...selected, ...update };
-      setSelected(updated);
-      setOrders(orders.map(o => o.id === selected.id ? updated : o));
-      setZoomAction(null);
-      setZoomRescheduleTime("");
-      setZoomMessage("");
-    } catch (err) {
-      console.error("Zoom update failed:", err);
-    } finally {
-      setZoomSaving(false);
-    }
-  };
-
-  if (selected) {
-    const cfg = queueStatusConfig[selected.status];
-    return (
-      <div className="max-w-2xl mx-auto space-y-5">
-        <button onClick={() => setSelected(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          ← Back to Queue
-        </button>
-
-        <div className="flex items-center gap-3">
-          <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-lg shrink-0">
-            {selected.patientAvatar}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">{selected.patientName}</h1>
-              <span className="text-sm">{selected.patientCountry}</span>
-            </div>
-            <p className="text-sm text-muted-foreground">Age {selected.patientAge} · {selected.category}</p>
-          </div>
-          <span className={cn("text-xs font-bold px-3 py-1.5 rounded-full", cfg.bg, cfg.color)}>{cfg.label}</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="border-none bg-muted/50">
-            <CardContent className="p-3">
-              <p className="text-xs text-muted-foreground">Requested Product</p>
-              <p className="font-bold text-sm">{selected.medication}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-none bg-muted/50">
-            <CardContent className="p-3">
-              <p className="text-xs text-muted-foreground">Intake</p>
-              <p className={cn("font-bold text-sm", selected.intakeComplete ? "text-emerald-600" : "text-amber-600")}>
-                {selected.intakeComplete ? "Complete ✓" : "Incomplete ⚠"}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardContent className="p-4 space-y-4">
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5"><FileText className="h-4 w-4" /> Intake Questionnaire Answers</p>
-              <div className="space-y-4">
-                {/* Clinical Vitals — from patient_vitals JSONB */}
-                {(() => {
-                  const v = selected.patient_vitals || selected.patientVitals || {};
-                  const hasVitals = v.height || v.weight || v.dob;
-                  return hasVitals ? (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
-                        <div>
-                          <p className="text-[10px] text-slate-500 uppercase font-bold">DOB / Sex</p>
-                          <p className="text-sm font-semibold text-slate-800">{v.dob || '—'} · {v.sex || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-slate-500 uppercase font-bold">Height</p>
-                          <p className="text-sm font-semibold text-slate-800">{v.height || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-slate-500 uppercase font-bold">Weight</p>
-                          <p className="text-sm font-semibold text-slate-800">{v.weight || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-slate-500 uppercase font-bold">BMI</p>
-                          <p className={`text-sm font-semibold ${parseFloat(v.bmi) >= 30 ? 'text-rose-600' : parseFloat(v.bmi) >= 25 ? 'text-amber-600' : 'text-emerald-600'}`}>{v.bmi || '—'}</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
-                        <div>
-                          <p className="text-[10px] text-slate-500 uppercase font-bold">Blood Type</p>
-                          <p className="text-sm font-semibold text-slate-800">{v.bloodType || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-slate-500 uppercase font-bold">Hair · Eye</p>
-                          <p className="text-sm font-semibold text-slate-800">{v.hairColor || '—'} · {v.eyeColor || '—'}</p>
-                        </div>
-                        <div className="col-span-2">
-                          <p className="text-[10px] text-slate-500 uppercase font-bold">Shipping Address</p>
-                          <p className="text-sm font-semibold text-slate-800">{v.address || '—'}</p>
-                        </div>
-                      </div>
-                      {(v.allergies || v.currentMeds) && (
-                        <div className="grid grid-cols-2 gap-3 p-3 bg-rose-50 rounded-xl border border-rose-100">
-                          <div>
-                            <p className="text-[10px] text-rose-700 uppercase font-bold">⚠ Allergies</p>
-                            <p className="text-sm font-semibold text-rose-800">{v.allergies || 'None reported'}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-slate-500 uppercase font-bold">Current Meds</p>
-                            <p className="text-sm font-semibold text-slate-800">{v.currentMeds || 'None'}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
-                      <div><p className="text-[10px] text-slate-500 uppercase font-bold">Age</p><p className="text-sm font-semibold text-slate-800">{selected.patient_age || selected.patientAge || '—'}</p></div>
-                      <div><p className="text-[10px] text-slate-500 uppercase font-bold">Country</p><p className="text-sm font-semibold text-slate-800">{selected.patient_country || selected.patientCountry || '—'}</p></div>
-                    </div>
-                  );
-                })()}
-
-                {/* Patient Answers */}
-                <div className="space-y-3 pt-2">
-                  {selected.intakeAnswers ? (
-                    Object.entries(selected.intakeAnswers).map(([q, a]) => (
-                      <div key={q} className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                        <p className="text-xs font-semibold text-slate-600 mb-1">{q}</p>
-                        <p className="text-sm text-slate-800">{Array.isArray(a) ? a.join(", ") : (a as string)}</p>
-                      </div>
-                    ))
-                  ) : (
-                    <>
-                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                        <p className="text-xs font-semibold text-slate-600 mb-1">What are your primary weight-loss goals and timeline?</p>
-                        <p className="text-sm text-slate-800">I want to lose 30 lbs before my wedding in 6 months. I've tried dieting but hit a plateau.</p>
-                      </div>
-                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                        <p className="text-xs font-semibold text-slate-600 mb-1">Have you ever had pancreatitis, gallbladder disease, or MEN-2?</p>
-                        <p className="text-sm font-medium text-emerald-600 flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5" /> No history</p>
-                      </div>
-                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                        <p className="text-xs font-semibold text-slate-600 mb-1">List all current medications and supplements</p>
-                        <p className="text-sm text-slate-800">Just a daily multivitamin and occasional ibuprofen.</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Chief Complaint & Clinical Notes</p>
-              <p className="text-sm bg-amber-50 text-amber-900 p-3 rounded-xl border border-amber-100">{selected.intakeNotes}</p>
-            </div>
-            
-            {/* Zoom Management Panel */}
-            {(() => {
-              const zoomStatus = selected.zoom_status || 'not_requested';
-              const reqTime = selected.consultation_time;
-              const reschedTime = selected.zoom_rescheduled_time;
-              const docMsg = selected.zoom_doctor_message;
-              const zoomDates = ["Today","Tomorrow","Wednesday","Thursday","Friday"];
-              const zoomTimes = ["9:00 AM","10:30 AM","12:00 PM","1:00 PM","2:45 PM","4:00 PM"];
-
-              const statusBadge: Record<string, { label: string; cls: string }> = {
-                requested:    { label: "Zoom Requested", cls: "bg-amber-100 text-amber-700 border-amber-200" },
-                confirmed:    { label: "Zoom Confirmed ✓", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-                rescheduled:  { label: "Rescheduled", cls: "bg-blue-100 text-blue-700 border-blue-200" },
-                cancelled:    { label: "Zoom Cancelled", cls: "bg-slate-100 text-slate-500 border-slate-200" },
-                not_requested:{ label: "No Zoom Requested", cls: "bg-slate-100 text-slate-500 border-slate-200" },
-              };
-              const badge = statusBadge[zoomStatus] || statusBadge.not_requested;
-
-              return (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Video Consultation</p>
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${badge.cls}`}>{badge.label}</span>
-                  </div>
-
-                  {/* Show patient's requested time */}
-                  {reqTime && zoomStatus !== 'not_requested' && (
-                    <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                      <Video className="h-4 w-4 text-amber-600 shrink-0" />
-                      <div>
-                        <p className="text-xs text-amber-700 font-bold">Patient requested</p>
-                        <p className="text-sm font-semibold text-amber-900">{reqTime}</p>
-                      </div>
-                      {zoomStatus === 'confirmed' && (
-                        <Button className="ml-auto h-8 px-3 text-xs rounded-xl bg-blue-600 hover:bg-blue-700 text-white">Join Zoom</Button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Show rescheduled time */}
-                  {reschedTime && (
-                    <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                      <Video className="h-4 w-4 text-blue-600 shrink-0" />
-                      <div>
-                        <p className="text-xs text-blue-700 font-bold">New time (rescheduled by you)</p>
-                        <p className="text-sm font-semibold text-blue-900">{reschedTime}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Doctor's message if any */}
-                  {docMsg && (
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
-                      <p className="font-bold text-slate-700 mb-0.5">Your message to patient:</p>
-                      <p>{docMsg}</p>
-                    </div>
-                  )}
-
-                  {/* Action buttons — only for requested/rescheduled */}
-                  {(zoomStatus === 'requested' || zoomStatus === 'rescheduled') && (
-                    <div className="flex gap-2">
-                      <button onClick={() => setZoomAction('confirm')}
-                        className={`flex-1 text-xs font-bold py-2 rounded-xl border-2 transition-all ${zoomAction === 'confirm' ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-emerald-400 text-emerald-700 hover:bg-emerald-50'}`}>
-                        ✓ Confirm
-                      </button>
-                      <button onClick={() => setZoomAction('reschedule')}
-                        className={`flex-1 text-xs font-bold py-2 rounded-xl border-2 transition-all ${zoomAction === 'reschedule' ? 'bg-blue-600 border-blue-600 text-white' : 'border-blue-400 text-blue-700 hover:bg-blue-50'}`}>
-                        ↻ Reschedule
-                      </button>
-                      <button onClick={() => setZoomAction('cancel')}
-                        className={`flex-1 text-xs font-bold py-2 rounded-xl border-2 transition-all ${zoomAction === 'cancel' ? 'bg-red-500 border-red-500 text-white' : 'border-slate-300 text-slate-500 hover:bg-slate-50'}`}>
-                        ✕ Cancel
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Confirmed — allow rescheduling */}
-                  {zoomStatus === 'confirmed' && (
-                    <button onClick={() => setZoomAction('reschedule')}
-                      className="w-full text-xs font-bold py-2 rounded-xl border-2 border-blue-300 text-blue-600 hover:bg-blue-50 transition-all">
-                      ↻ Reschedule This Meeting
-                    </button>
-                  )}
-
-                  {/* Not requested — doctor can propose a zoom */}
-                  {zoomStatus === 'not_requested' && (
-                    <button onClick={() => setZoomAction('confirm')}
-                      className="w-full text-xs font-bold py-2 rounded-xl border-2 border-primary/40 text-primary hover:bg-primary/5 transition-all">
-                      + Initiate Zoom Meeting
-                    </button>
-                  )}
-
-                  {/* Reschedule picker */}
-                  {zoomAction === 'reschedule' && (
-                    <div className="space-y-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                      <p className="text-xs font-bold text-blue-700">Select new date & time:</p>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {zoomDates.map(d => (
-                          <button key={d} onClick={() => setZoomRescheduleTime(zoomRescheduleTime.includes(d) ? zoomRescheduleTime : zoomRescheduleTime.split(' at ')[1] ? `${d} at ${zoomRescheduleTime.split(' at ')[1]}` : d)}
-                            className={`text-xs font-semibold px-2 py-1 rounded-lg border transition-all ${zoomRescheduleTime.startsWith(d) ? 'bg-blue-600 border-blue-600 text-white' : 'border-blue-300 text-blue-700 bg-white'}`}>
-                            {d}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {zoomTimes.map(t => (
-                          <button key={t} onClick={() => { const d = zoomRescheduleTime.split(' at ')[0] || 'TBD'; setZoomRescheduleTime(`${d} at ${t}`); }}
-                            className={`text-xs font-semibold px-2 py-1 rounded-lg border transition-all ${zoomRescheduleTime.endsWith(t) ? 'bg-blue-600 border-blue-600 text-white' : 'border-blue-300 text-blue-700 bg-white'}`}>
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Message field — always shown when action selected */}
-                  {zoomAction && (
-                    <div className="space-y-2">
-                      <textarea
-                        value={zoomMessage}
-                        onChange={e => setZoomMessage(e.target.value)}
-                        rows={2}
-                        placeholder={zoomAction === 'cancel' ? "Reason for cancelling (shown to patient)..." : zoomAction === 'reschedule' ? "Message to patient about new time..." : "Optional message to patient..."}
-                        className="w-full border border-border rounded-xl px-3 py-2 text-xs bg-background focus:outline-none focus:border-primary resize-none"
-                      />
-                      <div className="flex gap-2">
-                        <Button onClick={handleZoomAction} disabled={zoomSaving || (zoomAction === 'reschedule' && !zoomRescheduleTime)}
-                          className="flex-1 h-9 text-xs rounded-xl bg-slate-800 hover:bg-slate-900 text-white">
-                          {zoomSaving ? "Saving..." : "Save & Notify Patient"}
-                        </Button>
-                        <Button variant="outline" onClick={() => { setZoomAction(null); setZoomRescheduleTime(""); setZoomMessage(""); }}
-                          className="h-9 text-xs rounded-xl">Cancel</Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </CardContent>
-        </Card>
-
-        {/* Rx writer */}
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-bold flex items-center gap-2"><Pill className="h-4 w-4 text-primary" /> Write Prescription</p>
-              <div className="flex gap-1.5">
-                {["0.25mg/wk", "0.5mg/wk", "1mg/wk"].map(dose => (
-                  <button 
-                    key={dose}
-                    onClick={() => setRxDosage(dose)}
-                    className="text-[10px] font-bold px-2 py-1 rounded-lg border border-slate-200 hover:border-primary hover:text-primary transition-all"
-                  >
-                    {dose}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <input 
-                className="border border-border rounded-xl px-3 py-2 text-sm bg-background focus:outline-none focus:border-primary font-bold" 
-                placeholder="Drug name" 
-                value={rxDrug || selected.medication}
-                onChange={e => setRxDrug(e.target.value)}
-              />
-              <input 
-                className="border border-border rounded-xl px-3 py-2 text-sm bg-background focus:outline-none focus:border-primary font-bold" 
-                placeholder="Dosage (e.g. 10mg)" 
-                value={rxDosage || selected.dosageInstructions || ""}
-                onChange={e => setRxDosage(e.target.value)}
-              />
-            </div>
-            <textarea rows={2} value={rxNote} onChange={e => setRxNote(e.target.value)}
-              className="w-full border border-border rounded-xl px-3 py-2 text-sm bg-background focus:outline-none focus:border-primary resize-none"
-              placeholder="Clinical notes for pharmacy/patient..." />
-            <div className="flex gap-2">
-              <Button onClick={handleSendRx} className="flex-1 rounded-xl gap-1.5 bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20">
-                <Pill className="h-4 w-4" /> Finalize & Send Rx
-              </Button>
-              <Button variant="outline" className="rounded-xl gap-1.5">
-                <MessageSquare className="h-4 w-4" /> Message
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
-      {/* Header with availability */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
+      {/* Header Bar */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2">
         <div>
-          <h1 className="text-xl font-bold">Patient Queue</h1>
-          <p className="text-sm text-muted-foreground">{activeCount} patients waiting</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-muted rounded-2xl px-3 py-2">
-            <span className={cn("h-2.5 w-2.5 rounded-full animate-pulse", avail.dot)} />
-            <span className={cn("text-xs font-bold", avail.color)}>{avail.label}</span>
+          <div className="flex items-center gap-2 mb-1">
+             <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
+             <span className={`${theme.textGreen} text-[10px] font-black uppercase tracking-[0.2em]`}>Real-time Matrix Active</span>
           </div>
+          <h1 className={`text-3xl font-black ${theme.textMain} italic uppercase tracking-tighter`}>Clinical Queue</h1>
+          <p className={`${theme.textMuted} text-xs font-bold uppercase tracking-widest mt-1`}>
+             {queue.length} PATIENTS WAITING • GLOBAL DISPATCH SYSTEM
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4 bg-white/5 p-2 rounded-[2rem] border border-white/5 backdrop-blur-md">
+           {Object.entries(availabilityConfig).map(([key, cfg]) => (
+             <button
+               key={key}
+               onClick={() => setAvailability(key as AvailabilityStatus)}
+               className={cn(
+                 "px-4 py-2 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                 availability === key 
+                   ? `${cfg.bg} ${cfg.color} border border-white/10 shadow-lg shadow-black/20` 
+                   : "text-[#7f9488] hover:text-white"
+               )}
+             >
+               <div className={cn("h-1.5 w-1.5 rounded-full", cfg.dot)} />
+               {cfg.label}
+             </button>
+           ))}
         </div>
       </div>
 
-      {/* Availability selector */}
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">My Availability</p>
-          <div className="grid grid-cols-2 gap-2">
-            {(Object.keys(availabilityConfig) as AvailabilityStatus[]).map(status => (
-              <button key={status} onClick={() => setAvailability(status)}
-                className={cn("flex items-center gap-2 p-2.5 rounded-xl border-2 text-sm font-semibold transition-all",
-                  availability === status ? "border-primary bg-primary/5" : "border-border hover:bg-accent")}>
-                <span className={cn("h-2.5 w-2.5 rounded-full", availabilityConfig[status].dot)} />
-                {availabilityConfig[status].label}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid lg:grid-cols-12 gap-6 h-[calc(100vh-220px)] min-h-[600px]">
+        {/* Left Side: Queue List */}
+        <div className="lg:col-span-4 flex flex-col gap-4 overflow-hidden">
+          <div className={`${theme.card} ${theme.border} border rounded-[2.5rem] flex-1 flex flex-col overflow-hidden`}>
+            <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+              <div className="relative">
+                <Search className="absolute left-4 top-3 h-4 w-4 text-[#7f9488]" />
+                <input 
+                  placeholder="SEARCH SPECIMENS..." 
+                  className="w-full bg-black/40 border border-white/5 rounded-2xl py-2.5 pl-12 pr-4 text-xs font-bold italic text-white focus:border-[#22c55e]/50 outline-none transition-all"
+                />
+              </div>
+            </div>
 
-      {/* Queue */}
-      <div className="space-y-2">
-        {queue.length === 0 ? (
-          <div className="text-center py-10 text-muted-foreground border-2 border-dashed border-border rounded-xl">
-            No patients currently in queue.
-          </div>
-        ) : queue.map(patient => {
-          const cfg = queueStatusConfig[patient.status];
-          return (
-            <Card key={patient.id}
-              className={cn("hover:border-primary/40 transition-colors cursor-pointer",
-                patient.urgent && "border-l-4 border-l-red-500")}
-              onClick={() => {
-                setSelected(patient);
-                if (patient.status === "order_submitted") {
-                  updateOrderStatus(patient.id, "doctor_reviewing");
-                }
-              }}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="relative shrink-0">
-                    <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
-                      {patient.patient_avatar || patient.patientAvatar}
-                    </div>
-                    {patient.urgent && (
-                      <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-red-500 ring-2 ring-card flex items-center justify-center">
-                        <span className="text-[8px] text-white font-bold">!</span>
-                      </span>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              <AnimatePresence mode="popLayout">
+                {queue.map((order, i) => (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    key={order.id}
+                    onClick={() => setSelectedId(order.id)}
+                    className={cn(
+                      "group p-5 rounded-[2rem] border transition-all cursor-pointer relative overflow-hidden",
+                      selectedId === order.id 
+                        ? "bg-[#22c55e]/10 border-[#22c55e]/40 shadow-xl shadow-[#22c55e]/5" 
+                        : "bg-white/[0.02] border-white/5 hover:border-white/20"
                     )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-sm">{patient.patient_name || patient.patientName}</p>
-                      <span className="text-xs">{patient.patient_country || patient.patientCountry}</span>
+                  >
+                    {selectedId === order.id && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#22c55e]" />
+                    )}
+                    
+                    <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "h-12 w-12 rounded-2xl flex items-center justify-center font-black text-xs border transition-all",
+                        selectedId === order.id 
+                          ? "bg-[#22c55e] text-black border-[#22c55e]" 
+                          : "bg-white/5 text-[#7f9488] border-white/5 group-hover:border-white/20"
+                      )}>
+                        {order.patientName.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                           <p className={cn("text-sm font-black italic truncate transition-colors", selectedId === order.id ? "text-white" : "text-[#d4c4a8]")}>
+                             {order.patientName}
+                           </p>
+                           {order.urgent && <Zap className="h-3.5 w-3.5 text-red-500 fill-red-500 animate-pulse shrink-0" />}
+                        </div>
+                        <p className={`${theme.textMuted} text-[10px] font-bold uppercase tracking-widest mt-1 truncate`}>
+                          {order.medication}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">{patient.category} · {patient.time || patient.ordered_date || patient.orderedDate}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", cfg.bg, cfg.color)}>
-                        {cfg.label}
-                      </span>
-                      {patient.id === "RX-44810" && (
-                        <span className="text-[10px] bg-sky-100 text-sky-700 font-bold px-2 py-0.5 rounded-full border border-sky-200">
-                          REFILL (30 DAY)
-                        </span>
-                      )}
-                      {patient.status === "order_submitted" && patient.waitMins && patient.waitMins > 0 && (
-                        <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
-                          <Clock className="h-3 w-3" /> {patient.waitMins}m wait
-                        </span>
-                      )}
-                      {(() => {
-                        const v = patient.patient_vitals || patient.patientVitals || {};
-                        const isHighRisk = parseFloat(v.bmi) >= 35 || (v.allergies && v.allergies.toLowerCase() !== 'none');
-                        return isHighRisk && (
-                          <span className="text-[10px] bg-red-50 text-red-600 font-bold px-2 py-0.5 rounded-full border border-red-100 flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" /> HIGH RISK
-                          </span>
-                        );
-                      })()}
-                      {!patient.intakeComplete && !patient.intake_answers && (
-                        <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
-                          <AlertCircle className="h-3 w-3" /> Intake pending
-                        </span>
-                      )}
+
+                    <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+                       <span className={cn(
+                         "text-[9px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md",
+                         queueStatusConfig[order.status]?.bg,
+                         queueStatusConfig[order.status]?.color
+                       )}>
+                         {queueStatusConfig[order.status]?.label}
+                       </span>
+                       <span className={`${theme.textMuted} text-[9px] font-bold`}>{order.time || '12m ago'}</span>
                     </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {queue.length === 0 && (
+                <div className="h-full flex flex-col items-center justify-center text-center p-10">
+                  <Database className="h-12 w-12 text-white/5 mb-4" />
+                  <p className="text-sm font-black uppercase tracking-[0.2em] text-white/10 italic">Queue Void</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-white/5 bg-white/[0.01]">
+               <Button 
+                onClick={handleRefresh}
+                className="w-full rounded-2xl bg-white/5 border border-white/5 text-[10px] font-black uppercase italic tracking-widest hover:bg-white/10 gap-2 h-10"
+               >
+                 <Activity className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
+                 Force Re-Sync Matrix
+               </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Patient Detail & Clinical Interface */}
+        <div className="lg:col-span-8 overflow-hidden flex flex-col gap-6">
+          <AnimatePresence mode="wait">
+            {selected ? (
+              <motion.div
+                key={selected.id}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="flex-1 flex flex-col gap-6 overflow-hidden"
+              >
+                {/* Patient Profile Ribbon */}
+                <div className={`${theme.card} ${theme.border} border rounded-[2.5rem] p-8 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6`}>
+                   <div className="flex items-center gap-6">
+                      <div className="h-20 w-20 rounded-[2rem] bg-gradient-to-br from-[#22c55e] to-[#0c120f] p-[1px] shadow-2xl shadow-black">
+                         <div className="h-full w-full rounded-[2rem] bg-[#0c120f] flex items-center justify-center font-black text-2xl text-[#22c55e] italic">
+                            {selected.patientName.charAt(0)}
+                         </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-3 mb-1">
+                          <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">{selected.patientName}</h2>
+                          <Globe className="h-4 w-4 text-[#7f9488]" />
+                        </div>
+                        <div className="flex items-center gap-4">
+                           <span className={`${theme.textMuted} text-[10px] font-black uppercase tracking-widest`}>MALE • AGE {selected.patientAge} • BMI 31.4</span>
+                           <div className="h-1 w-1 rounded-full bg-white/20" />
+                           <span className={`${theme.textGreen} text-[10px] font-black uppercase tracking-widest`}>AUTHORIZED ACCESS</span>
+                        </div>
+                      </div>
+                   </div>
+
+                   <div className="flex gap-3">
+                      <Button className="rounded-2xl bg-[#22c55e] text-black font-black uppercase italic px-6 h-12 shadow-lg shadow-[#22c55e]/20 group">
+                        <Video className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" /> Launch Consultation
+                      </Button>
+                      <Button variant="outline" className="rounded-2xl border-white/10 bg-white/5 h-12 w-12 p-0 hover:bg-white/10">
+                        <MessageSquare className="h-5 w-5 text-[#d4c4a8]" />
+                      </Button>
+                   </div>
+                </div>
+
+                <div className="flex-1 grid md:grid-cols-2 gap-6 overflow-hidden">
+                  {/* Intake & History */}
+                  <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar">
+                     <div className={`${theme.card} ${theme.border} border rounded-[2rem] p-6`}>
+                        <div className="flex items-center gap-2 mb-6">
+                          <FileText className="h-4 w-4 text-[#22c55e]" />
+                          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#d4c4a8]">Intake Telemetry</h3>
+                        </div>
+                        
+                        <div className="space-y-4">
+                           <div className="grid grid-cols-2 gap-4">
+                              <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                 <p className="text-[9px] font-black text-[#7f9488] uppercase mb-1">Requested Agent</p>
+                                 <p className="text-xs font-bold text-white italic">{selected.medication}</p>
+                              </div>
+                              <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                 <p className="text-[9px] font-black text-[#7f9488] uppercase mb-1">Intake Compliance</p>
+                                 <p className="text-xs font-bold text-[#22c55e] italic">100% VERIFIED</p>
+                              </div>
+                           </div>
+
+                           <div className="p-5 bg-amber-500/5 rounded-2xl border border-amber-500/20">
+                              <div className="flex items-center gap-2 mb-2">
+                                <AlertCircle className="h-3 w-3 text-amber-500" />
+                                <p className="text-[9px] font-black text-amber-500 uppercase">Primary Complaint</p>
+                              </div>
+                              <p className="text-xs font-bold text-[#d4c4a8] leading-relaxed italic">
+                                "{selected.intakeNotes || 'Patient requesting weight management protocol via GLP-1 therapy.'}"
+                              </p>
+                           </div>
+
+                           <div className="space-y-3">
+                              <p className="text-[9px] font-black text-[#7f9488] uppercase tracking-widest mt-6 mb-2">Matrix Responses</p>
+                              {selected.intakeAnswers ? Object.entries(selected.intakeAnswers).slice(0,3).map(([q, a], i) => (
+                                <div key={i} className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
+                                  <p className="text-[10px] font-bold text-[#7f9488] mb-1">{q}</p>
+                                  <p className="text-xs text-white font-medium italic">{Array.isArray(a) ? a.join(", ") : a}</p>
+                                </div>
+                              )) : (
+                                [
+                                  "No known clinical contradictions reported.",
+                                  "Blood pressure stable at last clinical visit.",
+                                  "Ready for immediate asynchronous clearance."
+                                ].map((note, i) => (
+                                  <div key={i} className="flex items-start gap-3 p-3">
+                                    <CheckCircle2 className="h-3 w-3 text-[#22c55e] mt-0.5" />
+                                    <p className="text-xs font-medium text-[#7f9488] italic">{note}</p>
+                                  </div>
+                                ))
+                              )}
+                           </div>
+                        </div>
+                     </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+
+                  {/* Rx Dispatch Terminal */}
+                  <div className="space-y-6">
+                    <div className={`${theme.card} border-[#22c55e]/30 border rounded-[2rem] p-8 relative overflow-hidden bg-gradient-to-br from-[#0c120f] to-[#1a2620]`}>
+                       <div className="absolute top-0 right-0 p-6 opacity-10">
+                          <Pill className="h-24 w-24 text-[#22c55e]" />
+                       </div>
+
+                       <div className="flex items-center gap-3 mb-8">
+                         <div className="h-10 w-10 rounded-xl bg-[#22c55e] flex items-center justify-center">
+                            <Lock className="h-5 w-5 text-black" />
+                         </div>
+                         <div>
+                            <h3 className="text-sm font-black text-white italic uppercase tracking-tighter">Secure Dispatch Terminal</h3>
+                            <p className="text-[9px] font-bold text-[#22c55e] uppercase">Encryption Layer Active</p>
+                         </div>
+                       </div>
+
+                       <div className="space-y-6 relative z-10">
+                          <div>
+                            <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2 block">Clinical Directive / Rx Note</label>
+                            <textarea 
+                              value={rxNote}
+                              onChange={(e) => setRxNote(e.target.value)}
+                              placeholder="INJECT 0.25MG SUBCUTANEOUSLY ONCE WEEKLY FOR 4 WEEKS..."
+                              className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none h-32 transition-all"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 pt-4">
+                             <Button 
+                              variant="outline" 
+                              className="rounded-2xl border-white/10 bg-white/5 text-[10px] font-black uppercase italic tracking-widest h-14 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50 transition-all"
+                             >
+                               Deny Request
+                             </Button>
+                             <Button 
+                              onClick={() => {
+                                updateOrderStatus(selected.id, 'rx_sent');
+                                setRxNote("");
+                              }}
+                              className="rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-black font-black uppercase italic tracking-tighter h-14 group shadow-xl shadow-[#22c55e]/20"
+                             >
+                               Approve & Dispatch <Sparkles className="ml-2 h-4 w-4 group-hover:animate-spin" />
+                             </Button>
+                          </div>
+                       </div>
+
+                       <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                             <ShieldCheck className="h-3 w-3 text-[#22c55e]" />
+                             <span className="text-[9px] font-bold text-[#7f9488] uppercase italic">Provider Auth: Verified</span>
+                          </div>
+                          <div className="h-1.5 w-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+                       </div>
+                    </div>
+
+                    {/* Infrastructure Stats */}
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className={`${theme.card} ${theme.border} border rounded-[1.5rem] p-5`}>
+                          <p className="text-[9px] font-black text-[#7f9488] uppercase tracking-widest mb-1">Network Ping</p>
+                          <p className="text-xl font-black text-[#d4c4a8] italic">14ms</p>
+                       </div>
+                       <div className={`${theme.card} ${theme.border} border rounded-[1.5rem] p-5`}>
+                          <p className="text-[9px] font-black text-[#7f9488] uppercase tracking-widest mb-1">Queue Load</p>
+                          <p className="text-xl font-black text-[#22c55e] italic">LOW</p>
+                       </div>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+              </motion.div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center">
+                 <div className="h-20 w-20 rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 mb-6">
+                    <Activity className="h-10 w-10 text-white/20 animate-pulse" />
+                 </div>
+                 <h2 className="text-xl font-black text-white/40 italic uppercase tracking-widest">Select Patient Profile</h2>
+                 <p className="text-xs font-bold text-white/10 uppercase tracking-widest mt-2 italic">Awaiting Matrix Selection...</p>
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
+  );
+}
+
+function Lock(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
   );
 }

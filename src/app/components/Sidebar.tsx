@@ -9,7 +9,7 @@ import {
   Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse
 } from "lucide-react";
 import { cn } from "./ui/shared.tsx";
-import { useI18n, brand, useAuthStore } from "../../lib";
+import { useI18n, brand, useAuthStore, usePatientStore } from "../../lib";
 
 type Role = "patient" | "doctor" | "admin" | "superadmin" | "pharmacy";
 
@@ -23,11 +23,11 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
   patient: [
     { icon: Home, label: "Overview", href: "/patient" },
     { icon: Package, label: "Shop Treatments", href: "/patient/shop" },
-    { icon: TrendingUp, label: "My Orders", href: "/patient/orders", badge: 1 },
+    { icon: TrendingUp, label: "My Orders", href: "/patient/orders" },
     { icon: Calendar, label: "Appointments", href: "/patient/appointments" },
     { icon: FileCheck, label: "Intake Forms", href: "/patient/intake" },
     { icon: ClipboardList, label: "Visit Forms", href: "/patient/visit-forms" },
-    { icon: MessageSquare, label: "Messages", href: "/patient/messages", badge: 3 },
+    { icon: MessageSquare, label: "Messages", href: "/patient/messages" },
     { icon: FileText, label: "Visit Summaries", href: "/patient/summaries" },
     { icon: Pill, label: "Prescriptions", href: "/patient/prescriptions" },
     { icon: TestTube, label: "Lab Results", href: "/patient/labs" },
@@ -35,16 +35,16 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
     { icon: User, label: "Profile", href: "/patient/profile" },
     { icon: ShieldCheck, label: "Identity", href: "/patient/identity" },
     { icon: Users, label: "Family Access", href: "/patient/family" },
-    { icon: Bell, label: "Notifications", href: "/patient/notifications", badge: 2 },
+    { icon: Bell, label: "Notifications", href: "/patient/notifications" },
     { icon: Building2, label: "Insurance", href: "/patient/insurance" },
   ],
   doctor: [
     { icon: LayoutDashboard, label: "Dashboard", href: "/doctor" },
     { icon: Users, label: "Patients", href: "/doctor/patients" },
-    { icon: ClipboardList, label: "Patient Queue", href: "/doctor/queue", badge: 3 },
+    { icon: ClipboardList, label: "Patient Queue", href: "/doctor/queue" },
     { icon: Calendar, label: "Schedule", href: "/doctor/schedule" },
     { icon: Activity, label: "Availability", href: "/doctor/availability" },
-    { icon: MessageSquare, label: "Messages", href: "/doctor/messages", badge: 2 },
+    { icon: MessageSquare, label: "Messages", href: "/doctor/messages" },
     { icon: Stethoscope, label: "Consultation", href: "/doctor/consult" },
     { icon: FlaskConical, label: "Lab Requests", href: "/doctor/labs" },
     { icon: Bot, label: "AI Scribe", href: "/doctor/scribe" },
@@ -56,7 +56,7 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
     { group: "MANAGEMENT", icon: Users, label: "Patients", href: "/admin/patients" },
     { group: "MANAGEMENT", icon: HeartPulse, label: "Treatments", href: "/admin/treatments" },
     { group: "MANAGEMENT", icon: Package, label: "Orders", href: "/admin/orders" },
-    { group: "MANAGEMENT", icon: MessageSquare, label: "Messenger", href: "/admin/messages", badge: 3 },
+    { group: "MANAGEMENT", icon: MessageSquare, label: "Messenger", href: "/admin/messages" },
     { group: "MANAGEMENT", icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
     { group: "TOOLS & SERVICES", icon: FileText, label: "Questionnaires", href: "/admin/questionnaires" },
     { group: "TOOLS & SERVICES", icon: Layers, label: "Products", href: "/admin/products" },
@@ -79,9 +79,9 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
   ],
   pharmacy: [
     { icon: LayoutDashboard, label: "Dispensary Overview", href: "/pharmacy" },
-    { icon: ClipboardList, label: "Incoming Rx", href: "/pharmacy/orders", badge: 12 },
+    { icon: ClipboardList, label: "Incoming Rx", href: "/pharmacy/orders" },
     { icon: Truck, label: "Ready for Pickup", href: "/pharmacy/pickup" },
-    { icon: Package, label: "Shipping Queue", href: "/pharmacy/shipping", badge: 5 },
+    { icon: Package, label: "Shipping Queue", href: "/pharmacy/shipping" },
     { icon: FlaskConical, label: "Compounding Log", href: "/pharmacy/compounding" },
     { icon: Layers, label: "Inventory Mgmt", href: "/pharmacy/inventory" },
     { icon: FileText, label: "Audit Reports", href: "/pharmacy/audit" },
@@ -117,6 +117,10 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const displayRole = authRole?.replace('_', ' ') || role;
 
   const isAdminPortal = role === "admin" || role === "superadmin" || role === "doctor";
+  const { orders } = usePatientStore();
+  
+  // Real-time badge calculations
+  const pendingCount = orders.filter(o => o.status === "order_submitted" || o.status === "doctor_reviewing").length;
 
   const SidebarContent = () => (
     <div className={cn(
@@ -185,15 +189,23 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                       )} />
                       <span className="truncate">{item.label}</span>
                     </div>
-                    {item.badge && item.badge > 0 && (
-                      <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm",
-                        isActive 
-                          ? isAdminPortal ? "bg-[#22c55e] text-black" : "bg-primary text-primary-foreground" 
-                          : isAdminPortal ? "bg-[#22c55e]/20 text-[#22c55e]" : "bg-primary/10 text-primary"
-                      )}>
-                        {item.badge}
-                      </span>
-                    )}
+                    {(() => {
+                      let badgeCount = item.badge;
+                      if (item.label === "Patient Queue") badgeCount = pendingCount;
+                      
+                      if (badgeCount && badgeCount > 0) {
+                        return (
+                          <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm",
+                            isActive 
+                              ? isAdminPortal ? "bg-white text-black" : "bg-primary text-white"
+                              : isAdminPortal ? "bg-[#22c55e]/20 text-[#22c55e]" : "bg-primary/10 text-primary"
+                          )}>
+                            {badgeCount}
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                   </>
                 )}
               </NavLink>
