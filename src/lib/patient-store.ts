@@ -1,31 +1,31 @@
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 
-// Centralized reactive Zustand store for the patient portal.
-// Source of truth for: brand config (white-label), active order pipeline,
-// doctor availability, and prescription state. All UI surfaces (Dashboard,
-// OrderTracking, Appointments, Shop) read from here so updates stay in sync.
+// Centralized reactive Zustand store for the global state (Patient/Doctor/Admin).
+// Source of truth for: brand config, active order pipeline, doctor availability.
+// Uses local storage persist to simulate a real backend flow between portals.
 
-// Pipeline steps shown on prescription cards. "awaiting_review" is a
-// pre-pipeline state (consultation submitted, doctor hasn't responded yet)
-// and is rendered as a compact card without the stepper.
 export type OrderStatus =
-  | "intake_submitted"
+  | "order_submitted"
   | "doctor_reviewing"
-  | "prescribing"
-  | "shipping"
-  | "tracking";
+  | "rx_sent"
+  | "shipped"
+  | "delivered";
 
 export const ORDER_STEPS: { key: OrderStatus; label: string; desc: string }[] = [
-  { key: "intake_submitted", label: "Intake Submitted", desc: "Health questionnaire received by our clinical team" },
+  { key: "order_submitted", label: "Order Submitted", desc: "Health questionnaire received by our clinical team" },
   { key: "doctor_reviewing", label: "Doctor Reviewing", desc: "A physician is reviewing your medical profile" },
-  { key: "prescribing", label: "Prescribing", desc: "Prescription approved and sent to pharmacy" },
-  { key: "shipping", label: "Shipping", desc: "Medication being prepared and shipped" },
-  { key: "tracking", label: "Tracking", desc: "On its way to you" },
+  { key: "rx_sent", label: "Prescription Sent", desc: "Prescription approved and sent to pharmacy" },
+  { key: "shipped", label: "Shipped", desc: "Medication shipped" },
+  { key: "delivered", label: "Delivered", desc: "Medication delivered" },
 ];
 
 export type Order = {
   id: string;
+  patientName: string;
+  patientAvatar: string;
+  patientAge: number;
+  patientCountry: string;
   subBrand: string;
   medication: string;
   dosageInstructions: string;
@@ -42,93 +42,30 @@ export type Order = {
   trackingUrl: string | null;
   estimatedDelivery: string | null;
   timeline: { status: OrderStatus; date: string }[];
+  urgent?: boolean;
+  intakeComplete?: boolean;
+  intakeNotes?: string;
+  intakeAnswers?: Record<string, string | string[]>;
+  consultationTime?: string;
+  waitMins?: number;
+  time?: string;
+  mrn?: string;
 };
 
-export const orders: Order[] = [
-  {
-    id: "RX-G7K2M9",
-    subBrand: "GlowRx",
-    medication: "Tretinoin 0.05%",
-    dosageInstructions: "Apply a pea-sized amount nightly to clean, dry skin",
-    category: "Skincare",
-    status: "prescribing",
-    orderedDate: "Apr 30, 2026",
-    pharmacy: "Truepill Pharmacy",
-    amount: "$45",
-    doctor: "Dr. Amira Hassan",
-    doctorNote: "Approved. Start nightly, every other night for the first 2 weeks. Always pair with SPF 30+ in the morning.",
-    tracking: null,
-    carrier: null,
-    trackingUrl: null,
-    estimatedDelivery: "May 6, 2026",
-    timeline: [
-      { status: "intake_submitted", date: "Apr 30, 9:14 AM" },
-      { status: "doctor_reviewing", date: "Apr 30, 11:02 AM" },
-      { status: "prescribing", date: "May 1, 2:45 PM" },
-    ],
-  },
-  {
-    id: "RX-V3N8P1",
-    subBrand: "VitalCare",
-    medication: "Minoxidil Foam 5%",
-    dosageInstructions: "Apply twice daily to affected areas",
-    category: "Hair",
-    status: "tracking",
-    orderedDate: "Apr 21, 2026",
-    pharmacy: "Truepill Pharmacy",
-    amount: "$19",
-    doctor: "Dr. Marcus Thorne",
-    doctorNote: "Approved. Expect visible results in 3–6 months. Consistency matters more than quantity.",
-    tracking: "1Z999AA10123456784",
-    carrier: "UPS",
-    trackingUrl: "https://www.ups.com/track",
-    estimatedDelivery: "May 5, 2026",
-    timeline: [
-      { status: "intake_submitted", date: "Apr 21, 8:30 AM" },
-      { status: "doctor_reviewing", date: "Apr 21, 10:15 AM" },
-      { status: "prescribing", date: "Apr 22, 1:20 PM" },
-      { status: "shipping", date: "Apr 22, 5:00 PM" },
-      { status: "tracking", date: "Apr 24, 9:10 AM" },
-    ],
-  },
-  {
-    id: "RX-V8F4L2",
-    subBrand: "VitalCare",
-    medication: "Finasteride 1mg",
-    dosageInstructions: "One tablet daily, with or without food",
-    category: "Hair",
-    status: "doctor_reviewing",
-    orderedDate: "Apr 28, 2026",
-    consultationSubmittedDate: "Apr 28, 2026",
-    pharmacy: "Truepill Pharmacy",
-    amount: "$25",
-    doctor: "Pending assignment",
-    doctorNote: null,
-    tracking: null,
-    carrier: null,
-    trackingUrl: null,
-    estimatedDelivery: null,
-    timeline: [
-      { status: "intake_submitted", date: "Apr 28, 7:42 AM" },
-      { status: "doctor_reviewing", date: "Apr 28, 8:00 AM" },
-    ],
-  },
-];
+// Removed mock initialOrders to enforce strict backend data fetching
 
 export function getStepIndex(status: OrderStatus) {
   return ORDER_STEPS.findIndex((s) => s.key === status);
 }
 
-export function getActiveOrder() {
-  return orders.find((o) => o.status !== "tracking") ?? orders[0];
+export function getActiveOrder(orders: Order[]) {
+  return orders.find((o) => o.status !== "shipped" && o.status !== "delivered") ?? orders[0];
 }
 
-export function getAwaitingReviewCount() {
-  return orders.filter((o) => o.status === "intake_submitted" || o.status === "doctor_reviewing").length;
+export function getAwaitingReviewCount(orders: Order[]) {
+  return orders.filter((o) => o.status === "order_submitted" || o.status === "doctor_reviewing").length;
 }
 
-// Authenticated patient — single source of truth for greeting and profile.
-// Tenants override this when running Peak Health as a backend.
 export const patientUser = {
   firstName: "John",
   lastName: "Carter",
@@ -153,8 +90,6 @@ export const doctorAvailability: DoctorAvailability[] = [
   { id: 4, name: "Dr. Carlos Rivera", specialty: "Endocrinology", avatar: "CR", available: true, wait: "< 30 min", nextSlot: "Today 2:30 PM" },
 ];
 
-// White-label brand config — single source of truth for brand identity.
-// Other tenants override this object to use Peak Health as a backend.
 export const brand = {
   name: "Peak Health",
   shortName: "Peak",
@@ -163,44 +98,167 @@ export const brand = {
   tagline: "Global TeleHealth, HIPAA-compliant",
 };
 
-// Zustand Store Definition
-interface PatientState {
+interface AppState {
   orders: Order[];
   doctorAvailability: DoctorAvailability[];
   intakeFormData: Record<string, any>;
-  addOrder: (order: Order) => void;
-  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  fetchOrders: () => Promise<void>;
+  addOrder: (order: Order) => Promise<void>;
+  updateOrderStatus: (orderId: string, status: OrderStatus, tracking?: string, carrier?: string) => Promise<void>;
+  updateOrderRx: (orderId: string, medication: string, dosage: string, note: string) => Promise<void>;
   setIntakeFormData: (data: Record<string, any>) => void;
   updateDoctorAvailability: (doctorId: number, available: boolean) => void;
+  resetStore: () => void;
 }
 
-export const usePatientStore = create<PatientState>()(
+import { supabase } from './supabaseClient';
+import { useAuthStore } from './auth-store';
+import { PharmacyService } from '../api/pharmacy';
+
+export const usePatientStore = create<AppState>()(
   devtools(
-    (set) => ({
-      orders: orders,
+    (set, get) => ({
+      orders: [], // Start fresh
       doctorAvailability: doctorAvailability,
       intakeFormData: {},
 
-      addOrder: (order: Order) =>
-        set((state) => ({
-          orders: [...state.orders, order]
-        })),
+      fetchOrders: async () => {
+        try {
+          const { role, brandId, user } = useAuthStore.getState();
+          let query = supabase.from('orders').select('*').order('created_at', { ascending: false });
+          
+          if (role === 'patient' && user) {
+            query = query.eq('user_id', user.id);
+          } else if (role === 'brand_admin' && brandId) {
+            query = query.eq('sub_brand', brandId);
+          }
+          // Doctors and super_admins see all (doctors filter locally in the UI to order_submitted)
 
-      updateOrderStatus: (orderId: string, status: OrderStatus) =>
+          const { data, error } = await query;
+          if (error) throw error;
+          
+          const mappedOrders: Order[] = (data || []).map(d => ({
+            id: d.order_number,
+            patientName: d.patient_name,
+            patientAvatar: d.patient_avatar || '',
+            patientAge: d.patient_age,
+            patientCountry: d.patient_country,
+            subBrand: d.sub_brand,
+            medication: d.medication,
+            dosageInstructions: d.dosage_instructions,
+            category: d.category,
+            status: d.status as OrderStatus,
+            orderedDate: d.ordered_date,
+            consultationSubmittedDate: d.consultation_submitted_date,
+            pharmacy: d.pharmacy,
+            amount: d.amount,
+            doctor: d.doctor,
+            doctorNote: d.doctor_note,
+            tracking: d.tracking,
+            carrier: d.carrier,
+            trackingUrl: d.tracking_url,
+            estimatedDelivery: d.estimated_delivery,
+            timeline: d.timeline || [],
+            urgent: d.urgent,
+            intakeComplete: d.intake_complete,
+            intakeNotes: d.intake_notes,
+            waitMins: d.wait_mins,
+            time: d.time,
+            mrn: d.mrn
+          }));
+          set({ orders: mappedOrders });
+        } catch (error) {
+          console.error('Error fetching orders from Supabase:', error);
+        }
+      },
+
+
+      addOrder: async (order: Order) => {
+        set((state) => ({ orders: [...state.orders, order] }));
+        try {
+          await supabase.from('orders').insert([{
+            order_number: order.id,
+            patient_name: order.patientName,
+            patient_avatar: order.patientAvatar,
+            patient_age: order.patientAge,
+            patient_country: order.patientCountry,
+            sub_brand: order.subBrand,
+            medication: order.medication,
+            dosage_instructions: order.dosageInstructions,
+            category: order.category,
+            status: order.status,
+            ordered_date: order.orderedDate,
+            pharmacy: order.pharmacy,
+            amount: order.amount,
+            doctor: order.doctor,
+            urgent: order.urgent,
+            intake_complete: order.intakeComplete,
+            intake_notes: order.intakeNotes,
+            wait_mins: order.waitMins,
+            time: order.time,
+            mrn: order.mrn,
+            timeline: order.timeline
+          }]);
+        } catch (error) {
+          console.error('Error adding order to Supabase:', error);
+        }
+      },
+
+      updateOrderStatus: async (orderId: string, status: OrderStatus, tracking?: string, carrier?: string) => {
+        const orderToUpdate = get().orders.find(o => o.id === orderId);
+        if (!orderToUpdate) return;
+        
+        const newTimeline = [...orderToUpdate.timeline, { status, date: new Date().toLocaleString() }];
+        
         set((state) => ({
           orders: state.orders.map(order =>
             order.id === orderId
               ? {
                   ...order,
                   status,
-                  timeline: [
-                    ...order.timeline,
-                    { status, date: new Date().toLocaleString() }
-                  ]
+                  ...(tracking && { tracking }),
+                  ...(carrier && { carrier }),
+                  timeline: newTimeline
                 }
               : order
           )
-        })),
+        }));
+
+        try {
+          await supabase.from('orders').update({
+            status,
+            ...(tracking && { tracking }),
+            ...(carrier && { carrier }),
+            timeline: newTimeline
+          }).eq('order_number', orderId);
+        } catch (error) {
+          console.error('Error updating order status in Supabase:', error);
+        }
+      },
+        
+      updateOrderRx: async (orderId: string, medication: string, dosage: string, note: string) => {
+        try {
+          const { error } = await supabase
+            .from('orders')
+            .update({
+              status: 'rx_sent',
+              medication: medication,
+              dosage_instructions: dosage,
+              doctor_note: note
+            })
+            .eq('order_number', orderId);
+            
+          if (error) throw error;
+          
+          await get().fetchOrders(); // Refresh local state
+          
+          // trigger automated pharmacy fulfillment!
+          PharmacyService.simulateFulfillment(orderId, medication);
+          
+        } catch (error) {
+          console.error("Failed to update rx:", error);
+        }
+      },
 
       setIntakeFormData: (data: Record<string, any>) =>
         set((state) => ({
@@ -215,6 +273,8 @@ export const usePatientStore = create<PatientState>()(
               : doctor
           )
         })),
+        
+      resetStore: () => set({ orders: initialOrders, intakeFormData: {} }),
     })
   )
 );

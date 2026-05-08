@@ -16,10 +16,10 @@ export function AppLayout() {
   // Determine role and portal context
   const isLanding = path === "/";
   const isPatient = path.startsWith("/patient");
-  const isProfessional = !isPatient && !isLanding;
 
   // Determine Role for Sidebar
-  let role: "doctor" | "admin" | "superadmin" | "pharmacy" = "doctor";
+  let role: "patient" | "doctor" | "admin" | "superadmin" | "pharmacy" = "doctor";
+  if (isPatient) role = "patient";
   if (path.startsWith("/admin")) role = "admin";
   if (path.startsWith("/superadmin")) role = "superadmin";
   if (path.startsWith("/pharmacy")) role = "pharmacy";
@@ -34,7 +34,7 @@ export function AppLayout() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background font-sans antialiased text-foreground">
       {/* Desktop Sidebar (Left) */}
-      {isProfessional && (
+      {!isLanding && (
         <div className="hidden md:block h-full">
           <Sidebar role={role} />
         </div>
@@ -44,8 +44,8 @@ export function AppLayout() {
         {/* Header - Glassmorphic Design */}
         <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 md:px-6 shadow-sm">
           <div className="flex items-center gap-3">
-            {/* Mobile Sidebar Trigger (For Pros) */}
-            {isProfessional && (
+            {/* Mobile Sidebar Trigger */}
+            {!isLanding && (
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="md:hidden h-10 w-10 rounded-xl hover:bg-primary/5 active:scale-95 transition-all">
@@ -59,7 +59,7 @@ export function AppLayout() {
             )}
 
             {/* Back Button (For Deep Pages) */}
-            {canGoBack && !isProfessional && (
+            {canGoBack && isPatient && (
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -112,15 +112,12 @@ export function AppLayout() {
         {/* Scrollable Content Area */}
         <main className={cn(
           "flex-1 overflow-y-auto overflow-x-hidden scroll-smooth",
-          isPatient ? "pb-28" : "pb-6"
+          "pb-6"
         )}>
           <div className="w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <Outlet />
           </div>
         </main>
-
-        {/* Bottom Navigation (Patient Portal Only) */}
-        {isPatient && <BottomNav />}
       </div>
     </div>
   );

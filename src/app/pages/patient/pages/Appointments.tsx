@@ -24,6 +24,7 @@ const doctors = [
 export function AppointmentsPage() {
   const [tab, setTab] = useState<"upcoming" | "book" | "past">("upcoming");
   const [bookMode, setBookMode] = useState<"instant" | "async">("instant");
+  const [bookingDoctor, setBookingDoctor] = useState<number | null>(null);
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
@@ -79,8 +80,9 @@ export function AppointmentsPage() {
                     </div>
                     {appt.status === "confirmed" && appt.date === "Today" && (
                       <div className="flex gap-2 mt-3">
-                        <Button size="sm" className="rounded-xl text-xs h-8 gap-1.5">
-                          <Video className="h-3.5 w-3.5" /> Join Now
+                        <Button size="sm" className="rounded-xl text-xs h-8 gap-1.5"
+                          onClick={() => window.open('https://zoom.us/j/5551234567', '_blank')}>
+                          <Video className="h-3.5 w-3.5" /> Join Zoom
                         </Button>
                         <Button size="sm" variant="outline" className="rounded-xl text-xs h-8">Reschedule</Button>
                       </div>
@@ -117,43 +119,64 @@ export function AppointmentsPage() {
             </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">Available Doctors</p>
-            <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-              <Filter className="h-3.5 w-3.5" /> Filter
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {doctors.filter(d => bookMode === "async" || d.available).map(doc => (
-              <Card key={doc.id} className="hover:border-primary/40 transition-colors cursor-pointer">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center font-bold text-white text-sm shrink-0">
-                      {doc.avatar}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm">{doc.name}</p>
-                      <p className="text-xs text-muted-foreground">{doc.specialty}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <div className="flex items-center gap-0.5">
-                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                          <span className="text-xs font-semibold">{doc.rating}</span>
-                          <span className="text-xs text-muted-foreground">({doc.reviews})</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-emerald-600">
-                          <Clock className="h-3 w-3" />{doc.wait}
-                        </div>
-                      </div>
-                    </div>
-                    <Button size="sm" className="rounded-xl text-xs shrink-0">
-                      {bookMode === "async" ? "Message" : "Book"}
-                    </Button>
-                  </div>
-                </CardContent>
+          {bookingDoctor ? (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+              <Button variant="ghost" size="sm" onClick={() => setBookingDoctor(null)} className="gap-1.5 text-muted-foreground hover:text-foreground">
+                <ChevronRight className="h-4 w-4 rotate-180" /> Back to Doctors
+              </Button>
+              <Card className="overflow-hidden border-none shadow-md">
+                {/* Calendly Inline Widget */}
+                <iframe 
+                  src={`https://calendly.com/calendly-demo?hide_event_type_details=1&hide_gdpr_banner=1`} 
+                  width="100%" 
+                  height="700" 
+                  frameBorder="0" 
+                  title="Calendly Scheduling"
+                  className="w-full bg-white rounded-2xl"
+                />
               </Card>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold">Available Doctors</p>
+                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                  <Filter className="h-3.5 w-3.5" /> Filter
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {doctors.filter(d => bookMode === "async" || d.available).map(doc => (
+                  <Card key={doc.id} className="hover:border-primary/40 transition-colors cursor-pointer" onClick={() => setBookingDoctor(doc.id)}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center font-bold text-white text-sm shrink-0">
+                          {doc.avatar}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm">{doc.name}</p>
+                          <p className="text-xs text-muted-foreground">{doc.specialty}</p>
+                          <div className="flex items-center gap-3 mt-1">
+                            <div className="flex items-center gap-0.5">
+                              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                              <span className="text-xs font-semibold">{doc.rating}</span>
+                              <span className="text-xs text-muted-foreground">({doc.reviews})</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-emerald-600">
+                              <Clock className="h-3 w-3" />{doc.wait}
+                            </div>
+                          </div>
+                        </div>
+                        <Button size="sm" className="rounded-xl text-xs shrink-0" onClick={(e) => { e.stopPropagation(); setBookingDoctor(doc.id); }}>
+                          {bookMode === "async" ? "Message" : "Book"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 

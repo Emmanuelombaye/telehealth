@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
   Globe, TrendingUp, Users, DollarSign, Activity, ShieldCheck,
@@ -9,6 +10,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell
 } from "recharts";
+import { supabase } from "../../../lib/supabaseClient";
 
 const revenueData = [
   { month: "Nov", revenue: 182000 }, { month: "Dec", revenue: 210000 },
@@ -45,6 +47,40 @@ const recentActivity = [
 ];
 
 export function SuperAdminDashboard() {
+  const [orders, setOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchOrders() {
+      try {
+        const { data, error } = await supabase.from('orders').select('*');
+        if (error) throw error;
+        setOrders(data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    fetchOrders();
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+        fetchOrders();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Compute live metrics
+  const totalMRR = orders.reduce((sum, order) => {
+    const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
+    return sum + amt;
+  }, 0);
+
+  const uniquePatients = new Set(orders.map(o => o.patientName)).size;
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -76,8 +112,8 @@ export function SuperAdminDashboard() {
       {/* Platform KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Platform MRR", value: "$318,600", change: "+24%", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
-          { label: "Total Patients", value: "40,700", change: "+18%", icon: Users, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
+          { label: "Platform MRR", value: `$${totalMRR.toLocaleString(undefined, {minimumFractionDigits: 2})}`, change: "Live", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
+          { label: "Total Patients", value: uniquePatients.toLocaleString(), change: "Live", icon: Users, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
           { label: "Active Brands", value: "4", change: "+1 this mo", icon: Building2, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
           { label: "Uptime", value: "99.98%", change: "All systems", icon: Activity, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
         ].map((s, i) => (

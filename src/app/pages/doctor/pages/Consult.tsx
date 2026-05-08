@@ -63,6 +63,10 @@ export function DoctorConsultPage() {
             <ShieldCheck className="h-3 w-3" /> HIPAA SECURE
           </Badge>
           <div className="h-8 w-[1px] bg-slate-200 mx-2" />
+          <Button variant="outline" size="sm" className="rounded-xl h-9 text-xs font-bold"
+            onClick={() => window.open('https://zoom.us/j/5551234567', '_blank')}>
+            <Video className="h-3.5 w-3.5 mr-2" /> Open in Zoom
+          </Button>
           <Button variant="outline" size="sm" className="rounded-xl h-9 text-xs font-bold">
             <Users className="h-3.5 w-3.5 mr-2" /> Invite Specialist
           </Button>

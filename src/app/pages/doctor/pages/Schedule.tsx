@@ -37,12 +37,30 @@ export function DoctorSchedulePage() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Badge variant={s.status === "confirmed" ? "success" : "secondary"} className="text-[10px]">{s.status}</Badge>
-                  <Button size="sm" className="rounded-xl text-xs h-8 gap-1"><Video className="h-3.5 w-3.5" /> Start</Button>
+                  <Button size="sm" className="rounded-xl text-xs h-8 gap-1"
+                    onClick={() => window.open('https://zoom.us/j/5551234567', '_blank')}>
+                    <Video className="h-3.5 w-3.5" /> Start
+                  </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-lg font-bold mb-4">Manage Availability</h2>
+        <Card className="overflow-hidden border-none shadow-md">
+          {/* Calendly Inline Widget for Doctor to manage their availability/events */}
+          <iframe 
+            src={`https://calendly.com/calendly-demo?hide_event_type_details=1&hide_gdpr_banner=1`} 
+            width="100%" 
+            height="700" 
+            frameBorder="0" 
+            title="Calendly Scheduling"
+            className="w-full bg-white rounded-2xl"
+          />
+        </Card>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
   Calendar, Clock, FileText, Activity, MessageSquare, Plus,
@@ -8,8 +9,9 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Badge, cn } from "../
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   useI18n,
-  ORDER_STEPS, orders, getStepIndex, getAwaitingReviewCount, doctorAvailability, patientUser,
+  ORDER_STEPS, getStepIndex, doctorAvailability, usePatientStore, useAuthStore
 } from "../../../lib";
+import { supabase } from "../../../lib/supabaseClient";
 
 const stepIcon: Record<string, any> = {
   intake_submitted: FileText,
@@ -32,15 +34,47 @@ const healthData = [
 
 export function PatientDashboard() {
   const { t } = useI18n();
-  const awaitingReview = getAwaitingReviewCount();
+  const user = useAuthStore(state => state.user);
+  const firstName = user?.user_metadata?.first_name || 'Patient';
   const availableDoctors = doctorAvailability.filter(d => d.available);
+
+  const [orders, setOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchOrders() {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setOrders(data || []);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+      }
+    }
+    fetchOrders();
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+        fetchOrders();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const awaitingReview = orders.filter(o => o.status === "order_submitted").length;
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto">
       {/* Welcome header */}
       <div className="flex items-start justify-between pt-1 gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold">Welcome, {patientUser.firstName}</h1>
+          <h1 className="text-xl font-bold">Welcome, {firstName}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Here's the status of your prescriptions and consultations.
           </p>
@@ -115,10 +149,6 @@ export function PatientDashboard() {
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Ordered</p>
                       <p className="font-semibold">{order.orderedDate}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pharmacy</p>
-                      <p className="font-semibold flex items-center gap-1"><Building2 className="h-3 w-3" /> {order.pharmacy}</p>
                     </div>
                     {order.tracking && (
                       <div className="col-span-2">
