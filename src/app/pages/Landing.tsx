@@ -98,8 +98,8 @@ export function LandingPage() {
         scrolled ? "bg-white/90 backdrop-blur-xl border-b border-slate-100 py-3 shadow-md" : "bg-transparent py-6")}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-12">
-            <Link to="/" className="flex items-center gap-3 group">
-              <img src="/originallogo.png" alt="Peak Health" className="h-16 md:h-20 object-contain group-hover:scale-105 transition-transform duration-300" />
+            <Link to="/" className="flex items-center gap-2 group">
+              <img src="/originallogo.png" alt="Peak Health" className="h-28 md:h-32 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
             </Link>
 
             {/* Desktop Nav */}
