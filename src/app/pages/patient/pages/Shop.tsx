@@ -441,6 +441,8 @@ export function PatientShopPage() {
           });
           if (signInError) console.warn("Auto-login pending email confirmation:", signInError.message);
         }
+      }
+
       // Re-initialize auth store so ProtectedRoute sees the new session immediately
       if (!existingUser) {
         await initialize();

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { cn } from "./ui/utils";
 import { usePatientStore } from "../../lib";
 import { useEffect } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 export function AppLayout() {
   const { fetchOrders, fetchDoctorAvailability } = usePatientStore();
