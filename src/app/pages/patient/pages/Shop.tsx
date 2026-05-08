@@ -348,23 +348,29 @@ export function PatientShopPage() {
       if (!password || password.length < 6) throw new Error("Password must be at least 6 characters.");
       if (!firstName || !lastName) throw new Error("First and last name are required.");
 
-      // 1. Create Supabase Auth account
+      // 1. Check for existing session or Create Supabase Auth account
       let userId: string | null = null;
       let sessionToSet = null;
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          data: {
-            first_name: firstName || 'New',
-            last_name: lastName || 'Patient',
-            date_of_birth: dob,
-            phone,
-            role: 'patient',
+      const existingUser = useAuthStore.getState().user;
+
+      if (existingUser) {
+        userId = existingUser.id;
+        // Skip auth steps
+      } else {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: email.trim().toLowerCase(),
+          password,
+          options: {
+            data: {
+              first_name: firstName || 'New',
+              last_name: lastName || 'Patient',
+              date_of_birth: dob,
+              phone,
+              role: 'patient',
+            }
           }
-        }
-      });
+        });
 
       if (authError) {
         const msg = authError.message.toLowerCase();
@@ -387,9 +393,10 @@ export function PatientShopPage() {
         } else {
           throw authError;
         }
-      } else {
-        userId = authData.user?.id || null;
-        sessionToSet = authData.session;
+        } else {
+          userId = authData.user?.id || null;
+          sessionToSet = authData.session;
+        }
       }
 
       if (!userId) throw new Error("Account creation failed — please try again.");
@@ -422,20 +429,26 @@ export function PatientShopPage() {
 
       if (insertError) console.warn("Order insert warning:", insertError.message);
 
-      // 3. Auto sign-in + refresh auth store
-      if (sessionToSet) {
-        await supabase.auth.setSession(sessionToSet);
-      } else {
-        // Session wasn't returned (email confirmation ON or fallback signin used)
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
-          password
-        });
-        if (signInError) console.warn("Auto-login pending email confirmation:", signInError.message);
+      // 3. Auto sign-in + refresh auth store (only if new user)
+      if (!existingUser) {
+        if (sessionToSet) {
+          await supabase.auth.setSession(sessionToSet);
+        } else {
+          // Session wasn't returned (email confirmation ON or fallback signin used)
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: email.trim().toLowerCase(),
+            password
+          });
+          if (signInError) console.warn("Auto-login pending email confirmation:", signInError.message);
+        }
+      // Re-initialize auth store so ProtectedRoute sees the new session immediately
+      if (!existingUser) {
+        await initialize();
       }
 
-      // Re-initialize auth store so ProtectedRoute sees the new session immediately
-      await initialize();
+      // 4. Force refresh the global patient store so the new order appears immediately
+      const { fetchOrders } = usePatientStore.getState();
+      await fetchOrders();
 
       setStage("confirmed");
     } catch (err: any) {
@@ -827,7 +840,16 @@ export function PatientShopPage() {
             setIsPaying(true);
             setTimeout(() => {
               setIsPaying(false);
-              setStage("account_setup");
+              const currentUser = useAuthStore.getState().user;
+              if (currentUser) {
+                // If logged in, use their metadata and skip account setup
+                setFirstName(currentUser.user_metadata?.first_name || firstName);
+                setLastName(currentUser.user_metadata?.last_name || lastName);
+                setEmail(currentUser.email || email);
+                setStage("questionnaire");
+              } else {
+                setStage("account_setup");
+              }
             }, 1500);
           }}>
           {isPaying ? (

@@ -36,43 +36,13 @@ export function PatientDashboard() {
   const firstName = user?.user_metadata?.first_name || 'Patient';
   const availableDoctors = doctorAvailability.filter(d => d.available);
 
-  const [orders, setOrders] = useState<any[]>([]);
-
+  const { orders, fetchOrders } = usePatientStore();
+  
   useEffect(() => {
-    if (!user?.id) return;
-    
-    async function fetchOrders() {
-      try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        setOrders(data || []);
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-      }
+    if (user?.id) {
+      fetchOrders();
     }
-    
-    fetchOrders();
-
-    const channel = supabase
-      .channel(`public:orders:user_id=eq.${user.id}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'orders',
-        filter: `user_id=eq.${user.id}`
-      }, () => {
-        fetchOrders();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
+  }, [user?.id, fetchOrders]);
 
   const awaitingReview = orders.filter(o => o.status === "order_submitted").length;
 
