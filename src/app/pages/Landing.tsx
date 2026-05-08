@@ -99,7 +99,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-12">
             <Link to="/" className="flex items-center gap-3 group">
-              <img src="/originallogo.png" alt="Peak Health" className="h-12 md:h-14 object-contain group-hover:scale-105 transition-transform duration-300" />
+              <img src="/originallogo.png" alt="Peak Health" className="h-16 md:h-20 object-contain group-hover:scale-105 transition-transform duration-300" />
             </Link>
 
             {/* Desktop Nav */}

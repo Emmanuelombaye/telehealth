@@ -211,7 +211,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
       <div className="w-full max-w-md space-y-6">
         {/* Logo */}
         <div className="flex justify-center">
-          <img src="/originallogo.png" alt="Peak Health" className="h-14 object-contain" />
+          <img src="/originallogo.png" alt="Peak Health" className="h-20 object-contain" />
         </div>
 
         {/* Portal Card */}

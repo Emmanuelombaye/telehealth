@@ -119,9 +119,9 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const SidebarContent = () => (
     <div className="flex h-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4 shrink-0 bg-sidebar">
-        <Link to="/" className="flex items-center justify-center w-full py-4 px-2 group transition-all" onClick={onMobileClose}>
-          <img src="/originallogo.png" alt="Peak Health Logo" className="h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
+      <div className="flex h-24 items-center justify-between border-b border-sidebar-border px-4 shrink-0 bg-sidebar">
+        <Link to="/" className="flex items-center justify-center w-full py-2 px-2 group transition-all" onClick={onMobileClose}>
+          <img src="/originallogo.png" alt="Peak Health Logo" className="h-18 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
         </Link>
         {onMobileClose && (
           <button onClick={onMobileClose} className="md:hidden p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors">
