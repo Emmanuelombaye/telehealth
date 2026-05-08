@@ -153,7 +153,10 @@
 }
 
 @layer base {
-  * { @apply border-border outline-ring/50; }
+  * { 
+    @apply border-border outline-ring/50; 
+    box-sizing: border-box;
+  }
   html { 
     font-size: var(--font-size); 
     scroll-behavior: smooth;

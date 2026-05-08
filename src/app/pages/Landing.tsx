@@ -57,7 +57,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white font-sans text-[#0A0D14] selection:bg-emerald-100 selection:text-emerald-900">
+    <div className="min-h-screen w-full overflow-x-hidden bg-white font-sans text-[#0A0D14] selection:bg-emerald-100 selection:text-emerald-900">
 
       {/* ===== FULL-SCREEN SHOP MODAL ===== */}
       {shopOpen && (
@@ -156,10 +156,10 @@ export function LandingPage() {
       </header>
 
       {/* 3. Hero Section (with Scroll Reveal) */}
-      <section className="relative overflow-hidden pt-12 pb-24 md:pt-20 md:pb-32 px-6">
+      <section className="relative overflow-x-clip pt-12 pb-24 md:pt-20 md:pb-32 px-6">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
           <div className="lg:w-[55%] space-y-8 z-10 text-center lg:text-left">
-            <Reveal direction="right">
+            <Reveal direction="up">
               <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -177,13 +177,13 @@ export function LandingPage() {
               </h1>
             </Reveal>
 
-            <Reveal direction="right" delay={0.4}>
+            <Reveal direction="up" delay={0.4}>
               <p className="text-lg md:text-xl text-slate-500 max-w-xl leading-relaxed font-medium">
                 U.S. licensed providers, pharmaceutical-grade treatments, and 24/7 care. Your health journey, reimagined for the modern world.
               </p>
             </Reveal>
 
-            <Reveal direction="right" delay={0.5}>
+            <Reveal direction="up" delay={0.5}>
               <div className="flex flex-col sm:flex-row gap-5 pt-4 justify-center lg:justify-start">
                 <button onClick={() => setShopOpen(true)}>
                   <Button className="h-16 px-10 rounded-2xl bg-[#0A0D14] text-white hover:bg-[#1A1D24] font-black uppercase text-xs tracking-widest shadow-2xl shadow-slate-900/30 group">
@@ -199,7 +199,7 @@ export function LandingPage() {
             </Reveal>
           </div>
 
-          <Reveal direction="left" delay={0.4}>
+          <Reveal direction="up" delay={0.4}>
             <div className="lg:w-[45%] relative">
                <div className="absolute -inset-10 bg-emerald-500/10 rounded-[64px] blur-3xl animate-pulse" />
                <img 
@@ -271,7 +271,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-24 items-center">
             <div className="space-y-12">
-              <Reveal direction="right">
+              <Reveal direction="up">
                 <h2 className="text-5xl md:text-6xl font-black leading-tight">Healthcare that <span className="text-emerald-600">moves</span> with you.</h2>
               </Reveal>
               
@@ -281,7 +281,7 @@ export function LandingPage() {
                   { icon: ShieldCheck, title: "Provider Review", desc: "A U.S. licensed clinician creates your custom protocol." },
                   { icon: Zap, title: "Discreet Delivery", desc: "Medication arrives at your door in plain packaging." }
                 ].map((item, i) => (
-                  <Reveal key={i} direction="right" delay={0.2 * i}>
+                  <Reveal key={i} direction="up" delay={0.2 * i}>
                     <div className="flex gap-6">
                       <div className="h-16 w-16 rounded-[24px] bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
                         <item.icon className="h-8 w-8" />
@@ -296,7 +296,7 @@ export function LandingPage() {
               </div>
             </div>
 
-            <Reveal direction="left">
+            <Reveal direction="up">
               <div className="relative">
                 <div className="absolute inset-0 bg-emerald-100 rounded-[80px] rotate-6 scale-95" />
                 <div className="relative bg-[#0A0D14] rounded-[80px] p-12 text-white shadow-2xl h-[600px] flex flex-col justify-center overflow-hidden">

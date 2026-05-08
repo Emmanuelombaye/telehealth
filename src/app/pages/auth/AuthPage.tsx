@@ -19,18 +19,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const navigate = useNavigate();
   const initialize = useAuthStore(state => state.initialize);
 
-  // If user is already logged in, redirect them immediately
+  // Removed auto-redirect to ensure login page is always accessible for credential entry
   useEffect(() => {
-    const { user, role } = useAuthStore.getState();
-    if (user && role) {
-      // Only auto-redirect if the role matches the portal being accessed
-      if (portal === 'doctor' && role === 'doctor') navigate("/doctor", { replace: true });
-      else if ((portal === 'admin' || portal === 'superadmin') && (role === 'brand_admin' || role === 'super_admin')) {
-        navigate(role === 'super_admin' ? "/superadmin" : "/admin", { replace: true });
-      }
-      else if (portal === 'patient' && role === 'patient') navigate("/patient", { replace: true });
-    }
-  }, [navigate]);
+    // If we want to show 'Already logged in' state, we can, but user wants to be 'asked' to log in.
+    // So we don't auto-redirect.
+  }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
