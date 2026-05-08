@@ -7,7 +7,7 @@ export function NotFoundPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="text-center max-w-md">
         <div className="flex justify-center mb-10">
-          <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-16 object-contain" />
+          <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
         <h1 className="text-6xl font-extrabold text-primary mb-2">404</h1>
         <h2 className="text-xl font-bold mb-3">Page Not Found</h2>

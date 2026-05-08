@@ -7,6 +7,7 @@ import { AdminDashboard } from "./pages/admin/Dashboard";
 import { WeightLossPage, SexualWellnessPage, HairLossPage, LongevityPage } from "./pages/treatments";
 import { ClinicalResearchPage } from "./pages/authority/ClinicalResearch";
 import { SupportHubPage } from "./pages/SupportHub";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Patient pages
 import { PatientShopPage } from "./pages/patient/pages/Shop";
@@ -81,6 +82,7 @@ export const router = createBrowserRouter([
   {
     path: "/",
     Component: AppLayout,
+    errorElement: <ErrorBoundary />,
     children: [
       { index: true, Component: LandingPage },
       { path: "treatments/weight-loss", Component: WeightLossPage },
@@ -200,9 +202,9 @@ export const router = createBrowserRouter([
     ],
   },
   // ===== ISOLATED PORTAL LOGIN PAGES (NO LAYOUT - fully standalone) =====
-  { path: "/patient/login", element: <AuthPage portal="patient" /> },
-  { path: "/doctor/login", element: <AuthPage portal="doctor" /> },
-  { path: "/admin/login", element: <AuthPage portal="admin" /> },
-  { path: "/superadmin/login", element: <AuthPage portal="superadmin" /> },
-  { path: "/pharmacy/login", element: <AuthPage portal="doctor" /> },
+  { path: "/patient/login", element: <AuthPage portal="patient" />, errorElement: <ErrorBoundary /> },
+  { path: "/doctor/login", element: <AuthPage portal="doctor" />, errorElement: <ErrorBoundary /> },
+  { path: "/admin/login", element: <AuthPage portal="admin" />, errorElement: <ErrorBoundary /> },
+  { path: "/superadmin/login", element: <AuthPage portal="superadmin" />, errorElement: <ErrorBoundary /> },
+  { path: "/pharmacy/login", element: <AuthPage portal="doctor" />, errorElement: <ErrorBoundary /> },
 ]);
