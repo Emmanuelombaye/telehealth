@@ -153,7 +153,10 @@ export function AdminOrdersPage() {
                 <tr key={item.id} className="hover:bg-muted/20 transition-colors group">
                   <td className="py-4 px-6">
                     <div className="font-bold text-sm text-foreground">{item.patient_name || item.patientName}</div>
-                    <div className="text-[10px] text-primary font-black uppercase tracking-tighter mt-1">Order: {item.order_number || item.id.substring(0, 8)}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="text-[10px] text-primary font-black uppercase tracking-tighter">Order: {item.order_number || item.id.substring(0, 8)}</div>
+                      {item.mrn && <div className="text-[10px] bg-emerald-100 text-emerald-700 px-1 rounded font-bold">MRN: {item.mrn}</div>}
+                    </div>
                   </td>
                   <td className="py-4 px-4 text-foreground/80">{item.sub_brand || item.subBrand || "Peak Health"}</td>
                   <td className="py-4 px-4 text-foreground/80">
