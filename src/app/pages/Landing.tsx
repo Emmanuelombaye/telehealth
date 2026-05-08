@@ -419,7 +419,7 @@ export function LandingPage() {
               </ul>
             </div>
 
-            {/* Column 5: Support & Growth */}
+            {/* Column 5: Support */}
             <div className="space-y-8">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Support</h4>
               <ul className="space-y-5">
@@ -428,11 +428,29 @@ export function LandingPage() {
                   { name: "Referral Program", href: "/patient/referrals" },
                   { name: "Affiliate Portal", href: "/support-hub" },
                   { name: "Careers", href: "/support-hub" },
-                  { name: "Press & Media", href: "/support-hub" },
                   { name: "Partnerships", href: "/support-hub" }
                 ].map(item => (
                   <li key={item.name}>
                     <Link to={item.href} className="text-[15px] font-black text-[#0A0D14] hover:text-emerald-600 transition-colors leading-tight">
+                      {item.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 6: Staff Portals */}
+            <div className="space-y-8">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Portals</h4>
+              <ul className="space-y-5">
+                {[
+                  { name: "Provider Login", href: "/doctor/login" },
+                  { name: "Admin Login", href: "/admin/login" },
+                  { name: "SuperAdmin", href: "/superadmin/login" },
+                  { name: "Pharmacy", href: "/pharmacy/login" }
+                ].map(item => (
+                  <li key={item.name}>
+                    <Link to={item.href} className="text-[15px] font-black text-slate-400 hover:text-primary transition-colors leading-tight">
                       {item.name}
                     </Link>
                   </li>

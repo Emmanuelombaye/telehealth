@@ -33,6 +33,10 @@ The following issues were resolved to restore production stability:
 - **Problem**: Public pages (Landing, Treatments) were incorrectly rendering the portal sidebar and header.
 - **Solution**: Restructured `AppLayout.tsx` to distinguish between **Public** and **Protected** routes. Portal UI is now hidden on marketing pages.
 
+### ✅ Mobile Menu ReferenceError
+- **Problem**: `isMobileMenuOpen` was used in the JSX but its state definition was accidentally removed during refactoring.
+- **Solution**: Restored the `useState` hook for mobile menu management in `AppLayout.tsx`.
+
 ---
 
 ## 3. Comprehensive Data Flow
@@ -80,7 +84,37 @@ sequenceDiagram
 
 ---
 
-## 5. Future Roadmap (To Be Done)
+## 5. Backend cURL Endpoints
+
+For automated testing or external integration, use these cURL examples. 
+*Note: Replace `YOUR_ANON_KEY` and `USER_JWT_TOKEN` with real values.*
+
+### Fetch Live Orders (Admin/Doctor)
+```bash
+curl -X GET 'https://YOUR_PROJECT_REF.supabase.co/rest/v1/orders?select=*' \
+-H "apikey: YOUR_ANON_KEY" \
+-H "Authorization: Bearer USER_JWT_TOKEN"
+```
+
+### Update Order Status
+```bash
+curl -X PATCH 'https://YOUR_PROJECT_REF.supabase.co/rest/v1/orders?id=eq.ORDER_UUID' \
+-H "apikey: YOUR_ANON_KEY" \
+-H "Authorization: Bearer USER_JWT_TOKEN" \
+-H "Content-Type: application/json" \
+-d '{"status": "doctor_approved"}'
+```
+
+### Fetch Patient Profile
+```bash
+curl -X GET 'https://YOUR_PROJECT_REF.supabase.co/rest/v1/profiles?id=eq.USER_UUID' \
+-H "apikey: YOUR_ANON_KEY" \
+-H "Authorization: Bearer USER_JWT_TOKEN"
+```
+
+---
+
+## 6. Future Roadmap (To Be Done)
 
 - [ ] **Sentry Integration**: For real-time client-side crash monitoring.
 - [ ] **Twilio Video Integration**: For synchronous Telehealth consultations within the Doctor portal.

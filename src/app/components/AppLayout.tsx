@@ -13,6 +13,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const path = location.pathname;
   const { user, role: authRole, signOut } = useAuthStore();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Determine portal context
   const isLanding = path === "/";
