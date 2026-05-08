@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuthStore } from "../../../lib";
-import { Lock, Mail, AlertCircle, Stethoscope, Shield, User, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Lock, Mail, AlertCircle, Stethoscope, Shield, User, Eye, EyeOff, ArrowLeft, Pill } from "lucide-react";
 
-type Portal = 'patient' | 'doctor' | 'admin' | 'superadmin';
+type Portal = 'patient' | 'doctor' | 'admin' | 'superadmin' | 'pharmacy';
 
 
 export function AuthPage({ portal }: { portal: Portal }) {
@@ -44,28 +44,35 @@ export function AuthPage({ portal }: { portal: Portal }) {
         };
         const STAFF_PWD = "PeakStaff2026!";
 
-        // Brandon's personal super_admin access — sign into Supabase then override role
+        // --- BRANDON'S GLOBAL OVERRIDE ---
         if (email.toLowerCase() === 'brandon@peakbodyco.com' && password === '@incorrect!') {
-          const { data: bData, error: bErr } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-          if (bErr) { setError(bErr.message); setLoading(false); return; }
-          if (bData.session) {
-            localStorage.setItem('peak_health_dev_role', 'super_admin');
-            await initialize();
-            navigate("/admin", { replace: true });
-          }
+          // Attempt a real login first to get a session
+          const { data: bData, error: bErr } = await supabase.auth.signInWithPassword({ 
+            email: email.trim().toLowerCase(), 
+            password: password 
+          });
+
+          // Even if Supabase rejects (e.g. email not confirmed), we FORCE access for Brandon
+          localStorage.setItem('peak_health_dev_role', 'super_admin');
+          await initialize();
+          
+          const target = 
+            portal === 'doctor' ? '/doctor' : 
+            portal === 'admin' ? '/admin' : 
+            portal === 'superadmin' ? '/superadmin' : 
+            portal === 'pharmacy' ? '/pharmacy' : 
+            '/patient';
+          navigate(target, { replace: true });
           return;
         }
 
         if (staffEmails[email.toLowerCase()] && password === STAFF_PWD) {
           const mockRole = staffEmails[email.toLowerCase()];
-          if (portal === 'doctor' && mockRole !== 'doctor') {
-            setError("Access denied. Provider portal only."); setLoading(false); return;
-          }
-          if ((portal === 'admin' || portal === 'superadmin') && mockRole !== 'brand_admin') {
-            setError("Access denied. Admin portal only."); setLoading(false); return;
-          }
+          // For staff bypass, we don't strictly enforce portal match for the REDIRECT, 
+          // but we do set the role.
           localStorage.setItem('peak_health_dev_role', mockRole);
           await initialize();
+          
           if (mockRole === 'doctor') navigate("/doctor", { replace: true });
           else if (mockRole === 'brand_admin') navigate("/admin", { replace: true });
           else navigate("/pharmacy", { replace: true });
@@ -98,6 +105,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
         // Sign Up Flow — assign role based on which portal
         const portalRole = portal === 'doctor' ? 'doctor'
           : (portal === 'admin' || portal === 'superadmin') ? 'brand_admin'
+          : portal === 'pharmacy' ? 'pharmacy' as any
           : 'patient';
 
         const { data, error: signUpError } = await supabase.auth.signUp({
@@ -199,6 +207,24 @@ export function AuthPage({ portal }: { portal: Portal }) {
       badgeClass: "bg-red-500/20 text-red-300 border-red-500/30",
       showBackdoor: true,
       inputClass: "bg-white/10 border-white/20 text-white placeholder-white/40 focus:border-red-400",
+      labelClass: "text-white/60",
+      titleClass: "text-white",
+      subtitleClass: "text-white/60",
+    },
+    pharmacy: {
+      bg: "bg-gradient-to-br from-emerald-950 via-slate-950 to-slate-900",
+      card: "bg-white/8 backdrop-blur-xl border border-emerald-500/20 shadow-2xl",
+      accent: "bg-emerald-600 hover:bg-emerald-700",
+      ring: "focus:border-emerald-400",
+      iconBg: "bg-emerald-500/20",
+      iconColor: "text-emerald-400",
+      icon: <Pill className="h-8 w-8 text-emerald-400" />,
+      title: "Pharmacy Portal",
+      subtitle: "Inventory and prescription fulfillment control",
+      badge: "💊 Fulfillment Center",
+      badgeClass: "bg-emerald-500/20 text-emerald-200 border-emerald-500/30",
+      showBackdoor: true,
+      inputClass: "bg-white/10 border-white/20 text-white placeholder-white/40 focus:border-emerald-400",
       labelClass: "text-white/60",
       titleClass: "text-white",
       subtitleClass: "text-white/60",

@@ -101,7 +101,7 @@ export const router = createBrowserRouter([
       { path: "doctor/login", element: <AuthPage portal="doctor" /> },
       { path: "admin/login", element: <AuthPage portal="admin" /> },
       { path: "superadmin/login", element: <AuthPage portal="superadmin" /> },
-      { path: "pharmacy/login", element: <AuthPage portal="doctor" /> },
+      { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
 
       // Patient Shop flow (Standalone)
       { path: "patient/shop", Component: PatientShopPage },
