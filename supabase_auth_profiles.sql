@@ -1,9 +1,9 @@
 -- ==============================================================================
--- Peak Health: Authentication & Profiles System
+-- Peak Health: Authentication & Profiles System — FIXED (no RLS recursion)
 -- Run this ENTIRE script in your Supabase SQL Editor
 -- ==============================================================================
 
--- 1. Create Profiles Table (stores user roles and brand associations)
+-- 1. Create Profiles Table
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
     role TEXT NOT NULL DEFAULT 'patient',
@@ -13,85 +13,92 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. Turn on RLS for Profiles
+-- 2. Turn on RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- 3. Drop old policies first to avoid duplicates on re-run
+-- 3. Drop ALL old policies to start clean
 DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Super Admins can view all profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Service role can insert profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Allow trigger insert" ON public.profiles;
 
--- 4. Profiles RLS Policies
-CREATE POLICY "Users can view their own profile"
+-- 4. Simple non-recursive RLS Policies
+--    IMPORTANT: Never query the profiles table from within a profiles policy
+--               (causes infinite recursion → 500 error)
+
+-- Users can read their own profile row only
+CREATE POLICY "profiles_select_own"
 ON public.profiles FOR SELECT
 USING (auth.uid() = id);
 
-CREATE POLICY "Users can update their own profile"
+-- Users can update their own profile row only
+CREATE POLICY "profiles_update_own"
 ON public.profiles FOR UPDATE
 USING (auth.uid() = id);
 
--- Allow the trigger function (SECURITY DEFINER) to insert profiles
-CREATE POLICY "Service role can insert profiles"
+-- Anyone authenticated can insert (trigger runs as SECURITY DEFINER, always safe)
+CREATE POLICY "profiles_insert_all"
 ON public.profiles FOR INSERT
 WITH CHECK (true);
 
--- Super Admins can view all profiles
-CREATE POLICY "Super Admins can view all profiles"
-ON public.profiles FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'super_admin'
-  )
-);
+-- Super admin SELECT is handled server-side via service_role key, NOT via a
+-- recursive RLS policy. Remove the old recursive policy that caused 500 errors.
 
--- 5. Create / replace the trigger function WITH error handling
---    Using EXCEPTION WHEN OTHERS means signup NEVER returns a 500 due to this trigger
+-- 5. Trigger function — creates a profile row when a new user signs up
+--    Uses EXCEPTION so it NEVER blocks signup even if something goes wrong
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (id, role, brand_id, full_name)
   VALUES (
     NEW.id,
-    COALESCE(NULLIF((NEW.raw_user_meta_data->>'role')::text, ''), 'patient'),
-    NULLIF(NEW.raw_user_meta_data->>'brand_id', ''),
+    COALESCE(NULLIF(TRIM(NEW.raw_user_meta_data->>'role'), ''), 'patient'),
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'brand_id'), ''),
     NULLIF(
       TRIM(
         COALESCE(NEW.raw_user_meta_data->>'first_name', '') ||
         ' ' ||
         COALESCE(NEW.raw_user_meta_data->>'last_name', '')
       ),
-      ''
+      ' '
     )
   )
-  ON CONFLICT (id) DO NOTHING;  -- safe if profile already exists
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 EXCEPTION
   WHEN OTHERS THEN
-    -- Log the error but NEVER fail the signup
-    RAISE WARNING 'handle_new_user: could not create profile for user %. Error: %', NEW.id, SQLERRM;
+    RAISE WARNING '[handle_new_user] Profile insert failed for user %. Signup still succeeds. Error: %', NEW.id, SQLERRM;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 6. Attach / re-attach the trigger
+-- 6. Attach trigger
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- 7. Backfill: create profiles for any existing auth users who don't have one
+--    (safe to run multiple times due to ON CONFLICT DO NOTHING)
+INSERT INTO public.profiles (id, role)
+SELECT id, COALESCE(NULLIF(raw_user_meta_data->>'role', ''), 'patient')
+FROM auth.users
+WHERE id NOT IN (SELECT id FROM public.profiles)
+ON CONFLICT (id) DO NOTHING;
+
 -- ==============================================================================
--- HOW TO PROMOTE A USER TO DOCTOR OR ADMIN:
+-- PROMOTE USERS (run these individually as needed):
 --
--- Make a user a Doctor:
--- UPDATE public.profiles SET role = 'doctor'
--- WHERE id = (SELECT id FROM auth.users WHERE email = 'doctor@example.com');
+-- Doctor:
+--   UPDATE public.profiles SET role = 'doctor'
+--   WHERE id = (SELECT id FROM auth.users WHERE email = 'doctor@example.com');
 --
--- Make a user a Brand Admin:
--- UPDATE public.profiles SET role = 'brand_admin'
--- WHERE id = (SELECT id FROM auth.users WHERE email = 'admin@example.com');
+-- Brand Admin:
+--   UPDATE public.profiles SET role = 'brand_admin'
+--   WHERE id = (SELECT id FROM auth.users WHERE email = 'admin@example.com');
 --
--- Make a user a Super Admin:
--- UPDATE public.profiles SET role = 'super_admin'
--- WHERE id = (SELECT id FROM auth.users WHERE email = 'superadmin@example.com');
+-- Super Admin:
+--   UPDATE public.profiles SET role = 'super_admin'
+--   WHERE id = (SELECT id FROM auth.users WHERE email = 'superadmin@example.com');
 -- ==============================================================================

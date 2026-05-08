@@ -15,6 +15,40 @@ interface AuthState {
   setSession: (session: Session | null) => void;
 }
 
+/** Fetch the role from profiles table, with graceful fallback.
+ *  - If the profile row doesn't exist yet (new user, trigger not run), returns 'patient'
+ *  - If there's a network/RLS error, returns 'patient' and logs a warning (never throws)
+ */
+async function fetchRole(userId: string): Promise<{ role: Role; brandId: string | null }> {
+  try {
+    const { data, error, status } = await supabase
+      .from('profiles')
+      .select('role, brand_id')
+      .eq('id', userId)
+      .maybeSingle(); // maybeSingle returns null instead of error when row missing
+
+    if (error) {
+      // 500 = RLS issue / table missing — degrade gracefully
+      if (status === 500 || status === 404) {
+        console.warn(`[auth-store] profiles fetch returned ${status} — defaulting to patient role`);
+        // Attempt to create the missing profile row
+        await supabase.from('profiles').insert({ id: userId, role: 'patient' }).select().maybeSingle();
+        return { role: 'patient', brandId: null };
+      }
+      console.warn('[auth-store] profiles fetch error:', error.message);
+      return { role: 'patient', brandId: null };
+    }
+
+    return {
+      role: (data?.role as Role) || 'patient',
+      brandId: data?.brand_id || null,
+    };
+  } catch (err) {
+    console.warn('[auth-store] fetchRole threw:', err);
+    return { role: 'patient', brandId: null };
+  }
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   user: null,
@@ -25,48 +59,25 @@ export const useAuthStore = create<AuthState>((set) => ({
   initialize: async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (session?.user) {
-        // Fetch role and brand_id from profiles table
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role, brand_id')
-          .eq('id', session.user.id)
-          .single();
-          
-        set({ 
-          session, 
-          user: session.user, 
-          role: (profile?.role as Role) || 'patient',
-          brandId: profile?.brand_id || null,
-          isLoading: false 
-        });
+        const { role, brandId } = await fetchRole(session.user.id);
+        set({ session, user: session.user, role, brandId, isLoading: false });
       } else {
         set({ session: null, user: null, role: null, brandId: null, isLoading: false });
       }
 
-      // Listen for auth changes
+      // Listen for auth state changes (login/logout/token refresh)
       supabase.auth.onAuthStateChange(async (_event, newSession) => {
         if (newSession?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role, brand_id')
-            .eq('id', newSession.user.id)
-            .single();
-            
-          set({ 
-            session: newSession, 
-            user: newSession.user, 
-            role: (profile?.role as Role) || 'patient',
-            brandId: profile?.brand_id || null,
-            isLoading: false 
-          });
+          const { role, brandId } = await fetchRole(newSession.user.id);
+          set({ session: newSession, user: newSession.user, role, brandId, isLoading: false });
         } else {
           set({ session: null, user: null, role: null, brandId: null, isLoading: false });
         }
       });
     } catch (error) {
-      console.error('Error initializing auth:', error);
+      console.error('[auth-store] initialize error:', error);
       set({ isLoading: false });
     }
   },
