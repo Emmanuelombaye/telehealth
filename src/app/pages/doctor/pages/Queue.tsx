@@ -220,9 +220,11 @@ export function DoctorQueuePage() {
                           <Globe className="h-4 w-4 text-[#7f9488]" />
                         </div>
                         <div className="flex items-center gap-4">
-                           <span className={`${theme.textMuted} text-[10px] font-black uppercase tracking-widest`}>MALE • AGE {selected.patientAge} • BMI 31.4</span>
+                           <span className={`${theme.textMuted} text-[10px] font-black uppercase tracking-widest`}>
+                             {selected.patientVitals?.sex || 'Unknown Sex'} • AGE {selected.patientAge} • BMI {selected.patientVitals?.bmi || 'N/A'}
+                           </span>
                            <div className="h-1 w-1 rounded-full bg-white/20" />
-                           <span className={`${theme.textGreen} text-[10px] font-black uppercase tracking-widest`}>AUTHORIZED ACCESS</span>
+                           <span className={`${theme.textGreen} text-[10px] font-black uppercase tracking-widest`}>AUTHORIZED ACCESS • MRN: {selected.mrn || 'PENDING'}</span>
                         </div>
                       </div>
                    </div>
@@ -270,23 +272,19 @@ export function DoctorQueuePage() {
 
                            <div className="space-y-3">
                               <p className="text-[9px] font-black text-[#7f9488] uppercase tracking-widest mt-6 mb-2">Matrix Responses</p>
-                              {selected.intakeAnswers ? Object.entries(selected.intakeAnswers).slice(0,3).map(([q, a], i) => (
-                                <div key={i} className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
-                                  <p className="text-[10px] font-bold text-[#7f9488] mb-1">{q}</p>
-                                  <p className="text-xs text-white font-medium italic">{Array.isArray(a) ? a.join(", ") : a}</p>
-                                </div>
-                              )) : (
-                                [
-                                  "No known clinical contradictions reported.",
-                                  "Blood pressure stable at last clinical visit.",
-                                  "Ready for immediate asynchronous clearance."
-                                ].map((note, i) => (
-                                  <div key={i} className="flex items-start gap-3 p-3">
-                                    <CheckCircle2 className="h-3 w-3 text-[#22c55e] mt-0.5" />
-                                    <p className="text-xs font-medium text-[#7f9488] italic">{note}</p>
-                                  </div>
-                                ))
-                              )}
+                               {selected.intakeAnswers && Object.entries(selected.intakeAnswers).length > 0 ? (
+                                 Object.entries(selected.intakeAnswers).map(([q, a], i) => (
+                                   <div key={i} className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
+                                     <p className="text-[10px] font-bold text-[#7f9488] mb-1 leading-tight">{q}</p>
+                                     <p className="text-xs text-white font-medium italic">{Array.isArray(a) ? a.join(", ") : a}</p>
+                                   </div>
+                                 ))
+                               ) : (
+                                 <div className="p-10 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                                    <Bot className="h-8 w-8 text-white/10 mx-auto mb-2" />
+                                    <p className="text-[10px] font-black text-white/20 uppercase">No Intake Matrix Detected</p>
+                                 </div>
+                               )}
                            </div>
                         </div>
                      </div>
