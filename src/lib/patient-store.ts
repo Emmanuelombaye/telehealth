@@ -172,7 +172,13 @@ export const usePatientStore = create<AppState>()(
           // Doctors and super_admins see all (doctors filter locally in the UI to order_submitted)
 
           const { data, error } = await query;
-          if (error) throw error;
+          if (error) {
+            if (error.code === '42P17') {
+              console.error("[CRITICAL] Infinite recursion detected in Supabase RLS policies. Please run the fix script in supabase_fix_recursion_v2.sql");
+              return;
+            }
+            throw error;
+          }
           
           const mappedOrders: Order[] = (data || []).map(d => ({
             id: d.order_number,
