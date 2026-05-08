@@ -25,10 +25,14 @@ export function PatientOrderTrackingPage() {
 
   useEffect(() => {
     async function fetchOrders() {
+      const user = useAuthStore.getState().user;
+      if (!user?.id) return;
+      
       try {
         const { data, error } = await supabase
           .from('orders')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
         if (error) throw error;
         setOrders(data || []);
@@ -38,9 +42,15 @@ export function PatientOrderTrackingPage() {
     }
     fetchOrders();
 
+    const user = useAuthStore.getState().user;
     const channel = supabase
       .channel('schema-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'orders',
+        filter: `user_id=eq.${user?.id}`
+      }, (payload) => {
         fetchOrders();
       })
       .subscribe();
