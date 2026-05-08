@@ -48,7 +48,7 @@ export function AppLayout() {
   // Breadcrumb/Back support
   const canGoBack = path.split("/").filter(Boolean).length > 1;
 
-  const isAdminPortal = sidebarRole === "admin" || sidebarRole === "superadmin" || sidebarRole === "doctor";
+  const isAdminPortal = sidebarRole === "admin" || sidebarRole === "superadmin" || sidebarRole === "doctor" || sidebarRole === "brand_admin";
 
   return (
     <div className={cn(

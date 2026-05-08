@@ -116,7 +116,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
 
   const displayRole = authRole?.replace('_', ' ') || role;
 
-  const isAdminPortal = role === "admin" || role === "superadmin" || role === "doctor";
+  const isAdminPortal = role === "admin" || role === "superadmin" || role === "doctor" || role === "brand_admin";
   const { orders } = usePatientStore();
   
   // Real-time badge calculations

@@ -478,7 +478,10 @@ export function PatientShopPage() {
         </div>
         <Button
           className="w-full rounded-xl text-base h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
-          onClick={() => navigate('/patient')}>
+          onClick={() => {
+            // Hard reload ensures the protected route and layout pick up the new session immediately
+            window.location.href = '/patient';
+          }}>
           Enter My Patient Portal →
         </Button>
         <p className="text-xs text-muted-foreground">
