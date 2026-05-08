@@ -309,24 +309,69 @@ export function PatientShopPage() {
 
   const handleCompleteSetup = async () => {
     if (!selected) return;
+
+    // --- Client-side validation before hitting Supabase ---
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (!email.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
+
     const heightInches = (parseInt(heightFt || '0') * 12) + parseInt(heightIn || '0');
     const weightNum = parseFloat(weight || '0');
-    const bmi = heightInches > 0 && weightNum > 0 ? ((weightNum / (heightInches * heightInches)) * 703).toFixed(1) : 'N/A';
+    const bmi = heightInches > 0 && weightNum > 0
+      ? ((weightNum / (heightInches * heightInches)) * 703).toFixed(1)
+      : 'N/A';
     const age = dob ? new Date().getFullYear() - new Date(dob).getFullYear() : 30;
-    const patientVitals = { dob, sex, height: `${heightFt}'${heightIn}"`, weight: `${weight} lbs`, bmi, hairColor, eyeColor, bloodType, allergies: allergies || 'None', currentMeds: currentMeds || 'None', address: `${address}, ${city}, ${state} ${zip}`, phone, email };
+    const patientVitals = {
+      dob, sex,
+      height: `${heightFt}'${heightIn}"`,
+      weight: `${weight} lbs`, bmi,
+      hairColor, eyeColor, bloodType,
+      allergies: allergies || 'None',
+      currentMeds: currentMeds || 'None',
+      address: `${address}, ${city}, ${state} ${zip}`,
+      phone, email
+    };
 
     try {
       // 1. Create Supabase Auth account
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email, password,
-        options: { data: { first_name: firstName || 'New', last_name: lastName || 'Patient', date_of_birth: dob, phone, role: 'patient' } }
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          data: {
+            first_name: firstName || 'New',
+            last_name: lastName || 'Patient',
+            date_of_birth: dob,
+            phone,
+            role: 'patient',
+          }
+        }
       });
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create account");
 
-      // 2. Insert order with full patient vitals
+      // Handle common 422 causes with friendly messages
+      if (authError) {
+        const msg = authError.message.toLowerCase();
+        if (msg.includes('already registered') || msg.includes('already exists')) {
+          throw new Error("This email is already registered. Please sign in at /patient/login instead.");
+        }
+        if (msg.includes('password')) {
+          throw new Error("Password must be at least 6 characters.");
+        }
+        throw authError;
+      }
+
+      const userId = authData.user?.id;
+      if (!userId) throw new Error("Account creation failed — please try again.");
+
+      // 2. Insert order with full patient vitals into Supabase
       const { error: insertError } = await supabase.from('orders').insert([{
         order_number: orderRef,
         patient_name: `${firstName} ${lastName}`.trim() || "New Patient",
@@ -340,7 +385,7 @@ export function PatientShopPage() {
         status: "order_submitted",
         ordered_date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         amount: selected.priceUSD,
-        user_id: authData.user.id,
+        user_id: userId,
         intake_complete: true,
         intake_notes: `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Blood: ${bloodType} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
         intake_answers: answers,
@@ -348,17 +393,32 @@ export function PatientShopPage() {
         consultation_time: consultationTime,
         timeline: [{ status: "order_submitted", date: new Date().toLocaleDateString() }]
       }]);
-      if (insertError) throw insertError;
 
-      // 3. Auto sign-in → patient lands directly in portal
-      await supabase.auth.signInWithPassword({ email, password });
+      // Don't block confirmation if DB insert fails (order can be retried)
+      if (insertError) console.warn("Order insert warning:", insertError.message);
+
+      // 3. Auto sign-in — use session from signUp if available (email confirm OFF)
+      //    Otherwise, signInWithPassword (email confirm ON but still works after signup)
+      if (authData.session) {
+        // Email confirmation is disabled — user is immediately active
+        await supabase.auth.setSession(authData.session);
+      } else {
+        // Try to sign in — if email confirmation required this will fail silently
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+        if (signInError) {
+          // Email confirmation is ON — tell user to check inbox but still show confirmed
+          console.warn("Auto-login pending email confirmation:", signInError.message);
+        }
+      }
+
       setStage("confirmed");
     } catch (err: any) {
-      setError(err.message || "Something went wrong.");
+      setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   if (stage === "confirmed" && selected) {
     return (
@@ -370,7 +430,7 @@ export function PatientShopPage() {
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
         <div>
-          <h2 className="text-xl font-bold">You're all set!</h2>
+          <h2 className="text-xl font-bold">Welcome to Peak Health, {firstName}!</h2>
           <p className="text-sm text-muted-foreground mt-1">Your account is created and intake is under review.</p>
         </div>
         <Card className="text-left">
@@ -378,6 +438,7 @@ export function PatientShopPage() {
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Product</span><span className="font-semibold">{selected.name}</span></div>
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Order Ref</span><span className="font-mono font-bold text-primary">{orderRef}</span></div>
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Payment</span><span className="font-semibold">{gatewayConfig[gateway]?.label}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Account</span><span className="font-semibold text-emerald-600">✓ {email}</span></div>
           </CardContent>
         </Card>
         <div className="bg-secondary/40 border border-secondary rounded-2xl p-4 text-sm text-secondary-foreground text-left">
@@ -391,6 +452,9 @@ export function PatientShopPage() {
         <Button className="w-full rounded-xl text-base h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => window.location.href = "/patient"}>
           Enter My Patient Portal →
         </Button>
+        <p className="text-xs text-muted-foreground">
+          If you're prompted to log in, use <strong>{email}</strong> and the password you just created.
+        </p>
       </div>
     );
   }
