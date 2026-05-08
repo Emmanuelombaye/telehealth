@@ -637,81 +637,136 @@ export function PatientShopPage() {
   }
 
   if (stage === "payment" && selected) {
+    // Format card number with spaces every 4 digits for display
+    const formattedCard = cardNum.replace(/(.{4})/g, '$1 ').trim();
+    const cardReady = gateway === 'stripe'
+      ? (cardNum.length === 16 && cardExpiry.length === 5 && cardCvc.length === 3)
+      : !!gateway;
+
     return (
       <div className="max-w-md mx-auto space-y-5">
         <div className="flex justify-center mb-6">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
-        <button onClick={() => setStage("questionnaire")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <button onClick={() => setStage("account_setup")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
-        <div>
-          <h1 className="text-xl font-bold">Choose Payment</h1>
-          <p className="text-sm text-muted-foreground">Secure checkout — cancel anytime</p>
-        </div>
+
+        {/* Order summary */}
         <Card>
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="font-bold text-sm">{selected.name}</p>
-              <p className="text-xs text-muted-foreground">{selected.category}</p>
+              <p className="text-xs text-muted-foreground">{selected.category} · {firstName} {lastName}</p>
             </div>
             <span className="font-extrabold text-primary text-lg">{selected.price}</span>
           </CardContent>
         </Card>
-        <div className="space-y-2">
-          {selected.gateways.map(gw => (
-            <button key={gw} onClick={() => setGateway(gw)}
-              className={cn("w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left",
-                gateway === gw ? "border-primary bg-primary/5" : gatewayConfig[gw].color)}>
-              <span className="text-2xl">{gatewayConfig[gw].icon}</span>
-              <span className="font-semibold text-sm">{gatewayConfig[gw].label}</span>
-              {gateway === gw && <CheckCircle2 className="h-5 w-5 text-primary ml-auto" />}
-            </button>
-          ))}
+
+        {/* Step 1: Choose payment method */}
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">1. Select Payment Method</p>
+          <div className="space-y-2">
+            {selected.gateways.map(gw => (
+              <button key={gw} onClick={() => setGateway(gw)}
+                className={cn("w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left",
+                  gateway === gw ? "border-primary bg-primary/5" : gatewayConfig[gw]?.color || "border-border")}>
+                <span className="text-2xl">{gatewayConfig[gw]?.icon}</span>
+                <span className="font-semibold text-sm">{gatewayConfig[gw]?.label}</span>
+                {gateway === gw && <CheckCircle2 className="h-5 w-5 text-primary ml-auto" />}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {gateway === 'stripe' && (
-          <Card className="border-primary/20 bg-primary/5 animate-in fade-in slide-in-from-top-4">
-            <CardContent className="p-4 space-y-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Card Number</label>
-                <div className="relative">
-                  <CreditCard className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={cardNum}
-                    onChange={e => setCardNum(e.target.value.replace(/\D/g, '').slice(0, 16))}
-                    placeholder="0000 0000 0000 0000"
-                    className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">Expiry</label>
-                  <input type="text" value={cardExpiry}
-                    onChange={e => {
-                      let v = e.target.value.replace(/\D/g,'').slice(0,4);
-                      if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2);
-                      setCardExpiry(v);
-                    }}
-                    placeholder="MM/YY" className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">CVC</label>
-                  <input type="text" value={cardCvc}
-                    onChange={e => setCardCvc(e.target.value.replace(/\D/g,'').slice(0,3))}
-                    placeholder="123" className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary bg-background" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Step 2: Card details — always visible once a gateway is selected */}
+        {gateway && (
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">
+              2. {gateway === 'stripe' ? 'Enter Card Details' : `${gatewayConfig[gateway]?.label} — Card Details`}
+            </p>
 
-        {/* Non-stripe gateway helper */}
-        {gateway && gateway !== 'stripe' && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700 font-medium">
-            ✓ You'll be redirected to complete payment with {gatewayConfig[gateway].label} after account setup.
+            {/* Visual card preview */}
+            <div className="relative h-36 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-5 mb-4 overflow-hidden shadow-xl">
+              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_50%,white,transparent_60%)]" />
+              <div className="flex justify-between items-start">
+                <span className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Peak Health Pay</span>
+                <CreditCard className="h-6 w-6 text-white/50" />
+              </div>
+              <p className="text-white font-mono text-lg tracking-[0.2em] mt-3 font-bold">
+                {cardNum ? formattedCard.padEnd(19, '·').replace(/·/g, ' ·').replace(/ ·/g, '·') : '•••• •••• •••• ••••'}
+              </p>
+              <div className="flex justify-between items-end mt-2">
+                <div>
+                  <p className="text-white/40 text-[8px] uppercase tracking-wide">Cardholder</p>
+                  <p className="text-white text-sm font-bold">{firstName && lastName ? `${firstName.toUpperCase()} ${lastName.toUpperCase()}` : 'YOUR NAME'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-white/40 text-[8px] uppercase tracking-wide">Expires</p>
+                  <p className="text-white text-sm font-bold font-mono">{cardExpiry || 'MM/YY'}</p>
+                </div>
+              </div>
+            </div>
+
+            <Card className="border-border">
+              <CardContent className="p-4 space-y-4">
+                {/* Card number */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Card Number</label>
+                  <div className="relative">
+                    <CreditCard className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formattedCard}
+                      onChange={e => setCardNum(e.target.value.replace(/\D/g, '').slice(0, 16))}
+                      placeholder="0000 0000 0000 0000"
+                      className="w-full pl-10 pr-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background tracking-widest"
+                    />
+                    {cardNum.length === 16 && <CheckCircle2 className="absolute right-3 top-3 h-4 w-4 text-emerald-500" />}
+                  </div>
+                </div>
+
+                {/* Expiry + CVC side by side */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Expiry Date</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={cardExpiry}
+                      onChange={e => {
+                        let v = e.target.value.replace(/\D/g, '').slice(0, 4);
+                        if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
+                        setCardExpiry(v);
+                      }}
+                      placeholder="MM / YY"
+                      className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">CVC / CVV</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={cardCvc}
+                        onChange={e => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                        placeholder="3 digits"
+                        className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background"
+                      />
+                      <span className="absolute right-3 top-3 text-[10px] text-muted-foreground font-bold">CVV</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Helper tip */}
+                <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                  <Shield className="h-3 w-3 text-emerald-500" />
+                  Your card details are encrypted and never stored on our servers.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -719,8 +774,10 @@ export function PatientShopPage() {
           <Shield className="h-3.5 w-3.5 text-emerald-500" />
           256-bit SSL encryption · HIPAA compliant · Cancel anytime
         </div>
-        <Button className="w-full rounded-xl h-12 text-base font-bold relative overflow-hidden bg-emerald-600 hover:bg-emerald-700 text-white"
-          disabled={!gateway || isPaying || isSubmitting || (gateway === 'stripe' && (cardNum.length < 16 || cardExpiry.length < 5 || cardCvc.length < 3))}
+
+        <Button
+          className="w-full rounded-xl h-12 text-base font-bold relative overflow-hidden bg-emerald-600 hover:bg-emerald-700 text-white"
+          disabled={!cardReady || isPaying || isSubmitting}
           onClick={() => {
             setIsPaying(true);
             setTimeout(() => {
@@ -729,18 +786,23 @@ export function PatientShopPage() {
             }, 1500);
           }}>
           {isPaying || isSubmitting ? (
-            <span className="flex items-center gap-2">Creating your account... <Zap className="h-4 w-4 animate-pulse" /></span>
+            <span className="flex items-center gap-2">
+              Creating your account... <Zap className="h-4 w-4 animate-pulse" />
+            </span>
           ) : (
             <><CreditCard className="h-5 w-5 mr-2" /> Pay {selected.price} &amp; Activate Account</>
           )}
         </Button>
+
+        {!gateway && <p className="text-xs text-center text-muted-foreground">Select a payment method above to continue</p>}
         {gateway === 'stripe' && cardNum.length > 0 && cardNum.length < 16 && (
-          <p className="text-amber-500 text-xs text-center">Enter a complete 16-digit card number</p>
+          <p className="text-amber-500 text-xs text-center">{16 - cardNum.length} more digits needed</p>
         )}
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        {error && <p className="text-red-500 text-sm text-center font-semibold">{error}</p>}
       </div>
     );
   }
+
 
   if (stage === "questionnaire" && selected && currentQ) {
     return (
