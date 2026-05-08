@@ -165,9 +165,10 @@ export const router = createBrowserRouter([
       },
 
 
-      // SuperAdmin portal
+      // SuperAdmin portal — protected
       {
         path: "superadmin",
+        element: <ProtectedRoute allowedRoles={['super_admin']} />,
         children: [
           { index: true, Component: SuperAdminDashboard },
           { path: "brands", Component: SuperAdminBrandsPage },
@@ -179,17 +180,18 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // Pharmacy portal
+      // Pharmacy portal — protected (doctor or admin access)
       {
         path: "pharmacy",
+        element: <ProtectedRoute allowedRoles={['doctor', 'brand_admin', 'super_admin']} />,
         children: [
           { index: true, Component: PharmacyDashboard },
           { path: "orders", Component: PharmacyOrdersPage },
-          { path: "pickup", Component: PharmacyOrdersPage }, // Using same component for now
+          { path: "pickup", Component: PharmacyOrdersPage },
           { path: "shipping", Component: PharmacyShippingPage },
-          { path: "compounding", Component: PharmacyInventoryPage }, // Using same component for now
+          { path: "compounding", Component: PharmacyInventoryPage },
           { path: "inventory", Component: PharmacyInventoryPage },
-          { path: "audit", Component: PharmacyInventoryPage }, // Using same component for now
+          { path: "audit", Component: PharmacyInventoryPage },
           { path: "settings", Component: PharmacySettingsPage },
         ],
       },
@@ -202,4 +204,5 @@ export const router = createBrowserRouter([
   { path: "/doctor/login", element: <AuthPage portal="doctor" /> },
   { path: "/admin/login", element: <AuthPage portal="admin" /> },
   { path: "/superadmin/login", element: <AuthPage portal="superadmin" /> },
+  { path: "/pharmacy/login", element: <AuthPage portal="doctor" /> },
 ]);
