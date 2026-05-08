@@ -61,23 +61,24 @@ export function AuthPage({ portal }: { portal: Portal }) {
       }
 
       if (data.user) {
-        // Wait for auth store to update role, then redirect
-        setTimeout(() => {
-          const role = useAuthStore.getState().role;
-          if (portal === 'doctor' && role !== 'doctor') {
-            setError("Access denied. This portal is for licensed providers only.");
-            supabase.auth.signOut();
-            return;
-          }
-          if ((portal === 'admin' || portal === 'superadmin') && role !== 'brand_admin' && role !== 'super_admin') {
-            setError("Access denied. This portal is for administrators only.");
-            supabase.auth.signOut();
-            return;
-          }
-          if (role === 'doctor') navigate("/doctor", { replace: true });
-          else if (role === 'brand_admin' || role === 'super_admin') navigate("/admin", { replace: true });
-          else navigate("/patient", { replace: true });
-        }, 600);
+        // Read role directly from the session JWT — no setTimeout race condition
+        const appMeta = (data.user as any).app_metadata || {};
+        const meta = data.user.user_metadata || {};
+        const role = (appMeta.role || meta.role || 'patient') as string;
+
+        if (portal === 'doctor' && role !== 'doctor') {
+          setError("Access denied. This portal is for licensed providers only.");
+          supabase.auth.signOut();
+          return;
+        }
+        if ((portal === 'admin' || portal === 'superadmin') && role !== 'brand_admin' && role !== 'super_admin') {
+          setError("Access denied. This portal is for administrators only.");
+          supabase.auth.signOut();
+          return;
+        }
+        if (role === 'doctor') navigate("/doctor", { replace: true });
+        else if (role === 'brand_admin' || role === 'super_admin') navigate("/admin", { replace: true });
+        else navigate("/patient", { replace: true });
       }
     } catch (err: any) {
       setError(err.message || "Failed to sign in. Please try again.");
