@@ -62,10 +62,21 @@ export function AdminOrdersPage() {
     try {
       await supabase
         .from('orders')
-        .update({ status: 'shipped', tracking: trackingNumber, carrier: carrier })
+        .update({ 
+          status: 'shipped', 
+          tracking_number: trackingNumber, 
+          carrier: carrier,
+          shipped_date: new Date().toLocaleDateString()
+        })
         .eq('id', orderId);
       
-      setOrders(orders.map(o => o.id === orderId ? { ...o, status: 'shipped', tracking: trackingNumber, carrier } : o));
+      setOrders(orders.map(o => o.id === orderId ? { 
+        ...o, 
+        status: 'shipped', 
+        tracking_number: trackingNumber, 
+        carrier,
+        shipped_date: new Date().toLocaleDateString()
+      } : o));
       setEditingOrder(null);
       setTrackingNumber("");
     } catch(err) {
@@ -141,8 +152,8 @@ export function AdminOrdersPage() {
               {orders.map((item) => (
                 <tr key={item.id} className="hover:bg-muted/20 transition-colors group">
                   <td className="py-4 px-6">
-                    <div className="font-medium">{item.patient_name || item.patientName}</div>
-                    <div className="text-xs text-muted-foreground">MRN: {item.id.substring(0, 8)}</div>
+                    <div className="font-bold text-sm text-foreground">{item.patient_name || item.patientName}</div>
+                    <div className="text-[10px] text-primary font-black uppercase tracking-tighter mt-1">Order: {item.order_number || item.id.substring(0, 8)}</div>
                   </td>
                   <td className="py-4 px-4 text-foreground/80">{item.sub_brand || item.subBrand || "Peak Health"}</td>
                   <td className="py-4 px-4 text-foreground/80">
@@ -157,10 +168,13 @@ export function AdminOrdersPage() {
                   </td>
                   <td className="py-4 px-4">
                     {/* Manual Status Overrides for Pharmacies without APIs */}
-                    {item.status === "rx_sent" && editingOrder !== item.id && (
-                       <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => setEditingOrder(item.id)}>
-                         <Truck className="h-3 w-3" /> Mark Shipped
-                       </Button>
+                    {(item.status === "rx_sent" || item.status === "doctor_approved") && editingOrder !== item.id && (
+                       <div className="space-y-1">
+                        <Button size="sm" variant="outline" className="h-8 gap-1 w-full border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => setEditingOrder(item.id)}>
+                          <Truck className="h-3 w-3" /> Manual Ship Override
+                        </Button>
+                        <p className="text-[9px] text-center text-muted-foreground italic">Use if pharmacy is delayed</p>
+                       </div>
                     )}
                     
                     {editingOrder === item.id && (
@@ -186,7 +200,7 @@ export function AdminOrdersPage() {
                     {item.status === "shipped" && (
                       <div className="flex flex-col gap-1">
                         <div className="text-xs text-muted-foreground flex items-center gap-1">
-                           <Truck className="h-3 w-3" /> {item.carrier}: {item.tracking}
+                           <Truck className="h-3 w-3" /> {item.carrier || "Standard"}: {item.tracking_number || item.tracking}
                         </div>
                         <Button size="sm" variant="outline" className="h-8 gap-1 w-full" onClick={() => handleMarkDelivered(item.id)}>
                           <CheckCircle className="h-3 w-3" /> Mark Delivered

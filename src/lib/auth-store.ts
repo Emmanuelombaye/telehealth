@@ -21,12 +21,6 @@ interface AuthState {
  * This is the correct production approach.
  */
 function getRoleFromSession(session: Session): { role: Role; brandId: string | null } {
-  // Check for developer/staff override in localStorage for testing
-  const override = localStorage.getItem('peak_health_dev_role') as Role;
-  if (override) {
-    return { role: override, brandId: 'dev-brand' };
-  }
-
   const meta = session.user.user_metadata || {};
   const appMeta = (session.user as any).app_metadata || {};
 

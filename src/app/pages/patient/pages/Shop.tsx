@@ -320,7 +320,7 @@ export function PatientShopPage() {
   const totalQ = selected?.questionnaire.length ?? 0;
 
   const handleCompleteSetup = async () => {
-    if (!selected) return;
+    if (!selected || isSubmitting) return;
 
     setIsSubmitting(true);
     setError(null);
@@ -1020,7 +1020,20 @@ export function PatientShopPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
+    <div className="max-w-3xl mx-auto space-y-5 pb-20">
+      {/* Shop Header with Back button */}
+      <div className="flex items-center justify-between mb-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate('/patient')}
+          className="rounded-xl text-muted-foreground hover:text-foreground -ml-2"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Portal
+        </Button>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Medical Dispensary</span>
+      </div>
+
       {/* Yucca-style hero */}
       <div className="relative overflow-hidden rounded-3xl p-6 md:p-8" style={{ background: "var(--brand-hero)" }}>
         <div className="relative z-10">

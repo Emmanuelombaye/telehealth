@@ -114,14 +114,14 @@ export function PatientOrderTrackingPage() {
         </Card>
 
         {/* Doctor note */}
-        {activeSelected.doctorNote && (
+        {(activeSelected.doctor_note || activeSelected.doctorNote) && (
           <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <Stethoscope className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{activeSelected.doctor}</p>
-                  <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">{activeSelected.doctorNote}</p>
+                  <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{activeSelected.doctor || "Medical Provider"}</p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">{activeSelected.doctor_note || activeSelected.doctorNote}</p>
                 </div>
               </div>
             </CardContent>
@@ -129,18 +129,18 @@ export function PatientOrderTrackingPage() {
         )}
 
         {/* Tracking */}
-        {activeSelected.tracking && (
+        {(activeSelected.tracking_number || activeSelected.tracking) && (
           <Card>
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="font-bold text-sm flex items-center gap-2">
                   <Truck className="h-4 w-4 text-primary" /> Shipment Tracking
                 </p>
-                <Badge variant="secondary" className="text-[10px]">{activeSelected.carrier}</Badge>
+                <Badge variant="secondary" className="text-[10px]">{activeSelected.carrier || "Standard Courier"}</Badge>
               </div>
               <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-2">
-                <span className="font-mono text-sm flex-1">{activeSelected.tracking}</span>
-                <button onClick={() => copyTracking(activeSelected.tracking!)}
+                <span className="font-mono text-sm flex-1">{activeSelected.tracking_number || activeSelected.tracking}</span>
+                <button onClick={() => copyTracking((activeSelected.tracking_number || activeSelected.tracking)!)}
                   className="text-muted-foreground hover:text-foreground transition-colors">
                   <Copy className="h-4 w-4" />
                 </button>
@@ -218,9 +218,9 @@ export function PatientOrderTrackingPage() {
                         <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
                       </div>
                     </div>
-                    {order.tracking && (
+                    {(order.tracking_number || order.tracking) && (
                       <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                        <Truck className="h-3 w-3" /> Tracking: <span className="font-mono">{order.tracking}</span>
+                        <Truck className="h-3 w-3" /> Tracking: <span className="font-mono">{order.tracking_number || order.tracking}</span>
                       </div>
                     )}
                   </div>

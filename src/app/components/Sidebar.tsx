@@ -194,11 +194,18 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
           </div>
           <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
         </div>
-        <Link to="/" onClick={onMobileClose}
-          className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors group">
+        <button 
+          onClick={() => {
+            if (window.confirm("Are you sure you want to sign out?")) {
+              useAuthStore.getState().signOut();
+              window.location.href = "/";
+            }
+          }}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors group text-left"
+        >
           <LogOut className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           <span>{t("logout")}</span>
-        </Link>
+        </button>
       </div>
     </div>
   );

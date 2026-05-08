@@ -37,10 +37,9 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
 
     if (allowedRoles && role && !allowedRoles.includes(role)) {
       redirected.current = true;
-      // Kick them to their actual portal
-      if (role === 'doctor') navigate('/doctor', { replace: true });
-      else if (role === 'brand_admin' || role === 'super_admin') navigate('/admin', { replace: true });
-      else navigate('/patient', { replace: true });
+      // Strict Isolation: If you're in the wrong portal, we don't just "jump" you.
+      // We show that you don't have access to this specific area.
+      navigate('/not-found', { replace: true });
     }
   }, [user, role, isLoading, navigate, allowedRoles]);
 

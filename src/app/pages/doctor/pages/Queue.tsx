@@ -146,11 +146,11 @@ export function DoctorQueuePage() {
 
         <div className="flex items-center gap-3">
           <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-lg shrink-0">
-            {selected.patientAvatar}
+            {selected.patient_avatar || selected.patientAvatar}
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">{selected.patientName}</h1>
+              <h1 className="text-xl font-bold">{selected.patient_name || selected.patientName}</h1>
               <span className="text-sm">{selected.patientCountry}</span>
             </div>
             <p className="text-sm text-muted-foreground">Age {selected.patientAge} · {selected.category}</p>
@@ -241,8 +241,8 @@ export function DoctorQueuePage() {
 
                 {/* Patient Answers */}
                 <div className="space-y-3 pt-2">
-                  {selected.intakeAnswers ? (
-                    Object.entries(selected.intakeAnswers).map(([q, a]) => (
+                  {(selected.intake_answers || selected.intakeAnswers) ? (
+                    Object.entries(selected.intake_answers || selected.intakeAnswers).map(([q, a]) => (
                       <div key={q} className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
                         <p className="text-xs font-semibold text-slate-600 mb-1">{q}</p>
                         <p className="text-sm text-slate-800">{Array.isArray(a) ? a.join(", ") : a}</p>
@@ -416,18 +416,31 @@ export function DoctorQueuePage() {
         {/* Rx writer */}
         <Card>
           <CardContent className="p-4 space-y-3">
-            <p className="text-sm font-bold flex items-center gap-2"><Pill className="h-4 w-4 text-primary" /> Write Prescription</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold flex items-center gap-2"><Pill className="h-4 w-4 text-primary" /> Write Prescription</p>
+              <div className="flex gap-1.5">
+                {["0.25mg/wk", "0.5mg/wk", "1mg/wk"].map(dose => (
+                  <button 
+                    key={dose}
+                    onClick={() => setRxDosage(dose)}
+                    className="text-[10px] font-bold px-2 py-1 rounded-lg border border-slate-200 hover:border-primary hover:text-primary transition-all"
+                  >
+                    {dose}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <input 
-                className="border border-border rounded-xl px-3 py-2 text-sm bg-background focus:outline-none focus:border-primary" 
+                className="border border-border rounded-xl px-3 py-2 text-sm bg-background focus:outline-none focus:border-primary font-bold" 
                 placeholder="Drug name" 
-                defaultValue={selected.medication}
+                value={rxDrug || selected.medication}
                 onChange={e => setRxDrug(e.target.value)}
               />
               <input 
-                className="border border-border rounded-xl px-3 py-2 text-sm bg-background focus:outline-none focus:border-primary" 
+                className="border border-border rounded-xl px-3 py-2 text-sm bg-background focus:outline-none focus:border-primary font-bold" 
                 placeholder="Dosage (e.g. 10mg)" 
-                defaultValue={selected.dosageInstructions}
+                value={rxDosage || selected.dosage_instructions || selected.dosageInstructions || ""}
                 onChange={e => setRxDosage(e.target.value)}
               />
             </div>
@@ -435,8 +448,8 @@ export function DoctorQueuePage() {
               className="w-full border border-border rounded-xl px-3 py-2 text-sm bg-background focus:outline-none focus:border-primary resize-none"
               placeholder="Clinical notes for pharmacy/patient..." />
             <div className="flex gap-2">
-              <Button onClick={handleSendRx} className="flex-1 rounded-xl gap-1.5 bg-emerald-500 hover:bg-emerald-600">
-                <Pill className="h-4 w-4" /> Send Rx to Pharmacy
+              <Button onClick={handleSendRx} className="flex-1 rounded-xl gap-1.5 bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20">
+                <Pill className="h-4 w-4" /> Finalize & Send Rx
               </Button>
               <Button variant="outline" className="rounded-xl gap-1.5">
                 <MessageSquare className="h-4 w-4" /> Message
@@ -503,7 +516,7 @@ export function DoctorQueuePage() {
                 <div className="flex items-center gap-3">
                   <div className="relative shrink-0">
                     <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
-                      {patient.patientAvatar}
+                      {patient.patient_avatar || patient.patientAvatar}
                     </div>
                     {patient.urgent && (
                       <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-red-500 ring-2 ring-card flex items-center justify-center">
@@ -513,10 +526,10 @@ export function DoctorQueuePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-bold text-sm">{patient.patientName}</p>
-                      <span className="text-xs">{patient.patientCountry}</span>
+                      <p className="font-bold text-sm">{patient.patient_name || patient.patientName}</p>
+                      <span className="text-xs">{patient.patient_country || patient.patientCountry}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">{patient.category} · {patient.time || patient.orderedDate}</p>
+                    <p className="text-xs text-muted-foreground">{patient.category} · {patient.time || patient.ordered_date || patient.orderedDate}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", cfg.bg, cfg.color)}>
                         {cfg.label}
@@ -531,7 +544,16 @@ export function DoctorQueuePage() {
                           <Clock className="h-3 w-3" /> {patient.waitMins}m wait
                         </span>
                       )}
-                      {!patient.intakeComplete && (
+                      {(() => {
+                        const v = patient.patient_vitals || patient.patientVitals || {};
+                        const isHighRisk = parseFloat(v.bmi) >= 35 || (v.allergies && v.allergies.toLowerCase() !== 'none');
+                        return isHighRisk && (
+                          <span className="text-[10px] bg-red-50 text-red-600 font-bold px-2 py-0.5 rounded-full border border-red-100 flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" /> HIGH RISK
+                          </span>
+                        );
+                      })()}
+                      {!patient.intakeComplete && !patient.intake_answers && (
                         <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
                           <AlertCircle className="h-3 w-3" /> Intake pending
                         </span>

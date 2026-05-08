@@ -46,36 +46,51 @@ export function PharmacyDashboard() {
     try {
       const { error } = await supabase
         .from('orders')
-        .update({ status: 'shipped' })
+        .update({ 
+          status: 'shipped',
+          tracking_number: `TRK${Math.random().toString().slice(2, 10)}`,
+          shipped_date: new Date().toLocaleDateString()
+        })
         .eq('id', id);
       if (error) throw error;
-      // Realtime subscription will handle the UI update, but we can also update locally for speed
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'shipped' } : o));
+      // Realtime subscription will handle the UI update
     } catch (err) {
       console.error("Shipping update failed:", err);
     }
   };
 
   // Compute metrics from real data
-  const newRxCount = orders.filter(o => o.status === 'doctor_approved' || o.status === 'order_submitted').length;
-  const readyToShip = orders.filter(o => o.status === 'shipped').length;
+  const newRxCount = orders.filter(o => o.status === 'doctor_approved' || o.status === 'rx_sent').length;
+  const readyToShipCount = orders.filter(o => o.status === 'shipped').length;
   
   const stats = [
     { label: "New Rx Requests", value: newRxCount.toString(), sub: "Real-time sync", icon: ClipboardList, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Awaiting Action", value: orders.filter(o => o.status === 'doctor_approved').length.toString(), sub: "Pharmacist check", icon: ShieldAlert, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Total Shipped", value: readyToShip.toString(), sub: "Dispensary total", icon: Package, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Ready to Pack", value: orders.filter(o => o.status === 'rx_sent').length.toString(), sub: "Pharmacist check", icon: ShieldAlert, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Total Shipped", value: readyToShipCount.toString(), sub: "Dispensary total", icon: Package, color: "text-emerald-600", bg: "bg-emerald-50" },
     { label: "Live Queue", value: orders.length.toString(), sub: "Total records", icon: Activity, color: "text-violet-600", bg: "bg-violet-50" },
   ];
 
-  const incomingRx = orders.slice(0, 5).map(o => ({
-    rawId: o.id,
-    id: o.order_number || o.id.slice(0, 8),
-    patient: o.patient_name || "Unknown Patient",
-    drug: o.medication || "Consultation Request",
-    date: o.ordered_date || "Recent",
-    status: o.status.replace('_', ' '),
-    urgent: o.urgent || false
-  }));
+  const incomingRx = orders
+    .filter(o => o.status !== 'shipped' && o.status !== 'delivered')
+    .slice(0, 5)
+    .map(o => ({
+      rawId: o.id,
+      id: o.order_number || o.id.slice(0, 8),
+      patient: o.patient_name || "Unknown Patient",
+      drug: o.medication || "Consultation Request",
+      date: o.ordered_date || "Recent",
+      status: o.status.replace('_', ' '),
+      urgent: o.urgent || false
+    }));
+
+  const shippingQueue = orders
+    .filter(o => o.status === 'shipped')
+    .slice(0, 3)
+    .map(o => ({
+      id: o.order_number || o.id.slice(0, 8),
+      patient: o.patient_name || "Patient",
+      status: "In Transit"
+    }));
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -83,11 +98,11 @@ export function PharmacyDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-[#0A0D14]">Dispensary Dashboard</h1>
-          <p className="text-slate-500 font-medium">VialsRX Pharmacy #4401 · California Hub</p>
+          <p className="text-slate-500 font-medium">VialsRX Pharmacy #4401 · Hub Hub</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="rounded-2xl gap-2 font-bold h-11">
-            <Printer className="h-4 w-4" /> Batch Labels
+          <Button variant="outline" className="rounded-2xl gap-2 font-bold h-11" onClick={() => window.location.href='/pharmacy/orders'}>
+            <Printer className="h-4 w-4" /> Full Queue
           </Button>
           <Button className="rounded-2xl gap-2 font-black uppercase text-xs tracking-widest h-11 bg-[#0A0D14] text-white">
             <FlaskConical className="h-4 w-4" /> Compounding Log
@@ -136,7 +151,11 @@ export function PharmacyDashboard() {
           </div>
 
           <div className="space-y-3">
-            {incomingRx.map((rx, i) => (
+            {incomingRx.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 font-bold border-2 border-dashed border-slate-100 rounded-3xl">
+                No incoming prescriptions.
+              </div>
+            ) : incomingRx.map((rx, i) => (
               <Card key={i} className={cn("hover:border-primary/40 transition-all cursor-pointer group", rx.urgent && "border-l-4 border-l-red-500")}>
                 <CardContent className="p-5 flex items-center gap-6">
                   <div className="h-14 w-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
@@ -156,11 +175,11 @@ export function PharmacyDashboard() {
                     <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right mr-4">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                      <span className={cn("text-xs font-black", rx.status.includes('shipped') ? 'text-blue-600' : 'text-emerald-600')}>
+                      <span className={cn("text-xs font-black capitalize", rx.status.includes('shipped') ? 'text-blue-600' : 'text-emerald-600')}>
                         {rx.status}
                       </span>
                     </div>
-                    {rx.status === 'doctor approved' ? (
+                    {rx.status.includes('doctor approved') || rx.status.includes('rx sent') ? (
                       <Button 
                         onClick={(e) => { e.stopPropagation(); handleShip(rx.rawId); }}
                         className="rounded-xl h-10 px-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[10px] tracking-widest"
@@ -168,7 +187,7 @@ export function PharmacyDashboard() {
                         SHIP
                       </Button>
                     ) : (
-                      <Button variant="outline" size="icon" className="rounded-xl h-10 w-10">
+                      <Button variant="outline" size="icon" className="rounded-xl h-10 w-10" onClick={() => window.location.href='/pharmacy/orders'}>
                         <ChevronRight className="h-5 w-5" />
                       </Button>
                     )}
@@ -176,8 +195,8 @@ export function PharmacyDashboard() {
                 </CardContent>
               </Card>
             ))}
-            <Button variant="ghost" className="w-full h-12 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold hover:bg-slate-50">
-              View All {orders.length} Incoming Orders
+            <Button variant="ghost" onClick={() => window.location.href='/pharmacy/orders'} className="w-full h-12 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold hover:bg-slate-50">
+              View All {orders.length} Dispensary Orders
             </Button>
           </div>
         </div>
@@ -191,10 +210,12 @@ export function PharmacyDashboard() {
             </h2>
             <Card className="border-none shadow-xl shadow-slate-200/40 bg-emerald-500 text-white">
               <CardContent className="p-6">
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Next Pickup</p>
-                <p className="text-2xl font-black mb-4">FedEx @ 2:30 PM</p>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Daily Logistics</p>
+                <p className="text-2xl font-black mb-4">Pickup Hub</p>
                 <div className="space-y-3">
-                  {shippingQueue.map((s, i) => (
+                  {shippingQueue.length === 0 ? (
+                    <p className="text-xs font-bold opacity-60 italic text-center py-4">No shipments active</p>
+                  ) : shippingQueue.map((s, i) => (
                     <div key={i} className="flex items-center justify-between p-3 bg-white/10 rounded-2xl border border-white/10">
                       <div>
                         <p className="text-[10px] font-black uppercase opacity-80">{s.id}</p>
@@ -204,8 +225,8 @@ export function PharmacyDashboard() {
                     </div>
                   ))}
                 </div>
-                <Button className="w-full mt-4 bg-white text-emerald-600 hover:bg-white/90 rounded-xl font-black uppercase text-[10px] tracking-widest h-10">
-                  Manage Shipments
+                <Button onClick={() => window.location.href='/pharmacy/orders'} className="w-full mt-4 bg-white text-emerald-600 hover:bg-white/90 rounded-xl font-black uppercase text-[10px] tracking-widest h-10">
+                  Manage Logistics
                 </Button>
               </CardContent>
             </Card>

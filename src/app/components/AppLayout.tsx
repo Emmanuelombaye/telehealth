@@ -86,7 +86,12 @@ export function AppLayout() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => signOut()}
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to sign out?")) {
+                    signOut();
+                    navigate("/");
+                  }
+                }}
                 className="h-10 w-10 rounded-xl bg-primary/5 text-primary hover:bg-destructive/10 hover:text-destructive transition-colors"
               >
                 <LogOut className="h-5 w-5" />

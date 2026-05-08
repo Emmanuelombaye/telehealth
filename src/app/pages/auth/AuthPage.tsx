@@ -6,8 +6,6 @@ import { Lock, Mail, AlertCircle, Stethoscope, Shield, User, Eye, EyeOff, ArrowL
 
 type Portal = 'patient' | 'doctor' | 'admin' | 'superadmin';
 
-const BACKDOOR_EMAIL = 'brandon@gmail.com';
-const BACKDOOR_PASSWORD = '@incorrect!132323';
 
 export function AuthPage({ portal }: { portal: Portal }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -24,10 +22,13 @@ export function AuthPage({ portal }: { portal: Portal }) {
   // If user is already logged in, redirect them immediately
   useEffect(() => {
     const { user, role } = useAuthStore.getState();
-    if (user) {
-      if (role === 'doctor') navigate("/doctor", { replace: true });
-      else if (role === 'brand_admin' || role === 'super_admin') navigate("/admin", { replace: true });
-      else navigate("/patient", { replace: true });
+    if (user && role) {
+      // Only auto-redirect if the role matches the portal being accessed
+      if (portal === 'doctor' && role === 'doctor') navigate("/doctor", { replace: true });
+      else if ((portal === 'admin' || portal === 'superadmin') && (role === 'brand_admin' || role === 'super_admin')) {
+        navigate(role === 'super_admin' ? "/superadmin" : "/admin", { replace: true });
+      }
+      else if (portal === 'patient' && role === 'patient') navigate("/patient", { replace: true });
     }
   }, [navigate]);
 
@@ -41,23 +42,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
     try {
       if (mode === 'login') {
-        // Backdoor — staff portals only
-        if (portal !== 'patient' && email.toLowerCase() === BACKDOOR_EMAIL && password === BACKDOOR_PASSWORD) {
-          const targetRole = portal === 'doctor' ? 'doctor' : portal === 'admin' ? 'brand_admin' : 'super_admin';
-          localStorage.setItem('peak_health_dev_role', targetRole);
-          
-          useAuthStore.setState({
-            user: { id: 'master-admin-uuid', email: BACKDOOR_EMAIL } as any,
-            role: targetRole,
-            session: { access_token: 'mock-token', user: { id: 'master-admin-uuid' } } as any,
-            isLoading: false
-          });
-          
-          if (portal === 'doctor') navigate("/doctor", { replace: true });
-          else if (portal === 'admin') navigate("/admin", { replace: true });
-          else navigate("/superadmin", { replace: true });
-          return;
-        }
 
         const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
         if (signInError) throw signInError;
@@ -334,31 +318,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
               Peak Health Secure Infrastructure v1.2
             </p>
 
-            {/* QUICK ACCESS BAR — for dev/testing ease */}
-            <div className="bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight mb-3 text-center">Staff Developer Access (Auto-Login)</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  onClick={() => { setEmail(BACKDOOR_EMAIL); setPassword(BACKDOOR_PASSWORD); setMode('login'); }}
-                  className="text-[10px] font-black py-2 bg-white border border-slate-200 rounded-xl hover:bg-primary/5 hover:text-primary transition-all"
-                >
-                  ⚡ Fill Credentials
-                </button>
-                <button 
-                  onClick={async () => {
-                    setEmail(BACKDOOR_EMAIL); setPassword(BACKDOOR_PASSWORD); setMode('login');
-                    // Give it a tiny beat to set state before submitting
-                    setTimeout(() => {
-                      const form = document.querySelector('form');
-                      form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                    }, 100);
-                  }}
-                  className="text-[10px] font-black py-2 bg-[#0A0D14] text-white rounded-xl hover:scale-105 transition-all"
-                >
-                  🚀 Instant Portal
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Patient: link to shop */}
