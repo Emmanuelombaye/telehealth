@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "../../../lib/supabaseClient";
 import { 
   ClipboardList, Package, Truck, FlaskConical, Pill,
   AlertTriangle, CheckCircle2, Search, Filter,
