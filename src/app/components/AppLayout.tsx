@@ -17,12 +17,24 @@ export function AppLayout() {
     fetchOrders();
     fetchDoctorAvailability();
     
-    // Refresh every minute to keep badges accurate
+    // Real-time synchronization
+    const channel = supabase
+      .channel('global-order-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+        console.log('[Realtime] Order Change Detected:', payload);
+        fetchOrders();
+      })
+      .subscribe();
+
+    // Secondary polling to ensure consistency
     const interval = setInterval(() => {
       fetchOrders();
     }, 60000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, [fetchOrders, fetchDoctorAvailability]);
 
   const location = useLocation();

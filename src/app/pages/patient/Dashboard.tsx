@@ -100,6 +100,18 @@ export function PatientDashboard() {
                   </div>
                   <p className="font-bold text-sm">{order.medication}</p>
                   <p className="text-xs text-muted-foreground">{order.dosageInstructions}</p>
+                  
+                  {order.doctor && order.doctor !== "Pending assignment" && (
+                    <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-lg w-fit">
+                      <Stethoscope className="h-3 w-3 text-blue-600" />
+                      <span className="text-[10px] font-bold text-blue-800 uppercase tracking-tight">Assigned: {order.doctor}</span>
+                    </div>
+                  )}
+
+                  <div className="mt-3 p-3 bg-muted/30 rounded-2xl border border-border/40">
+                     <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Current Progress</p>
+                     <p className="text-xs font-medium text-foreground leading-relaxed">{ORDER_STEPS[currentIdx]?.desc || "Processing your request..."}</p>
+                  </div>
 
                   {/* 5-step horizontal pipeline */}
                   <div className="mt-4 flex items-start gap-1">
