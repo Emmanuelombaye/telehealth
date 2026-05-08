@@ -1,6 +1,6 @@
 import { Plus, Copy, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
-import { Button, Badge } from "../../../components/ui/shared";
-import { AdminDataTable, StatusText } from "../../../components/ui/shared/AdminDataTable";
+import { Button, Badge } from "../../../components/ui/shared.tsx";
+import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminDataTable";
 import { useState } from "react";
 
 const discounts = [

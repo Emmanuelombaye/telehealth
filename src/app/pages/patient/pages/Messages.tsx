@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Send, Lock, Search, ChevronLeft, Paperclip, Smile } from "lucide-react";
-import { Button, Badge, cn } from "../../../components/ui/shared";
+import { Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 const conversations = [
   { id: 1, name: "Dr. Sarah Johnson", role: "General Practice", lastMsg: "Your blood pressure looks good. Keep monitoring daily.", time: "2m", unread: 2, online: true },

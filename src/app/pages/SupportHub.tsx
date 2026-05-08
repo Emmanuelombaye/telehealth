@@ -4,7 +4,7 @@ import {
   Share2, Newspaper, Lock, Info, Heart, Scale
 } from "lucide-react";
 import { Link } from "react-router";
-import { Button, Card, CardContent, Badge, cn } from "../components/ui/shared";
+import { Button, Card, CardContent, Badge, cn } from "../components/ui/shared.tsx";
 import { Reveal } from "../components/ui/Reveal";
 
 export function SupportHubPage() {

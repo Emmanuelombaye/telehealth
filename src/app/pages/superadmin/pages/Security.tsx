@@ -3,7 +3,7 @@ import {
   Shield, AlertTriangle, Lock, Search, Filter,
   CheckCircle2, XCircle, Eye, Ban, Globe, Clock, Server, Cloud, Smartphone
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 const threats = [
   { id: 1, type: "Brute Force", brand: "Brand B", ip: "203.0.113.42", country: "🇷🇺 Russia", attempts: 82, time: "4m ago", status: "active" },

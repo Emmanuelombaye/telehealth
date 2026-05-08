@@ -1,5 +1,5 @@
 import { Users, Plus, Shield, Edit2, Trash2, Heart } from "lucide-react";
-import { Card, CardContent, Button, Badge } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge } from "../../../components/ui/shared.tsx";
 
 const members = [
   { id: 1, name: "Jane Doe", relation: "Spouse", age: 38, access: "Full", avatar: "JD" },

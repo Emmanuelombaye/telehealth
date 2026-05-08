@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Download, CreditCard, ExternalLink, RefreshCw, Columns } from "lucide-react";
-import { Card, Button } from "../../../components/ui/shared";
+import { Card, Button } from "../../../components/ui/shared.tsx";
 
 const mockInvoices = [
   { id: "Upcoming", plan: "Enterprise", amount: "$4,499.99", status: "Processing", method: "--", date: "--" },

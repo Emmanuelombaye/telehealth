@@ -5,7 +5,7 @@ import {
   CheckCircle2, AlertCircle, Circle, Stethoscope, Pill,
   Phone, ToggleLeft, ToggleRight, Search, Filter, Bell, Zap
 } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { OrderStatus, Order } from "../../../../lib/patient-store";
 import { supabase } from "../../../../lib/supabaseClient";
 

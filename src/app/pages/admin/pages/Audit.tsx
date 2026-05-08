@@ -1,5 +1,5 @@
 import { ShieldCheck, Download, Filter, Search, AlertTriangle, Info, AlertCircle, Lock } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 const logs = [
   { id: 1, user: "Dr. Sarah Johnson", action: "Record Access", target: "Patient #8492 — Alice Thompson", ip: "192.168.1.10", time: "2026-05-19 10:02:14 UTC", severity: "info", category: "PHI Access" },

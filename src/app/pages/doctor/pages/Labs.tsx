@@ -1,5 +1,5 @@
 import { TestTube, Clock, CheckCircle2, AlertCircle, Plus } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 const labOrders = [
   { id: 1, patient: "Alice Thompson", tests: ["CBC", "CMP"], ordered: "May 12", status: "results-ready", priority: "routine" },

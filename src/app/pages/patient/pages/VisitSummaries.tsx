@@ -1,5 +1,5 @@
 import { FileText, Download, ChevronRight, Video, MessageSquare, Calendar } from "lucide-react";
-import { Card, CardContent, Button, Badge } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge } from "../../../components/ui/shared.tsx";
 
 const summaries = [
   { id: 1, doctor: "Dr. Sarah Johnson", specialty: "General Practice", date: "May 1, 2026", type: "video", diagnosis: "Hypertension — Stage 1", followUp: "May 19, 2026" },

@@ -3,7 +3,7 @@ import {
   Calendar, Clock, Plus, Copy, CheckCircle2, Globe,
   ToggleLeft, ToggleRight, Trash2, Link, Video, MessageSquare
 } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { usePatientStore } from "../../../../lib/patient-store";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];

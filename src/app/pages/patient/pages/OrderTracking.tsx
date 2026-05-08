@@ -3,7 +3,7 @@ import {
   Package, CheckCircle2, Stethoscope, Pill, Truck, ShoppingBag, Hourglass, FileText,
   ChevronRight, Search, MapPin, ExternalLink, MessageSquare, Copy
 } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { ORDER_STEPS, getStepIndex, type Order } from "../../../../lib/patient-store";
 import { supabase } from "../../../../lib/supabaseClient";
 

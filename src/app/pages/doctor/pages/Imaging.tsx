@@ -1,5 +1,5 @@
 import { Activity, Search, Maximize2, ZoomIn, Eye, Download, Image as ImageIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared.tsx";
 import { ImageWithFallback } from "../../../components/figma/ImageWithFallback";
 
 export function DoctorImagingPage() {

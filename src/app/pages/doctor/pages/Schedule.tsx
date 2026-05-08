@@ -1,5 +1,5 @@
 import { Calendar, Clock, Video, ChevronRight, Plus } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 const schedule = [
   { time: "09:00 AM", patient: "Alice Thompson", type: "Follow-up", duration: "30 min", status: "confirmed" },

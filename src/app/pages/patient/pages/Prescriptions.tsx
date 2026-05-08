@@ -1,5 +1,5 @@
 import { Pill, RefreshCw, MapPin, Clock, CheckCircle2, AlertCircle, ChevronRight } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 const prescriptions = [
   { id: 1, name: "Lisinopril", dosage: "10mg", frequency: "Once daily", prescriber: "Dr. Sarah Johnson", refills: 3, daysLeft: 28, status: "active", pharmacy: "CVS Pharmacy" },

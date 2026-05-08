@@ -4,7 +4,7 @@ import {
   Pill, FileText, Zap, ShieldCheck, Activity, Users, 
   Send, Bot, Sparkles, CheckCircle2, MoreHorizontal
 } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 interface Message {
   id: string;

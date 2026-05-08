@@ -1,5 +1,5 @@
 import { FileText, Download, Upload, Search, Filter, FolderOpen } from "lucide-react";
-import { Card, CardContent, Button, Badge } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge } from "../../../components/ui/shared.tsx";
 
 const docs = [
   { id: 1, name: "Blood Test Results — May 2026", type: "Lab Report", date: "May 12, 2026", size: "245 KB", new: true },

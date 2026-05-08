@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Search, Printer, ArrowDownUp, CloudDownload, RefreshCw, ChevronDown } from "lucide-react";
-import { Card } from "../../../components/ui/shared";
-import { AdminDataTable } from "../../../components/ui/shared/AdminDataTable";
+import { Card } from "../../../components/ui/shared.tsx";
+import { AdminDataTable } from "../../../components/ui/tables/AdminDataTable";
 
 // Mock Data from Bask Health Screenshot
 const mockPatients = [

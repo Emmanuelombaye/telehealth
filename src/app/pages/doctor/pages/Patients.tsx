@@ -1,5 +1,5 @@
 import { Search, Filter, Video, MessageSquare, FileText, ChevronRight, Activity } from "lucide-react";
-import { Card, CardContent, Button, Badge } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge } from "../../../components/ui/shared.tsx";
 
 const patients = [
   { id: 1, name: "Alice Thompson", age: 34, condition: "Hypertension", lastVisit: "May 1", status: "Active", avatar: "AT", risk: "low" },

@@ -1,5 +1,5 @@
 import { TestTube, TrendingUp, TrendingDown, Minus, Download, ChevronRight, AlertCircle } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 const results = [
   {

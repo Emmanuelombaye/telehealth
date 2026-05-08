@@ -5,7 +5,7 @@ import {
   Pill, Zap, ShieldCheck, Activity, Users, 
   Sparkles, CheckCircle2, MoreHorizontal
 } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 export function DoctorConsultPage() {
   const [isMuted, setIsMuted] = useState(false);

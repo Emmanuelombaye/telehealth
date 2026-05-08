@@ -2,7 +2,7 @@ import {
   DollarSign, TrendingUp, CreditCard, ArrowUpRight,
   CheckCircle2, Clock, Building2, Download
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const monthlyRevenue = [

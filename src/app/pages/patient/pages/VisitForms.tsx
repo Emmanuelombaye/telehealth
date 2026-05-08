@@ -1,5 +1,5 @@
 import { FileCheck, Clock, CheckCircle2, ChevronRight } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 const visitForms = [
   { id: 1, title: "Chief Complaint Form", visit: "General Consultation — May 19", status: "pending", urgent: true },

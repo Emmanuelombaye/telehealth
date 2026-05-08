@@ -1,5 +1,5 @@
 import { Building2, CheckCircle2, Clock, AlertCircle, ChevronRight, Plus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared.tsx";
 
 const claims = [
   { id: 1, service: "General Consultation — May 1", provider: "Dr. Sarah Johnson", billed: "$250", covered: "$200", owed: "$50", status: "approved" },

@@ -3,7 +3,7 @@ import {
   Users, Search, Filter, Edit2, ShieldOff, Shield,
   ChevronDown, UserCheck, Building2, Eye
 } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 const users = [
   { id: 1, name: "Alice Thompson", email: "alice@branda.health", role: "patient", brand: "Brand A", status: "active", joined: "Jan 15, 2026", country: "🇺🇸", lastSeen: "2m ago" },

@@ -1,5 +1,5 @@
 import { Wrench, Zap, Bot, Workflow, ToggleLeft, ToggleRight } from "lucide-react";
-import { Card, CardContent, Button, Badge } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge } from "../../../components/ui/shared.tsx";
 import { useState } from "react";
 
 const tools = [

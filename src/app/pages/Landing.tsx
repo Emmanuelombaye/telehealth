@@ -6,7 +6,7 @@ import {
   Menu, X, Star, ChevronDown,
   Pill, Heart, Sparkles, Layout, Lock
 } from "lucide-react";
-import { Button, Card, CardContent, cn } from "../components/ui/shared";
+import { Button, Card, CardContent, cn } from "../components/ui/shared.tsx";
 import { Reveal } from "../components/ui/Reveal";
 import { PatientShopPage } from "./patient/pages/Shop";
 

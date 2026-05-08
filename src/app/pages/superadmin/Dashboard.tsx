@@ -5,7 +5,7 @@ import {
   AlertTriangle, Server, ArrowUpRight, Building2, Zap, CheckCircle2,
   Package, Clock, BarChart3, Lock
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from "../../components/ui/shared";
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from "../../components/ui/shared.tsx";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell

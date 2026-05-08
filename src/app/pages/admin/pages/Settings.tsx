@@ -1,5 +1,5 @@
 import { Settings, Shield, Globe, Bell, CreditCard, Mail, Lock, ToggleLeft, ToggleRight, Save } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button } from "../../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle, Button } from "../../../components/ui/shared.tsx";
 import { useState } from "react";
 
 const sections = [

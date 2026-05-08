@@ -1,5 +1,5 @@
 import { Bell, Calendar, FileText, Pill, MessageSquare, ShieldCheck, CheckCheck } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 
 const notifications = [
   { id: 1, type: "appointment", icon: Calendar, title: "Appointment Confirmed", body: "Dr. Sarah Johnson confirmed your appointment for May 19 at 10:30 AM.", time: "2 minutes ago", unread: true },

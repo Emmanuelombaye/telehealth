@@ -1,6 +1,6 @@
 import { Share2, Plus, TrendingUp, DollarSign, Users, Copy, ExternalLink } from "lucide-react";
-import { Card, CardContent, Button, Badge } from "../../../components/ui/shared";
-import { AdminDataTable, StatusText } from "../../../components/ui/shared/AdminDataTable";
+import { Card, CardContent, Button, Badge } from "../../../components/ui/shared.tsx";
+import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminDataTable";
 
 const affiliates = [
   { id: 1, name: "HealthBlog Pro", contact: "sarah@healthblog.com", referrals: 234, revenue: "$4,680", commission: "$468", rate: "10%", status: "active" },

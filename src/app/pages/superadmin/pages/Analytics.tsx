@@ -1,7 +1,7 @@
 import {
   DollarSign, Users, Activity, TrendingUp, Globe, Package
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Badge } from "../../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle, Badge } from "../../../components/ui/shared.tsx";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell, PieChart, Pie, LineChart, Line, Legend

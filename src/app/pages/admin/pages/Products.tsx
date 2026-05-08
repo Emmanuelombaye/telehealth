@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, PackageSearch, RefreshCw } from "lucide-react";
-import { Card, Button } from "../../../components/ui/shared";
-import { AdminDataTable, StatusText } from "../../../components/ui/shared/AdminDataTable";
+import { Card, Button } from "../../../components/ui/shared.tsx";
+import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminDataTable";
 import { supabase } from "../../../../lib/supabaseClient";
 
 const filterTabs = ["Ungrouped Product", "Drug Group", "Digital Product", "Bundle", "Lab Test", "Active", "Archived"];

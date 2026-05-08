@@ -5,7 +5,7 @@ import {
   Stethoscope, Package, CreditCard, BarChart3, ArrowLeft,
   CheckCircle2, Clock, AlertTriangle, Settings
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const brands = [

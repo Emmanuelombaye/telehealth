@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CheckCircle2, Circle, ChevronRight, AlertCircle } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { usePatientStore } from "../../../../lib/patient-store";
 
 const forms = [

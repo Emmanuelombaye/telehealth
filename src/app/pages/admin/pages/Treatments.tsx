@@ -1,5 +1,5 @@
-import { Card } from "../../../components/ui/shared";
-import { AdminDataTable } from "../../../components/ui/shared/AdminDataTable";
+import { Card } from "../../../components/ui/shared.tsx";
+import { AdminDataTable } from "../../../components/ui/tables/AdminDataTable";
 
 const mockTreatments = [
   { id: "1", name: "Ashley Shepherd", date: "05/02/2026", mrn: "P05626967", email: "ashepherd111@yahoo.com", phone: "(305) 304-9665", orders: "1" },

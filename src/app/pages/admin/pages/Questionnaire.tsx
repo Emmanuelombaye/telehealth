@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Search, Plus, Filter, FileText, ArrowLeft, Smartphone, Trash2, GripVertical, Settings2 } from "lucide-react";
-import { Card, Button, Badge, cn } from "../../../components/ui/shared";
-import { AdminDataTable, StatusText, ActionBadge } from "../../../components/ui/shared/AdminDataTable";
+import { Card, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { AdminDataTable, StatusText, ActionBadge } from "../../../components/ui/tables/AdminDataTable";
 
 const mockQuestionnaires = [
   { id: "6839", name: "Methylene Blue", date: "12/05/2025", questions: "61", products: "1", checkoutPages: "13", domain: "https://go.trygenesis.com", slug: "methylene-blue", review: "Unpublish", status: "Approved", mode: "Test", intake: "-", lastUsed: "5/7/2026" },

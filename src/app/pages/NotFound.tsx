@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { Activity, ArrowLeft } from "lucide-react";
-import { Button } from "../components/ui/shared";
+import { Button } from "../components/ui/shared.tsx";
 
 export function NotFoundPage() {
   return (

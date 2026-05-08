@@ -5,7 +5,7 @@ import {
   Droplets, Heart, ChevronRight, Video, Pill, Stethoscope,
   ShieldCheck, TrendingUp, Truck, CheckCircle2, Package, ShoppingBag, Hourglass, Building2, Copy
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, cn } from "../../components/ui/shared";
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge, cn } from "../../components/ui/shared.tsx";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   useI18n,

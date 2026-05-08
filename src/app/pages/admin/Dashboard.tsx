@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import {
   ShoppingCart, CreditCard, DollarSign, Calendar, ChevronDown, RefreshCw, Info
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/shared.tsx";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useAuthStore } from "../../../lib";
 import { supabase } from "../../../lib/supabaseClient";

@@ -1,5 +1,5 @@
 import { ShieldCheck, Upload, CheckCircle2, Clock, AlertCircle, Lock, Eye } from "lucide-react";
-import { Card, CardContent, Button, Badge } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge } from "../../../components/ui/shared.tsx";
 
 export function IdentityPage() {
   return (

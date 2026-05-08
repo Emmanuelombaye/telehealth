@@ -1,6 +1,6 @@
 import { Plus, Download, Upload } from "lucide-react";
-import { Button } from "../../../components/ui/shared";
-import { AdminDataTable } from "../../../components/ui/shared/AdminDataTable";
+import { Button } from "../../../components/ui/shared.tsx";
+import { AdminDataTable } from "../../../components/ui/tables/AdminDataTable";
 
 const tabs = ["All", "Active", "Unactive"];
 

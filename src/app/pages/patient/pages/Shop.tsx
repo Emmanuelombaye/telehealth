@@ -5,7 +5,7 @@ import {
   Star, Shield, Clock, Package, ArrowLeft, Globe, Zap, Loader2,
   Video, MessageSquare
 } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
 
@@ -343,6 +343,11 @@ export function PatientShopPage() {
     };
 
     try {
+      // 0. Final validation to prevent 422 (Unprocessable Content)
+      if (!email || !email.includes('@')) throw new Error("A valid email is required.");
+      if (!password || password.length < 6) throw new Error("Password must be at least 6 characters.");
+      if (!firstName || !lastName) throw new Error("First and last name are required.");
+
       // 1. Create Supabase Auth account
       let userId: string | null = null;
       let sessionToSet = null;

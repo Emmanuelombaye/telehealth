@@ -5,7 +5,7 @@ import {
   ArrowUpRight, Clock, Box, ShieldAlert, 
   ChevronRight, MoreHorizontal, Printer, Mail
 } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../components/ui/shared";
+import { Card, CardContent, Button, Badge, cn } from "../../components/ui/shared.tsx";
 
 const stats = [
   { label: "New Rx Requests", value: "12", sub: "Last 2 hours", icon: ClipboardList, color: "text-blue-600", bg: "bg-blue-50" },

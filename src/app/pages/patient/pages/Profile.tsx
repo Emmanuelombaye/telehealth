@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Camera, Edit2, Save, Globe, Phone, Mail, MapPin, Calendar } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared.tsx";
 
 export function ProfilePage() {
   const [editing, setEditing] = useState(false);

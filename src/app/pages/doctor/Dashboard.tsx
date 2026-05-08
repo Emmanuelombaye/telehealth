@@ -2,7 +2,7 @@ import {
   Users, Calendar, Clock, Search, Filter, MoreVertical,
   Video, FileText, MessageSquare, TrendingUp, UserCheck, ChevronRight
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Input } from "../../components/ui/shared";
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Input } from "../../components/ui/shared.tsx";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { useI18n, getGreeting, usePatientStore, useAuthStore } from "../../../lib";
 import { Link } from "react-router";
