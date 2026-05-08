@@ -50,6 +50,14 @@ export type Order = {
   waitMins?: number;
   time?: string;
   mrn?: string;
+  patient_vitals?: any;
+  patientVitals?: any;
+  patient_age?: number;
+  patient_country?: string;
+  zoom_status?: 'requested' | 'not_requested' | 'confirmed' | 'rescheduled' | 'canceled';
+  zoom_doctor_message?: string | null;
+  zoom_rescheduled_time?: string | null;
+  consultation_time?: string | null;
 };
 
 // Removed mock initialOrders to enforce strict backend data fetching
@@ -274,7 +282,7 @@ export const usePatientStore = create<AppState>()(
           )
         })),
         
-      resetStore: () => set({ orders: initialOrders, intakeFormData: {} }),
+      resetStore: () => set({ orders: [], intakeFormData: {} }),
     })
   )
 );

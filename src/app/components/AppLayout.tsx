@@ -2,7 +2,7 @@ import { Outlet, useLocation, Link, useNavigate } from "react-router";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { Activity, Bell, Search, User, Menu, ChevronLeft } from "lucide-react";
-import { Button } from "./ui/shared";
+import { Button } from "./ui/shared.tsx";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { useState } from "react";
 import { cn } from "./ui/utils";

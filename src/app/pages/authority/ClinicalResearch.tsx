@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { 
   Beaker, Microscope, BookOpen, GraduationCap, 
   ArrowRight, ShieldCheck, CheckCircle2, FlaskConical,
-  BarChart3, FileText, Globe, Heart
+  BarChart3, FileText, Globe, Heart, Lock
 } from "lucide-react";
 import { Link } from "react-router";
 import { Button, Card, CardContent, Badge, cn } from "../../components/ui/shared.tsx";
@@ -146,7 +146,7 @@ export function ClinicalResearchPage() {
               { icon: ShieldCheck, title: "FDA Approved", desc: "We only prescribe FDA-approved medications and ingredients." },
               { icon: Lock, title: "HIPAA Secure", desc: "Your clinical data is protected by military-grade encryption." },
               { icon: Beaker, title: "Vetted Partners", desc: "Our 503(B) pharmacy partners maintain rigorous sterility." }
-            ].map((item, i) => (
+            ].map((item: any, i) => (
               <Reveal key={i} delay={0.1 * i} direction="up">
                  <div className="text-center space-y-4">
                     <div className="h-16 w-16 rounded-[24px] bg-white border border-slate-100 flex items-center justify-center mx-auto shadow-sm">

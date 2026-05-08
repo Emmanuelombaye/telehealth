@@ -3,7 +3,6 @@ export type { Locale } from "./i18n.tsx";
 export { useTheme, ThemeProvider } from "./theme.tsx";
 export {
   ORDER_STEPS,
-  initialOrders,
   getStepIndex,
   getActiveOrder,
   getAwaitingReviewCount,

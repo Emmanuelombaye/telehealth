@@ -8,7 +8,7 @@ import {
   FileCheck, Receipt, BookOpen, Building2, Truck,
   Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse
 } from "lucide-react";
-import { cn } from "./ui/shared";
+import { cn } from "./ui/shared.tsx";
 import { useI18n, brand } from "../../lib";
 
 type Role = "patient" | "doctor" | "admin" | "superadmin" | "pharmacy";

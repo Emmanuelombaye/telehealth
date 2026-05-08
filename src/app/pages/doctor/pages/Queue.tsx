@@ -79,6 +79,16 @@ export function DoctorQueuePage() {
 
   const avail = availabilityConfig[availability];
   const activeCount = queue.length;
+  
+  const updateOrderStatus = async (id: string, status: OrderStatus) => {
+    try {
+      const { error } = await supabase.from('orders').update({ status }).eq('id', id);
+      if (error) throw error;
+      setOrders(orders.map(o => o.id === id ? { ...o, status } : o));
+    } catch (err) {
+      console.error("Failed to update order status:", err);
+    }
+  };
 
   const handleSendRx = async () => {
     if (!selected) return;

@@ -304,7 +304,7 @@ export function PatientShopPage() {
   const filteredProducts = activeCat === "All" ? dbProducts : dbProducts.filter(p => p.category === activeCat);
   const categories = ["All", ...Array.from(new Set(dbProducts.map(p => p.category)))];
 
-  const startFlow = (product: typeof products[0]) => {
+  const startFlow = (product: any) => {
     setSelected(product);
     setQStep(0);
     setAnswers({});

@@ -6,7 +6,7 @@ import {
   Package,
   User 
 } from "lucide-react";
-import { cn } from "./ui/shared";
+import { cn } from "./ui/shared.tsx";
 import { motion } from "framer-motion";
 
 export function BottomNav() {
