@@ -9,7 +9,7 @@ import {
   Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse
 } from "lucide-react";
 import { cn } from "./ui/shared.tsx";
-import { useI18n, brand } from "../../lib";
+import { useI18n, brand, useAuthStore } from "../../lib";
 
 type Role = "patient" | "doctor" | "admin" | "superadmin" | "pharmacy";
 
@@ -108,6 +108,13 @@ const roleLabels: Record<Role, string> = {
 export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const { t } = useI18n();
   const menu = menuConfig[role];
+  const { user, role: authRole } = useAuthStore();
+
+  const fullName = user?.user_metadata?.first_name 
+    ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`
+    : user?.email || "Guest User";
+
+  const displayRole = authRole?.replace('_', ' ') || role;
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
@@ -181,9 +188,9 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold truncate">
-              {role === "doctor" ? "Dr. Harrison Vance" : role === "admin" ? "Alex Sterling" : role === "patient" ? "Alex Sterling" : "Staff Member"}
+              {fullName}
             </p>
-            <p className="text-[10px] text-muted-foreground capitalize font-medium">{role} Portal · Online</p>
+            <p className="text-[10px] text-muted-foreground capitalize font-medium">{displayRole} · Online</p>
           </div>
           <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
         </div>

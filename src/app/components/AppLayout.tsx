@@ -14,38 +14,23 @@ export function AppLayout() {
   const path = location.pathname;
   const { user, role: authRole, signOut } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Determine portal context
-  const isLanding = path === "/";
-  const isTreatment = path.startsWith("/treatments");
-  const isSupport = path.startsWith("/support-hub") || path.startsWith("/clinical-research");
-  const isShop = path.startsWith("/patient/shop");
   
-  // Public pages that should NOT have the portal shell (sidebar/header)
-  const isPublic = isLanding || isTreatment || isSupport || isShop;
-
-  // Determine Role for Sidebar
-  let sidebarRole: "patient" | "doctor" | "admin" | "superadmin" | "pharmacy" = "doctor";
-  if (path.startsWith("/patient")) sidebarRole = "patient";
-  if (path.startsWith("/admin")) sidebarRole = "admin";
-  if (path.startsWith("/superadmin")) sidebarRole = "superadmin";
-  if (path.startsWith("/pharmacy")) sidebarRole = "pharmacy";
+  // Determine Role for Sidebar based on current URL path
+  let sidebarRole: "patient" | "doctor" | "admin" | "superadmin" | "pharmacy" = "patient";
+  if (path.startsWith("/doctor")) sidebarRole = "doctor";
+  else if (path.startsWith("/admin")) sidebarRole = "admin";
+  else if (path.startsWith("/superadmin")) sidebarRole = "superadmin";
+  else if (path.startsWith("/pharmacy")) sidebarRole = "pharmacy";
 
   // Dynamic user info
   const fullName = user?.user_metadata?.first_name 
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`
     : user?.email || "Guest User";
   
-  const displayRole = authRole === "super_admin" ? "Super Admin" : 
-                     authRole === "brand_admin" ? "Administrator" : 
-                     authRole === "doctor" ? "Provider" : "Patient";
+  const displayRole = authRole?.replace('_', ' ').toUpperCase() || sidebarRole.toUpperCase();
 
   // Breadcrumb/Back support
   const canGoBack = path.split("/").filter(Boolean).length > 1;
-
-  if (isPublic) {
-    return <Outlet />;
-  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background font-sans antialiased text-foreground">
@@ -70,62 +55,20 @@ export function AppLayout() {
               </SheetContent>
             </Sheet>
 
-            {/* Back Button (For Deep Pages) */}
-            {canGoBack && sidebarRole === "patient" && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => navigate(-1)}
-                className="h-10 w-10 rounded-xl bg-primary/5 text-primary"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-            )}
-
-            {/* Brand Logo */}
-            <Link to="/" className="flex items-center gap-3 group py-1">
-              <img src="/originallogo.png" alt="Peak Health Logo" className="h-12 md:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
-            </Link>
-          </div>
-
-          {/* Desktop Search */}
-          <div className="hidden lg:flex flex-1 max-w-md mx-8 relative group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Search health records..." 
-              className="w-full pl-11 pr-4 py-2.5 bg-muted/40 rounded-2xl border border-transparent focus:border-primary/20 focus:bg-background focus:ring-4 focus:ring-primary/5 text-sm transition-all outline-none"
-            />
+            {/* Portal Identity */}
+            <div className="flex items-center gap-4">
+               <div className="hidden sm:block">
+                 <img src="/originallogo.png" alt="Logo" className="h-10 w-auto" />
+               </div>
+               <div className="h-6 w-[1px] bg-border/60 hidden sm:block" />
+               <span className="text-[10px] font-black tracking-[0.2em] text-primary uppercase bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10">
+                 {displayRole} PORTAL
+               </span>
+            </div>
           </div>
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
-            {/* DEV PORTAL SWITCHER — for easy testing of all "real" portals */}
-            <div className="hidden lg:flex items-center gap-1 bg-slate-100 p-1 rounded-xl mr-2">
-              {[
-                { r: 'patient', l: 'P', path: '/patient' },
-                { r: 'doctor', l: 'D', path: '/doctor' },
-                { r: 'brand_admin', l: 'A', path: '/admin' },
-                { r: 'super_admin', l: 'S', path: '/superadmin' }
-              ].map(p => (
-                <button
-                  key={p.r}
-                  onClick={() => {
-                    localStorage.setItem('peak_health_dev_role', p.r);
-                    window.location.href = p.path;
-                  }}
-                  className={cn(
-                    "h-7 w-7 rounded-lg text-[10px] font-black transition-all",
-                    (authRole === p.r || (authRole === 'super_admin' && p.r === 'brand_admin')) 
-                      ? "bg-white text-primary shadow-sm shadow-black/5" 
-                      : "text-slate-400 hover:text-slate-600"
-                  )}
-                >
-                  {p.l}
-                </button>
-              ))}
-            </div>
-
             <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl hover:bg-primary/5 group">
               <Bell className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-destructive border-2 border-background animate-pulse" />
@@ -136,7 +79,9 @@ export function AppLayout() {
             <div className="flex items-center gap-3 pl-1">
               <div className="hidden sm:flex flex-col text-right">
                 <span className="text-xs font-bold leading-tight">{fullName}</span>
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">{displayRole}</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">
+                  {sidebarRole === 'doctor' ? 'Clinical Provider' : sidebarRole === 'admin' ? 'Brand Admin' : sidebarRole === 'superadmin' ? 'Super Admin' : 'Patient'}
+                </span>
               </div>
               <Button 
                 variant="ghost" 
