@@ -1,33 +1,66 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabaseClient";
 import { 
   ClipboardList, Package, Truck, FlaskConical, Pill,
   AlertTriangle, CheckCircle2, Search, Filter,
-  ArrowUpRight, Clock, Box, ShieldAlert, 
+  ArrowUpRight, Clock, Box, ShieldAlert, Activity,
   ChevronRight, MoreHorizontal, Printer, Mail
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../components/ui/shared.tsx";
 
-const stats = [
-  { label: "New Rx Requests", value: "12", sub: "Last 2 hours", icon: ClipboardList, color: "text-blue-600", bg: "bg-blue-50" },
-  { label: "Pending Verification", value: "8", sub: "Awaiting pharmacist", icon: ShieldAlert, color: "text-amber-600", bg: "bg-amber-50" },
-  { label: "Ready to Ship", value: "24", sub: "Pickup scheduled", icon: Package, color: "text-emerald-600", bg: "bg-emerald-50" },
-  { label: "Inventory Alerts", value: "3", sub: "Action required", icon: AlertTriangle, color: "text-red-600", bg: "bg-red-50" },
-];
-
-const incomingRx = [
-  { id: "RX-9912", patient: "Sophie Bennett", drug: "Semaglutide 0.25mg", date: "Just now", status: "New", urgent: true },
-  { id: "RX-9910", patient: "Caleb Montgomery", drug: "Sildenafil 50mg", date: "12m ago", status: "Verifying", urgent: false },
-  { id: "RX-9908", patient: "Maya Brooks", drug: "Escitalopram 10mg", date: "45m ago", status: "Processing", urgent: false },
-  { id: "RX-9905", patient: "Liam Wilson", drug: "Finasteride 1mg", date: "1h ago", status: "Reviewing", urgent: false },
-];
-
-const shippingQueue = [
-  { id: "SH-4421", patient: "Emma Davis", method: "FedEx Overnight", destination: "TX, USA", status: "Label Generated" },
-  { id: "SH-4418", patient: "Noah Brown", method: "UPS Ground", destination: "NY, USA", status: "Awaiting Pickup" },
-];
-
 export function PharmacyDashboard() {
   const [activeTab, setActiveTab] = useState("all");
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchOrders() {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setOrders(data || []);
+      } catch (err) {
+        console.error("Pharmacy fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchOrders();
+
+    const channel = supabase
+      .channel('pharmacy-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        fetchOrders();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Compute metrics from real data
+  const newRxCount = orders.filter(o => o.status === 'doctor_approved' || o.status === 'order_submitted').length;
+  const readyToShip = orders.filter(o => o.status === 'shipped').length;
+  
+  const stats = [
+    { label: "New Rx Requests", value: newRxCount.toString(), sub: "Real-time sync", icon: ClipboardList, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Awaiting Action", value: orders.filter(o => o.status === 'doctor_approved').length.toString(), sub: "Pharmacist check", icon: ShieldAlert, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Total Shipped", value: readyToShip.toString(), sub: "Dispensary total", icon: Package, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Live Queue", value: orders.length.toString(), sub: "Total records", icon: Activity, color: "text-violet-600", bg: "bg-violet-50" },
+  ];
+
+  const incomingRx = orders.slice(0, 5).map(o => ({
+    id: o.order_number || o.id.slice(0, 8),
+    patient: o.patient_name || "Unknown Patient",
+    drug: o.medication || "Consultation Request",
+    date: o.ordered_date || "Recent",
+    status: o.status.replace('_', ' '),
+    urgent: o.urgent || false
+  }));
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -118,7 +151,7 @@ export function PharmacyDashboard() {
               </Card>
             ))}
             <Button variant="ghost" className="w-full h-12 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold hover:bg-slate-50">
-              View All 42 Incoming Orders
+              View All {orders.length} Incoming Orders
             </Button>
           </div>
         </div>
