@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Badge, cn } from "../
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   useI18n,
-  ORDER_STEPS, getStepIndex, doctorAvailability, usePatientStore, useAuthStore
+  ORDER_STEPS, getStepIndex, usePatientStore, useAuthStore
 } from "../../../lib";
 import { supabase } from "../../../lib/supabaseClient";
 
@@ -32,13 +32,17 @@ const subBrandTint: Record<string, string> = {
 export function PatientDashboard() {
   const { t } = useI18n();
   const user = useAuthStore(state => state.user);
+  const doctorAvailability = usePatientStore(state => state.doctorAvailability);
   const firstName = user?.user_metadata?.first_name || 'Patient';
   const availableDoctors = doctorAvailability.filter(d => d.available);
 
   const [orders, setOrders] = useState<any[]>([]);
 
   useEffect(() => {
-        if (!user?.id) return;
+    if (!user?.id) return;
+    
+    async function fetchOrders() {
+      try {
         const { data, error } = await supabase
           .from('orders')
           .select('*')
@@ -50,14 +54,17 @@ export function PatientDashboard() {
         console.error("Error fetching orders:", err);
       }
     }
+    
     fetchOrders();
 
+    const channel = supabase
+      .channel(`public:orders:user_id=eq.${user.id}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'orders',
-        filter: `user_id=eq.${user?.id}`
-      }, (payload) => {
+        filter: `user_id=eq.${user.id}`
+      }, () => {
         fetchOrders();
       })
       .subscribe();
@@ -65,7 +72,7 @@ export function PatientDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user?.id]);
 
   const awaitingReview = orders.filter(o => o.status === "order_submitted").length;
 

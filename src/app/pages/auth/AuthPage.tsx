@@ -35,32 +35,37 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
     try {
       if (mode === 'login') {
-        // --- SECURE STAFF OVERRIDE (for dev/testing only) ---
-        const staffEmails = {
+        // --- STAFF QUICK ACCESS (dev/testing) ---
+        const staffEmails: Record<string, string> = {
           'doctor@peakhealth.com': 'doctor',
           'admin@peakhealth.com': 'brand_admin',
           'admin2@peakhealth.com': 'brand_admin',
           'pharmacy@peakhealth.com': 'pharmacy'
         };
-        const STAFF_PWD = "@incorrect!132323";
+        const STAFF_PWD = "PeakStaff2026!";
 
-        if (staffEmails[email.toLowerCase() as keyof typeof staffEmails] && password === STAFF_PWD) {
-          const mockRole = staffEmails[email.toLowerCase() as keyof typeof staffEmails];
-          // Ensure portal match
+        // Brandon's personal super_admin access — sign into Supabase then override role
+        if (email.toLowerCase() === 'brandon@peakbodyco.com' && password === '@incorrect!') {
+          const { data: bData, error: bErr } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+          if (bErr) { setError(bErr.message); setLoading(false); return; }
+          if (bData.session) {
+            localStorage.setItem('peak_health_dev_role', 'super_admin');
+            await initialize();
+            navigate("/admin", { replace: true });
+          }
+          return;
+        }
+
+        if (staffEmails[email.toLowerCase()] && password === STAFF_PWD) {
+          const mockRole = staffEmails[email.toLowerCase()];
           if (portal === 'doctor' && mockRole !== 'doctor') {
-            setError("Access denied. Provider portal only.");
-            setLoading(false);
-            return;
+            setError("Access denied. Provider portal only."); setLoading(false); return;
           }
           if ((portal === 'admin' || portal === 'superadmin') && mockRole !== 'brand_admin') {
-            setError("Access denied. Admin portal only.");
-            setLoading(false);
-            return;
+            setError("Access denied. Admin portal only."); setLoading(false); return;
           }
-          
           localStorage.setItem('peak_health_dev_role', mockRole);
           await initialize();
-          
           if (mockRole === 'doctor') navigate("/doctor", { replace: true });
           else if (mockRole === 'brand_admin') navigate("/admin", { replace: true });
           else navigate("/pharmacy", { replace: true });
@@ -90,7 +95,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
           else navigate("/patient", { replace: true });
         }
       } else {
-        // Sign Up Flow
+        // Sign Up Flow — assign role based on which portal
+        const portalRole = portal === 'doctor' ? 'doctor'
+          : (portal === 'admin' || portal === 'superadmin') ? 'brand_admin'
+          : 'patient';
+
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
           password,
@@ -98,17 +107,19 @@ export function AuthPage({ portal }: { portal: Portal }) {
             data: {
               first_name: firstName,
               last_name: lastName,
-              role: 'patient'
+              full_name: `${firstName} ${lastName}`.trim(),
+              role: portalRole
             }
           }
         });
         if (signUpError) throw signUpError;
         
         if (data.user) {
-          // If auto-logged in
           if (data.session) {
             await initialize();
-            navigate("/patient", { replace: true });
+            if (portalRole === 'doctor') navigate("/doctor", { replace: true });
+            else if (portalRole === 'brand_admin') navigate("/admin", { replace: true });
+            else navigate("/patient", { replace: true });
           } else {
             setError("Account created! Please check your email for a confirmation link.");
             setMode('login');
@@ -227,9 +238,9 @@ export function AuthPage({ portal }: { portal: Portal }) {
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
-            {/* Mode Switcher */}
-            {portal === 'patient' && (
-              <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
+            {/* Mode Switcher — show on patient AND doctor portals */}
+            {(portal === 'patient' || portal === 'doctor') && (
+              <div className="flex bg-slate-100/10 p-1 rounded-xl mb-6">
                 <button 
                   type="button"
                   onClick={() => setMode('login')}

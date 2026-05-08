@@ -87,16 +87,11 @@ export type DoctorAvailability = {
   specialty: string;
   avatar: string;
   available: boolean;
-  wait: string;
-  nextSlot: string;
+  wait_time?: string;
+  wait?: string; // fallback
+  next_slot?: string;
+  nextSlot?: string; // fallback
 };
-
-export const doctorAvailability: DoctorAvailability[] = [
-  { id: 1, name: "Dr. Sarah Johnson", specialty: "General Practice", avatar: "SJ", available: true, wait: "< 5 min", nextSlot: "Available now" },
-  { id: 2, name: "Dr. Michael Chen", specialty: "Cardiology", avatar: "MC", available: true, wait: "< 15 min", nextSlot: "Today 11:00 AM" },
-  { id: 3, name: "Dr. Amira Hassan", specialty: "Dermatology", avatar: "AH", available: false, wait: "Async only", nextSlot: "Tomorrow 9:00 AM" },
-  { id: 4, name: "Dr. Carlos Rivera", specialty: "Endocrinology", avatar: "CR", available: true, wait: "< 30 min", nextSlot: "Today 2:30 PM" },
-];
 
 export const brand = {
   name: "Peak Health",
@@ -111,24 +106,44 @@ interface AppState {
   doctorAvailability: DoctorAvailability[];
   intakeFormData: Record<string, any>;
   fetchOrders: () => Promise<void>;
+  fetchDoctorAvailability: () => Promise<void>;
   addOrder: (order: Order) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus, tracking?: string, carrier?: string) => Promise<void>;
   updateOrderRx: (orderId: string, medication: string, dosage: string, note: string) => Promise<void>;
   setIntakeFormData: (data: Record<string, any>) => void;
-  updateDoctorAvailability: (doctorId: number, available: boolean) => void;
+  updateDoctorAvailability: (doctorId: number, available: boolean) => Promise<void>;
   resetStore: () => void;
 }
 
 import { supabase } from './supabaseClient';
 import { useAuthStore } from './auth-store';
-import { PharmacyService } from '../api/pharmacy';
 
 export const usePatientStore = create<AppState>()(
   devtools(
     (set, get) => ({
       orders: [], // Start fresh
-      doctorAvailability: doctorAvailability,
+      doctorAvailability: [],
       intakeFormData: {},
+
+      fetchDoctorAvailability: async () => {
+        try {
+          const { data, error } = await supabase.from('doctor_availability').select('*').order('id', { ascending: true });
+          if (error) throw error;
+          
+          const mappedDocs = (data || []).map(d => ({
+            id: d.id,
+            name: d.name,
+            specialty: d.specialty,
+            avatar: d.avatar,
+            available: d.available,
+            wait: d.wait_time || '< 5 min',
+            nextSlot: d.next_slot || 'Available now'
+          }));
+          set({ doctorAvailability: mappedDocs });
+        } catch (error) {
+          console.error('Error fetching doctors:', error);
+        }
+      },
 
       fetchOrders: async () => {
         try {
@@ -260,9 +275,6 @@ export const usePatientStore = create<AppState>()(
           
           await get().fetchOrders(); // Refresh local state
           
-          // trigger automated pharmacy fulfillment!
-          PharmacyService.simulateFulfillment(orderId, medication);
-          
         } catch (error) {
           console.error("Failed to update rx:", error);
         }
@@ -273,14 +285,20 @@ export const usePatientStore = create<AppState>()(
           intakeFormData: { ...state.intakeFormData, ...data }
         })),
 
-      updateDoctorAvailability: (doctorId: number, available: boolean) =>
+      updateDoctorAvailability: async (doctorId: number, available: boolean) => {
         set((state) => ({
           doctorAvailability: state.doctorAvailability.map(doctor =>
             doctor.id === doctorId
               ? { ...doctor, available }
               : doctor
           )
-        })),
+        }));
+        try {
+          await supabase.from('doctor_availability').update({ available }).eq('id', doctorId);
+        } catch (error) {
+          console.error('Error updating doctor availability:', error);
+        }
+      },
         
       resetStore: () => set({ orders: [], intakeFormData: {} }),
     })

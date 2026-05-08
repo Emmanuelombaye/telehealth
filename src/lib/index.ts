@@ -6,7 +6,6 @@ export {
   getStepIndex,
   getActiveOrder,
   getAwaitingReviewCount,
-  doctorAvailability,
   brand,
   patientUser,
   usePatientStore,

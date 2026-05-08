@@ -1,28 +1,52 @@
-import { Pill, RefreshCw, MapPin, Clock, CheckCircle2, AlertCircle, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Pill, MapPin, Clock, Loader2, ShoppingBag } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
-
-const prescriptions = [
-  { id: 1, name: "Lisinopril", dosage: "10mg", frequency: "Once daily", prescriber: "Dr. Sarah Johnson", refills: 3, daysLeft: 28, status: "active", pharmacy: "CVS Pharmacy" },
-  { id: 2, name: "Metformin", dosage: "500mg", frequency: "Twice daily", prescriber: "Dr. Sarah Johnson", refills: 1, daysLeft: 5, status: "refill-ready", pharmacy: "Walgreens" },
-  { id: 3, name: "Atorvastatin", dosage: "20mg", frequency: "Once nightly", prescriber: "Dr. Michael Chen", refills: 5, daysLeft: 14, status: "active", pharmacy: "CVS Pharmacy" },
-  { id: 4, name: "Amoxicillin", dosage: "500mg", frequency: "Three times daily", prescriber: "Dr. Sarah Johnson", refills: 0, daysLeft: 0, status: "completed", pharmacy: "CVS Pharmacy" },
-];
+import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib";
+import { Link } from "react-router";
 
 export function PrescriptionsPage() {
+  const { user } = useAuthStore();
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    async function fetch() {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('id, order_number, medication, dosage_instructions, doctor, doctor_note, pharmacy, status, ordered_date, amount')
+          .eq('user_id', user!.id)
+          .in('status', ['rx_sent', 'shipped', 'delivered'])
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setPrescriptions(data || []);
+      } catch (err) {
+        console.error(err);
+      } finally { setLoading(false); }
+    }
+    fetch();
+    const ch = supabase.channel('px').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetch).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user]);
+
+  const cfg = (s: string) => ({
+    rx_sent: { label: 'Ready to Fill', pill: 'text-amber-600', bg: 'bg-amber-100' },
+    shipped:  { label: 'Shipped',       pill: 'text-blue-600',  bg: 'bg-blue-100'  },
+    delivered:{ label: 'Delivered',     pill: 'text-emerald-600',bg: 'bg-emerald-100'},
+  } as any)[s] || { label: s, pill: 'text-muted-foreground', bg: 'bg-muted' };
+
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Prescriptions</h1>
-        <Button size="sm" variant="outline" className="rounded-full text-xs gap-1.5">
-          <RefreshCw className="h-3.5 w-3.5" /> Request Refill
-        </Button>
-      </div>
-
+      <h1 className="text-xl font-bold">Prescriptions</h1>
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Active", count: 3, color: "text-primary" },
-          { label: "Refill Ready", count: 1, color: "text-amber-600" },
-          { label: "Completed", count: 1, color: "text-muted-foreground" },
+          { label: "Ready", count: prescriptions.filter(p=>p.status==='rx_sent').length, color: "text-amber-600" },
+          { label: "Shipped", count: prescriptions.filter(p=>p.status==='shipped').length, color: "text-blue-600" },
+          { label: "Delivered", count: prescriptions.filter(p=>p.status==='delivered').length, color: "text-emerald-600" },
         ].map((s, i) => (
           <Card key={i} className="border-none bg-muted/50">
             <CardContent className="p-3 text-center">
@@ -32,49 +56,41 @@ export function PrescriptionsPage() {
           </Card>
         ))}
       </div>
-
-      <div className="space-y-3">
-        {prescriptions.map(rx => (
-          <Card key={rx.id} className={cn("hover:border-primary/40 transition-colors",
-            rx.status === "refill-ready" && "border-l-4 border-l-amber-500")}>
+      {prescriptions.length === 0 ? (
+        <Card className="border-dashed border-2 bg-muted/20">
+          <CardContent className="p-10 text-center">
+            <ShoppingBag className="h-10 w-10 text-primary mx-auto mb-3" />
+            <h3 className="font-bold">No prescriptions yet</h3>
+            <p className="text-sm text-muted-foreground mt-1">Once a doctor approves your request, it appears here.</p>
+            <Link to="/patient/shop"><Button className="rounded-xl mt-4">Browse Treatments</Button></Link>
+          </CardContent>
+        </Card>
+      ) : prescriptions.map(rx => {
+        const c = cfg(rx.status);
+        return (
+          <Card key={rx.id} className={cn("hover:border-primary/40 transition-colors", rx.status==='rx_sent' && "border-l-4 border-l-amber-500")}>
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <div className={cn("h-11 w-11 rounded-2xl flex items-center justify-center shrink-0",
-                  rx.status === "active" ? "bg-primary/10" : rx.status === "refill-ready" ? "bg-amber-100 dark:bg-amber-950/40" : "bg-muted")}>
-                  <Pill className={cn("h-5 w-5", rx.status === "active" ? "text-primary" : rx.status === "refill-ready" ? "text-amber-600" : "text-muted-foreground")} />
+                <div className={cn("h-11 w-11 rounded-2xl flex items-center justify-center shrink-0", c.bg)}>
+                  <Pill className={cn("h-5 w-5", c.pill)} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-bold text-sm">{rx.name} {rx.dosage}</p>
-                    <Badge variant={rx.status === "active" ? "secondary" : rx.status === "refill-ready" ? "default" : "outline"}
-                      className={cn("text-[10px] shrink-0", rx.status === "refill-ready" && "bg-amber-500 text-white")}>
-                      {rx.status === "refill-ready" ? "Refill Ready" : rx.status.charAt(0).toUpperCase() + rx.status.slice(1)}
-                    </Badge>
+                    <p className="font-bold text-sm">{rx.medication}</p>
+                    <Badge variant="secondary" className="text-[10px] shrink-0">{c.label}</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">{rx.frequency} · {rx.prescriber}</p>
+                  <p className="text-xs text-muted-foreground">{rx.dosage_instructions || "As directed"} · {rx.doctor || "Your provider"}</p>
                   <div className="flex items-center gap-3 mt-2">
-                    {rx.status !== "completed" && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {rx.daysLeft > 0 ? `${rx.daysLeft} days left` : "Expired"}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3" />{rx.pharmacy}
-                    </div>
-                    <span className="text-xs text-muted-foreground">{rx.refills} refills left</span>
+                    {rx.pharmacy && <span className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3"/>{rx.pharmacy}</span>}
+                    {rx.ordered_date && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3"/>Ordered {rx.ordered_date}</span>}
                   </div>
-                  {rx.status === "refill-ready" && (
-                    <Button size="sm" className="mt-2 rounded-xl text-xs h-8 bg-amber-500 hover:bg-amber-600">
-                      Request Refill
-                    </Button>
-                  )}
+                  {rx.doctor_note && <p className="text-xs italic mt-2 bg-muted/50 rounded-lg px-3 py-2 text-muted-foreground">"{rx.doctor_note}"</p>}
                 </div>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }

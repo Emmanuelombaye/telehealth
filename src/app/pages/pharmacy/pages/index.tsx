@@ -1,5 +1,6 @@
 import { PharmacyDashboard } from "../Dashboard";
 import { PharmacyOrdersPage } from "./Orders";
+import { Card, CardContent } from "../../../components/ui/shared";
 
 export { PharmacyDashboard, PharmacyOrdersPage };
 

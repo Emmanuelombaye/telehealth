@@ -146,11 +146,11 @@ export function DoctorQueuePage() {
 
         <div className="flex items-center gap-3">
           <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-lg shrink-0">
-            {selected.patient_avatar || selected.patientAvatar}
+            {selected.patientAvatar}
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">{selected.patient_name || selected.patientName}</h1>
+              <h1 className="text-xl font-bold">{selected.patientName}</h1>
               <span className="text-sm">{selected.patientCountry}</span>
             </div>
             <p className="text-sm text-muted-foreground">Age {selected.patientAge} · {selected.category}</p>
@@ -241,11 +241,11 @@ export function DoctorQueuePage() {
 
                 {/* Patient Answers */}
                 <div className="space-y-3 pt-2">
-                  {(selected.intake_answers || selected.intakeAnswers) ? (
-                    Object.entries(selected.intake_answers || selected.intakeAnswers).map(([q, a]) => (
+                  {selected.intakeAnswers ? (
+                    Object.entries(selected.intakeAnswers).map(([q, a]) => (
                       <div key={q} className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
                         <p className="text-xs font-semibold text-slate-600 mb-1">{q}</p>
-                        <p className="text-sm text-slate-800">{Array.isArray(a) ? a.join(", ") : a}</p>
+                        <p className="text-sm text-slate-800">{Array.isArray(a) ? a.join(", ") : (a as string)}</p>
                       </div>
                     ))
                   ) : (
@@ -440,7 +440,7 @@ export function DoctorQueuePage() {
               <input 
                 className="border border-border rounded-xl px-3 py-2 text-sm bg-background focus:outline-none focus:border-primary font-bold" 
                 placeholder="Dosage (e.g. 10mg)" 
-                value={rxDosage || selected.dosage_instructions || selected.dosageInstructions || ""}
+                value={rxDosage || selected.dosageInstructions || ""}
                 onChange={e => setRxDosage(e.target.value)}
               />
             </div>

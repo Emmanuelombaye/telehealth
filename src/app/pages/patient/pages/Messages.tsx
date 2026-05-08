@@ -1,31 +1,120 @@
-import { useState } from "react";
-import { Send, Lock, Search, ChevronLeft, Paperclip, Smile } from "lucide-react";
-import { Button, Badge, cn } from "../../../components/ui/shared.tsx";
-
-const conversations = [
-  { id: 1, name: "Dr. Sarah Johnson", role: "General Practice", lastMsg: "Your blood pressure looks good. Keep monitoring daily.", time: "2m", unread: 2, online: true },
-  { id: 2, name: "Dr. Michael Chen", role: "Cardiology", lastMsg: "Please complete the cardiac intake form before our visit.", time: "1h", unread: 1, online: false },
-  { id: 3, name: "Nurse Maria", role: "Care Coordinator", lastMsg: "Your prescription has been sent to the pharmacy.", time: "3h", unread: 0, online: true },
-  { id: 4, name: "Dr. Amira Hassan", role: "Dermatology", lastMsg: "The photos you sent look like contact dermatitis.", time: "1d", unread: 0, online: false },
-];
-
-const mockMessages = [
-  { id: 1, from: "doctor", text: "Hello John! How are you feeling today?", time: "10:00 AM" },
-  { id: 2, from: "patient", text: "Hi Dr. Johnson! I've been having some chest tightness since yesterday.", time: "10:02 AM" },
-  { id: 3, from: "doctor", text: "I see. On a scale of 1-10, how would you rate the discomfort?", time: "10:03 AM" },
-  { id: 4, from: "patient", text: "About a 4. It comes and goes.", time: "10:05 AM" },
-  { id: 5, from: "doctor", text: "Your blood pressure looks good based on your last reading. Keep monitoring daily and let me know if it gets worse. I'll order an ECG just to be safe.", time: "10:07 AM" },
-];
+import { useState, useEffect, useRef } from "react";
+import { Send, Lock, Search, ChevronLeft, Paperclip, Loader2 } from "lucide-react";
+import { Button, cn } from "../../../components/ui/shared.tsx";
+import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib";
 
 export function MessagesPage() {
-  const [active, setActive] = useState<number | null>(null);
+  const { user } = useAuthStore();
+  const [threads, setThreads] = useState<any[]>([]);
+  const [activeThread, setActiveThread] = useState<any | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const activeConv = conversations.find(c => c.id === active);
+  // Fetch conversation threads (unique senders/receivers the user has talked to)
+  useEffect(() => {
+    if (!user) return;
+    async function fetchThreads() {
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select(`
+            id, content, created_at,
+            sender_id, receiver_id,
+            sender:profiles!messages_sender_id_fkey(id, full_name, role),
+            receiver:profiles!messages_receiver_id_fkey(id, full_name, role)
+          `)
+          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Build unique thread map keyed by the "other" person's id
+        const threadMap: Record<string, any> = {};
+        (data || []).forEach((msg: any) => {
+          const other = msg.sender_id === user.id ? msg.receiver : msg.sender;
+          if (!other) return;
+          if (!threadMap[other.id]) {
+            threadMap[other.id] = {
+              id: other.id,
+              name: other.full_name,
+              role: other.role,
+              lastMsg: msg.content,
+              time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              unread: 0,
+            };
+          }
+        });
+        setThreads(Object.values(threadMap));
+      } catch (err) {
+        console.error("Thread fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchThreads();
+  }, [user]);
+
+  // Fetch messages for a thread
+  useEffect(() => {
+    if (!activeThread || !user) return;
+    async function fetchMessages() {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('id, content, created_at, sender_id, read')
+        .or(
+          `and(sender_id.eq.${user!.id},receiver_id.eq.${activeThread.id}),and(sender_id.eq.${activeThread.id},receiver_id.eq.${user!.id})`
+        )
+        .order('created_at', { ascending: true });
+      if (!error) setMessages(data || []);
+    }
+    fetchMessages();
+
+    const channel = supabase
+      .channel(`messages-thread-${activeThread.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        const msg = payload.new as any;
+        const isInThread =
+          (msg.sender_id === user.id && msg.receiver_id === activeThread.id) ||
+          (msg.sender_id === activeThread.id && msg.receiver_id === user.id);
+        if (isInThread) setMessages(prev => [...prev, msg]);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [activeThread, user]);
+
+  // Scroll to bottom on new message
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (!input.trim() || !activeThread || !user || sending) return;
+    setSending(true);
+    const content = input.trim();
+    setInput("");
+    try {
+      const { error } = await supabase.from('messages').insert({
+        sender_id: user.id,
+        receiver_id: activeThread.id,
+        content,
+        read: false,
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error("Send error:", err);
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
-      {!active ? (
+      {!activeThread ? (
         <>
           <div className="flex items-center justify-between mb-4 shrink-0">
             <div>
@@ -43,25 +132,34 @@ export function MessagesPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-1">
-            {conversations.map(conv => (
-              <button key={conv.id} onClick={() => setActive(conv.id)}
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : threads.length === 0 ? (
+              <div className="text-center py-20 text-muted-foreground">
+                <Lock className="h-8 w-8 mx-auto mb-3 opacity-20" />
+                <p className="text-sm font-medium">No messages yet</p>
+                <p className="text-xs mt-1">Your doctor will message you here after your consultation.</p>
+              </div>
+            ) : threads.map(thread => (
+              <button key={thread.id} onClick={() => setActiveThread(thread)}
                 className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-accent transition-colors text-left">
                 <div className="relative shrink-0">
                   <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
-                    {conv.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                    {thread.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
                   </div>
-                  {conv.online && <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold truncate">{conv.name}</p>
-                    <span className="text-[10px] text-muted-foreground shrink-0 ml-2">{conv.time}</span>
+                    <p className="text-sm font-bold truncate">{thread.name}</p>
+                    <span className="text-[10px] text-muted-foreground shrink-0 ml-2">{thread.time}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">{conv.lastMsg}</p>
+                  <p className="text-xs text-muted-foreground truncate capitalize">{thread.role} · {thread.lastMsg}</p>
                 </div>
-                {conv.unread > 0 && (
+                {thread.unread > 0 && (
                   <span className="h-5 w-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                    {conv.unread}
+                    {thread.unread}
                   </span>
                 )}
               </button>
@@ -72,18 +170,15 @@ export function MessagesPage() {
         <>
           {/* Chat header */}
           <div className="flex items-center gap-3 pb-3 border-b border-border mb-3 shrink-0">
-            <button onClick={() => setActive(null)} className="p-1.5 rounded-xl hover:bg-accent">
+            <button onClick={() => { setActiveThread(null); setMessages([]); }} className="p-1.5 rounded-xl hover:bg-accent">
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <div className="relative">
-              <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
-                {activeConv?.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-              </div>
-              {activeConv?.online && <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-background" />}
+            <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
+              {activeThread.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold">{activeConv?.name}</p>
-              <p className="text-xs text-muted-foreground">{activeConv?.role} · {activeConv?.online ? "Online" : "Offline"}</p>
+              <p className="text-sm font-bold">{activeThread.name}</p>
+              <p className="text-xs text-muted-foreground capitalize">{activeThread.role}</p>
             </div>
             <div className="flex items-center gap-1">
               <Lock className="h-3.5 w-3.5 text-emerald-500" />
@@ -93,17 +188,22 @@ export function MessagesPage() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto space-y-3 pb-2">
-            {mockMessages.map(msg => (
-              <div key={msg.id} className={cn("flex", msg.from === "patient" ? "justify-end" : "justify-start")}>
+            {messages.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground text-sm">Start the conversation...</div>
+            ) : messages.map(msg => (
+              <div key={msg.id} className={cn("flex", msg.sender_id === user?.id ? "justify-end" : "justify-start")}>
                 <div className={cn("max-w-[80%] px-4 py-2.5 rounded-2xl text-sm",
-                  msg.from === "patient"
+                  msg.sender_id === user?.id
                     ? "bg-primary text-white rounded-br-sm"
                     : "bg-muted text-foreground rounded-bl-sm")}>
-                  <p className="leading-relaxed">{msg.text}</p>
-                  <p className={cn("text-[10px] mt-1", msg.from === "patient" ? "text-white/70 text-right" : "text-muted-foreground")}>{msg.time}</p>
+                  <p className="leading-relaxed">{msg.content}</p>
+                  <p className={cn("text-[10px] mt-1", msg.sender_id === user?.id ? "text-white/70 text-right" : "text-muted-foreground")}>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
                 </div>
               </div>
             ))}
+            <div ref={bottomRef} />
           </div>
 
           {/* Input */}
@@ -112,13 +212,12 @@ export function MessagesPage() {
             <input
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && setInput("")}
+              onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()}
               className="flex-1 bg-muted rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
               placeholder="Type a secure message..."
             />
-            <button className="p-2 rounded-xl hover:bg-accent text-muted-foreground"><Smile className="h-4 w-4" /></button>
-            <Button size="sm" className="rounded-xl h-9 w-9 p-0" onClick={() => setInput("")}>
-              <Send className="h-4 w-4" />
+            <Button size="sm" className="rounded-xl h-9 w-9 p-0" onClick={handleSend} disabled={sending || !input.trim()}>
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
         </>

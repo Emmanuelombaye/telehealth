@@ -21,6 +21,12 @@ interface AuthState {
  * This is the correct production approach.
  */
 function getRoleFromSession(session: Session): { role: Role; brandId: string | null } {
+  // Dev override — allows quick staff access without changing Supabase user metadata
+  const devRole = typeof window !== 'undefined' ? localStorage.getItem('peak_health_dev_role') : null;
+  if (devRole) {
+    return { role: devRole as Role, brandId: null };
+  }
+
   const meta = session.user.user_metadata || {};
   const appMeta = (session.user as any).app_metadata || {};
 
@@ -72,33 +78,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
-        // 1. Set role immediately from JWT — no DB, no latency, no 500s
+        // Read role from JWT metadata ONLY — never queries profiles table
+        // This avoids any RLS recursion issues on the profiles table
         const { role, brandId } = getRoleFromSession(session);
         set({ session, user: session.user, role, brandId, isLoading: false });
-
-        // 2. Background: try profiles table for any server-side role overrides
-        syncProfile(session).then(({ role: dbRole, brandId: dbBrandId }) => {
-          // Only update if profile table returned a different (promoted) role
-          if (dbRole && dbRole !== get().role) {
-            set({ role: dbRole, brandId: dbBrandId });
-          }
-        });
       } else {
         set({ session: null, user: null, role: null, brandId: null, isLoading: false });
       }
 
-      // Listen for auth state changes
-      supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      supabase.auth.onAuthStateChange((_event, newSession) => {
         if (newSession?.user) {
           const { role, brandId } = getRoleFromSession(newSession);
           set({ session: newSession, user: newSession.user, role, brandId, isLoading: false });
-
-          // Background profile sync for role promotions
-          syncProfile(newSession).then(({ role: dbRole, brandId: dbBrandId }) => {
-            if (dbRole && dbRole !== get().role) {
-              set({ role: dbRole, brandId: dbBrandId });
-            }
-          });
         } else {
           set({ session: null, user: null, role: null, brandId: null, isLoading: false });
         }

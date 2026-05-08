@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { ORDER_STEPS, getStepIndex, type Order } from "../../../../lib/patient-store";
+import { useAuthStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
 
 const stepIcon: Record<string, any> = {

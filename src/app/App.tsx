@@ -6,6 +6,7 @@ import { usePatientStore, useAuthStore } from '../lib';
 
 export default function App() {
   const fetchOrders = usePatientStore(state => state.fetchOrders);
+  const fetchDoctorAvailability = usePatientStore(state => state.fetchDoctorAvailability);
   const initializeAuth = useAuthStore(state => state.initialize);
   const isLoading = useAuthStore(state => state.isLoading);
   const user = useAuthStore(state => state.user);
@@ -17,8 +18,9 @@ export default function App() {
   useEffect(() => {
     if (!isLoading) {
       fetchOrders();
+      fetchDoctorAvailability();
     }
-  }, [isLoading, user, fetchOrders]);
+  }, [isLoading, user, fetchOrders, fetchDoctorAvailability]);
 
   return (
     <>
