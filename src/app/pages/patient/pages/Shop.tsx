@@ -344,6 +344,9 @@ export function PatientShopPage() {
 
     try {
       // 1. Create Supabase Auth account
+      let userId: string | null = null;
+      let sessionToSet = null;
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
@@ -358,19 +361,32 @@ export function PatientShopPage() {
         }
       });
 
-      // Handle common 422 causes with friendly messages
       if (authError) {
         const msg = authError.message.toLowerCase();
-        if (msg.includes('already registered') || msg.includes('already exists')) {
+        // 500 = server-side trigger error — user may still have been created
+        // Try signing in with the same credentials as a fallback
+        if (authError.status === 500 || msg.includes('unexpected') || msg.includes('server')) {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: email.trim().toLowerCase(),
+            password,
+          });
+          if (!signInError && signInData.user) {
+            // User was actually created — proceed normally
+            userId = signInData.user.id;
+            sessionToSet = signInData.session;
+          } else {
+            throw new Error("Account creation failed (server error). Please try again in a moment.");
+          }
+        } else if (msg.includes('already registered') || msg.includes('already exists')) {
           throw new Error("This email is already registered. Please sign in at /patient/login instead.");
+        } else {
+          throw authError;
         }
-        if (msg.includes('password')) {
-          throw new Error("Password must be at least 6 characters.");
-        }
-        throw authError;
+      } else {
+        userId = authData.user?.id || null;
+        sessionToSet = authData.session;
       }
 
-      const userId = authData.user?.id;
       if (!userId) throw new Error("Account creation failed — please try again.");
 
       // 2. Insert order with full patient vitals into Supabase
@@ -399,21 +415,20 @@ export function PatientShopPage() {
         timeline: [{ status: "order_submitted", date: new Date().toLocaleDateString() }]
       }]);
 
-      // Don't block confirmation if DB insert fails (order can be retried)
       if (insertError) console.warn("Order insert warning:", insertError.message);
 
       // 3. Auto sign-in + refresh auth store
-      if (authData.session) {
-        await supabase.auth.setSession(authData.session);
+      if (sessionToSet) {
+        await supabase.auth.setSession(sessionToSet);
       } else {
+        // Session wasn't returned (email confirmation ON or fallback signin used)
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: email.trim().toLowerCase(),
           password
         });
-        if (signInError) {
-          console.warn("Auto-login pending email confirmation:", signInError.message);
-        }
+        if (signInError) console.warn("Auto-login pending email confirmation:", signInError.message);
       }
+
       // Re-initialize auth store so ProtectedRoute sees the new session immediately
       await initialize();
 
@@ -424,6 +439,7 @@ export function PatientShopPage() {
       setIsSubmitting(false);
     }
   };
+
 
 
   if (stage === "confirmed" && selected) {
