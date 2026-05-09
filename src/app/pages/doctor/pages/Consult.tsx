@@ -22,10 +22,10 @@ export function DoctorConsultPage() {
   const [isFinalizing, setIsFinalizing] = useState(false);
 
   const [soapNotes, setSoapNotes] = useState({
-    subjective: "Patient reports increasing difficulty with weight management despite diet. Energy levels are down.",
-    objective: "BMI 31.4. No acute distress. BP 122/80.",
-    assessment: "Class 1 Obesity. Candidate for GLP-1 therapy.",
-    plan: "Start Semaglutide 0.25mg weekly for 4 weeks. Follow-up in 30 days."
+    subjective: "Loading...",
+    objective: "Loading...",
+    assessment: "Loading...",
+    plan: "Loading..."
   });
 
   useEffect(() => {
@@ -41,9 +41,16 @@ export function DoctorConsultPage() {
         .single();
       if (!error && data) {
         setOrder(data);
-        if (data.intake_notes) {
-          setSoapNotes(prev => ({ ...prev, subjective: data.intake_notes }));
-        }
+        
+        // Dynamically build professional SOAP notes from patient data
+        const vitals = data.patient_vitals ? JSON.stringify(data.patient_vitals) : 'No recent vitals reported.';
+        
+        setSoapNotes({ 
+          subjective: data.intake_notes || `Patient seeking consultation for ${data.category || 'general condition'}.`,
+          objective: `Age: ${data.patient_age || 'N/A'}. Gender: ${data.patient_sex || 'Not specified'}. Vitals: ${vitals}. Intake Complete: ${data.intake_complete ? 'Yes' : 'No'}.`,
+          assessment: `Patient requesting evaluation for ${data.medication || 'treatment'}.`,
+          plan: `Prescribe ${data.medication || 'medication'} ${data.dosage_instructions ? `(${data.dosage_instructions})` : 'as directed'}.`
+        });
       }
       setLoading(false);
     }
@@ -54,12 +61,15 @@ export function DoctorConsultPage() {
     if (!order || isFinalizing) return;
     setIsFinalizing(true);
     try {
-      // 1. Create Visit Summary (gracefully handle if table doesn't exist yet)
+      const currentUser = useAuthStore.getState().user;
+      const doctorName = currentUser?.user_metadata?.first_name ? `Dr. ${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}` : "Attending Physician";
+
+      // 1. Create Visit Summary
       let summaryError = null;
       try {
         const { error } = await supabase.from('visit_summaries').insert([{
           patient_id: order.user_id,
-          doctor_name: "Dr. Alex Rivera",
+          doctor_name: doctorName,
           specialty: order.category,
           diagnosis: soapNotes.assessment,
           type: 'video',
@@ -78,7 +88,7 @@ export function DoctorConsultPage() {
         frequency: soapNotes.plan,
         status: 'active',
         refills_remaining: 3,
-        doctor_id: useAuthStore.getState().user?.id,
+        doctor_id: currentUser?.id,
       }]);
 
       // 3. Update Order Status
@@ -88,7 +98,7 @@ export function DoctorConsultPage() {
 
       const { error: orderError } = await supabase.from('orders').update({
         status: 'rx_sent',
-        doctor: "Dr. Alex Rivera",
+        doctor: doctorName,
         last_approved_at: new Date().toISOString(),
         timeline: newTimeline
       }).eq('id', order.id);
@@ -118,8 +128,10 @@ export function DoctorConsultPage() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <h1 className="text-lg font-black text-[#0A0D14]">{order.patient_name}</h1>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ongoing Consultation · {order.category}</p>
+            <h1 className="text-lg font-black text-[#0A0D14]">{order.patient_name || 'Patient Details'}</h1>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              Consultation #{order.order_number} · {order.category}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -127,12 +139,14 @@ export function DoctorConsultPage() {
             <ShieldCheck className="h-3 w-3" /> HIPAA SECURE
           </Badge>
           <div className="h-8 w-[1px] bg-slate-200 mx-2" />
-          <Button variant="outline" size="sm" className="rounded-xl h-9 text-xs font-bold"
-            onClick={() => window.open('https://zoom.us/j/5551234567', '_blank')}>
-            <Video className="h-3.5 w-3.5 mr-2" /> Open in Zoom
-          </Button>
+          {order.zoom_status === 'confirmed' && (
+             <Button variant="outline" size="sm" className="rounded-xl h-9 text-xs font-bold"
+               onClick={() => window.open(order.zoom_join_url || 'https://zoom.us', '_blank')}>
+               <Video className="h-3.5 w-3.5 mr-2" /> Join Zoom Call
+             </Button>
+          )}
           <Button variant="outline" size="sm" className="rounded-xl h-9 text-xs font-bold">
-            <Users className="h-3.5 w-3.5 mr-2" /> Invite Specialist
+            <Users className="h-3.5 w-3.5 mr-2" /> Patient History
           </Button>
         </div>
       </div>
@@ -140,23 +154,22 @@ export function DoctorConsultPage() {
       <div className="flex-1 flex gap-4 overflow-hidden">
         {/* Left Column: Video & Controls */}
         <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-          <div className="flex-1 bg-slate-900 rounded-[32px] relative overflow-hidden group shadow-2xl">
-            <img 
-              src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80" 
-              alt="Patient" 
-              className={cn("w-full h-full object-cover transition-opacity duration-500", isVideoOff ? "opacity-30" : "opacity-100")}
-            />
-            <div className="absolute top-6 right-6 w-48 h-32 bg-slate-800 rounded-2xl border-2 border-white/20 overflow-hidden shadow-xl">
-               <img 
-                src="https://images.unsplash.com/photo-1559839734-2b71f15367ef?auto=format&fit=crop&w=800&q=80" 
-                alt="Doctor" 
-                className="w-full h-full object-cover"
-              />
+          <div className="flex-1 bg-slate-900 rounded-[32px] relative overflow-hidden group shadow-2xl flex items-center justify-center">
+            {/* If no active video, show a professional placeholder */}
+            <div className="text-center">
+               <div className="h-24 w-24 rounded-full bg-slate-800 border-4 border-slate-700 mx-auto flex items-center justify-center mb-4">
+                  <span className="text-3xl font-black text-slate-500">{order.patient_name?.charAt(0) || '?'}</span>
+               </div>
+               <p className="text-white font-bold">{order.patient_name}</p>
+               <p className="text-slate-400 text-sm">Secure Connection Ready</p>
             </div>
+            
             <div className="absolute top-6 left-6 space-y-2">
               <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/10">
                 <Activity className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-[10px] font-black text-white uppercase tracking-widest">HR: 72 BPM</span>
+                <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                  {order.patient_vitals ? 'Vitals Synced' : 'Vitals Pending'}
+                </span>
               </div>
             </div>
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 px-6 py-3 bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl transition-all duration-300 group-hover:bottom-10">
@@ -169,9 +182,11 @@ export function DoctorConsultPage() {
               <button className="h-14 w-20 bg-red-600 hover:bg-red-700 text-white rounded-2xl flex items-center justify-center transition-all shadow-lg shadow-red-600/40">
                 <Zap className="h-6 w-6 fill-current rotate-12" />
               </button>
-              <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-full flex items-center justify-center">
-                <MessageSquare className="h-5 w-5" />
-              </button>
+              <Link to={`/doctor/messages?userId=${order.user_id}`}>
+                <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-full flex items-center justify-center">
+                  <MessageSquare className="h-5 w-5" />
+                </button>
+              </Link>
               <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-full flex items-center justify-center">
                 <MoreHorizontal className="h-5 w-5" />
               </button>
@@ -186,7 +201,7 @@ export function DoctorConsultPage() {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                <p className="text-xs text-slate-400 italic">Listening to conversation...</p>
+                <p className="text-xs text-slate-400 italic">Listening to conversation and securely transcribing clinical notes...</p>
               </div>
             </CardContent>
           </Card>
@@ -244,7 +259,9 @@ export function DoctorConsultPage() {
                 {isFinalizing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Finalize & Send to Pharmacy
               </Button>
-              <p className="text-center text-[9px] font-black text-emerald-700/60 uppercase tracking-widest">Sent to: VialsRX Pharmacy (California)</p>
+              <p className="text-center text-[9px] font-black text-emerald-700/60 uppercase tracking-widest">
+                Sent to: {order.pharmacy || "Patient's Preferred Network Pharmacy"}
+              </p>
             </CardContent>
           </Card>
         </div>
