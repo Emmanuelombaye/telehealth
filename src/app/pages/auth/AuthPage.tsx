@@ -74,8 +74,10 @@ export function AuthPage({ portal }: { portal: Portal }) {
           await initialize();
           
           if (mockRole === 'doctor') navigate("/doctor", { replace: true });
+          else if (mockRole === 'super_admin') navigate("/superadmin", { replace: true });
           else if (mockRole === 'brand_admin') navigate("/admin", { replace: true });
-          else navigate("/pharmacy", { replace: true });
+          else if (mockRole === 'pharmacy') navigate("/pharmacy", { replace: true });
+          else navigate("/patient", { replace: true });
           return;
         }
 
@@ -88,17 +90,22 @@ export function AuthPage({ portal }: { portal: Portal }) {
           await initialize();
           const role = useAuthStore.getState().role;
           
-          if (portal === 'doctor' && role !== 'doctor') {
+          if (portal === 'doctor' && role !== 'doctor' && role !== 'super_admin') {
             setError("Access denied. Provider portal only.");
             await supabase.auth.signOut();
             return;
           }
-          if (portal === 'pharmacy' && role !== 'pharmacy') {
+          if (portal === 'pharmacy' && role !== 'pharmacy' && role !== 'super_admin') {
             setError("Access denied. Pharmacy portal only.");
             await supabase.auth.signOut();
             return;
           }
-          if ((portal === 'admin' || portal === 'superadmin') && role !== 'brand_admin' && role !== 'super_admin') {
+          if (portal === 'superadmin' && role !== 'super_admin') {
+            setError("Access denied. Super Admin portal only.");
+            await supabase.auth.signOut();
+            return;
+          }
+          if (portal === 'admin' && role !== 'brand_admin' && role !== 'super_admin') {
             setError("Access denied. Admin portal only.");
             await supabase.auth.signOut();
             return;
@@ -106,7 +113,8 @@ export function AuthPage({ portal }: { portal: Portal }) {
           
           if (role === 'doctor') navigate("/doctor", { replace: true });
           else if (role === 'pharmacy') navigate("/pharmacy", { replace: true });
-          else if (role === 'brand_admin' || role === 'super_admin') navigate("/admin", { replace: true });
+          else if (role === 'super_admin') navigate("/superadmin", { replace: true });
+          else if (role === 'brand_admin') navigate("/admin", { replace: true });
           else navigate("/patient", { replace: true });
         }
       } else {
@@ -137,6 +145,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
             await initialize();
             if (portalRole === 'doctor') navigate("/doctor", { replace: true });
             else if (portalRole === 'pharmacy') navigate("/pharmacy", { replace: true });
+            else if (portalRole === 'super_admin') navigate("/superadmin", { replace: true });
             else if (portalRole === 'brand_admin') navigate("/admin", { replace: true });
             else navigate("/patient", { replace: true });
           } else {
