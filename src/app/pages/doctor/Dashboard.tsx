@@ -1,42 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Users, Calendar, Clock, Search, Filter, MoreVertical,
-  Video, FileText, MessageSquare, TrendingUp, UserCheck, 
+  Video, FileText, MessageSquare, TrendingUp, UserCheck,
   ChevronRight, Activity, HeartPulse, Stethoscope, Zap,
   Bell, Command, ShieldCheck, Database, Layers, ArrowUpRight,
   Sparkles, FlaskConical, Bot, Pill
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Input } from "../../components/ui/shared.tsx";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, Cell, AreaChart, Area 
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Cell, AreaChart, Area
 } from "recharts";
 import { useI18n, getGreeting, usePatientStore, useAuthStore } from "../../../lib";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 
-const statsData = [
-  { name: "Mon", visits: 12 }, { name: "Tue", visits: 18 }, { name: "Wed", visits: 15 },
-  { name: "Thu", visits: 22 }, { name: "Fri", visits: 20 }, { name: "Sat", visits: 8 }, { name: "Sun", visits: 5 },
-];
-
-const revenueData = [
-  { time: "08:00", active: 4 }, { time: "10:00", active: 12 }, { time: "12:00", active: 8 },
-  { time: "14:00", active: 15 }, { time: "16:00", active: 10 }, { time: "18:00", active: 6 }
-];
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function DoctorDashboard() {
   const { t } = useI18n();
   const greeting = getGreeting(t);
   const [currentTime, setCurrentTime] = useState(new Date());
-  
+
   const user = useAuthStore(state => state.user);
-  const doctorName = user?.user_metadata?.first_name 
+  const doctorName = user?.user_metadata?.first_name
     ? `Dr. ${user.user_metadata.first_name} ${user.user_metadata.last_name}`
     : "Dr. Brandon 👨‍⚕️";
 
   const { orders, fetchOrders, subscribeToOrders } = usePatientStore();
-  
+
   // Real metrics from database
   const pendingConsults = orders.filter(o => {
     const isActive = o.status === "order_submitted" || o.status === "doctor_reviewing" || o.status === "rx_sent";
@@ -45,6 +37,46 @@ export function DoctorDashboard() {
   });
   const completedVisits = orders.filter(o => o.status === "shipped" || o.status === "delivered").length;
   const patientsToday = pendingConsults.length;
+
+  // Throughput by day-of-week for the trailing 7 days
+  const statsData = useMemo(() => {
+    const now = new Date();
+    const buckets: { name: string; visits: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      buckets.push({ name: DAY_LABELS[d.getDay()], visits: 0 });
+    }
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    for (const o of orders) {
+      const raw = (o as any).orderedDate || (o as any).ordered_date;
+      if (!raw) continue;
+      const od = new Date(raw);
+      if (isNaN(od.getTime()) || od < sevenDaysAgo) continue;
+      const dayDiff = Math.floor((od.getTime() - sevenDaysAgo.getTime()) / (1000 * 60 * 60 * 24));
+      if (dayDiff >= 0 && dayDiff < 7) buckets[dayDiff].visits += 1;
+    }
+    return buckets;
+  }, [orders]);
+
+  // Active consult load by hour bucket for today
+  const revenueData = useMemo(() => {
+    const slots = ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00"];
+    const counts = slots.map(time => ({ time, active: 0 }));
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    for (const o of orders) {
+      const raw = (o as any).orderedDate || (o as any).ordered_date;
+      if (!raw) continue;
+      const od = new Date(raw);
+      if (isNaN(od.getTime()) || od < today) continue;
+      const hr = od.getHours();
+      const idx = Math.min(slots.length - 1, Math.max(0, Math.floor((hr - 8) / 2)));
+      counts[idx].active += 1;
+    }
+    return counts;
+  }, [orders]);
 
   useEffect(() => {
     const unsubscribe = subscribeToOrders();
