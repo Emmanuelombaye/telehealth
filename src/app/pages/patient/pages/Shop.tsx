@@ -326,8 +326,16 @@ export function PatientShopPage() {
     setIsSubmitting(true);
     setError(null);
 
+    // ── Resolve identity synchronously from auth store or form state ──────────
+    const existingUser = useAuthStore.getState().user;
+    const meta = existingUser?.user_metadata || {};
+
+    const resolvedFirstName = firstName || meta.first_name || 'Patient';
+    const resolvedLastName  = lastName  || meta.last_name  || '';
+    const resolvedEmail     = email     || existingUser?.email || '';
+
     const heightInches = (parseInt(heightFt || '0') * 12) + parseInt(heightIn || '0');
-    const weightNum = parseFloat(weight || '0');
+    const weightNum    = parseFloat(weight || '0');
     const bmi = heightInches > 0 && weightNum > 0
       ? ((weightNum / (heightInches * heightInches)) * 703).toFixed(1)
       : 'N/A';
@@ -340,36 +348,33 @@ export function PatientShopPage() {
       allergies: allergies || 'None',
       currentMeds: currentMeds || 'None',
       address: `${address}, ${city}, ${state} ${zip}`,
-      phone, email
+      phone,
+      email: resolvedEmail,
     };
 
     try {
-      // 1. Check for existing session
-      const existingUser = useAuthStore.getState().user;
       let userId: string | null = null;
       let sessionToSet = null;
 
       if (existingUser) {
-        // Already logged in — use their data, skip signup entirely
+        // ── Existing logged-in patient ────────────────────────────────────────
         userId = existingUser.id;
-        const meta = existingUser.user_metadata || {};
-        // Populate state vars so confirmed screen renders correctly
-        if (!firstName) setFirstName(meta.first_name || 'Patient');
-        if (!lastName) setLastName(meta.last_name || '');
-        if (!email) setEmail(existingUser.email || '');
       } else {
-        // New user — validate then create account
-        if (!email || !email.includes('@')) throw new Error("A valid email is required.");
-        if (!password || password.length < 6) throw new Error("Password must be at least 6 characters.");
-        if (!firstName || !lastName) throw new Error("First and last name are required.");
+        // ── New patient — validate and create account ─────────────────────────
+        if (!resolvedEmail || !resolvedEmail.includes('@'))
+          throw new Error("A valid email is required.");
+        if (!password || password.length < 6)
+          throw new Error("Password must be at least 6 characters.");
+        if (!resolvedFirstName || resolvedFirstName === 'Patient')
+          throw new Error("First and last name are required.");
 
         const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: email.trim().toLowerCase(),
+          email: resolvedEmail.trim().toLowerCase(),
           password,
           options: {
             data: {
-              first_name: firstName || 'New',
-              last_name: lastName || 'Patient',
+              first_name: resolvedFirstName,
+              last_name: resolvedLastName,
               date_of_birth: dob,
               phone,
               role: 'patient',
@@ -380,18 +385,19 @@ export function PatientShopPage() {
         if (authError) {
           const msg = authError.message.toLowerCase();
           if (authError.status === 500 || msg.includes('unexpected') || msg.includes('server')) {
+            // Server may have created the user — try signing in as fallback
             const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-              email: email.trim().toLowerCase(),
+              email: resolvedEmail.trim().toLowerCase(),
               password,
             });
             if (!signInError && signInData.user) {
               userId = signInData.user.id;
               sessionToSet = signInData.session;
             } else {
-              throw new Error("Account creation failed (server error). Please try again in a moment.");
+              throw new Error("Account creation failed. Please try again in a moment.");
             }
           } else if (msg.includes('already registered') || msg.includes('already exists')) {
-            throw new Error("This email is already registered. Please sign in at /patient/login instead.");
+            throw new Error("This email is already registered. Please sign in at /patient/login.");
           } else {
             throw authError;
           }
@@ -401,68 +407,65 @@ export function PatientShopPage() {
         }
       }
 
-      if (!userId) throw new Error("Account creation failed — please try again.");
+      if (!userId) throw new Error("Could not determine user ID — please try again.");
 
-      // Resolve final name/email (use stored state OR user metadata)
-      const finalFirstName = firstName || existingUser?.user_metadata?.first_name || 'Patient';
-      const finalLastName = lastName || existingUser?.user_metadata?.last_name || '';
-      const finalEmail = email || existingUser?.email || '';
+      // ── Generate a fresh unique order number (prevents 409 on retry) ─────────
+      const freshOrderRef = "RX-" + Date.now().toString(36).toUpperCase() +
+                            "-" + Math.random().toString(36).slice(2, 5).toUpperCase();
 
-      // 2. Generate a fresh unique order number at submission time (prevents 409 on retry)
-      const freshOrderRef = "RX-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).slice(2, 5).toUpperCase();
-
-      // Insert order into Supabase
+      // ── Insert order into Supabase ────────────────────────────────────────────
       const { error: insertError } = await supabase.from('orders').insert([{
-        order_number: freshOrderRef,
-        patient_name: `${finalFirstName} ${finalLastName}`.trim() || "New Patient",
-        patient_avatar: (finalFirstName[0] || "") + (finalLastName[0] || ""),
-        patient_age: age,
-        patient_country: "🇺🇸 US",
-        sub_brand: "Peak Health",
-        medication: selected.name,
+        order_number:      freshOrderRef,
+        patient_name:      `${resolvedFirstName} ${resolvedLastName}`.trim() || "New Patient",
+        patient_avatar:    (resolvedFirstName[0] || "") + (resolvedLastName[0] || ""),
+        patient_age:       age,
+        patient_country:   "🇺🇸 US",
+        sub_brand:         "Peak Health",
+        medication:        selected.name,
         dosage_instructions: selected.tagline,
-        category: selected.category,
-        status: "order_submitted",
-        ordered_date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        amount: selected.priceUSD,
-        user_id: userId,
-        intake_complete: true,
-        intake_notes: `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Blood: ${bloodType} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
-        intake_answers: answers,
-        patient_vitals: patientVitals,
+        category:          selected.category,
+        status:            "order_submitted",
+        ordered_date:      new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        amount:            selected.priceUSD,
+        user_id:           userId,
+        intake_complete:   true,
+        intake_notes:      `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Blood: ${bloodType} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
+        intake_answers:    answers,
+        patient_vitals:    patientVitals,
         consultation_time: consultationTime || null,
-        zoom_status: zoomWanted && consultationTime ? 'requested' : 'not_requested',
-        zoom_doctor_message: null,
+        zoom_status:       zoomWanted && consultationTime ? 'requested' : 'not_requested',
+        zoom_doctor_message:   null,
         zoom_rescheduled_time: null,
         timeline: [{ status: "order_submitted", date: new Date().toLocaleDateString() }]
       }]);
 
-      // Surface insert errors visibly instead of silently ignoring
       if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
 
-      // 3. Auto sign-in + refresh auth store (only for new users)
+      // ── Auto sign-in for new patients ─────────────────────────────────────────
       if (!existingUser) {
         if (sessionToSet) {
           await supabase.auth.setSession(sessionToSet);
         } else {
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: email.trim().toLowerCase(),
+          await supabase.auth.signInWithPassword({
+            email: resolvedEmail.trim().toLowerCase(),
             password
           });
-          if (signInError) console.warn("Auto-login pending email confirmation:", signInError.message);
         }
         await initialize();
       }
 
-      // 4. Force refresh the global patient store so new order appears immediately
-      const { fetchOrders } = usePatientStore.getState();
-      await fetchOrders();
+      // ── Refresh patient store so new order appears immediately ────────────────
+      await usePatientStore.getState().fetchOrders();
 
-      // Save the order ref for the confirmation screen
+      // ── Update local state for the confirmed screen ───────────────────────────
       setSubmittedOrderRef(freshOrderRef);
-
+      setFirstName(resolvedFirstName);
+      setLastName(resolvedLastName);
+      setEmail(resolvedEmail);
       setStage("confirmed");
+
     } catch (err: any) {
+      console.error("[Enrollment error]", err);
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -1055,10 +1058,26 @@ export function PatientShopPage() {
           )}
         </div>
 
-        <Button className="w-full rounded-xl h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+        {/* Error display — previously silent */}
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold text-center">
+            ⚠️ {error}
+          </div>
+        )}
+
+        <Button
+          className="w-full rounded-xl h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2"
           disabled={zoomWanted === null || (zoomWanted === true && !consultationTime) || !idFile || isSubmitting}
           onClick={() => handleCompleteSetup()}>
-          {isSubmitting ? "Finishing..." : "Complete Enrollment →"}
+          {isSubmitting ? (
+            <>
+              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              Submitting your enrollment...
+            </>
+          ) : "Complete Enrollment →"}
         </Button>
       </div>
     );
