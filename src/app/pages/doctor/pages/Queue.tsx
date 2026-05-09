@@ -5,7 +5,7 @@ import {
   CheckCircle2, AlertCircle, Circle, Stethoscope, Pill,
   Phone, ToggleLeft, ToggleRight, Search, Filter, Bell, Zap,
   Activity, HeartPulse, ShieldCheck, Database, Layers, ArrowUpRight,
-  Sparkles, FlaskConical, Bot, Command, Globe
+  Sparkles, FlaskConical, Bot, Command, Globe, Truck
 } from "lucide-react";
 import { Card, CardContent, Button, Badge } from "../../../components/ui/shared.tsx";
 import { OrderStatus, Order, usePatientStore } from "../../../../lib";

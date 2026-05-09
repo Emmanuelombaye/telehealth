@@ -63,7 +63,8 @@ export type Order = {
   refillIntervalDays?: number;
   zoomStatus?: 'requested' | 'not_requested' | 'confirmed' | 'rescheduled' | 'canceled';
   userId?: string;
-};
+  user_id?: string;
+}
 
 // Helper: Generate a unique Medical Record Number (MRN)
 export const generateMRN = () => {
@@ -123,7 +124,7 @@ interface AppState {
   fetchOrders: () => Promise<void>;
   fetchDoctorAvailability: () => Promise<void>;
   addOrder: (order: Order) => Promise<void>;
-  updateOrderStatus: (orderId: string, status: OrderStatus, tracking?: string, carrier?: string) => Promise<void>;
+  updateOrderStatus: (orderId: string, status: OrderStatus, tracking?: string, carrier?: string, trackingUrl?: string, estimatedDelivery?: string) => Promise<void>;
   updateOrderRx: (orderId: string, medication: string, dosage: string, note: string) => Promise<void>;
   subscribeToOrders: () => (() => void);
   setIntakeFormData: (data: Record<string, any>) => void;
@@ -206,6 +207,7 @@ export const usePatientStore = create<AppState>()(
           const mappedOrders: Order[] = (data || []).map(d => ({
             id: d.order_number,
             userId: d.user_id,
+            user_id: d.user_id,
             patientName: d.patient_name,
             patientAvatar: d.patient_avatar || '',
             patientAge: d.patient_age,

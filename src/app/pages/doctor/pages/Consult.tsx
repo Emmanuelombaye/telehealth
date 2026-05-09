@@ -6,6 +6,7 @@ import {
   Sparkles, CheckCircle2, MoreHorizontal, Loader2
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { useAuthStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
 
 export function DoctorConsultPage() {

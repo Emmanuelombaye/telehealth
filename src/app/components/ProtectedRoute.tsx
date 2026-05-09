@@ -41,7 +41,6 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
       const targetPortal = 
         role === 'doctor' ? '/doctor' : 
         (role === 'brand_admin' || role === 'super_admin') ? '/admin' : 
-        role === 'super_admin' ? '/superadmin' :
         '/patient';
       
       console.log(`[ProtectedRoute] Role ${role} not allowed on ${window.location.pathname}. Redirecting to ${targetPortal}`);
