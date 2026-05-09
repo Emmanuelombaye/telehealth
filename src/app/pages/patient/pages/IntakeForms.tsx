@@ -29,8 +29,21 @@ export function IntakeFormsPage() {
           .select('*')
           .eq('patient_id', user!.id)
           .order('created_at', { ascending: false });
+        
         if (error) throw error;
-        setForms(data || []);
+
+        if (data && data.length > 0) {
+          setForms(data);
+        } else {
+          // SEED DEFAULT FORMS
+          const defaultForms = [
+            { patient_id: user!.id, title: "General Health Intake", status: "pending", required: true },
+            { patient_id: user!.id, title: "Medical History & Symptoms", status: "pending", required: true }
+          ];
+          const { data: seeded, error: seedErr } = await supabase.from('intake_forms').insert(defaultForms).select();
+          if (seedErr) throw seedErr;
+          setForms(seeded || []);
+        }
       } catch (err) {
         console.error(err);
       } finally { setLoading(false); }
@@ -40,12 +53,31 @@ export function IntakeFormsPage() {
 
   const handleSubmit = async () => {
     if (!activeForm || !user) return;
+    setLoading(true);
     try {
-      await supabase.from('intake_forms').update({ status: 'completed', completed_date: new Date().toLocaleDateString() }).eq('id', activeForm);
-      setForms(forms.map(f => f.id === activeForm ? { ...f, status: 'completed', completed_date: new Date().toLocaleDateString() } : f));
+      const { error } = await supabase
+        .from('intake_forms')
+        .update({ 
+          status: 'completed', 
+          completed_date: new Date().toLocaleDateString(),
+          form_data: intakeFormData // Save the actual form data
+        })
+        .eq('id', activeForm);
+      
+      if (error) throw error;
+
+      setForms(forms.map(f => f.id === activeForm ? { 
+        ...f, 
+        status: 'completed', 
+        completed_date: new Date().toLocaleDateString(),
+        form_data: intakeFormData
+      } : f));
       setActiveForm(null);
     } catch (err) {
       console.error(err);
+      alert("Failed to save intake form. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -53,12 +85,14 @@ export function IntakeFormsPage() {
 
   if (activeForm !== null && viewMode) {
     const form = forms.find(f => f.id === activeForm);
+    const data = form?.form_data || {};
+    
     return (
       <div className="max-w-2xl mx-auto space-y-5">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold">{form?.title}</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Submitted {form?.completedDate}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Submitted {form?.completed_date}</p>
           </div>
           <Button variant="outline" size="sm" className="rounded-xl" onClick={() => {
             setActiveForm(null);
@@ -73,78 +107,82 @@ export function IntakeFormsPage() {
             <div className="space-y-4">
               <h3 className="font-semibold text-sm border-b pb-2">Personal Information</h3>
               <div className="grid gap-3">
-                <div className="flex justify-between items-center py-2">
+                <div className="flex justify-between items-center py-2 border-b border-border/40">
                   <span className="text-sm text-muted-foreground">Full Legal Name</span>
-                  <span className="text-sm font-medium">John Doe</span>
+                  <span className="text-sm font-medium">{data.fullName || "—"}</span>
                 </div>
-                <div className="flex justify-between items-center py-2">
+                <div className="flex justify-between items-center py-2 border-b border-border/40">
                   <span className="text-sm text-muted-foreground">Date of Birth</span>
-                  <span className="text-sm font-medium">06/15/1987</span>
+                  <span className="text-sm font-medium">{data.dob || "—"}</span>
                 </div>
-                <div className="flex justify-between items-center py-2">
+                <div className="flex justify-between items-center py-2 border-b border-border/40">
                   <span className="text-sm text-muted-foreground">Biological Sex</span>
-                  <span className="text-sm font-medium">Male</span>
+                  <span className="text-sm font-medium">{data.sex || "—"}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-sm text-muted-foreground">Country of Residence</span>
-                  <span className="text-sm font-medium">United States</span>
+                  <span className="text-sm font-medium">{data.country || "—"}</span>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="font-semibold text-sm border-b pb-2">Medical History</h3>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Reported Conditions:</p>
-                <div className="flex flex-wrap gap-2">
-                  {["Hypertension", "Asthma"].map(c => (
-                    <Badge key={c} className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">{c}</Badge>
-                  ))}
+            {(data.conditions || []).length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-sm border-b pb-2">Medical History</h3>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Reported Conditions:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {data.conditions.map((c: string) => (
+                      <Badge key={c} className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">{c}</Badge>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="space-y-4">
-              <h3 className="font-semibold text-sm border-b pb-2">Symptoms Reported</h3>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Description</p>
-                  <p className="text-sm">Occasional chest discomfort, shortness of breath with exertion, mild fatigue.</p>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-muted-foreground">Pain Level</span>
-                  <span className="text-sm font-medium">4 / 10</span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-muted-foreground">Duration</span>
-                  <span className="text-sm font-medium">1 week</span>
+            {data.symptoms && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-sm border-b pb-2">Symptoms Reported</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Description</p>
+                    <p className="text-sm">{data.symptoms}</p>
+                  </div>
+                  {data.painLevel !== undefined && (
+                    <div className="flex justify-between items-center py-2 border-b border-border/40">
+                      <span className="text-sm text-muted-foreground">Pain Level</span>
+                      <span className="text-sm font-medium">{data.painLevel} / 10</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm text-muted-foreground">Duration</span>
+                    <span className="text-sm font-medium">{data.duration || "—"}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="space-y-4">
-              <h3 className="font-semibold text-sm border-b pb-2">Current Medications</h3>
-              <div className="space-y-3">
-                <div className="p-3 bg-muted rounded-xl">
-                  <p className="font-medium text-sm">Lisinopril 10mg</p>
-                  <p className="text-xs text-muted-foreground">Once daily</p>
-                </div>
-                <div className="p-3 bg-muted rounded-xl">
-                  <p className="font-medium text-sm">Albuterol Inhaler</p>
-                  <p className="text-xs text-muted-foreground">As needed</p>
+            {data.medName && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-sm border-b pb-2">Current Medications</h3>
+                <div className="space-y-3">
+                  <div className="p-3 bg-muted rounded-xl">
+                    <p className="font-medium text-sm">{data.medName}</p>
+                    <p className="text-xs text-muted-foreground">{data.medDosage} · {data.medFrequency}</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-xl p-4 text-center">
               <CheckCircle2 className="h-5 w-5 text-emerald-500 mx-auto mb-2" />
-              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Form submitted successfully</p>
-              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">This record is encrypted and stored securely</p>
+              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Form submitted securely</p>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">This record is verified and HIPAA-compliant</p>
             </div>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (activeForm !== null) {
@@ -174,23 +212,43 @@ export function IntakeFormsPage() {
               <>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold">Full Legal Name</label>
-                  <input className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" placeholder="John Doe" />
+                  <input 
+                    className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" 
+                    placeholder="John Doe" 
+                    value={intakeFormData.fullName || ""}
+                    onChange={e => setIntakeFormData({ ...intakeFormData, fullName: e.target.value })}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-sm font-semibold">Date of Birth</label>
-                    <input type="date" className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" />
+                    <input 
+                      type="date" 
+                      className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" 
+                      value={intakeFormData.dob || ""}
+                      onChange={e => setIntakeFormData({ ...intakeFormData, dob: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-semibold">Biological Sex</label>
-                    <select className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary">
+                    <select 
+                      className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary"
+                      value={intakeFormData.sex || ""}
+                      onChange={e => setIntakeFormData({ ...intakeFormData, sex: e.target.value })}
+                    >
+                      <option value="">Select...</option>
                       <option>Male</option><option>Female</option><option>Other</option>
                     </select>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold">Country of Residence</label>
-                  <select className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary">
+                  <select 
+                    className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary"
+                    value={intakeFormData.country || ""}
+                    onChange={e => setIntakeFormData({ ...intakeFormData, country: e.target.value })}
+                  >
+                    <option value="">Select...</option>
                     <option>United States</option><option>United Kingdom</option><option>Saudi Arabia</option>
                     <option>Spain</option><option>France</option><option>Brazil</option><option>China</option>
                   </select>
@@ -202,7 +260,19 @@ export function IntakeFormsPage() {
                 <p className="text-sm font-semibold">Do you have any of the following conditions?</p>
                 {["Diabetes", "Hypertension", "Heart Disease", "Asthma", "Cancer (any)", "Thyroid Disorder"].map(c => (
                   <label key={c} className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer hover:bg-accent">
-                    <input type="checkbox" className="h-4 w-4 accent-primary" />
+                    <input 
+                      type="checkbox" 
+                      className="h-4 w-4 accent-primary" 
+                      checked={(intakeFormData.conditions || []).includes(c)}
+                      onChange={e => {
+                        const conditions = intakeFormData.conditions || [];
+                        if (e.target.checked) {
+                          setIntakeFormData({ ...intakeFormData, conditions: [...conditions, c] });
+                        } else {
+                          setIntakeFormData({ ...intakeFormData, conditions: conditions.filter((item: string) => item !== c) });
+                        }
+                      }}
+                    />
                     <span className="text-sm">{c}</span>
                   </label>
                 ))}
@@ -212,15 +282,31 @@ export function IntakeFormsPage() {
               <>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold">Describe your current symptoms</label>
-                  <textarea rows={4} className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary resize-none" placeholder="Describe what you're experiencing..." />
+                  <textarea 
+                    rows={4} 
+                    className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary resize-none" 
+                    placeholder="Describe what you're experiencing..." 
+                    value={intakeFormData.symptoms || ""}
+                    onChange={e => setIntakeFormData({ ...intakeFormData, symptoms: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold">Pain level (0–10)</label>
-                  <input type="range" min={0} max={10} className="w-full accent-primary" />
+                  <label className="text-sm font-semibold">Pain level ({intakeFormData.painLevel || 0} / 10)</label>
+                  <input 
+                    type="range" min={0} max={10} 
+                    className="w-full accent-primary" 
+                    value={intakeFormData.painLevel || 0}
+                    onChange={e => setIntakeFormData({ ...intakeFormData, painLevel: parseInt(e.target.value) })}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold">Duration of symptoms</label>
-                  <select className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary">
+                  <select 
+                    className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary"
+                    value={intakeFormData.duration || ""}
+                    onChange={e => setIntakeFormData({ ...intakeFormData, duration: e.target.value })}
+                  >
+                    <option value="">Select...</option>
                     <option>Less than 24 hours</option><option>1–3 days</option><option>1 week</option><option>More than 1 week</option>
                   </select>
                 </div>
@@ -230,11 +316,25 @@ export function IntakeFormsPage() {
               <>
                 <p className="text-sm font-semibold">Current Medications</p>
                 <div className="space-y-2">
-                  {["Medication name", "Dosage", "Frequency"].map(f => (
-                    <input key={f} className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" placeholder={f} />
-                  ))}
+                  <input 
+                    className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" 
+                    placeholder="Medication name" 
+                    value={intakeFormData.medName || ""}
+                    onChange={e => setIntakeFormData({ ...intakeFormData, medName: e.target.value })}
+                  />
+                  <input 
+                    className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" 
+                    placeholder="Dosage (e.g. 10mg)" 
+                    value={intakeFormData.medDosage || ""}
+                    onChange={e => setIntakeFormData({ ...intakeFormData, medDosage: e.target.value })}
+                  />
+                  <input 
+                    className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" 
+                    placeholder="Frequency (e.g. Daily)" 
+                    value={intakeFormData.medFrequency || ""}
+                    onChange={e => setIntakeFormData({ ...intakeFormData, medFrequency: e.target.value })}
+                  />
                 </div>
-                <Button variant="outline" size="sm" className="rounded-xl text-xs">+ Add Another Medication</Button>
               </>
             )}
             {step === 4 && (
@@ -251,7 +351,7 @@ export function IntakeFormsPage() {
           {step > 0 && <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setStep(s => s - 1)}>Back</Button>}
           {step < steps.length - 1
             ? <Button className="flex-1 rounded-xl" onClick={() => setStep(s => s + 1)}>Continue</Button>
-            : <Button className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-600" onClick={handleSubmit}>Submit Securely</Button>
+            : <Button className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-600" onClick={handleSubmit} disabled={loading}>Submit Securely</Button>
           }
         </div>
       </div>

@@ -217,12 +217,33 @@ export function DoctorConsultPage() {
 
       if (!error && data) {
         setOrder(data);
+        
+        // --- FETCH INTAKE DATA ---
+        const { data: intakeData } = await supabase
+          .from('intake_forms')
+          .select('form_data')
+          .eq('patient_id', data.user_id)
+          .eq('status', 'completed')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const intake = intakeData?.form_data || {};
+        
         const vitals = data.patient_vitals
           ? (typeof data.patient_vitals === 'object' ? JSON.stringify(data.patient_vitals) : data.patient_vitals)
           : 'No recent vitals reported.';
+
+        // Build summary from intake data
+        const subjectiveSummary = intake.symptoms 
+          ? `Patient reports symptoms: ${intake.symptoms}. Duration: ${intake.duration || 'N/A'}. Pain Level: ${intake.painLevel || 0}/10.`
+          : data.intake_notes || `Patient seeking consultation for ${data.category || 'general condition'}.`;
+
+        const objectiveSummary = `Age: ${data.patient_age || 'N/A'}. Gender: ${intake.sex || data.patient_sex || 'Not specified'}. Vitals: ${vitals}. Medical History: ${(intake.conditions || []).join(', ') || 'None reported'}. Current Meds: ${intake.medName || 'None'}.`;
+
         setSoapNotes({
-          subjective: data.intake_notes || `Patient seeking consultation for ${data.category || 'general condition'}.`,
-          objective: `Age: ${data.patient_age || 'N/A'}. Gender: ${data.patient_sex || 'Not specified'}. Vitals: ${vitals}. Intake Complete: ${data.intake_complete ? 'Yes' : 'No'}.`,
+          subjective: subjectiveSummary,
+          objective: objectiveSummary,
           assessment: `Patient requesting evaluation for ${data.medication || 'treatment'}.`,
           plan: `Prescribe ${data.medication || 'medication'} ${data.dosage_instructions ? `(${data.dosage_instructions})` : 'as directed'}.`,
         });
