@@ -12,7 +12,7 @@ async function run() {
     await client.connect();
     console.log('Connected to Supabase PostgreSQL database.');
     
-    const sql = fs.readFileSync('./supabase_schema.sql', 'utf8');
+    const sql = fs.readFileSync('./supabase_doctor_clinical_policies.sql', 'utf8');
     await client.query(sql);
     console.log('Schema applied successfully.');
   } catch (err) {
