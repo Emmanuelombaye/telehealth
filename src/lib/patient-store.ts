@@ -61,6 +61,8 @@ export type Order = {
   lastApprovedAt?: string | null;
   nextRefillAt?: string | null;
   refillIntervalDays?: number;
+  zoomStatus?: 'requested' | 'not_requested' | 'confirmed' | 'rescheduled' | 'canceled';
+  userId?: string;
 };
 
 // Helper: Generate a unique Medical Record Number (MRN)
@@ -203,6 +205,7 @@ export const usePatientStore = create<AppState>()(
           
           const mappedOrders: Order[] = (data || []).map(d => ({
             id: d.order_number,
+            userId: d.user_id,
             patientName: d.patient_name,
             patientAvatar: d.patient_avatar || '',
             patientAge: d.patient_age,

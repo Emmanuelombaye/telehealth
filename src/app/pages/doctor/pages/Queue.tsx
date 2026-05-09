@@ -243,7 +243,7 @@ export function DoctorQueuePage() {
                     <div className="flex gap-3">
                       <Button 
                         onClick={() => navigate(`/doctor/consult?orderId=${selected.id}`)}
-                        className="rounded-2xl bg-[#22c55e] text-black font-black uppercase italic px-6 h-12 shadow-lg shadow-[#22c55e]/20 group"
+                        className="rounded-2xl bg-[#22c55e] text-black font-black uppercase italic px-6 h-12 shadow-lg shadow-[#22c55e]/20 group whitespace-nowrap flex-shrink-0"
                       >
                         <Video className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" /> 
                         {selected.zoomStatus === 'requested' ? 'Join Zoom Call' : 'Launch Consultation'}
