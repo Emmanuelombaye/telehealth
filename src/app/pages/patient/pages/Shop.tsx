@@ -706,10 +706,10 @@ export function PatientShopPage() {
         <div className="space-y-4 mb-4">
           <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contact Information</p>
           <div className="grid grid-cols-2 gap-3">
-             <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white" />
-             <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white" />
+             <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary" />
+             <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary" />
           </div>
-          <input type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white" />
+          <input type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary" />
         </div>
 
         {/* Order summary */}
