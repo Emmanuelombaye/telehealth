@@ -54,26 +54,31 @@ export function DoctorConsultPage() {
     if (!order || isFinalizing) return;
     setIsFinalizing(true);
     try {
-      // 1. Create Visit Summary
-      const { error: summaryError } = await supabase.from('visit_summaries').insert([{
-        patient_id: order.user_id,
-        doctor_name: "Dr. Alex Rivera",
-        specialty: order.category,
-        diagnosis: soapNotes.assessment,
-        type: 'video',
-        date: new Date().toISOString(),
-      }]);
+      // 1. Create Visit Summary (gracefully handle if table doesn't exist yet)
+      let summaryError = null;
+      try {
+        const { error } = await supabase.from('visit_summaries').insert([{
+          patient_id: order.user_id,
+          doctor_name: "Dr. Alex Rivera",
+          specialty: order.category,
+          diagnosis: soapNotes.assessment,
+          type: 'video',
+          date: new Date().toISOString(),
+        }]);
+        summaryError = error;
+      } catch (e) {
+        console.warn("Visit summaries table may not exist yet", e);
+      }
 
       // 2. Create Prescription
       const { error: rxError } = await supabase.from('prescriptions').insert([{
         patient_id: order.user_id,
-        medication_name: order.medication,
+        medication: order.medication,
         dosage: order.dosage_instructions || "As directed",
-        instructions: soapNotes.plan,
+        frequency: soapNotes.plan,
         status: 'active',
         refills_remaining: 3,
-        prescribing_doctor: "Dr. Alex Rivera",
-        last_filled: new Date().toISOString(),
+        doctor_id: useAuthStore.getState().user?.id,
       }]);
 
       // 3. Update Order Status
@@ -83,13 +88,16 @@ export function DoctorConsultPage() {
 
       const { error: orderError } = await supabase.from('orders').update({
         status: 'rx_sent',
-        doctor_name: "Dr. Alex Rivera",
-        review_date: new Date().toISOString(),
+        doctor: "Dr. Alex Rivera",
+        last_approved_at: new Date().toISOString(),
         timeline: newTimeline
       }).eq('id', order.id);
 
-      if (!summaryError && !rxError && !orderError) {
+      if (!rxError && !orderError) {
         navigate('/doctor/queue');
+      } else {
+        console.error("Rx Error:", rxError);
+        console.error("Order Error:", orderError);
       }
     } catch (err) {
       console.error(err);
