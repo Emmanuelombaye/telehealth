@@ -179,10 +179,29 @@ export function AppointmentsPage() {
                     </p>
                   )}
                   {status === 'rescheduled' && (
-                    <p className="text-xs text-blue-700 flex items-center gap-1.5">
-                      <RefreshCw className="h-3 w-3" />
-                      Your doctor has proposed a new time. Please check your messages for details.
-                    </p>
+                    <div className="space-y-3">
+                      <p className="text-xs text-blue-700 flex items-center gap-1.5">
+                        <RefreshCw className="h-3 w-3" />
+                        Your doctor has proposed a new time.
+                      </p>
+                      <Button 
+                        size="sm" 
+                        className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold h-9"
+                        onClick={async () => {
+                          const { error } = await supabase
+                            .from('orders')
+                            .update({ 
+                              zoom_status: 'confirmed',
+                              consultation_time: order.zoom_rescheduled_time,
+                              zoom_rescheduled_time: null 
+                            })
+                            .eq('id', order.id);
+                          if (error) alert("Failed to accept time. Please try again.");
+                        }}
+                      >
+                        Accept New Time
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
