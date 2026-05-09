@@ -15,24 +15,23 @@ DO $$
 BEGIN
     DELETE FROM auth.users 
     WHERE email NOT IN (
-        'brandon@peakbodyco.com',          -- Super Admin / Admin
-        'brandon+doctor@peakbodyco.com',   -- Doctor Account
-        'brandon+pharmacy@peakbodyco.com'  -- Pharmacy Account
+        'brandon@peakbodyco.com',  -- Admin
+        'doctor@peakbodyco.com',   -- Doctor
+        'pharmacy@peakbodyco.com'  -- Pharmacy
     );
 EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'Note: Manual cleanup of users in Supabase Dashboard may be required if permissions are restricted.';
 END $$;
 
 -- 3. ENSURE ROLES ARE CORRECTLY ASSIGNED IN METADATA
--- This ensures you land in the right portals instantly
 UPDATE auth.users SET raw_user_meta_data = jsonb_build_object('role', 'super_admin', 'full_name', 'Brandon (Admin)') 
 WHERE email = 'brandon@peakbodyco.com';
 
 UPDATE auth.users SET raw_user_meta_data = jsonb_build_object('role', 'doctor', 'full_name', 'Brandon (Doctor)') 
-WHERE email = 'brandon+doctor@peakbodyco.com';
+WHERE email = 'doctor@peakbodyco.com';
 
 UPDATE auth.users SET raw_user_meta_data = jsonb_build_object('role', 'pharmacy', 'full_name', 'Brandon (Pharmacy)') 
-WHERE email = 'brandon+pharmacy@peakbodyco.com';
+WHERE email = 'pharmacy@peakbodyco.com';
 
 -- 4. RE-SYNC PROFILES
 TRUNCATE TABLE public.profiles CASCADE;

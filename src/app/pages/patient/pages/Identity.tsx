@@ -1,25 +1,78 @@
-import { ShieldCheck, Upload, CheckCircle2, Clock, AlertCircle, Lock, Eye } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ShieldCheck, Upload, CheckCircle2, Clock, AlertCircle, Lock, Eye, Loader2 } from "lucide-react";
 import { Card, CardContent, Button, Badge } from "../../../components/ui/shared.tsx";
+import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib";
 
 export function IdentityPage() {
+  const { user } = useAuthStore();
+  const [verification, setVerification] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    async function fetch() {
+      try {
+        const { data, error } = await supabase
+          .from('identity_verification')
+          .select('*')
+          .eq('user_id', user!.id)
+          .maybeSingle();
+        if (error) throw error;
+        setVerification(data);
+      } catch (err) {
+        console.error(err);
+      } finally { setLoading(false); }
+    }
+    fetch();
+  }, [user]);
+
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+
+  const isVerified = verification?.status === 'verified';
+  const checklist = verification?.checklist || [
+    { label: "Government-issued ID", status: "pending", detail: "Not uploaded" },
+    { label: "Selfie / Liveness Check", status: "pending", detail: "Not completed" },
+    { label: "Address Verification", status: "pending", detail: "Awaiting documents" },
+    { label: "Two-Factor Authentication", status: "pending", detail: "Disabled" },
+  ];
+
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <h1 className="text-xl font-bold">Identity Verification</h1>
 
       {/* Status banner */}
-      <Card className="bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800">
+      <Card className={cn(
+        "border-2",
+        isVerified 
+          ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200" 
+          : "bg-amber-50 dark:bg-amber-950/30 border-amber-200"
+      )}>
         <CardContent className="p-5">
           <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center shrink-0">
-              <ShieldCheck className="h-7 w-7 text-emerald-600" />
+            <div className={cn(
+              "h-14 w-14 rounded-2xl flex items-center justify-center shrink-0",
+              isVerified ? "bg-emerald-100" : "bg-amber-100"
+            )}>
+              <ShieldCheck className={cn("h-7 w-7", isVerified ? "text-emerald-600" : "text-amber-600")} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-bold text-emerald-800 dark:text-emerald-300">Identity Verified</p>
-                <Badge className="bg-emerald-500 text-white text-[10px]">HIPAA Compliant</Badge>
+                <p className={cn("font-bold", isVerified ? "text-emerald-800" : "text-amber-800")}>
+                  {isVerified ? "Identity Verified" : "Verification Pending"}
+                </p>
+                <Badge className={cn("text-[10px]", isVerified ? "bg-emerald-500" : "bg-amber-500")}>
+                  HIPAA Compliant
+                </Badge>
               </div>
-              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">Verified on Jan 15, 2026 · Valid through Dec 31, 2026</p>
-              <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-0.5">Verification ID: VRF-2026-00492-BH</p>
+              {isVerified ? (
+                <>
+                  <p className="text-xs text-emerald-700 mt-0.5">Verified on {new Date(verification.verification_date).toLocaleDateString()} · Valid through {new Date(verification.expiry_date).toLocaleDateString()}</p>
+                  <p className="text-xs text-emerald-600 mt-0.5">Verification ID: {verification.verification_id}</p>
+                </>
+              ) : (
+                <p className="text-xs text-amber-700 mt-0.5">Complete the checklist below to verify your identity.</p>
+              )}
             </div>
           </div>
         </CardContent>
@@ -29,13 +82,7 @@ export function IdentityPage() {
       <Card>
         <CardContent className="p-4 space-y-3">
           <p className="text-sm font-bold mb-1">Verification Checklist</p>
-          {[
-            { label: "Government-issued ID", status: "verified", detail: "Passport — Expires 2030" },
-            { label: "Selfie / Liveness Check", status: "verified", detail: "Completed Jan 15, 2026" },
-            { label: "Address Verification", status: "verified", detail: "123 Main St, New York" },
-            { label: "Insurance Verification", status: "verified", detail: "BlueCross BlueShield" },
-            { label: "Two-Factor Authentication", status: "pending", detail: "Enable for extra security" },
-          ].map((item, i) => (
+          {checklist.map((item: any, i: number) => (
             <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40">
               {item.status === "verified"
                 ? <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
@@ -46,7 +93,7 @@ export function IdentityPage() {
                 <p className="text-xs text-muted-foreground">{item.detail}</p>
               </div>
               {item.status === "pending" && (
-                <Button size="sm" variant="outline" className="rounded-xl text-xs h-7 shrink-0">Enable</Button>
+                <Button size="sm" variant="outline" className="rounded-xl text-xs h-7 shrink-0">Complete</Button>
               )}
             </div>
           ))}
