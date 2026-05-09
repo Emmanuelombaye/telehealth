@@ -60,13 +60,19 @@ export function AdminOrdersPage() {
 
   const handleMarkShipped = async (orderId: string) => {
     try {
+      const order = orders.find(o => o.id === orderId);
+      const newTimeline = order && order.timeline 
+        ? [...order.timeline, { status: 'shipped', date: new Date().toLocaleDateString() }] 
+        : [{ status: 'shipped', date: new Date().toLocaleDateString() }];
+
       await supabase
         .from('orders')
         .update({ 
           status: 'shipped', 
           tracking_number: trackingNumber, 
           carrier: carrier,
-          shipped_date: new Date().toLocaleDateString()
+          shipped_date: new Date().toLocaleDateString(),
+          timeline: newTimeline
         })
         .eq('id', orderId);
       
@@ -75,7 +81,8 @@ export function AdminOrdersPage() {
         status: 'shipped', 
         tracking_number: trackingNumber, 
         carrier,
-        shipped_date: new Date().toLocaleDateString()
+        shipped_date: new Date().toLocaleDateString(),
+        timeline: newTimeline
       } : o));
       setEditingOrder(null);
       setTrackingNumber("");
@@ -86,12 +93,20 @@ export function AdminOrdersPage() {
 
   const handleMarkDelivered = async (orderId: string) => {
     try {
+      const order = orders.find(o => o.id === orderId);
+      const newTimeline = order && order.timeline 
+        ? [...order.timeline, { status: 'delivered', date: new Date().toLocaleDateString() }] 
+        : [{ status: 'delivered', date: new Date().toLocaleDateString() }];
+
       await supabase
         .from('orders')
-        .update({ status: 'delivered' })
+        .update({ 
+          status: 'delivered',
+          timeline: newTimeline 
+        })
         .eq('id', orderId);
       
-      setOrders(orders.map(o => o.id === orderId ? { ...o, status: 'delivered' } : o));
+      setOrders(orders.map(o => o.id === orderId ? { ...o, status: 'delivered', timeline: newTimeline } : o));
     } catch(err) {
       console.error(err);
     }

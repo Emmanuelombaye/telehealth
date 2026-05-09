@@ -304,7 +304,7 @@ export const usePatientStore = create<AppState>()(
         try {
           await supabase.from('orders').update({
             status,
-            ...(tracking && { tracking }),
+            ...(tracking && { tracking_number: tracking }),
             ...(carrier && { carrier }),
             ...(trackingUrl && { tracking_url: trackingUrl }),
             ...(estimatedDelivery && { estimated_delivery: estimatedDelivery }),
@@ -317,6 +317,9 @@ export const usePatientStore = create<AppState>()(
         
       updateOrderRx: async (orderId: string, medication: string, dosage: string, note: string) => {
         try {
+          const orderToUpdate = get().orders.find(o => o.id === orderId);
+          const newTimeline = orderToUpdate ? [...orderToUpdate.timeline, { status: 'rx_sent', date: new Date().toLocaleString() }] : undefined;
+
           const { error } = await supabase
             .from('orders')
             .update({
@@ -325,7 +328,8 @@ export const usePatientStore = create<AppState>()(
               dosage_instructions: dosage,
               doctor_note: note,
               doctor_id: useAuthStore.getState().user?.id,
-              last_approved_at: new Date().toISOString()
+              last_approved_at: new Date().toISOString(),
+              ...(newTimeline && { timeline: newTimeline })
             })
             .eq('order_number', orderId);
             
