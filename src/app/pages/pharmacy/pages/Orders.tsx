@@ -74,8 +74,36 @@ export function PharmacyOrdersPage() {
     }
   };
 
+  const handleDeliverOrder = async () => {
+    if (!selected) return;
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'delivered',
+          delivered_date: new Date().toLocaleDateString()
+        })
+        .eq('id', selected.id);
+
+      if (error) throw error;
+      
+      setOrders(orders.map(o => o.id === selected.id ? { ...o, status: 'delivered' } : o));
+      setSelected(null);
+    } catch (err) {
+      console.error("Delivery update failed:", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const [view, setView] = useState<'incoming' | 'shipped' | 'delivered'>('incoming');
+
   const incoming = orders.filter(o => o.status === 'doctor_approved' || o.status === 'rx_sent');
   const shipped = orders.filter(o => o.status === 'shipped');
+  const delivered = orders.filter(o => o.status === 'delivered');
+
+  const displayedOrders = view === 'incoming' ? incoming : view === 'shipped' ? shipped : delivered;
 
   if (selected) {
     return (
@@ -180,16 +208,31 @@ export function PharmacyOrdersPage() {
                     </Button>
                     <p className="text-[10px] text-center text-muted-foreground">This will notify the patient and activate tracking in their portal.</p>
                   </div>
+                ) : selected.status === 'shipped' ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-white border border-blue-200 rounded-2xl text-center">
+                      <Truck className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                      <p className="text-sm font-bold text-blue-900">In Transit</p>
+                      <p className="text-xs text-blue-700 font-mono mt-1">{selected.tracking_number}</p>
+                    </div>
+                    <Button 
+                      className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 gap-2"
+                      onClick={handleDeliverOrder}
+                      disabled={isUpdating}
+                    >
+                      {isUpdating ? "Processing..." : <><CheckCircle2 className="h-5 w-5" /> Mark as Delivered</>}
+                    </Button>
+                    <Button variant="outline" className="w-full rounded-xl gap-2 h-10 text-xs">
+                      <Printer className="h-4 w-4" /> Print Packing Slip
+                    </Button>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="p-4 bg-white border border-emerald-200 rounded-2xl text-center">
                       <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-                      <p className="text-sm font-bold text-emerald-900">Order Shipped</p>
-                      <p className="text-xs text-emerald-700 font-mono mt-1">{selected.tracking_number}</p>
+                      <p className="text-sm font-bold text-emerald-900">Order Delivered</p>
+                      <p className="text-xs text-emerald-700 mt-1">Completed on {selected.delivered_date || "today"}</p>
                     </div>
-                    <Button variant="outline" className="w-full rounded-xl gap-2 h-10 text-xs">
-                      <Printer className="h-4 w-4" /> Print Packing Slip
-                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -241,12 +284,18 @@ export function PharmacyOrdersPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: "New Prescriptions", value: incoming.length, icon: Pill, color: "text-amber-600", bg: "bg-amber-100" },
-          { label: "Ready to Ship", value: incoming.filter(o => o.status === 'rx_sent').length, icon: Package, color: "text-violet-600", bg: "bg-violet-100" },
-          { label: "Shipped Today", value: shipped.length, icon: Truck, color: "text-blue-600", bg: "bg-blue-100" },
-          { label: "Alerts / Delays", value: 0, icon: AlertCircle, color: "text-red-600", bg: "bg-red-100" },
+          { key: 'incoming', label: "New Prescriptions", value: incoming.length, icon: Pill, color: "text-amber-600", bg: "bg-amber-100" },
+          { key: 'shipped', label: "In Transit", value: shipped.length, icon: Truck, color: "text-blue-600", bg: "bg-blue-100" },
+          { key: 'delivered', label: "Delivered", value: delivered.length, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-100" },
         ].map((stat, i) => (
-          <Card key={i} className="border-none shadow-sm bg-card hover:bg-accent/50 transition-colors cursor-pointer group">
+          <Card 
+            key={i} 
+            onClick={() => setView(stat.key as any)}
+            className={cn(
+              "border-none shadow-sm bg-card hover:bg-accent/50 transition-all cursor-pointer group relative overflow-hidden",
+              view === stat.key && "ring-2 ring-primary ring-offset-2"
+            )}
+          >
             <CardContent className="p-4 flex items-center gap-4">
               <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110", stat.bg)}>
                 <stat.icon className={cn("h-6 w-6", stat.color)} />
@@ -264,7 +313,9 @@ export function PharmacyOrdersPage() {
         <div className="border-b border-border/40 bg-muted/20 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary" />
-            <span className="text-sm font-bold">Incoming Queue</span>
+            <span className="text-sm font-bold uppercase tracking-widest">
+              {view === 'incoming' ? 'Incoming Queue' : view === 'shipped' ? 'In Transit' : 'Delivery Archive'}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">
@@ -286,10 +337,10 @@ export function PharmacyOrdersPage() {
               <Package className="h-8 w-8 animate-bounce mx-auto mb-4 opacity-20" />
               <p className="text-sm font-medium">Synchronizing dispensary queue...</p>
             </div>
-          ) : incoming.length === 0 ? (
+          ) : displayedOrders.length === 0 ? (
             <div className="p-20 text-center text-muted-foreground">
               <CheckCircle2 className="h-8 w-8 text-emerald-500/20 mx-auto mb-4" />
-              <p className="text-sm font-medium">No pending prescriptions in the queue.</p>
+              <p className="text-sm font-medium">No {view} prescriptions in the queue.</p>
             </div>
           ) : (
             <table className="w-full text-left border-collapse">
@@ -299,12 +350,12 @@ export function PharmacyOrdersPage() {
                   <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Patient</th>
                   <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Prescription</th>
                   <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Received</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Date</th>
                   <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground"></th>
                 </tr>
               </thead>
               <tbody>
-                {incoming.map(order => (
+                {displayedOrders.map(order => (
                   <tr key={order.id} 
                     onClick={() => setSelected(order)}
                     className="border-b border-border/40 hover:bg-primary/5 transition-colors cursor-pointer group">
@@ -327,7 +378,15 @@ export function PharmacyOrdersPage() {
                       <p className="text-[10px] text-muted-foreground mt-0.5">{order.dosage_instructions || "Standard titration"}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge className="bg-amber-100 text-amber-700 text-[10px] border-none font-black px-2 py-0.5">READY FOR FILL</Badge>
+                      <Badge className={cn("text-[10px] border-none font-black px-2 py-0.5", 
+                        order.status === 'delivered' ? "bg-emerald-100 text-emerald-700" :
+                        order.status === 'shipped' ? "bg-blue-100 text-blue-700" :
+                        "bg-amber-100 text-amber-700"
+                      )}>
+                        {order.status === 'delivered' ? "DELIVERED" : 
+                         order.status === 'shipped' ? "IN TRANSIT" : 
+                         "READY FOR FILL"}
+                      </Badge>
                     </td>
                     <td className="px-6 py-4 text-xs font-medium text-muted-foreground">
                       {order.ordered_date || "Today"}
