@@ -288,19 +288,28 @@ export function DoctorQueuePage() {
                               </p>
                            </div>
 
-                           <div className="space-y-3">
-                              <p className="text-[9px] font-black text-[#7f9488] uppercase tracking-widest mt-6 mb-2">Matrix Responses</p>
+                           <div className="space-y-4 pt-4">
+                              <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                                <Activity className="h-4 w-4 text-[#7f9488]" />
+                                <h4 className="text-[11px] font-black text-[#d4c4a8] uppercase tracking-[0.2em]">Diagnostic Intake</h4>
+                              </div>
                                {selected.intakeAnswers && Object.entries(selected.intakeAnswers).length > 0 ? (
-                                 Object.entries(selected.intakeAnswers).map(([q, a], i) => (
-                                   <div key={i} className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
-                                     <p className="text-[10px] font-bold text-[#7f9488] mb-1 leading-tight">{q}</p>
-                                     <p className="text-xs text-white font-medium italic">{Array.isArray(a) ? a.join(", ") : a}</p>
-                                   </div>
-                                 ))
+                                 <div className="flex flex-col gap-3">
+                                   {Object.entries(selected.intakeAnswers).map(([q, a], i) => (
+                                     <div key={i} className="group relative p-4 bg-gradient-to-r from-[#22c55e]/[0.03] to-transparent border-l-2 border-[#22c55e]/40 hover:border-[#22c55e] hover:bg-[#22c55e]/5 rounded-r-2xl transition-all">
+                                       <p className="text-[11px] font-bold text-[#7f9488] mb-2 leading-relaxed pr-4">{q}</p>
+                                       <div className="flex items-start gap-2">
+                                         <div className="h-1.5 w-1.5 rounded-full bg-[#22c55e] mt-1.5 shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                                         <p className="text-sm text-white font-medium">{Array.isArray(a) ? a.join(", ") : a}</p>
+                                       </div>
+                                     </div>
+                                   ))}
+                                 </div>
                                ) : (
-                                 <div className="p-10 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                                    <Bot className="h-8 w-8 text-white/10 mx-auto mb-2" />
-                                    <p className="text-[10px] font-black text-white/20 uppercase">No Intake Matrix Detected</p>
+                                 <div className="p-10 text-center border-2 border-dashed border-white/5 rounded-3xl bg-white/[0.01]">
+                                    <Database className="h-8 w-8 text-white/10 mx-auto mb-3" />
+                                    <p className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest">No Intake Diagnostics Detected</p>
+                                    <p className="text-[9px] text-[#7f9488]/60 mt-1">Patient did not submit a clinical questionnaire.</p>
                                  </div>
                                )}
                            </div>
