@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Package, CheckCircle2, Stethoscope, Pill, Truck, ShoppingBag, Hourglass, FileText,
-  ChevronRight, Search, MapPin, ExternalLink, MessageSquare, Copy
+  ChevronRight, Search, MapPin, ExternalLink, MessageSquare, Copy, Activity
 } from "lucide-react";
 import { Link } from "react-router";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
@@ -10,11 +10,15 @@ import { useAuthStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
 
 const stepIcon: Record<string, any> = {
-  order_submitted: FileText,
+  order_submitted: ShoppingBag,
+  medical_review: Activity,
+  id_verified: FileText,
+  intake_completed: FileText,
   doctor_reviewing: Stethoscope,
   rx_sent: Pill,
-  shipped: Package,
-  delivered: CheckCircle2,
+  shipped: Truck,
+  delivered: Package,
+  refill_eligible: CheckCircle2,
 };
 
 const statusSteps = ORDER_STEPS.map(s => ({ ...s, icon: stepIcon[s.key] }));

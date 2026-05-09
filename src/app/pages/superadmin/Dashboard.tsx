@@ -141,14 +141,14 @@ export function SuperAdminDashboard() {
       {/* KPI GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         {[
-          { label: "Platform MRR", value: `$${totalMRR.toLocaleString(undefined, {minimumFractionDigits: 2})}`, sub: "LIVE PAYMENTS", icon: DollarSign, color: "text-[#22c55e]", bg: "bg-[#22c55e]/10", border: "border-[#22c55e]/20" },
-          { label: "Global Patients", value: uniquePatients.toLocaleString(), sub: "CROSS-BRAND", icon: Users, color: "text-violet-500", bg: "bg-violet-600/10", border: "border-violet-600/20" },
-          { label: "Active Brands", value: "4", sub: "READY FOR SCALE", icon: Building2, color: "text-[#d4c4a8]", bg: "bg-[#d4c4a8]/10", border: "border-[#d4c4a8]/20" },
-          { label: "Infrastructure", value: "99.98%", sub: "SYSTEM UPTIME", icon: Server, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+          { label: "Aggregate MRR", value: `$${totalMRR.toLocaleString(undefined, {minimumFractionDigits: 2})}`, sub: "GLOBAL PAYMENTS", icon: DollarSign, color: "text-[#22c55e]", bg: "bg-[#22c55e]/10", border: "border-[#22c55e]/20" },
+          { label: "Active Brands", value: "8", sub: "READY FOR SCALE", icon: Building2, color: "text-[#d4c4a8]", bg: "bg-[#d4c4a8]/10", border: "border-[#d4c4a8]/20" },
+          { label: "Global Users", value: "24.2K", sub: "CROSS-PORTAL", icon: Users, color: "text-violet-500", bg: "bg-violet-600/10", border: "border-violet-600/20" },
+          { label: "System Health", value: "99.98%", sub: "INFRASTRUCTURE", icon: Server, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" },
         ].map((s, i) => (
-          <div key={i} className={`${theme.card} ${s.border} border rounded-3xl p-6 hover:translate-y-[-4px] transition-all group`}>
+          <div key={i} className={`${theme.card} ${s.border} border rounded-3xl p-6 hover:translate-y-[-4px] transition-all group shadow-xl shadow-black/40`}>
             <div className="flex items-center justify-between mb-4">
-              <div className={`h-12 w-12 rounded-2xl ${s.bg} flex items-center justify-center transition-transform group-hover:scale-110`}>
+              <div className={`h-12 w-12 rounded-2xl ${s.bg} flex items-center justify-center transition-transform group-hover:scale-110 shadow-lg`}>
                 <s.icon className={`h-6 w-6 ${s.color}`} />
               </div>
               <TrendingUp className="h-4 w-4 text-[#7f9488] opacity-50" />
@@ -200,7 +200,7 @@ export function SuperAdminDashboard() {
 
         <div className={`${theme.card} ${theme.border} border rounded-[2rem] p-8`}>
            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold text-white tracking-tight">Revenue Share</h3>
+              <h3 className="text-xl font-bold text-white tracking-tight">Market Distribution</h3>
               <div className="h-8 w-8 rounded-xl bg-white/5 flex items-center justify-center">
                 <PieChart size={16} className="text-[#7f9488]" />
               </div>
@@ -208,14 +208,14 @@ export function SuperAdminDashboard() {
 
            <div className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={brandRevenue} barSize={32}>
+                <BarChart data={brandRevenue} barSize={24}>
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#4f6458", fontWeight: 'bold' }} />
                   <YAxis hide />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0c120f', border: '1px solid #1a2620', borderRadius: '16px' }}
                     formatter={(v: any) => [`$${(v / 1000).toFixed(0)}k`]} 
                   />
-                  <Bar dataKey="revenue" radius={[8, 8, 0, 0]}>
+                  <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
                     {brandRevenue.map((_, i) => (
                       <Cell key={i} fill={i === 0 ? "#7c3aed" : i === 1 ? "#6d28d9" : i === 2 ? "#8b5cf6" : "#a78bfa"} />
                     ))}
@@ -226,12 +226,15 @@ export function SuperAdminDashboard() {
 
            <div className="mt-8 space-y-4">
               {brandRevenue.map((b, i) => (
-                <div key={i} className="flex items-center justify-between">
-                   <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: i === 0 ? "#7c3aed" : i === 1 ? "#6d28d9" : i === 2 ? "#8b5cf6" : "#a78bfa" }}></div>
-                      <span className="text-xs font-bold text-[#7f9488] uppercase">{b.name}</span>
+                <div key={i} className="flex items-center justify-between group cursor-default">
+                   <div className="flex items-center gap-3">
+                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: i === 0 ? "#7c3aed" : i === 1 ? "#6d28d9" : i === 2 ? "#8b5cf6" : "#a78bfa" }}></div>
+                      <span className="text-xs font-bold text-[#7f9488] uppercase group-hover:text-white transition-colors">{b.name}</span>
                    </div>
-                   <span className="text-xs font-black text-white">${(b.revenue / 1000).toFixed(1)}K</span>
+                   <div className="flex items-center gap-3">
+                      <span className="text-xs font-black text-white">${(b.revenue / 1000).toFixed(1)}K</span>
+                      <span className="text-[10px] font-bold text-[#22c55e]">+12%</span>
+                   </div>
                 </div>
               ))}
            </div>

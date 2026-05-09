@@ -23,11 +23,15 @@ const availabilityConfig: Record<AvailabilityStatus, { label: string; color: str
 };
 
 const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg: string }> = {
-  order_submitted: { label: "Awaiting Review", color: "text-amber-500", bg: "bg-amber-500/10" },
-  doctor_reviewing: { label: "Active Review", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
+  order_submitted: { label: "Order Submitted", color: "text-blue-400", bg: "bg-blue-400/10" },
+  medical_review: { label: "Medical Review", color: "text-violet-400", bg: "bg-violet-400/10" },
+  id_verified: { label: "ID Verified", color: "text-emerald-400", bg: "bg-emerald-400/10" },
+  intake_completed: { label: "Intake Complete", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
+  doctor_reviewing: { label: "Physician Review", color: "text-amber-500", bg: "bg-amber-500/10" },
   rx_sent: { label: "Rx Dispatched", color: "text-[#22c55e]", bg: "bg-[#22c55e]/20" },
   shipped: { label: "In Transit", color: "text-blue-500", bg: "bg-blue-500/10" },
   delivered: { label: "Delivered", color: "text-[#7f9488]", bg: "bg-white/5" },
+  refill_eligible: { label: "Refill Eligible", color: "text-emerald-400", bg: "bg-emerald-400/10" },
 };
 
 export function DoctorQueuePage() {
@@ -38,10 +42,13 @@ export function DoctorQueuePage() {
   const [rxNote, setRxNote] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Filter orders for the queue
+  // Filter orders for the queue - show anything that needs attention
   const queue = orders.filter(o => {
-    const isActive = o.status === "order_submitted" || o.status === "doctor_reviewing" || o.status === "rx_sent";
-    const needsRefill = o.nextRefillAt && new Date(o.nextRefillAt) <= new Date();
+    const isActive = [
+      "order_submitted", "medical_review", "id_verified", 
+      "intake_completed", "doctor_reviewing"
+    ].includes(o.status);
+    const needsRefill = o.status === "refill_eligible" || (o.nextRefillAt && new Date(o.nextRefillAt) <= new Date());
     return isActive || needsRefill;
   });
   const selected = queue.find(o => o.id === selectedId) || null;
@@ -351,13 +358,33 @@ export function DoctorQueuePage() {
                             >
                               Finalize & Approve
                             </Button>
-                            <Button 
-                              variant="outline"
-                              className="border-[#22c55e]/40 text-[#22c55e] h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-[#22c55e]/10"
-                              onClick={() => window.open('https://surescripts.com', '_blank')}
-                            >
-                              SureScripts e-Rx
-                            </Button>
+                            <div className="flex flex-col gap-3">
+                              <Button 
+                                variant="outline"
+                                className="border-[#22c55e]/40 text-[#22c55e] h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-[#22c55e]/10 gap-2"
+                                onClick={() => window.open('https://surescripts.com', '_blank')}
+                              >
+                                SureScripts e-Rx
+                              </Button>
+                              <Button 
+                                variant="outline"
+                                className="border-amber-500/40 text-amber-500 h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-amber-500/10 gap-2"
+                                onClick={async (e) => {
+                                  const btn = e.currentTarget;
+                                  const originalContent = btn.innerHTML;
+                                  btn.innerText = "SENDING INVITE...";
+                                  btn.disabled = true;
+                                  await new Promise(r => setTimeout(r, 1500));
+                                  btn.innerText = "INVITE SENT ✓";
+                                  setTimeout(() => {
+                                    btn.innerHTML = originalContent;
+                                    btn.disabled = false;
+                                  }, 3000);
+                                }}
+                              >
+                                <Video size={16} /> Request Video Call
+                              </Button>
+                            </div>
                          </div>
                       </div>
 

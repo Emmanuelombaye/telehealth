@@ -9,7 +9,10 @@ import {
   Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse
 } from "lucide-react";
 import { cn } from "./ui/shared.tsx";
-import { useI18n, brand, useAuthStore, usePatientStore } from "../../lib";
+import { useI18n } from "../../lib/i18n.tsx";
+import { brand } from "../../lib/patient-store";
+import { useAuthStore } from "../../lib/auth-store";
+import { usePatientStore } from "../../lib/patient-store";
 
 type Role = "patient" | "doctor" | "admin" | "superadmin" | "pharmacy";
 

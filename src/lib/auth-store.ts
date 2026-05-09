@@ -10,7 +10,7 @@ interface AuthState {
   role: Role;
   brandId: string | null;
   isLoading: boolean;
-  initialize: () => Promise<void>;
+  initialize: (initialSession?: Session | null) => Promise<void>;
   signOut: () => Promise<void>;
   setSession: (session: Session | null) => void;
 }
@@ -81,9 +81,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   brandId: null,
   isLoading: true,
 
-  initialize: async () => {
+  initialize: async (initialSession) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = initialSession !== undefined ? initialSession : (await supabase.auth.getSession()).data.session;
 
       if (session?.user) {
         // Read role from JWT metadata ONLY — never queries profiles table

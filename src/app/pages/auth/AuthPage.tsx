@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../../../lib/supabaseClient";
-import { useAuthStore } from "../../../lib";
+import { useAuthStore } from "../../../lib/auth-store";
 import { Lock, Mail, AlertCircle, Stethoscope, Shield, User, Eye, EyeOff, ArrowLeft, Pill, KeyRound, Building2, Heart } from "lucide-react";
 
 type Portal = 'patient' | 'doctor' | 'admin' | 'superadmin' | 'pharmacy';
@@ -30,23 +30,35 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const initialize = useAuthStore(state => state.initialize);
   const cleanupDone = useRef(false);
 
-  // ── CRITICAL: Clear previous session on every login page visit ──
-  // This prevents the "logged into doctor, visit superadmin/login → redirects to doctor" bug.
+  // ── OPTIMIZED: Faster login page preparation ──
   useEffect(() => {
     if (cleanupDone.current) return;
     cleanupDone.current = true;
 
-    (async () => {
-      // 1. Wipe dev role override
-      localStorage.removeItem('peak_health_dev_role');
-      // 2. Sign out any existing Supabase session
-      await supabase.auth.signOut();
-      // 3. Re-initialize auth store so it sees "no user"
-      await initialize();
-      // 4. Now show the form
-      setReady(true);
-    })();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    async function cleanup() {
+      try {
+        // 1. Explicitly clear local dev roles
+        localStorage.removeItem('peak_health_dev_role');
+        
+        // 2. Check for existing session first - if none, we skip sign out (faster)
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // Only sign out if there's actually someone logged in
+          await supabase.auth.signOut();
+          await initialize(null); // Explicitly pass null to clear
+        } else {
+          // 3. Re-initialize auth store with null session (already fetched)
+          await initialize(null);
+        }
+      } catch (err) {
+        console.warn('[AuthPage] Initialization cleanup error:', err);
+      } finally {
+        setReady(true);
+      }
+    }
+    cleanup();
+  }, [initialize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Portal target path — always go to the portal the user is logging into
   const portalTarget = (p: Portal) => {

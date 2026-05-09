@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Truck, CheckCircle, Edit2, Search, Printer, ArrowDownUp, CloudDownload, RefreshCw, ChevronDown, Columns, Filter, MoreHorizontal, ArrowUpRight, Package, ShieldCheck } from "lucide-react";
+import { Truck, CheckCircle, Edit2, Search, Printer, ArrowDownUp, CloudDownload, RefreshCw, ChevronDown, Columns, Filter, MoreHorizontal, ArrowUpRight, Package, ShieldCheck, Activity } from "lucide-react";
 import { Card, Button, Badge } from "../../../components/ui/shared.tsx";
 import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminDataTable";
 import { OrderStatus } from "../../../../lib/patient-store";
@@ -8,19 +8,27 @@ import { supabase } from "../../../../lib/supabaseClient";
 import { cn } from "../../../components/ui/utils";
 
 const statusStyles: Record<OrderStatus, string> = {
-  "order_submitted": "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200",
-  "doctor_reviewing": "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400 border-violet-200",
+  "order_submitted": "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200",
+  "medical_review": "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400 border-violet-200",
+  "id_verified": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200",
+  "intake_completed": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200",
+  "doctor_reviewing": "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200",
   "rx_sent": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200",
   "shipped": "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200",
-  "delivered": "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-400 border-slate-200"
+  "delivered": "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-400 border-slate-200",
+  "refill_eligible": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200",
 };
 
 const statusLabels: Record<OrderStatus, string> = {
-  "order_submitted": "Intake Pending",
-  "doctor_reviewing": "Clinical Review",
-  "rx_sent": "Rx Dispatched",
-  "shipped": "In Transit",
-  "delivered": "Delivered"
+  "order_submitted": "Submitted",
+  "medical_review": "Med Review",
+  "id_verified": "ID Verified",
+  "intake_completed": "Intake Done",
+  "doctor_reviewing": "MD Review",
+  "rx_sent": "Rx Sent",
+  "shipped": "Shipped",
+  "delivered": "Delivered",
+  "refill_eligible": "Refill Opt",
 };
 
 export function AdminOrdersPage() {

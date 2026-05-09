@@ -131,14 +131,14 @@ export function AdminDashboard() {
       {/* TOP METRICS ROW */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
         {[
-          { label: "TOTAL PATIENTS", value: "6", status: "LIVE", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
-          { label: "TOTAL DOCTORS", value: "9", status: "STABLE", color: "text-[#22c55e]", bg: "bg-[#22c55e]/5" },
-          { label: "VISITS TODAY", value: "2", status: "INCREASING", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
-          { label: "IN PROGRESS", value: "1", status: "CRITICAL", color: "text-[#ef4444]", bg: "bg-[#ef4444]/10" },
-          { label: "COMPLETED TODAY", value: "0", status: "PENDING", color: "text-[#7f9488]", bg: "bg-white/5" },
-          { label: "ADMITTED", value: "1", status: "ACTIVE", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
-          { label: "OPEN BILLS", value: "3", status: "ACTION REQ", color: "text-[#ef4444]", bg: "bg-[#ef4444]/10", sub: "$2,605" },
-          { label: "DOCTORS AVAILABLE", value: "6", status: "READY", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
+          { label: "TOTAL ORDERS", value: "142", status: "LIVE", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
+          { label: "PENDING REVIEW", value: "18", status: "STABLE", color: "text-amber-500", bg: "bg-amber-500/5" },
+          { label: "REV TODAY", value: "$4.2K", status: "INCREASING", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
+          { label: "ACTIVE PATIENTS", value: "842", status: "STABLE", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
+          { label: "DISPUTES", value: "2", status: "CRITICAL", color: "text-[#ef4444]", bg: "bg-[#ef4444]/10" },
+          { label: "PHARMACY LAG", value: "4m", status: "OPTIMAL", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
+          { label: "OPEN TICKETS", value: "12", status: "ACTION REQ", color: "text-[#ef4444]", bg: "bg-[#ef4444]/10" },
+          { label: "AUTH RATE", value: "98%", status: "HEALTHY", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
         ].map((stat, i) => (
           <div key={i} className={`${theme.card} ${theme.border} border rounded-2xl p-4 flex flex-col justify-between hover:border-[#22c55e]/30 transition-all group cursor-default hover:shadow-[0_10px_30px_rgba(34,197,94,0.05)]`}>
             <div>
@@ -150,7 +150,6 @@ export function AdminDashboard() {
             </div>
             <div className="mt-2 pt-2 border-t border-[#1a2620] flex items-center justify-between">
               <span className={`text-[8px] font-black ${stat.color} tracking-tighter`}>{stat.status}</span>
-              {stat.sub && <span className="text-[10px] font-bold text-[#ef4444]">{stat.sub}</span>}
             </div>
           </div>
         ))}
@@ -205,23 +204,28 @@ export function AdminDashboard() {
           {/* TRIAGE ACTION BAR */}
           <div className={`rounded-3xl border border-[#ef4444]/30 bg-gradient-to-r from-[#2d1212] to-[#1a0a0a] p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg shadow-red-950/10`}>
             <div className="flex items-start gap-5">
-              <div className="bg-[#ef4444]/10 p-4 rounded-2xl border border-[#ef4444]/20">
+              <div className="bg-[#ef4444]/10 p-4 rounded-2xl border border-[#ef4444]/20 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
                 <HeartPulse className="text-[#ef4444] animate-pulse" size={24} />
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="text-lg font-bold text-white tracking-tight">10 patient requests awaiting triage</h3>
+                  <h3 className="text-lg font-bold text-white tracking-tight">Active Operations Monitor</h3>
                   <div className="flex gap-2">
-                    <span className="bg-[#ef4444] text-white text-[9px] font-black px-2 py-1 rounded-lg uppercase tracking-tighter shadow-md shadow-red-500/20">2 Emergency</span>
-                    <span className="bg-[#f59e0b] text-white text-[9px] font-black px-2 py-1 rounded-lg uppercase tracking-tighter shadow-md shadow-amber-500/20">3 Urgent</span>
+                    <span className="bg-[#ef4444] text-white text-[9px] font-black px-2 py-1 rounded-lg uppercase tracking-tighter shadow-md shadow-red-500/20">4 Critical</span>
+                    <span className="bg-[#f59e0b] text-white text-[9px] font-black px-2 py-1 rounded-lg uppercase tracking-tighter shadow-md shadow-amber-500/20">8 Pending Review</span>
                   </div>
                 </div>
-                <p className="text-xs text-[#ef4444]/70 mt-1 font-medium italic">"Critical wait time threshold exceeded in Brand B portal (300m+)"</p>
+                <p className="text-xs text-[#ef4444]/70 mt-1 font-medium italic">"Abnormal order volume detected in Northeast region (Brand A)"</p>
               </div>
             </div>
-            <button className="w-full md:w-auto bg-[#ef4444] text-white font-black text-xs px-8 py-4 rounded-2xl hover:bg-[#dc2626] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-red-500/20 whitespace-nowrap">
-              OPEN TRIAGE QUEUE →
-            </button>
+            <div className="flex gap-3 w-full md:w-auto">
+              <button className="flex-1 md:flex-none bg-[#ef4444] text-white font-black text-xs px-8 py-4 rounded-2xl hover:bg-[#dc2626] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-red-500/20 whitespace-nowrap uppercase tracking-widest">
+                Deploy Triage →
+              </button>
+              <button className="flex-1 md:flex-none bg-white/5 border border-white/10 text-white font-black text-xs px-6 py-4 rounded-2xl hover:bg-white/10 transition-all uppercase tracking-widest">
+                Ignore
+              </button>
+            </div>
           </div>
 
           {/* MAIN CHARTS SECTION */}

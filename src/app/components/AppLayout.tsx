@@ -3,12 +3,11 @@ import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { Activity, Bell, Search, User, Menu, ChevronLeft, LogOut } from "lucide-react";
 import { Button } from "./ui/shared.tsx";
-import { useAuthStore } from "../../lib";
+import { useAuthStore } from "../../lib/auth-store";
+import { usePatientStore } from "../../lib/patient-store";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "./ui/utils";
-import { usePatientStore } from "../../lib";
-import { useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 export function AppLayout() {

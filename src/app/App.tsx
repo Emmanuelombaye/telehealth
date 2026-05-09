@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { RouterProvider } from 'react-router';
 import { router } from './routes';
 import { Toaster } from 'sonner';
-import { usePatientStore, useAuthStore } from '../lib';
+import { usePatientStore } from '../lib/patient-store';
+import { useAuthStore } from '../lib/auth-store';
 
 export default function App() {
   const fetchOrders = usePatientStore(state => state.fetchOrders);

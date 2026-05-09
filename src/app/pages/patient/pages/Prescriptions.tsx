@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Pill, MapPin, Clock, Loader2, ShoppingBag, ChevronRight, Stethoscope, ShieldCheck, ArrowRight, Download, RefreshCw } from "lucide-react";
+import { Pill, MapPin, Clock, Loader2, ShoppingBag, ChevronRight, Stethoscope, ShieldCheck, ArrowRight, Download, RefreshCw, Activity } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";

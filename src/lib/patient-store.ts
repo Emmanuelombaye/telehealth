@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { supabase } from './supabaseClient';
+import { useAuthStore } from './auth-store';
 
 // Centralized reactive Zustand store for the global state (Patient/Doctor/Admin).
 // Source of truth for: brand config, active order pipeline, doctor availability.
@@ -7,17 +9,25 @@ import { devtools, persist } from 'zustand/middleware';
 
 export type OrderStatus =
   | "order_submitted"
+  | "medical_review"
+  | "id_verified"
+  | "intake_completed"
   | "doctor_reviewing"
   | "rx_sent"
   | "shipped"
-  | "delivered";
+  | "delivered"
+  | "refill_eligible";
 
 export const ORDER_STEPS: { key: OrderStatus; label: string; desc: string }[] = [
-  { key: "order_submitted", label: "Order Submitted", desc: "Health questionnaire received by our clinical team" },
-  { key: "doctor_reviewing", label: "Doctor Reviewing", desc: "A physician is reviewing your medical profile" },
-  { key: "rx_sent", label: "Prescription Sent", desc: "Prescription approved and sent to pharmacy" },
-  { key: "shipped", label: "Shipped", desc: "Medication shipped" },
-  { key: "delivered", label: "Delivered", desc: "Medication delivered" },
+  { key: "order_submitted", label: "Order Submitted", desc: "Treatment selection and payment received" },
+  { key: "medical_review", label: "Medical Review", desc: "Automated clinical risk assessment and safety check" },
+  { key: "id_verified", label: "ID Verified", desc: "Identity and age verification successful" },
+  { key: "intake_completed", label: "Intake Completed", desc: "Health questionnaire and medical history received" },
+  { key: "doctor_reviewing", label: "Doctor Reviewing", desc: "A licensed physician is evaluating your profile" },
+  { key: "rx_sent", label: "Prescription Sent", desc: "Approval granted and sent to fulfillment center" },
+  { key: "shipped", label: "Shipped", desc: "Medication is in transit to your address" },
+  { key: "delivered", label: "Delivered", desc: "Package has been successfully delivered" },
+  { key: "refill_eligible", label: "Refill Eligible", desc: "You are now eligible to request a treatment refill" },
 ];
 
 export type Order = {
@@ -134,8 +144,6 @@ interface AppState {
   resetStore: () => void;
 }
 
-import { supabase } from './supabaseClient';
-import { useAuthStore } from './auth-store';
 
 export const usePatientStore = create<AppState>()(
   devtools(
