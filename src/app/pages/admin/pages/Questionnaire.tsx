@@ -1,20 +1,8 @@
-import { useState } from "react";
-import { Search, Plus, Filter, FileText, ArrowLeft, Smartphone, Trash2, GripVertical, Settings2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Plus, Filter, FileText, ArrowLeft, Smartphone, Trash2, GripVertical, Settings2, Loader2 } from "lucide-react";
 import { Card, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { AdminDataTable, StatusText, ActionBadge } from "../../../components/ui/tables/AdminDataTable";
-
-const mockQuestionnaires = [
-  { id: "6839", name: "Methylene Blue", date: "12/05/2025", questions: "61", products: "1", checkoutPages: "13", domain: "https://go.trygenesis.com", slug: "methylene-blue", review: "Unpublish", status: "Approved", mode: "Test", intake: "-", lastUsed: "5/7/2026" },
-  { id: "6601", name: "ED Intake", date: "11/20/2025", questions: "64", products: "1", checkoutPages: "1", domain: "https://go.trygenesis.com", slug: "ed-intake", review: "Unpublish", status: "Approved", mode: "Test", intake: "-", lastUsed: "5/4/2026" },
-  { id: "6600", name: "Sermorelin Intake", date: "11/20/2025", questions: "64", products: "2", checkoutPages: "13", domain: "https://go.trygenesis.com", slug: "sermorelin-intake", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "5/7/2026" },
-  { id: "6586", name: "Hair Loss Intake", date: "11/19/2025", questions: "98", products: "3", checkoutPages: "8", domain: "https://go.trygenesis.com", slug: "hairloss-intake", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "12/5/2025" },
-  { id: "6584", name: "Anti Aging Intake", date: "11/19/2025", questions: "42", products: "5", checkoutPages: "5", domain: "https://go.trygenesis.com", slug: "anti-aging-intake", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "5/7/2026" },
-  { id: "5189", name: "Personalized WL Membershi", date: "7/31/2025", questions: "97", products: "0", checkoutPages: "4", domain: "https://go.trygenesis.com", slug: "personalized-weightloss-ex", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "5/6/2026" },
-  { id: "4413", name: "Personalized Weight Loss Me", date: "5/22/2025", questions: "97", products: "0", checkoutPages: "4", domain: "https://go.trygenesis.com", slug: "weight-loss-memberships", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "5/7/2026" },
-  { id: "4367", name: "Weight Loss Memberships 2r", date: "5/20/2025", questions: "82", products: "0", checkoutPages: "9", domain: "https://go.trygenesis.com", slug: "wl-m", review: "Publish", status: "Draft", mode: "Test", intake: "-", lastUsed: "5/20/2025" },
-  { id: "4254", name: "Weight Loss Memberships 2r", date: "5/12/2025", questions: "81", products: "4", checkoutPages: "11", domain: "https://go.trygenesis.com", slug: "weight-loss-memberships-2r", review: "Unpublish", status: "Approved", mode: "Live", intake: "-", lastUsed: "12/12/2025" },
-  { id: "4202", name: "New Questionnaire Template", date: "5/8/2025", questions: "119", products: "0", checkoutPages: "20", domain: "https://go.trygenesis.com", slug: "template-new", review: "Publish", status: "Draft", mode: "Test", intake: "-", lastUsed: "-" },
-];
+import { supabase } from "../../../../lib/supabaseClient";
 
 type QuestionType = "text" | "choice" | "yes_no";
 
@@ -27,12 +15,33 @@ interface Question {
 }
 
 export function AdminQuestionnairePage() {
+  const [questionnaires, setQuestionnaires] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isBuilding, setIsBuilding] = useState(false);
   const [formName, setFormName] = useState("New Intake Form");
   const [questions, setQuestions] = useState<Question[]>([
     { id: "1", type: "text", title: "What is your main health concern?", required: true },
     { id: "2", type: "yes_no", title: "Are you currently taking any prescription medications?", required: true }
   ]);
+
+  useEffect(() => {
+    async function fetchQuestionnaires() {
+      try {
+        const { data, error } = await supabase
+          .from('admin_questionnaires')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setQuestionnaires(data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchQuestionnaires();
+  }, []);
 
   const addQuestion = (type: QuestionType) => {
     setQuestions([
@@ -261,7 +270,7 @@ export function AdminQuestionnairePage() {
       </div>
 
       <AdminDataTable 
-        data={mockQuestionnaires} 
+        data={questionnaires} 
         columns={columns} 
         searchPlaceholder="Search by questionnaire name, slug, or ID"
         onRowClick={() => setIsBuilding(true)}

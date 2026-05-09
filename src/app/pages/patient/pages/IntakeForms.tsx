@@ -1,19 +1,16 @@
-import { useState } from "react";
-import { CheckCircle2, Circle, ChevronRight, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CheckCircle2, Circle, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { usePatientStore } from "../../../../lib/patient-store";
-
-const forms = [
-  { id: 1, title: "General Health Intake", status: "completed", required: true, completedDate: "May 10, 2026" },
-  { id: 2, title: "Cardiovascular Risk Assessment", status: "pending", required: true, completedDate: null },
-  { id: 3, title: "Mental Health Screening (PHQ-9)", status: "pending", required: false, completedDate: null },
-  { id: 4, title: "Medication History", status: "completed", required: true, completedDate: "May 10, 2026" },
-  { id: 5, title: "Allergy & Adverse Reactions", status: "in-progress", required: true, completedDate: null },
-];
+import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib";
 
 const steps = ["Personal Info", "Medical History", "Symptoms", "Medications", "Review"];
 
 export function IntakeFormsPage() {
+  const { user } = useAuthStore();
+  const [forms, setForms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeForm, setActiveForm] = useState<number | null>(null);
   const [step, setStep] = useState(0);
   const [viewMode, setViewMode] = useState(false);
@@ -23,6 +20,37 @@ export function IntakeFormsPage() {
   const setIntakeFormData = usePatientStore(state => state.setIntakeFormData);
 
   // Read-only view for completed forms
+  useEffect(() => {
+    if (!user) return;
+    async function fetchForms() {
+      try {
+        const { data, error } = await supabase
+          .from('intake_forms')
+          .select('*')
+          .eq('patient_id', user!.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setForms(data || []);
+      } catch (err) {
+        console.error(err);
+      } finally { setLoading(false); }
+    }
+    fetchForms();
+  }, [user]);
+
+  const handleSubmit = async () => {
+    if (!activeForm || !user) return;
+    try {
+      await supabase.from('intake_forms').update({ status: 'completed', completed_date: new Date().toLocaleDateString() }).eq('id', activeForm);
+      setForms(forms.map(f => f.id === activeForm ? { ...f, status: 'completed', completed_date: new Date().toLocaleDateString() } : f));
+      setActiveForm(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+
   if (activeForm !== null && viewMode) {
     const form = forms.find(f => f.id === activeForm);
     return (
@@ -223,7 +251,7 @@ export function IntakeFormsPage() {
           {step > 0 && <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setStep(s => s - 1)}>Back</Button>}
           {step < steps.length - 1
             ? <Button className="flex-1 rounded-xl" onClick={() => setStep(s => s + 1)}>Continue</Button>
-            : <Button className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-600" onClick={() => setActiveForm(null)}>Submit Securely</Button>
+            : <Button className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-600" onClick={handleSubmit}>Submit Securely</Button>
           }
         </div>
       </div>

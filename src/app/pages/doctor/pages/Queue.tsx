@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   Users, Clock, Video, MessageSquare, FileText, ChevronRight,
   CheckCircle2, AlertCircle, Circle, Stethoscope, Pill,
@@ -31,6 +31,7 @@ const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg:
 };
 
 export function DoctorQueuePage() {
+  const navigate = useNavigate();
   const { orders, updateOrderStatus, updateOrderRx, fetchOrders, subscribeToOrders } = usePatientStore();
   const [availability, setAvailability] = useState<AvailabilityStatus>("available");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -241,7 +242,7 @@ export function DoctorQueuePage() {
 
                     <div className="flex gap-3">
                       <Button 
-                        onClick={() => updateOrderStatus(selected.id, 'doctor_reviewing')}
+                        onClick={() => navigate(`/doctor/consult?orderId=${selected.id}`)}
                         className="rounded-2xl bg-[#22c55e] text-black font-black uppercase italic px-6 h-12 shadow-lg shadow-[#22c55e]/20 group"
                       >
                         <Video className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" /> 

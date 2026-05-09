@@ -1,26 +1,51 @@
-import { useState } from "react";
-import { Search, Printer, ArrowDownUp, CloudDownload, RefreshCw, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Printer, ArrowDownUp, CloudDownload, RefreshCw, ChevronDown, Loader2 } from "lucide-react";
 import { Card } from "../../../components/ui/shared.tsx";
 import { AdminDataTable } from "../../../components/ui/tables/AdminDataTable";
-
-// Mock Data from Bask Health Screenshot
-const mockPatients = [
-  { id: "1", name: "Arista Steyn", date: "05/05/2026", mrn: "E96722429", subscription: "$0", product: "N/A" },
-  { id: "2", name: "Lynda Ellison", date: "05/05/2026", mrn: "R11263215", subscription: "$0", product: "N/A" },
-  { id: "3", name: "Joyce Robertson", date: "05/05/2026", mrn: "I75373261", subscription: "$0", product: "N/A" },
-  { id: "4", name: "Cheryl Gaspard", date: "05/05/2026", mrn: "Z45572227", subscription: "$0", product: "N/A" },
-  { id: "5", name: "John Morgan", date: "05/05/2026", mrn: "S09023269", subscription: "$0", product: "N/A" },
-  { id: "6", name: "Michelle Sault", date: "05/05/2026", mrn: "S20564877", subscription: "$0", product: "N/A" },
-  { id: "7", name: "Marlene Ponce", date: "05/04/2026", mrn: "O26118938", subscription: "$0", product: "N/A" },
-  { id: "8", name: "Skillatria User", date: "05/04/2026", mrn: "Y86920229", subscription: "$0", product: "N/A" },
-  { id: "9", name: "Misanly Marquez Ortiz", date: "05/04/2026", mrn: "K35472620", subscription: "$0", product: "N/A" },
-  { id: "10", name: "Tiffany Morris", date: "05/04/2026", mrn: "Y70564083", subscription: "$0", product: "N/A" },
-];
-
-const tabs = ["All", "Active", "Pending", "Abandoned", "Canceled"];
+import { supabase } from "../../../../lib/supabaseClient";
 
 export function AdminPatientsPage() {
   const [activeTab, setActiveTab] = useState("All");
+  const [patients, setPatients] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPatients() {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('id, order_number, patient_name, mrn, amount, created_at')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const uniquePatients: any[] = [];
+        const seen = new Set();
+
+        (data || []).forEach(order => {
+          const pId = order.patient_name || order.id;
+          if (!seen.has(pId)) {
+            seen.add(pId);
+            uniquePatients.push({
+              id: order.id,
+              name: order.patient_name || "New Patient",
+              date: new Date(order.created_at).toLocaleDateString(),
+              mrn: order.mrn || "Pending",
+              subscription: typeof order.amount === 'number' ? `$${order.amount}` : order.amount || "$0",
+              product: "Telehealth Visit"
+            });
+          }
+        });
+
+        setPatients(uniquePatients);
+      } catch (err) {
+        console.error("Error fetching patients:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPatients();
+  }, []);
 
   const columns = [
     { header: "Name", accessorKey: "name", cell: (item: any) => (
@@ -32,14 +57,17 @@ export function AdminPatientsPage() {
     { header: "Product Name", accessorKey: "product" },
   ];
 
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+
   return (
     <div className="max-w-[1500px] mx-auto font-sans space-y-6">
       <h1 className="text-2xl font-semibold">Patients</h1>
       <AdminDataTable 
-        data={mockPatients} 
+        data={patients} 
         columns={columns} 
         searchPlaceholder="Search by Patient ID, name, email, phone number, MRN#" 
       />
     </div>
   );
 }
+

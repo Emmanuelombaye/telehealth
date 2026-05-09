@@ -131,6 +131,85 @@ CREATE TABLE public.appointments (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 9. VISIT SUMMARIES
+DROP TABLE IF EXISTS public.visit_summaries CASCADE;
+CREATE TABLE public.visit_summaries (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    doctor_id UUID REFERENCES auth.users(id),
+    doctor_name TEXT,
+    specialty TEXT,
+    date TIMESTAMPTZ DEFAULT now(),
+    type TEXT DEFAULT 'video' CHECK (type IN ('video', 'async')),
+    diagnosis TEXT,
+    follow_up_date TIMESTAMPTZ,
+    report_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 10. VISIT FORMS (Questionnaires/Consents)
+DROP TABLE IF EXISTS public.visit_forms CASCADE;
+CREATE TABLE public.visit_forms (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    visit_name TEXT,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'in-progress')),
+    urgent BOOLEAN DEFAULT false,
+    form_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 11. DOCTOR AVAILABILITY
+DROP TABLE IF EXISTS public.doctor_availability CASCADE;
+CREATE TABLE public.doctor_availability (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    specialty TEXT NOT NULL,
+    avatar TEXT NOT NULL,
+    available BOOLEAN DEFAULT true,
+    wait_time TEXT DEFAULT '< 5 min',
+    next_slot TEXT DEFAULT 'Available now'
+);
+
+INSERT INTO public.doctor_availability (name, specialty, avatar, available, wait_time, next_slot) VALUES
+('Dr. Sarah Chen', 'Weight Loss Specialist', 'SC', true, '< 5 min', 'Available now'),
+('Dr. Michael Patel', 'Men''s Health', 'MP', true, '~ 10 min', '10:15 AM'),
+('Dr. Emily Stone', 'General Practice', 'ES', false, 'Unavailable', 'Tomorrow 9:00 AM');
+
+-- 12. INTAKE FORMS
+DROP TABLE IF EXISTS public.intake_forms CASCADE;
+CREATE TABLE public.intake_forms (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in-progress', 'completed')),
+    required BOOLEAN DEFAULT true,
+    completed_date TEXT,
+    form_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+
+-- 13. ADMIN QUESTIONNAIRES
+DROP TABLE IF EXISTS public.admin_questionnaires CASCADE;
+CREATE TABLE public.admin_questionnaires (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    date TEXT,
+    questions TEXT,
+    products TEXT,
+    checkout_pages TEXT,
+    domain TEXT,
+    slug TEXT,
+    review TEXT,
+    status TEXT,
+    mode TEXT,
+    intake TEXT,
+    last_used TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- ENABLE RLS ON ALL TABLES
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.family_members ENABLE ROW LEVEL SECURITY;
@@ -141,14 +220,52 @@ ALTER TABLE public.insurance_claims ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.identity_verification ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.prescriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.visit_summaries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.visit_forms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.intake_forms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.doctor_availability ENABLE ROW LEVEL SECURITY;
 
--- POLICIES (Users see their own data)
-CREATE POLICY "Select Notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Select Family" ON public.family_members FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Select Labs" ON public.lab_results FOR SELECT USING (auth.uid() = patient_id);
-CREATE POLICY "Select Docs" ON public.patient_documents FOR SELECT USING (auth.uid() = patient_id);
-CREATE POLICY "Select Ins Plans" ON public.insurance_plans FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Select Ins Claims" ON public.insurance_claims FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Select Identity" ON public.identity_verification FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Select Prescriptions" ON public.prescriptions FOR SELECT USING (auth.uid() = patient_id);
-CREATE POLICY "Select Appointments" ON public.appointments FOR SELECT USING (auth.uid() = patient_id);
+-- POLICIES
+
+-- Notifications
+CREATE POLICY "Users can view their own notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can update their own notifications" ON public.notifications FOR UPDATE USING (auth.uid() = user_id);
+
+-- Family Members
+CREATE POLICY "Users can view their family members" ON public.family_members FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert family members" ON public.family_members FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete family members" ON public.family_members FOR DELETE USING (auth.uid() = user_id);
+
+-- Patient Documents
+CREATE POLICY "Users can view their own documents" ON public.patient_documents FOR SELECT USING (auth.uid() = patient_id);
+CREATE POLICY "Users can upload their own documents" ON public.patient_documents FOR INSERT WITH CHECK (auth.uid() = patient_id);
+
+-- Insurance
+CREATE POLICY "Users can view their insurance plans" ON public.insurance_plans FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can view their claims" ON public.insurance_claims FOR SELECT USING (auth.uid() = user_id);
+
+-- Lab Results
+CREATE POLICY "Users can view their lab results" ON public.lab_results FOR SELECT USING (auth.uid() = patient_id);
+
+-- Prescriptions
+CREATE POLICY "Users can view their prescriptions" ON public.prescriptions FOR SELECT USING (auth.uid() = patient_id);
+
+-- Appointments
+CREATE POLICY "Users can view their appointments" ON public.appointments FOR SELECT USING (auth.uid() = patient_id);
+
+-- Visit Summaries
+CREATE POLICY "Users can view their visit summaries" ON public.visit_summaries FOR SELECT USING (auth.uid() = patient_id);
+CREATE POLICY "Doctors can insert visit summaries" ON public.visit_summaries FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Visit Forms
+CREATE POLICY "Users can view their visit forms" ON public.visit_forms FOR SELECT USING (auth.uid() = patient_id);
+CREATE POLICY "Users can update their visit forms" ON public.visit_forms FOR UPDATE USING (auth.uid() = patient_id);
+
+-- Intake Forms
+CREATE POLICY "Users can view their intake forms" ON public.intake_forms FOR SELECT USING (auth.uid() = patient_id);
+CREATE POLICY "Users can update their intake forms" ON public.intake_forms FOR UPDATE USING (auth.uid() = patient_id);
+CREATE POLICY "Users can insert intake forms" ON public.intake_forms FOR INSERT WITH CHECK (auth.uid() = patient_id);
+
+-- Doctor Availability
+CREATE POLICY "Anyone can view doctor availability" ON public.doctor_availability FOR SELECT USING (true);
+CREATE POLICY "Doctors can update their availability" ON public.doctor_availability FOR UPDATE USING (auth.uid() IS NOT NULL);

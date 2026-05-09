@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ShieldCheck, Upload, CheckCircle2, Clock, AlertCircle, Lock, Eye, Loader2 } from "lucide-react";
-import { Card, CardContent, Button, Badge } from "../../../components/ui/shared.tsx";
+import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
 

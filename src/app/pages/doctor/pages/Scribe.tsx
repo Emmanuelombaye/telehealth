@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { Mic, MicOff, Save, RefreshCw, FileText, Bot, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared.tsx";
+import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib";
 
 export function DoctorScribePage() {
+  const { user } = useAuthStore();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [soapNote, setSoapNote] = useState({
@@ -39,8 +42,24 @@ export function DoctorScribePage() {
           <p className="text-sm text-muted-foreground">Automated ambient listening and SOAP note generation.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-xl"><RefreshCw className="h-4 w-4 mr-2" /> Clear</Button>
-          <Button className="rounded-xl bg-emerald-600 hover:bg-emerald-700"><Save className="h-4 w-4 mr-2" /> Save to EHR</Button>
+          <Button variant="outline" className="rounded-xl" onClick={() => setSoapNote({subjective:"", objective:"", assessment:"", plan:""})}><RefreshCw className="h-4 w-4 mr-2" /> Clear</Button>
+          <Button className="rounded-xl bg-emerald-600 hover:bg-emerald-700" onClick={async () => {
+            if (!user) return;
+            try {
+              await supabase.from('visit_summaries').insert({
+                patient_id: user.id, // Ideally this would be the actual patient ID context
+                doctor_id: user.id,
+                diagnosis: soapNote.assessment,
+                treatment_plan: soapNote.plan,
+                notes: `Subjective: ${soapNote.subjective}\nObjective: ${soapNote.objective}`,
+                date: new Date().toISOString()
+              });
+              alert("Saved to EHR successfully!");
+              setSoapNote({subjective:"", objective:"", assessment:"", plan:""});
+            } catch (e) {
+              console.error(e);
+            }
+          }}><Save className="h-4 w-4 mr-2" /> Save to EHR</Button>
         </div>
       </div>
 

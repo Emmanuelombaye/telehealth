@@ -1,15 +1,37 @@
-import { FileCheck, Clock, CheckCircle2, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { FileCheck, Clock, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
-
-const visitForms = [
-  { id: 1, title: "Chief Complaint Form", visit: "General Consultation — May 19", status: "pending", urgent: true },
-  { id: 2, title: "Consent to Treat", visit: "General Consultation — May 19", status: "pending", urgent: true },
-  { id: 3, title: "Telehealth Consent", visit: "General Consultation — May 19", status: "completed", urgent: false },
-  { id: 4, title: "Post-Visit Satisfaction Survey", visit: "Cardiology — May 1", status: "pending", urgent: false },
-  { id: 5, title: "Follow-up Symptom Check", visit: "Cardiology — May 1", status: "completed", urgent: false },
-];
+import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib";
 
 export function VisitFormsPage() {
+  const { user } = useAuthStore();
+  const [visitForms, setVisitForms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    async function fetch() {
+      try {
+        const { data, error } = await supabase
+          .from('visit_forms')
+          .select('*')
+          .eq('patient_id', user!.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setVisitForms(data || []);
+      } catch (err) {
+        console.error(err);
+      } finally { setLoading(false); }
+    }
+    fetch();
+  }, [user]);
+
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+
+  const pendingCount = visitForms.filter(f => f.status === 'pending').length;
+  const completedCount = visitForms.filter(f => f.status === 'completed').length;
+
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
@@ -20,20 +42,28 @@ export function VisitFormsPage() {
       <div className="grid grid-cols-2 gap-3">
         <Card className="border-none bg-primary/5">
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-extrabold text-primary">2</p>
+            <p className="text-2xl font-extrabold text-primary">{pendingCount}</p>
             <p className="text-xs text-muted-foreground mt-0.5">Pending</p>
           </CardContent>
         </Card>
         <Card className="border-none bg-emerald-50 dark:bg-emerald-950/30">
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-extrabold text-emerald-600">2</p>
+            <p className="text-2xl font-extrabold text-emerald-600">{completedCount}</p>
             <p className="text-xs text-muted-foreground mt-0.5">Completed</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="space-y-3">
-        {visitForms.map(form => (
+        {visitForms.length === 0 ? (
+          <Card className="border-dashed border-2 bg-muted/20">
+            <CardContent className="p-10 text-center text-muted-foreground">
+              <FileCheck className="h-10 w-10 mx-auto mb-3 opacity-20" />
+              <p className="text-sm font-medium">No forms assigned</p>
+              <p className="text-xs mt-1">Check back here if your doctor requests additional info or consent.</p>
+            </CardContent>
+          </Card>
+        ) : visitForms.map(form => (
           <Card key={form.id} className={cn("hover:border-primary/40 transition-colors", form.urgent && form.status === "pending" && "border-l-4 border-l-amber-500")}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -49,7 +79,7 @@ export function VisitFormsPage() {
                     <p className="text-sm font-semibold">{form.title}</p>
                     {form.urgent && form.status === "pending" && <Badge variant="destructive" className="text-[9px]">Urgent</Badge>}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{form.visit}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{form.visit_name}</p>
                 </div>
                 {form.status === "pending"
                   ? <Button size="sm" className="rounded-xl text-xs shrink-0">Fill Out</Button>

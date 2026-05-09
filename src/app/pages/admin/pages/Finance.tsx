@@ -1,20 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, CreditCard, ExternalLink, RefreshCw, Columns } from "lucide-react";
 import { Card, Button } from "../../../components/ui/shared.tsx";
-
-const mockInvoices = [
-  { id: "Upcoming", plan: "Enterprise", amount: "$4,499.99", status: "Processing", method: "--", date: "--" },
-  { id: "911B6F01-0039", plan: "Enterprise", amount: "$3,004.85", status: "Paid", method: "Visa Card ****2792", date: "May 4, 2026" },
-  { id: "911B6F01-0038", plan: "Enterprise", amount: "$3,397.83", status: "Paid", method: "Visa Card ****2792", date: "Apr 24, 2026" },
-  { id: "911B6F01-0037", plan: "Enterprise", amount: "$7,387.87", status: "Paid", method: "Visa Card ****2792", date: "Apr 19, 2026" },
-  { id: "911B6F01-0036", plan: "Enterprise", amount: "$3,135.79", status: "Paid", method: "Visa Card ****2792", date: "Apr 12, 2026" },
-];
+import { supabase } from "../../../../lib/supabaseClient";
 
 const tabs = ["Overview", "Invoices", "Contracts"];
 const invoiceFilters = ["All", "Paid", "Open", "Failed", "Processing", "Canceled"];
 
 export function AdminFinancePage() {
   const [activeTab, setActiveTab] = useState("Overview");
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchInvoices() {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('id, amount, status, created_at, category')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        
+        const mapped = (data || []).map(o => ({
+          id: o.id.substring(0,8).toUpperCase(),
+          plan: o.category || "Consultation",
+          amount: typeof o.amount === 'number' ? `$${o.amount}` : o.amount || "$0.00",
+          status: o.status === 'delivered' || o.status === 'shipped' || o.status === 'rx_sent' ? 'Paid' : 'Processing',
+          method: "Visa Card ****2792",
+          date: new Date(o.created_at).toLocaleDateString()
+        }));
+
+        setInvoices(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchInvoices();
+  }, []);
 
   return (
     <div className="max-w-[1400px] mx-auto font-sans space-y-6">
@@ -164,7 +188,7 @@ export function AdminFinancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
-                {mockInvoices.map((item, i) => (
+                {invoices.map((item, i) => (
                   <tr key={i} className="hover:bg-muted/20 transition-colors">
                     <td className="py-4 px-6 font-semibold text-foreground">{item.id}</td>
                     <td className="py-4 px-4 text-foreground/80">{item.plan}</td>

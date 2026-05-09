@@ -15,10 +15,9 @@ export function PrescriptionsPage() {
     async function fetch() {
       try {
         const { data, error } = await supabase
-          .from('orders')
-          .select('id, order_number, medication, dosage_instructions, doctor, doctor_note, pharmacy, status, ordered_date, amount')
-          .eq('user_id', user!.id)
-          .in('status', ['rx_sent', 'shipped', 'delivered'])
+          .from('prescriptions')
+          .select('*')
+          .eq('patient_id', user!.id)
           .order('created_at', { ascending: false });
         if (error) throw error;
         setPrescriptions(data || []);
@@ -27,14 +26,14 @@ export function PrescriptionsPage() {
       } finally { setLoading(false); }
     }
     fetch();
-    const ch = supabase.channel('px').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetch).subscribe();
+    const ch = supabase.channel('px').on('postgres_changes', { event: '*', schema: 'public', table: 'prescriptions' }, fetch).subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user]);
 
   const cfg = (s: string) => ({
-    rx_sent: { label: 'Ready to Fill', pill: 'text-amber-600', bg: 'bg-amber-100' },
-    shipped:  { label: 'Shipped',       pill: 'text-blue-600',  bg: 'bg-blue-100'  },
-    delivered:{ label: 'Delivered',     pill: 'text-emerald-600',bg: 'bg-emerald-100'},
+    active: { label: 'Active', pill: 'text-amber-600', bg: 'bg-amber-100' },
+    inactive:  { label: 'Inactive',       pill: 'text-blue-600',  bg: 'bg-blue-100'  },
+    completed:{ label: 'Completed',     pill: 'text-emerald-600',bg: 'bg-emerald-100'},
   } as any)[s] || { label: s, pill: 'text-muted-foreground', bg: 'bg-muted' };
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
@@ -44,9 +43,9 @@ export function PrescriptionsPage() {
       <h1 className="text-xl font-bold">Prescriptions</h1>
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Ready", count: prescriptions.filter(p=>p.status==='rx_sent').length, color: "text-amber-600" },
-          { label: "Shipped", count: prescriptions.filter(p=>p.status==='shipped').length, color: "text-blue-600" },
-          { label: "Delivered", count: prescriptions.filter(p=>p.status==='delivered').length, color: "text-emerald-600" },
+          { label: "Active", count: prescriptions.filter(p=>p.status==='active').length, color: "text-amber-600" },
+          { label: "Inactive", count: prescriptions.filter(p=>p.status==='inactive').length, color: "text-blue-600" },
+          { label: "Completed", count: prescriptions.filter(p=>p.status==='completed').length, color: "text-emerald-600" },
         ].map((s, i) => (
           <Card key={i} className="border-none bg-muted/50">
             <CardContent className="p-3 text-center">
@@ -68,7 +67,7 @@ export function PrescriptionsPage() {
       ) : prescriptions.map(rx => {
         const c = cfg(rx.status);
         return (
-          <Card key={rx.id} className={cn("hover:border-primary/40 transition-colors", rx.status==='rx_sent' && "border-l-4 border-l-amber-500")}>
+          <Card key={rx.id} className={cn("hover:border-primary/40 transition-colors", rx.status==='active' && "border-l-4 border-l-amber-500")}>
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <div className={cn("h-11 w-11 rounded-2xl flex items-center justify-center shrink-0", c.bg)}>
@@ -76,15 +75,15 @@ export function PrescriptionsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-bold text-sm">{rx.medication}</p>
+                    <p className="font-bold text-sm">{rx.medication_name}</p>
                     <Badge variant="secondary" className="text-[10px] shrink-0">{c.label}</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">{rx.dosage_instructions || "As directed"} · {rx.doctor || "Your provider"}</p>
+                  <p className="text-xs text-muted-foreground">{rx.dosage || "As directed"} · {rx.prescribing_doctor || "Your provider"}</p>
                   <div className="flex items-center gap-3 mt-2">
-                    {rx.pharmacy && <span className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3"/>{rx.pharmacy}</span>}
-                    {rx.ordered_date && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3"/>Ordered {rx.ordered_date}</span>}
+                    {rx.pharmacy_id && <span className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3"/>Pharmacy</span>}
+                    {rx.created_at && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3"/>Ordered {new Date(rx.created_at).toLocaleDateString()}</span>}
                   </div>
-                  {rx.doctor_note && <p className="text-xs italic mt-2 bg-muted/50 rounded-lg px-3 py-2 text-muted-foreground">"{rx.doctor_note}"</p>}
+                  {rx.instructions && <p className="text-xs italic mt-2 bg-muted/50 rounded-lg px-3 py-2 text-muted-foreground">"{rx.instructions}"</p>}
                 </div>
               </div>
             </CardContent>

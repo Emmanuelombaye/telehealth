@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
   ChevronRight, CheckCircle2, CreditCard,
-  Star, Shield, Clock, Package, ArrowLeft, Globe, Zap, Loader2,
+  Star, Shield, ShieldCheck, Clock, Package, ArrowLeft, Globe, Zap, Loader2,
   Video, MessageSquare
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
