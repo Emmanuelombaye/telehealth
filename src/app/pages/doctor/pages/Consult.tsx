@@ -279,6 +279,7 @@ export function DoctorConsultPage() {
           status: 'rx_sent',
           doctor: doctorName,
           doctor_note: soapNotes.plan,
+          doctor_id: currentUser?.id,
           last_approved_at: new Date().toISOString(),
           timeline: newTimeline,
         })

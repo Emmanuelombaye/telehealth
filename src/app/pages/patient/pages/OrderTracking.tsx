@@ -176,11 +176,18 @@ export function PatientOrderTrackingPage() {
         )}
 
         {/* Message doctor */}
-        <Link to={`/patient/messages?userId=${activeSelected.doctor_id}`}>
-          <Button variant="outline" className="w-full rounded-xl gap-2">
-            <MessageSquare className="h-4 w-4" /> Message {activeSelected.doctor || "Medical Provider"}
+        {activeSelected.doctor_id ? (
+          <Link to={`/patient/messages?userId=${activeSelected.doctor_id}`}>
+            <Button variant="outline" className="w-full rounded-xl gap-2 hover:bg-emerald-500/10 hover:text-emerald-500 hover:border-emerald-500/30 transition-all">
+              <MessageSquare className="h-4 w-4" /> Message {activeSelected.doctor || "Medical Provider"}
+            </Button>
+          </Link>
+        ) : (
+          <Button variant="outline" disabled className="w-full rounded-xl gap-2 opacity-50 cursor-not-allowed">
+            <MessageSquare className="h-4 w-4" /> Message Medical Provider
+            <span className="text-[10px] block opacity-70">(Assigned upon approval)</span>
           </Button>
-        </Link>
+        )}
       </div>
     );
   }

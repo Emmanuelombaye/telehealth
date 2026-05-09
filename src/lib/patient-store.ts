@@ -64,6 +64,7 @@ export type Order = {
   zoomStatus?: 'requested' | 'not_requested' | 'confirmed' | 'rescheduled' | 'canceled';
   userId?: string;
   user_id?: string;
+  doctor_id?: string;
 }
 
 // Helper: Generate a unique Medical Record Number (MRN)
@@ -242,7 +243,8 @@ export const usePatientStore = create<AppState>()(
             mrn: d.mrn || generateMRN(),
             lastApprovedAt: d.last_approved_at,
             nextRefillAt: d.next_refill_at,
-            refillIntervalDays: d.refill_interval_days
+            refillIntervalDays: d.refill_interval_days,
+            doctor_id: d.doctor_id
           }));
           set({ orders: mappedOrders });
         } catch (error) {
@@ -351,6 +353,7 @@ export const usePatientStore = create<AppState>()(
             .from('orders')
             .update({
               status: 'rx_sent',
+              doctor_id: useAuthStore.getState().user?.id,
               last_approved_at: new Date().toISOString()
             })
             .eq('order_number', orderId);
