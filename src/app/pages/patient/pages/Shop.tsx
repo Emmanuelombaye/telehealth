@@ -268,7 +268,7 @@ export function PatientShopPage() {
   const [zoomWanted, setZoomWanted] = useState<boolean | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
-  const [orderRef] = useState(() => "RX-" + Math.random().toString(36).slice(2, 8).toUpperCase());
+  // orderRef is now generated fresh at submission time — static useState caused 409 conflicts on retry
   const [activeCat, setActiveCat] = useState("All");
   
   // Account creation state
@@ -296,6 +296,7 @@ export function PatientShopPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+  const [submittedOrderRef, setSubmittedOrderRef] = useState("");
   // Payment card fields
   const [cardNum, setCardNum] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
@@ -407,9 +408,12 @@ export function PatientShopPage() {
       const finalLastName = lastName || existingUser?.user_metadata?.last_name || '';
       const finalEmail = email || existingUser?.email || '';
 
-      // 2. Insert order into Supabase
+      // 2. Generate a fresh unique order number at submission time (prevents 409 on retry)
+      const freshOrderRef = "RX-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).slice(2, 5).toUpperCase();
+
+      // Insert order into Supabase
       const { error: insertError } = await supabase.from('orders').insert([{
-        order_number: orderRef,
+        order_number: freshOrderRef,
         patient_name: `${finalFirstName} ${finalLastName}`.trim() || "New Patient",
         patient_avatar: (finalFirstName[0] || "") + (finalLastName[0] || ""),
         patient_age: age,
@@ -454,6 +458,9 @@ export function PatientShopPage() {
       const { fetchOrders } = usePatientStore.getState();
       await fetchOrders();
 
+      // Save the order ref for the confirmation screen
+      setSubmittedOrderRef(freshOrderRef);
+
       setStage("confirmed");
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
@@ -478,7 +485,7 @@ export function PatientShopPage() {
         <Card className="text-left">
           <CardContent className="p-4 space-y-2">
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Product</span><span className="font-semibold">{selected.name}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Order Ref</span><span className="font-mono font-bold text-primary">{orderRef}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Order Ref</span><span className="font-mono font-bold text-primary">{submittedOrderRef || '—'}</span></div>
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Payment</span><span className="font-semibold">{gatewayConfig[gateway]?.label}</span></div>
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Account</span><span className="font-semibold text-emerald-600">✓ {email}</span></div>
           </CardContent>
