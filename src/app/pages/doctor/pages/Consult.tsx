@@ -37,7 +37,7 @@ export function DoctorConsultPage() {
       const { data, error } = await supabase
         .from('orders')
         .select('*')
-        .eq('id', orderId)
+        .eq('order_number', orderId)
         .single();
       if (!error && data) {
         setOrder(data);
@@ -77,10 +77,15 @@ export function DoctorConsultPage() {
       }]);
 
       // 3. Update Order Status
+      const newTimeline = order.timeline 
+        ? [...order.timeline, { status: 'rx_sent', date: new Date().toLocaleString() }] 
+        : [{ status: 'rx_sent', date: new Date().toLocaleString() }];
+
       const { error: orderError } = await supabase.from('orders').update({
         status: 'rx_sent',
         doctor_name: "Dr. Alex Rivera",
         review_date: new Date().toISOString(),
+        timeline: newTimeline
       }).eq('id', order.id);
 
       if (!summaryError && !rxError && !orderError) {
