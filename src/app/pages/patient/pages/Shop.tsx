@@ -343,21 +343,25 @@ export function PatientShopPage() {
     };
 
     try {
-      // 0. Final validation to prevent 422 (Unprocessable Content)
-      if (!email || !email.includes('@')) throw new Error("A valid email is required.");
-      if (!password || password.length < 6) throw new Error("Password must be at least 6 characters.");
-      if (!firstName || !lastName) throw new Error("First and last name are required.");
-
-      // 1. Check for existing session or Create Supabase Auth account
+      // 1. Check for existing session
+      const existingUser = useAuthStore.getState().user;
       let userId: string | null = null;
       let sessionToSet = null;
 
-      const existingUser = useAuthStore.getState().user;
-
       if (existingUser) {
+        // Already logged in — use their data, skip signup entirely
         userId = existingUser.id;
-        // Skip auth steps
+        const meta = existingUser.user_metadata || {};
+        // Populate state vars so confirmed screen renders correctly
+        if (!firstName) setFirstName(meta.first_name || 'Patient');
+        if (!lastName) setLastName(meta.last_name || '');
+        if (!email) setEmail(existingUser.email || '');
       } else {
+        // New user — validate then create account
+        if (!email || !email.includes('@')) throw new Error("A valid email is required.");
+        if (!password || password.length < 6) throw new Error("Password must be at least 6 characters.");
+        if (!firstName || !lastName) throw new Error("First and last name are required.");
+
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
           password,
@@ -372,27 +376,24 @@ export function PatientShopPage() {
           }
         });
 
-      if (authError) {
-        const msg = authError.message.toLowerCase();
-        // 500 = server-side trigger error — user may still have been created
-        // Try signing in with the same credentials as a fallback
-        if (authError.status === 500 || msg.includes('unexpected') || msg.includes('server')) {
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: email.trim().toLowerCase(),
-            password,
-          });
-          if (!signInError && signInData.user) {
-            // User was actually created — proceed normally
-            userId = signInData.user.id;
-            sessionToSet = signInData.session;
+        if (authError) {
+          const msg = authError.message.toLowerCase();
+          if (authError.status === 500 || msg.includes('unexpected') || msg.includes('server')) {
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: email.trim().toLowerCase(),
+              password,
+            });
+            if (!signInError && signInData.user) {
+              userId = signInData.user.id;
+              sessionToSet = signInData.session;
+            } else {
+              throw new Error("Account creation failed (server error). Please try again in a moment.");
+            }
+          } else if (msg.includes('already registered') || msg.includes('already exists')) {
+            throw new Error("This email is already registered. Please sign in at /patient/login instead.");
           } else {
-            throw new Error("Account creation failed (server error). Please try again in a moment.");
+            throw authError;
           }
-        } else if (msg.includes('already registered') || msg.includes('already exists')) {
-          throw new Error("This email is already registered. Please sign in at /patient/login instead.");
-        } else {
-          throw authError;
-        }
         } else {
           userId = authData.user?.id || null;
           sessionToSet = authData.session;
@@ -401,11 +402,16 @@ export function PatientShopPage() {
 
       if (!userId) throw new Error("Account creation failed — please try again.");
 
-      // 2. Insert order with full patient vitals into Supabase
+      // Resolve final name/email (use stored state OR user metadata)
+      const finalFirstName = firstName || existingUser?.user_metadata?.first_name || 'Patient';
+      const finalLastName = lastName || existingUser?.user_metadata?.last_name || '';
+      const finalEmail = email || existingUser?.email || '';
+
+      // 2. Insert order into Supabase
       const { error: insertError } = await supabase.from('orders').insert([{
         order_number: orderRef,
-        patient_name: `${firstName} ${lastName}`.trim() || "New Patient",
-        patient_avatar: (firstName[0] || "") + (lastName[0] || ""),
+        patient_name: `${finalFirstName} ${finalLastName}`.trim() || "New Patient",
+        patient_avatar: (finalFirstName[0] || "") + (finalLastName[0] || ""),
         patient_age: age,
         patient_country: "🇺🇸 US",
         sub_brand: "Peak Health",
@@ -427,28 +433,24 @@ export function PatientShopPage() {
         timeline: [{ status: "order_submitted", date: new Date().toLocaleDateString() }]
       }]);
 
-      if (insertError) console.warn("Order insert warning:", insertError.message);
+      // Surface insert errors visibly instead of silently ignoring
+      if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
 
-      // 3. Auto sign-in + refresh auth store (only if new user)
+      // 3. Auto sign-in + refresh auth store (only for new users)
       if (!existingUser) {
         if (sessionToSet) {
           await supabase.auth.setSession(sessionToSet);
         } else {
-          // Session wasn't returned (email confirmation ON or fallback signin used)
           const { error: signInError } = await supabase.auth.signInWithPassword({
             email: email.trim().toLowerCase(),
             password
           });
           if (signInError) console.warn("Auto-login pending email confirmation:", signInError.message);
         }
-      }
-
-      // Re-initialize auth store so ProtectedRoute sees the new session immediately
-      if (!existingUser) {
         await initialize();
       }
 
-      // 4. Force refresh the global patient store so the new order appears immediately
+      // 4. Force refresh the global patient store so new order appears immediately
       const { fetchOrders } = usePatientStore.getState();
       await fetchOrders();
 
@@ -459,8 +461,6 @@ export function PatientShopPage() {
       setIsSubmitting(false);
     }
   };
-
-
 
   if (stage === "confirmed" && selected) {
     return (
