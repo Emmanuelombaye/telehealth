@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { supabase } from './supabaseClient';
 import { User, Session } from '@supabase/supabase-js';
 
-export type Role = 'patient' | 'doctor' | 'brand_admin' | 'super_admin' | null;
+export type Role = 'patient' | 'doctor' | 'pharmacy' | 'brand_admin' | 'super_admin' | null;
 
 interface AuthState {
   session: Session | null;

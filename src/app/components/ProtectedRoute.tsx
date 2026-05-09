@@ -4,6 +4,7 @@ import { useAuthStore, Role } from '../../lib/auth-store';
 
 const portalLoginUrl = (path: string) => {
   if (path.startsWith('/doctor')) return '/doctor/login';
+  if (path.startsWith('/pharmacy')) return '/pharmacy/login';
   if (path.startsWith('/admin')) return '/admin/login';
   if (path.startsWith('/superadmin')) return '/superadmin/login';
   return '/patient/login';
@@ -40,6 +41,7 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
       // Arranging Access: Redirect to the user's appropriate portal instead of showing 404
       const targetPortal = 
         role === 'doctor' ? '/doctor' : 
+        role === 'pharmacy' ? '/pharmacy' :
         (role === 'brand_admin' || role === 'super_admin') ? '/admin' : 
         '/patient';
       

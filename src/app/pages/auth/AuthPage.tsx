@@ -93,6 +93,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
             await supabase.auth.signOut();
             return;
           }
+          if (portal === 'pharmacy' && role !== 'pharmacy') {
+            setError("Access denied. Pharmacy portal only.");
+            await supabase.auth.signOut();
+            return;
+          }
           if ((portal === 'admin' || portal === 'superadmin') && role !== 'brand_admin' && role !== 'super_admin') {
             setError("Access denied. Admin portal only.");
             await supabase.auth.signOut();
@@ -100,6 +105,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
           }
           
           if (role === 'doctor') navigate("/doctor", { replace: true });
+          else if (role === 'pharmacy') navigate("/pharmacy", { replace: true });
           else if (role === 'brand_admin' || role === 'super_admin') navigate("/admin", { replace: true });
           else navigate("/patient", { replace: true });
         }
@@ -130,6 +136,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
           if (data.session) {
             await initialize();
             if (portalRole === 'doctor') navigate("/doctor", { replace: true });
+            else if (portalRole === 'pharmacy') navigate("/pharmacy", { replace: true });
             else if (portalRole === 'brand_admin') navigate("/admin", { replace: true });
             else navigate("/patient", { replace: true });
           } else {

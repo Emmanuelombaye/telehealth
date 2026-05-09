@@ -198,7 +198,7 @@ export const router = createBrowserRouter([
           // Pharmacy portal
           {
             path: "pharmacy",
-            element: <ProtectedRoute allowedRoles={['doctor', 'brand_admin', 'super_admin']} />,
+            element: <ProtectedRoute allowedRoles={['pharmacy', 'doctor', 'brand_admin', 'super_admin']} />,
             children: [
               { index: true, Component: PharmacyDashboard },
               { path: "orders", Component: PharmacyOrdersPage },
