@@ -247,7 +247,7 @@ const gatewayConfig: Record<string, { label: string; icon: string; color: string
   klarna: { label: "Klarna · Pay in 4", icon: "🛍️", color: "border-pink-300 bg-pink-50 dark:bg-pink-950/30" },
 };
 
-type Stage = "catalog" | "payment" | "account_setup" | "questionnaire" | "scheduling" | "confirmed";
+type Stage = "catalog" | "payment" | "account_setup" | "2fa" | "identity" | "questionnaire" | "scheduling" | "confirmed";
 
 export function PatientShopPage() {
   const navigate = useNavigate();
@@ -302,6 +302,11 @@ export function PatientShopPage() {
   const [cardNum, setCardNum] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvc, setCardCvc] = useState("");
+
+  // Verification state
+  const [otp, setOtp] = useState("");
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isVerifyingIdentity, setIsVerifyingIdentity] = useState(false);
 
   const filteredProducts = activeCat === "All" ? dbProducts : dbProducts.filter(p => p.category === activeCat);
   const categories = ["All", ...Array.from(new Set(dbProducts.map(p => p.category)))];
@@ -661,15 +666,7 @@ export function PatientShopPage() {
           </div>
         </div>
 
-        {/* ─── SECTION 5: ID + Terms ─── */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Government-Issued ID <span className="text-muted-foreground/60 normal-case font-medium">(Driver's License or Passport)</span></label>
-          <label className="flex items-center gap-3 w-full border-2 border-dashed border-border rounded-xl px-4 py-4 cursor-pointer hover:border-primary transition-colors">
-            <Shield className="h-5 w-5 text-muted-foreground shrink-0" />
-            <span className="text-sm text-muted-foreground">{idFile ? <span className="text-emerald-600 font-semibold">✓ {idFile.name}</span> : "Click to upload ID photo"}</span>
-            <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => setIdFile(e.target.files?.[0] || null)} />
-          </label>
-        </div>
+        {/* ID Upload Moved to Identity Stage */}
 
         <label className="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
@@ -700,9 +697,141 @@ export function PatientShopPage() {
 
         <Button className="w-full rounded-xl h-12 text-base font-bold bg-primary hover:bg-primary/90 text-white"
           disabled={!dob || !sex || !password || password.length < 6 || !agreedToTerms}
-          onClick={() => setStage("questionnaire")}>
-          Continue to Medical Questionnaire <ChevronRight className="h-4 w-4 ml-1" />
+          onClick={() => {
+            const currentUser = useAuthStore.getState().user;
+            if (currentUser) {
+              setStage("questionnaire");
+            } else {
+              setStage("2fa");
+            }
+          }}>
+          Continue to Phone Verification <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
+      </div>
+    );
+  }
+
+  if (stage === "2fa" && selected) {
+    return (
+      <div className="max-w-md mx-auto space-y-6 pt-8">
+        <div className="flex justify-center mb-4">
+           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+        </div>
+        <div className="text-center">
+          <div className="h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+             <MessageSquare className="h-8 w-8 text-blue-500" />
+          </div>
+          <h1 className="text-2xl font-bold">Verify your phone</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            We've sent a 6-digit verification code to<br />
+            <span className="font-bold text-foreground">{phone || "(555) 000-0000"}</span>
+          </p>
+        </div>
+
+        <div className="space-y-4 pt-4">
+          <div className="flex justify-center gap-2">
+            {[1,2,3,4,5,6].map((_, i) => (
+              <input 
+                key={i}
+                type="text" 
+                maxLength={1} 
+                className="w-12 h-14 text-center text-xl font-bold border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white shadow-sm"
+                value={otp[i] || ""}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  const newOtp = otp.split("");
+                  newOtp[i] = val;
+                  setOtp(newOtp.join(""));
+                  if (val && i < 5) {
+                    const next = e.target.nextElementSibling as HTMLInputElement;
+                    if (next) next.focus();
+                  }
+                }}
+              />
+            ))}
+          </div>
+          <Button 
+            className="w-full rounded-xl h-12 text-base font-bold bg-primary hover:bg-primary/90 text-white"
+            disabled={otp.length !== 6 || isVerifyingOtp}
+            onClick={() => {
+              setIsVerifyingOtp(true);
+              setTimeout(() => {
+                setIsVerifyingOtp(false);
+                setStage("identity");
+              }, 1500);
+            }}
+          >
+            {isVerifyingOtp ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify & Continue"}
+          </Button>
+          <p className="text-xs text-center text-muted-foreground mt-4">
+            Didn't receive the code? <button className="font-bold text-primary hover:underline">Resend SMS</button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (stage === "identity" && selected) {
+    return (
+      <div className="max-w-md mx-auto space-y-6 pt-8">
+        <div className="flex justify-center mb-4">
+           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+        </div>
+        
+        <div className="bg-white border border-gray-200 rounded-[2rem] p-6 shadow-sm relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+             <ShieldCheck className="h-32 w-32" />
+           </div>
+           
+           <div className="flex items-center gap-2 mb-2">
+             <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-50 text-[10px] font-black uppercase">
+               Powered by Vouched™
+             </Badge>
+           </div>
+           <h1 className="text-2xl font-bold mt-4">Identity Verification</h1>
+           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+             To comply with KYC and telemedicine regulations, we need to quickly verify your identity. This usually takes less than 30 seconds.
+           </p>
+
+           <div className="space-y-4 mt-8 relative z-10">
+              <label className="flex items-center gap-4 w-full border-2 border-dashed border-gray-300 rounded-2xl px-4 py-5 cursor-pointer hover:border-primary transition-colors bg-gray-50/50 group">
+                <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                  <CreditCard className="h-5 w-5 text-gray-500" />
+                </div>
+                <div>
+                  <span className="block font-bold text-sm text-gray-900">
+                    {idFile ? <span className="text-emerald-600">✓ {idFile.name}</span> : "Upload Government ID"}
+                  </span>
+                  <span className="block text-xs text-muted-foreground mt-0.5">Driver's License, Passport, or State ID</span>
+                </div>
+                <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => setIdFile(e.target.files?.[0] || null)} />
+              </label>
+
+              <Button 
+                className="w-full rounded-2xl h-14 text-base font-bold bg-[#0A0D14] hover:bg-gray-800 text-white shadow-xl shadow-gray-900/10"
+                disabled={!idFile || isVerifyingIdentity}
+                onClick={() => {
+                  setIsVerifyingIdentity(true);
+                  setTimeout(() => {
+                    setIsVerifyingIdentity(false);
+                    setStage("questionnaire");
+                  }, 2000);
+                }}
+              >
+                {isVerifyingIdentity ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin text-emerald-400" /> Analyzing ID...
+                  </span>
+                ) : (
+                  "Verify My Identity"
+                )}
+              </Button>
+           </div>
+        </div>
+        
+        <p className="text-xs text-center text-muted-foreground mt-6 flex items-center justify-center gap-1.5">
+           <Shield className="h-3.5 w-3.5 text-emerald-500" /> End-to-end encrypted and HIPAA compliant
+        </p>
       </div>
     );
   }

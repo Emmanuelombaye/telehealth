@@ -9,10 +9,10 @@ import { cn } from "../../../components/ui/utils";
 
 const statusStyles: Record<OrderStatus, string> = {
   "order_submitted": "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200",
-  "medical_review": "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400 border-violet-200",
+  "account_created": "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400 border-violet-200",
   "id_verified": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200",
   "intake_completed": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200",
-  "doctor_reviewing": "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200",
+  "medical_review": "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200",
   "rx_sent": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200",
   "shipped": "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200",
   "delivered": "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-400 border-slate-200",
@@ -21,10 +21,10 @@ const statusStyles: Record<OrderStatus, string> = {
 
 const statusLabels: Record<OrderStatus, string> = {
   "order_submitted": "Submitted",
-  "medical_review": "Med Review",
+  "account_created": "Registered",
   "id_verified": "ID Verified",
   "intake_completed": "Intake Done",
-  "doctor_reviewing": "MD Review",
+  "medical_review": "MD Review",
   "rx_sent": "Rx Sent",
   "shipped": "Shipped",
   "delivered": "Delivered",

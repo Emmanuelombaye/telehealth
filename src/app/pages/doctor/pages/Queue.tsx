@@ -24,10 +24,10 @@ const availabilityConfig: Record<AvailabilityStatus, { label: string; color: str
 
 const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg: string }> = {
   order_submitted: { label: "Order Submitted", color: "text-blue-400", bg: "bg-blue-400/10" },
-  medical_review: { label: "Medical Review", color: "text-violet-400", bg: "bg-violet-400/10" },
+  account_created: { label: "Account Created", color: "text-violet-400", bg: "bg-violet-400/10" },
   id_verified: { label: "ID Verified", color: "text-emerald-400", bg: "bg-emerald-400/10" },
   intake_completed: { label: "Intake Complete", color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
-  doctor_reviewing: { label: "Physician Review", color: "text-amber-500", bg: "bg-amber-500/10" },
+  medical_review: { label: "Physician Review", color: "text-amber-500", bg: "bg-amber-500/10" },
   rx_sent: { label: "Rx Dispatched", color: "text-[#22c55e]", bg: "bg-[#22c55e]/20" },
   shipped: { label: "In Transit", color: "text-blue-500", bg: "bg-blue-500/10" },
   delivered: { label: "Delivered", color: "text-[#7f9488]", bg: "bg-white/5" },
@@ -46,7 +46,7 @@ export function DoctorQueuePage() {
   const queue = orders.filter(o => {
     const isActive = [
       "order_submitted", "medical_review", "id_verified", 
-      "intake_completed", "doctor_reviewing"
+      "intake_completed", "medical_review"
     ].includes(o.status);
     const needsRefill = o.status === "refill_eligible" || (o.nextRefillAt && new Date(o.nextRefillAt) <= new Date());
     return isActive || needsRefill;
@@ -193,7 +193,7 @@ export function DoctorQueuePage() {
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-2 text-[#7f9488]">
                             <Clock className="h-3.5 w-3.5" />
-                            <span className="text-xs font-bold">{order.orderedDate || new Date(order.created_at).toLocaleDateString()}</span>
+                            <span className="text-xs font-bold">{order.orderedDate}</span>
                           </div>
                         </td>
                         <td className="px-6 py-5">

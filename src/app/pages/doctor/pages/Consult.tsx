@@ -23,7 +23,7 @@ function PatientPicker() {
         const { data, error } = await supabase
           .from('orders')
           .select('*')
-          .in('status', ['order_submitted', 'doctor_reviewing', 'rx_sent'])
+          .in('status', ['order_submitted', 'medical_review', 'rx_sent'])
           .order('created_at', { ascending: true });
         if (error) throw error;
         setQueue(data || []);
@@ -46,7 +46,7 @@ function PatientPicker() {
 
   const statusConfig: Record<string, { label: string; color: string; bg: string; dot: string }> = {
     order_submitted:  { label: "Awaiting Review", color: "text-amber-400",  bg: "bg-amber-400/10",  dot: "bg-amber-400" },
-    doctor_reviewing: { label: "In Review",       color: "text-[#22c55e]",  bg: "bg-[#22c55e]/10", dot: "bg-[#22c55e]" },
+    medical_review: { label: "In Review",       color: "text-[#22c55e]",  bg: "bg-[#22c55e]/10", dot: "bg-[#22c55e]" },
     rx_sent:          { label: "Rx Dispatched",   color: "text-blue-400",   bg: "bg-blue-400/10",  dot: "bg-blue-400" },
   };
 
@@ -87,7 +87,7 @@ function PatientPicker() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: "Awaiting Review", value: queue.filter(o => o.status === 'order_submitted').length, color: "text-amber-400", bg: "bg-amber-400/10" },
-          { label: "In Active Review", value: queue.filter(o => o.status === 'doctor_reviewing').length, color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
+          { label: "In Active Review", value: queue.filter(o => o.status === 'medical_review').length, color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
           { label: "Rx Dispatched", value: queue.filter(o => o.status === 'rx_sent').length, color: "text-blue-400", bg: "bg-blue-400/10" },
         ].map((stat, i) => (
           <div key={i} className={`${stat.bg} border border-white/5 rounded-2xl p-4`}>

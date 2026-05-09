@@ -9,10 +9,10 @@ import { useAuthStore } from './auth-store';
 
 export type OrderStatus =
   | "order_submitted"
-  | "medical_review"
+  | "account_created"
   | "id_verified"
   | "intake_completed"
-  | "doctor_reviewing"
+  | "medical_review"
   | "rx_sent"
   | "shipped"
   | "delivered"
@@ -20,11 +20,11 @@ export type OrderStatus =
 
 export const ORDER_STEPS: { key: OrderStatus; label: string; desc: string }[] = [
   { key: "order_submitted", label: "Order Submitted", desc: "Treatment selection and payment received" },
-  { key: "medical_review", label: "Medical Review", desc: "Automated clinical risk assessment and safety check" },
+  { key: "account_created", label: "Account Created", desc: "Patient portal account successfully registered" },
   { key: "id_verified", label: "ID Verified", desc: "Identity and age verification successful" },
   { key: "intake_completed", label: "Intake Completed", desc: "Health questionnaire and medical history received" },
-  { key: "doctor_reviewing", label: "Doctor Reviewing", desc: "A licensed physician is evaluating your profile" },
-  { key: "rx_sent", label: "Prescription Sent", desc: "Approval granted and sent to fulfillment center" },
+  { key: "medical_review", label: "Medical Review", desc: "A licensed physician is evaluating your profile" },
+  { key: "rx_sent", label: "Prescribed", desc: "Approval granted and prescription sent to pharmacy" },
   { key: "shipped", label: "Shipped", desc: "Medication is in transit to your address" },
   { key: "delivered", label: "Delivered", desc: "Package has been successfully delivered" },
   { key: "refill_eligible", label: "Refill Eligible", desc: "You are now eligible to request a treatment refill" },
@@ -98,7 +98,7 @@ export function getActiveOrder(orders: Order[]) {
 }
 
 export function getAwaitingReviewCount(orders: Order[]) {
-  return orders.filter((o) => o.status === "order_submitted" || o.status === "doctor_reviewing").length;
+  return orders.filter((o) => o.status === "order_submitted" || o.status === "medical_review").length;
 }
 
 export const patientUser = {

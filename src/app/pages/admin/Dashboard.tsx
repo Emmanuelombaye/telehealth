@@ -34,7 +34,7 @@ export function AdminDashboard() {
             console.warn("RLS Recursion detected. Falling back to local state.");
             setOrders([
               { id: 1, amount: 245, patientName: "Sophie Bennett", status: "order_submitted", urgent: true },
-              { id: 2, amount: 35, patientName: "Caleb Montgomery", status: "doctor_reviewing", urgent: false }
+              { id: 2, amount: 35, patientName: "Caleb Montgomery", status: "medical_review", urgent: false }
             ]);
             return;
           }

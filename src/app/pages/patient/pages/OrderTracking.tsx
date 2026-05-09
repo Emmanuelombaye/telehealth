@@ -11,10 +11,10 @@ import { supabase } from "../../../../lib/supabaseClient";
 
 const stepIcon: Record<string, any> = {
   order_submitted: ShoppingBag,
-  medical_review: Activity,
+  account_created: CheckCircle2,
   id_verified: FileText,
   intake_completed: FileText,
-  doctor_reviewing: Stethoscope,
+  medical_review: Stethoscope,
   rx_sent: Pill,
   shipped: Truck,
   delivered: Package,

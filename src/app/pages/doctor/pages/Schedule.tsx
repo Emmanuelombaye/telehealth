@@ -1,6 +1,8 @@
+import { useState, useEffect } from "react";
 import { Calendar, Clock, Video, ChevronRight, Plus, Loader2 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { usePatientStore } from "../../../../lib/patient-store";
+import { supabase } from "../../../../lib/supabaseClient";
 import { useNavigate } from "react-router";
 
 export function DoctorSchedulePage() {

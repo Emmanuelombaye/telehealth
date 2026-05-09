@@ -123,7 +123,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const { orders } = usePatientStore();
   
   // Real-time badge calculations
-  const pendingCount = orders.filter(o => o.status === "order_submitted" || o.status === "doctor_reviewing").length;
+  const pendingCount = orders.filter(o => o.status === "order_submitted" || o.status === "medical_review").length;
 
   const SidebarContent = () => (
     <div className={cn(

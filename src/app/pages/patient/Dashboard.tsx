@@ -15,7 +15,7 @@ import { supabase } from "../../../lib/supabaseClient";
 
 const stepIcon: Record<string, any> = {
   order_submitted: FileText,
-  doctor_reviewing: Stethoscope,
+  medical_review: Stethoscope,
   rx_sent: Pill,
   shipped: Package,
   delivered: Truck,

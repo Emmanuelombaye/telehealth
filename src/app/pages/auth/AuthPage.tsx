@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../../../lib/supabaseClient";
-import { useAuthStore } from "../../../lib/auth-store";
+import { useAuthStore, Role } from "../../../lib/auth-store";
 import { Lock, Mail, AlertCircle, Stethoscope, Shield, User, Eye, EyeOff, ArrowLeft, Pill, KeyRound, Building2, Heart } from "lucide-react";
 
 type Portal = 'patient' | 'doctor' | 'admin' | 'superadmin' | 'pharmacy';
@@ -124,6 +124,12 @@ export function AuthPage({ portal }: { portal: Portal }) {
           // ── Step 4: Portal Access Control ──
           // Allow super_admin anywhere, otherwise restrict by portal
           if (role !== 'super_admin') {
+            if (portal === 'superadmin') {
+              setError("Access denied. Super Admin portal only.");
+              await supabase.auth.signOut();
+              await initialize();
+              return;
+            }
             if (portal === 'doctor' && role !== 'doctor') {
               setError("Access denied. Provider portal requires a doctor account.");
               await supabase.auth.signOut();
@@ -132,12 +138,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
             }
             if (portal === 'pharmacy' && role !== 'pharmacy') {
               setError("Access denied. Pharmacy portal requires a pharmacy account.");
-              await supabase.auth.signOut();
-              await initialize();
-              return;
-            }
-            if (portal === 'superadmin' && role !== 'super_admin') {
-              setError("Access denied. Super Admin portal only.");
               await supabase.auth.signOut();
               await initialize();
               return;

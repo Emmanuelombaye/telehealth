@@ -31,7 +31,7 @@ export function DoctorDashboard() {
 
   // Real metrics from database
   const pendingConsults = orders.filter(o => {
-    const isActive = o.status === "order_submitted" || o.status === "doctor_reviewing" || o.status === "rx_sent";
+    const isActive = o.status === "order_submitted" || o.status === "medical_review" || o.status === "rx_sent";
     const needsRefill = o.nextRefillAt && new Date(o.nextRefillAt) <= new Date();
     return isActive || needsRefill;
   });
@@ -301,8 +301,8 @@ export function DoctorDashboard() {
                          </td>
                          <td className="p-6">
                             <div className="flex items-center gap-2">
-                              <div className={`h-1.5 w-1.5 rounded-full ${order.status === 'doctor_reviewing' ? 'bg-amber-500 animate-pulse' : 'bg-[#22c55e]'}`} />
-                              <span className={`text-[10px] font-black uppercase tracking-widest ${order.status === 'doctor_reviewing' ? 'text-amber-500' : 'text-[#22c55e]'}`}>
+                              <div className={`h-1.5 w-1.5 rounded-full ${order.status === 'medical_review' ? 'bg-amber-500 animate-pulse' : 'bg-[#22c55e]'}`} />
+                              <span className={`text-[10px] font-black uppercase tracking-widest ${order.status === 'medical_review' ? 'text-amber-500' : 'text-[#22c55e]'}`}>
                                 {order.status?.replace('_', ' ')}
                               </span>
                             </div>
