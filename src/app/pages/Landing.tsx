@@ -438,13 +438,16 @@ export function LandingPage() {
             </div>
 
             {/* Column 6: Staff & Admin */}
-            <div className="space-y-8">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Secure Portals</h4>
-              <ul className="space-y-4">
+            <div className="space-y-8 lg:border-l lg:border-slate-100 lg:pl-12">
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Secure Portals</h4>
+                <div className="h-0.5 w-6 bg-emerald-500/20 rounded-full" />
+              </div>
+              <ul className="space-y-3">
                 {[
                   { name: "Patient Login", href: "/patient/login", primary: true },
-                  { name: "Provider Login", href: "/doctor/login", primary: false },
-                  { name: "Admin Portal", href: "/admin/login", primary: false },
+                  { name: "Provider Portal", href: "/doctor/login", primary: false },
+                  { name: "Admin Access", href: "/admin/login", primary: false },
                   { name: "SuperAdmin", href: "/superadmin/login", primary: false },
                   { name: "Pharmacy Hub", href: "/pharmacy/login", primary: false }
                 ].map(item => (
@@ -452,11 +455,14 @@ export function LandingPage() {
                     <Link 
                       to={item.href} 
                       className={cn(
-                        "text-sm font-black uppercase tracking-widest transition-all px-4 py-2 rounded-xl inline-block",
-                        item.primary ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        "text-[11px] font-black uppercase tracking-widest transition-all px-5 py-3 rounded-2xl inline-flex items-center gap-2 border w-full justify-center lg:justify-start",
+                        item.primary 
+                          ? "bg-[#0A0D14] text-white border-[#0A0D14] shadow-xl shadow-slate-900/10 hover:bg-emerald-600 hover:border-emerald-600 hover:shadow-emerald-500/20" 
+                          : "bg-white text-slate-600 border-slate-100 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 shadow-sm"
                       )}
                     >
                       {item.name}
+                      {!item.primary && <ArrowRight className="h-3 w-3 opacity-30" />}
                     </Link>
                   </li>
                 ))}

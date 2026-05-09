@@ -22,43 +22,59 @@ function AuthLoadingScreen() {
   );
 }
 
+/**
+ * Check if a dev-role override is active (used for staff/testing bypass).
+ * This allows access when no real Supabase session exists but a role was set.
+ */
+function getDevRoleOverride(): Role | null {
+  if (typeof window === 'undefined') return null;
+  const devRole = localStorage.getItem('peak_health_dev_role');
+  if (devRole) return devRole as Role;
+  return null;
+}
+
 export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
   const { user, role, isLoading } = useAuthStore();
   const navigate = useNavigate();
   const redirected = useRef(false);
 
+  // Effective role: real auth role takes priority, dev override as fallback
+  const devRole = getDevRoleOverride();
+  const effectiveRole = role || devRole;
+  const isAuthenticated = !!user || !!devRole;
+
   useEffect(() => {
     if (isLoading || redirected.current) return;
 
-    if (!user) {
+    if (!isAuthenticated) {
       redirected.current = true;
       navigate(portalLoginUrl(window.location.pathname), { replace: true });
       return;
     }
 
-    if (allowedRoles && role && !allowedRoles.includes(role)) {
+    if (allowedRoles && effectiveRole && !allowedRoles.includes(effectiveRole)) {
       redirected.current = true;
       // Arranging Access: Redirect to the user's appropriate portal instead of showing 404
       const targetPortal = 
-        role === 'doctor' ? '/doctor' : 
-        role === 'pharmacy' ? '/pharmacy' :
-        role === 'super_admin' ? '/superadmin' :
-        role === 'brand_admin' ? '/admin' : 
+        effectiveRole === 'doctor' ? '/doctor' : 
+        effectiveRole === 'pharmacy' ? '/pharmacy' :
+        effectiveRole === 'super_admin' ? '/superadmin' :
+        effectiveRole === 'brand_admin' ? '/admin' : 
         '/patient';
       
-      console.log(`[ProtectedRoute] Role ${role} not allowed on ${window.location.pathname}. Redirecting to ${targetPortal}`);
+      console.log(`[ProtectedRoute] Role ${effectiveRole} not allowed on ${window.location.pathname}. Redirecting to ${targetPortal}`);
       navigate(targetPortal, { replace: true });
     }
-  }, [user, role, isLoading, navigate, allowedRoles]);
+  }, [isAuthenticated, effectiveRole, isLoading, navigate, allowedRoles]);
 
   // Show branded loading screen while auth is resolving
   if (isLoading) return <AuthLoadingScreen />;
 
-  // Not logged in — show nothing while redirect fires
-  if (!user) return <AuthLoadingScreen />;
+  // Not logged in and no dev override — show nothing while redirect fires
+  if (!isAuthenticated) return <AuthLoadingScreen />;
 
   // Logged in but wrong role — show nothing while redirect fires
-  if (allowedRoles && role && !allowedRoles.includes(role)) return <AuthLoadingScreen />;
+  if (allowedRoles && effectiveRole && !allowedRoles.includes(effectiveRole)) return <AuthLoadingScreen />;
 
   // ✅ Authenticated + correct role — render the portal
   return <Outlet />;

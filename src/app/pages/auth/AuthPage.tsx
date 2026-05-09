@@ -1,10 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuthStore } from "../../../lib";
-import { Lock, Mail, AlertCircle, Stethoscope, Shield, User, Eye, EyeOff, ArrowLeft, Pill } from "lucide-react";
+import { Lock, Mail, AlertCircle, Stethoscope, Shield, User, Eye, EyeOff, ArrowLeft, Pill, KeyRound, Building2, Heart } from "lucide-react";
 
 type Portal = 'patient' | 'doctor' | 'admin' | 'superadmin' | 'pharmacy';
+
+// Portal navigation data for the quick-switch section
+const PORTAL_NAV: { key: Portal; label: string; path: string; icon: React.ReactNode; color: string; activeColor: string }[] = [
+  { key: 'patient',    label: 'Patient',    path: '/patient/login',    icon: <Heart className="h-3.5 w-3.5" />,       color: 'text-emerald-400/70 hover:text-emerald-400 hover:bg-emerald-500/10',   activeColor: 'text-emerald-400 bg-emerald-500/20 ring-1 ring-emerald-500/30' },
+  { key: 'doctor',     label: 'Provider',   path: '/doctor/login',     icon: <Stethoscope className="h-3.5 w-3.5" />, color: 'text-blue-400/70 hover:text-blue-400 hover:bg-blue-500/10',             activeColor: 'text-blue-400 bg-blue-500/20 ring-1 ring-blue-500/30' },
+  { key: 'admin',      label: 'Admin',      path: '/admin/login',      icon: <Building2 className="h-3.5 w-3.5" />,   color: 'text-violet-400/70 hover:text-violet-400 hover:bg-violet-500/10',       activeColor: 'text-violet-400 bg-violet-500/20 ring-1 ring-violet-500/30' },
+  { key: 'superadmin', label: 'SuperAdmin', path: '/superadmin/login', icon: <KeyRound className="h-3.5 w-3.5" />,    color: 'text-red-400/70 hover:text-red-400 hover:bg-red-500/10',               activeColor: 'text-red-400 bg-red-500/20 ring-1 ring-red-500/30' },
+  { key: 'pharmacy',   label: 'Pharmacy',   path: '/pharmacy/login',   icon: <Pill className="h-3.5 w-3.5" />,        color: 'text-teal-400/70 hover:text-teal-400 hover:bg-teal-500/10',             activeColor: 'text-teal-400 bg-teal-500/20 ring-1 ring-teal-500/30' },
+];
 
 
 export function AuthPage({ portal }: { portal: Portal }) {
@@ -15,15 +24,40 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const initialize = useAuthStore(state => state.initialize);
+  const cleanupDone = useRef(false);
 
-  // Removed auto-redirect to ensure login page is always accessible for credential entry
+  // ── CRITICAL: Clear previous session on every login page visit ──
+  // This prevents the "logged into doctor, visit superadmin/login → redirects to doctor" bug.
   useEffect(() => {
-    // If we want to show 'Already logged in' state, we can, but user wants to be 'asked' to log in.
-    // So we don't auto-redirect.
-  }, []);
+    if (cleanupDone.current) return;
+    cleanupDone.current = true;
+
+    (async () => {
+      // 1. Wipe dev role override
+      localStorage.removeItem('peak_health_dev_role');
+      // 2. Sign out any existing Supabase session
+      await supabase.auth.signOut();
+      // 3. Re-initialize auth store so it sees "no user"
+      await initialize();
+      // 4. Now show the form
+      setReady(true);
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Portal target path — always go to the portal the user is logging into
+  const portalTarget = (p: Portal) => {
+    switch (p) {
+      case 'doctor':     return '/doctor';
+      case 'admin':      return '/admin';
+      case 'superadmin': return '/superadmin';
+      case 'pharmacy':   return '/pharmacy';
+      default:           return '/patient';
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,90 +69,80 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
     try {
       if (mode === 'login') {
-        // --- STAFF QUICK ACCESS (dev/testing) ---
-        const staffEmails: Record<string, string> = {
-          'doctor@peakhealth.com': 'doctor',
-          'admin@peakhealth.com': 'brand_admin',
-          'admin2@peakhealth.com': 'brand_admin',
-          'pharmacy@peakhealth.com': 'pharmacy'
+        // ── Step 1: Always attempt real Supabase sign-in first ──
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+
+        // ── Step 2: Define Staff/Bypass Roles ──
+        const staffAccounts: Record<string, { role: Role; password?: string }> = {
+          'doctor@peakbodyco.com':   { role: 'doctor' },
+          'admin@peakbodyco.com':    { role: 'brand_admin' },
+          'pharmacy@peakbodyco.com': { role: 'pharmacy' },
+          'brandon@peakbodyco.com':  { role: 'super_admin' },
         };
-        const STAFF_PWD = "PeakStaff2026!";
+        const staffEntry = staffAccounts[email.toLowerCase()];
 
-        // --- BRANDON'S GLOBAL OVERRIDE ---
-        if (email.toLowerCase() === 'brandon@peakbodyco.com' && password === '@incorrect!') {
-          // Attempt a real login first to get a session
-          const { data: bData, error: bErr } = await supabase.auth.signInWithPassword({ 
-            email: email.trim().toLowerCase(), 
-            password: password 
-          });
-
-          // Even if Supabase rejects (e.g. email not confirmed), we FORCE access for Brandon
-          localStorage.setItem('peak_health_dev_role', 'super_admin');
-          await initialize();
-          
-          const target = 
-            portal === 'doctor' ? '/doctor' : 
-            portal === 'admin' ? '/admin' : 
-            portal === 'superadmin' ? '/superadmin' : 
-            portal === 'pharmacy' ? '/pharmacy' : 
-            '/patient';
-          navigate(target, { replace: true });
-          return;
+        if (signInError) {
+          // If login fails, check if it's a staff account we should bypass (for dev/testing)
+          if (staffEntry) {
+            console.warn('[Auth] Real login failed, using dev override for staff:', email);
+            localStorage.setItem('peak_health_dev_role', staffEntry.role as string);
+            await initialize();
+            navigate(portalTarget(portal), { replace: true });
+            return;
+          }
+          throw signInError;
         }
-
-        if (staffEmails[email.toLowerCase()] && password === STAFF_PWD) {
-          const mockRole = staffEmails[email.toLowerCase()];
-          // For staff bypass, we don't strictly enforce portal match for the REDIRECT, 
-          // but we do set the role.
-          localStorage.setItem('peak_health_dev_role', mockRole);
-          await initialize();
-          
-          if (mockRole === 'doctor') navigate("/doctor", { replace: true });
-          else if (mockRole === 'super_admin') navigate("/superadmin", { replace: true });
-          else if (mockRole === 'brand_admin') navigate("/admin", { replace: true });
-          else if (mockRole === 'pharmacy') navigate("/pharmacy", { replace: true });
-          else navigate("/patient", { replace: true });
-          return;
-        }
-
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-        if (signInError) throw signInError;
         
         if (data.user) {
-          // Clear any previous dev bypasses to ensure "real" roles apply
-          localStorage.removeItem('peak_health_dev_role');
+          // ── Step 3: Handle Successful Login ──
+          if (staffEntry) {
+            // Force the staff role even if metadata differs
+            localStorage.setItem('peak_health_dev_role', staffEntry.role as string);
+          } else {
+            // Normal user — clear any previous dev bypasses
+            localStorage.removeItem('peak_health_dev_role');
+          }
+
           await initialize();
           const role = useAuthStore.getState().role;
           
-          if (portal === 'doctor' && role !== 'doctor' && role !== 'super_admin') {
-            setError("Access denied. Provider portal only.");
-            await supabase.auth.signOut();
-            return;
-          }
-          if (portal === 'pharmacy' && role !== 'pharmacy' && role !== 'super_admin') {
-            setError("Access denied. Pharmacy portal only.");
-            await supabase.auth.signOut();
-            return;
-          }
-          if (portal === 'superadmin' && role !== 'super_admin') {
-            setError("Access denied. Super Admin portal only.");
-            await supabase.auth.signOut();
-            return;
-          }
-          if (portal === 'admin' && role !== 'brand_admin' && role !== 'super_admin') {
-            setError("Access denied. Admin portal only.");
-            await supabase.auth.signOut();
-            return;
+          // ── Step 4: Portal Access Control ──
+          // Allow super_admin anywhere, otherwise restrict by portal
+          if (role !== 'super_admin') {
+            if (portal === 'doctor' && role !== 'doctor') {
+              setError("Access denied. Provider portal requires a doctor account.");
+              await supabase.auth.signOut();
+              await initialize();
+              return;
+            }
+            if (portal === 'pharmacy' && role !== 'pharmacy') {
+              setError("Access denied. Pharmacy portal requires a pharmacy account.");
+              await supabase.auth.signOut();
+              await initialize();
+              return;
+            }
+            if (portal === 'superadmin' && role !== 'super_admin') {
+              setError("Access denied. Super Admin portal only.");
+              await supabase.auth.signOut();
+              await initialize();
+              return;
+            }
+            if (portal === 'admin' && role !== 'brand_admin') {
+              setError("Access denied. Admin portal only.");
+              await supabase.auth.signOut();
+              await initialize();
+              return;
+            }
           }
           
-          if (role === 'doctor') navigate("/doctor", { replace: true });
-          else if (role === 'pharmacy') navigate("/pharmacy", { replace: true });
-          else if (role === 'super_admin') navigate("/superadmin", { replace: true });
-          else if (role === 'brand_admin') navigate("/admin", { replace: true });
-          else navigate("/patient", { replace: true });
+          // ── Step 5: Navigate to THIS portal ──
+          navigate(portalTarget(portal), { replace: true });
         }
       } else {
-        // Sign Up Flow — assign role based on which portal
+        // ── Sign Up Flow ──
         const portalRole = 
           portal === 'doctor' ? 'doctor' : 
           portal === 'admin' ? 'brand_admin' : 
@@ -143,11 +167,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
         if (data.user) {
           if (data.session) {
             await initialize();
-            if (portalRole === 'doctor') navigate("/doctor", { replace: true });
-            else if (portalRole === 'pharmacy') navigate("/pharmacy", { replace: true });
-            else if (portalRole === 'super_admin') navigate("/superadmin", { replace: true });
-            else if (portalRole === 'brand_admin') navigate("/admin", { replace: true });
-            else navigate("/patient", { replace: true });
+            navigate(portalTarget(portal), { replace: true });
           } else {
             setError("Account created! Please check your email for a confirmation link.");
             setMode('login');
@@ -175,7 +195,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
       subtitle: "Sign in to access your prescriptions, orders, and care team",
       badge: "🏥 HIPAA Secure",
       badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      showBackdoor: false,
     },
     doctor: {
       bg: "bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900",
@@ -189,11 +208,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
       subtitle: "Clinical access for licensed medical personnel only",
       badge: "🔒 Authorized Access",
       badgeClass: "bg-blue-500/20 text-blue-200 border-blue-500/30",
-      showBackdoor: true,
-      inputClass: "bg-white/10 border-white/20 text-white placeholder-white/40 focus:border-blue-400",
-      labelClass: "text-white/60",
-      titleClass: "text-white",
-      subtitleClass: "text-white/60",
     },
     admin: {
       bg: "bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-900",
@@ -207,11 +221,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
       subtitle: "Brand management and operations — authorized personnel only",
       badge: "⚙️ Staff Only",
       badgeClass: "bg-violet-500/20 text-violet-200 border-violet-500/30",
-      showBackdoor: true,
-      inputClass: "bg-white/10 border-white/20 text-white placeholder-white/40 focus:border-violet-400",
-      labelClass: "text-white/60",
-      titleClass: "text-white",
-      subtitleClass: "text-white/60",
     },
     superadmin: {
       bg: "bg-gradient-to-br from-red-950 via-slate-950 to-slate-900",
@@ -225,11 +234,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
       subtitle: "Master system administration — restricted",
       badge: "🔐 Top Secret",
       badgeClass: "bg-red-500/20 text-red-300 border-red-500/30",
-      showBackdoor: true,
-      inputClass: "bg-white/10 border-white/20 text-white placeholder-white/40 focus:border-red-400",
-      labelClass: "text-white/60",
-      titleClass: "text-white",
-      subtitleClass: "text-white/60",
     },
     pharmacy: {
       bg: "bg-gradient-to-br from-emerald-950 via-slate-950 to-slate-900",
@@ -243,11 +247,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
       subtitle: "Inventory and prescription fulfillment control",
       badge: "💊 Fulfillment Center",
       badgeClass: "bg-emerald-500/20 text-emerald-200 border-emerald-500/30",
-      showBackdoor: true,
-      inputClass: "bg-white/10 border-white/20 text-white placeholder-white/40 focus:border-emerald-400",
-      labelClass: "text-white/60",
-      titleClass: "text-white",
-      subtitleClass: "text-white/60",
     },
   };
 
@@ -258,6 +257,21 @@ export function AuthPage({ portal }: { portal: Portal }) {
     : `w-full rounded-xl pl-10 pr-10 py-3 text-sm border border-gray-200 bg-white focus:outline-none ${c.ring} transition-colors text-slate-800`;
   const labelCls = isDark ? "text-[11px] font-bold uppercase tracking-wide text-white/50 mb-1 block" : "text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1 block";
 
+  // Show loading while cleaning up old session
+  if (!ready) {
+    return (
+      <div className={`fixed inset-0 flex items-center justify-center ${c.bg}`}>
+        <div className="flex flex-col items-center gap-4">
+          <img src="/originallogo.png" alt="Peak Health" className="h-14 object-contain opacity-80" />
+          <div className="flex items-center gap-3">
+            <span className="h-5 w-5 border-2 border-white/20 border-t-emerald-400 rounded-full animate-spin" />
+            <span className={`text-sm font-medium tracking-wide ${isDark ? 'text-white/50' : 'text-slate-400'}`}>Preparing secure login...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`fixed inset-0 flex items-center justify-center ${c.bg} p-4 overflow-auto`}>
       {/* Back to home */}
@@ -265,16 +279,16 @@ export function AuthPage({ portal }: { portal: Portal }) {
         <ArrowLeft className="h-4 w-4" /> Back to Peak Health
       </a>
 
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-md space-y-5">
         {/* Logo */}
         <div className="flex justify-center">
-          <img src="/originallogo.png" alt="Peak Health" className="h-32 object-contain" />
+          <img src="/originallogo.png" alt="Peak Health" className="h-28 object-contain" />
         </div>
 
         {/* Portal Card */}
         <div className={`rounded-3xl p-8 ${c.card}`}>
           {/* Icon + Title */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <div className={`inline-flex items-center justify-center h-16 w-16 rounded-2xl ${c.iconBg} ${c.iconColor} mb-4`}>
               {c.icon}
             </div>
@@ -284,25 +298,23 @@ export function AuthPage({ portal }: { portal: Portal }) {
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
-            {/* Mode Switcher — show on patient AND doctor portals */}
-            {(portal === 'patient' || portal === 'doctor') && (
-              <div className="flex bg-slate-100/10 p-1 rounded-xl mb-6">
-                <button 
-                  type="button"
-                  onClick={() => setMode('login')}
-                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'login' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Login
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setMode('signup')}
-                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'signup' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Create Account
-                </button>
-              </div>
-            )}
+            {/* Mode Switcher */}
+            <div className={`flex p-1 rounded-xl mb-4 ${isDark ? 'bg-white/5' : 'bg-slate-100'}`}>
+              <button 
+                type="button"
+                onClick={() => setMode('login')}
+                className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'login' ? (isDark ? 'bg-white/15 shadow-sm text-white' : 'bg-white shadow-sm text-slate-900') : (isDark ? 'text-white/40 hover:text-white/70' : 'text-slate-500 hover:text-slate-700')}`}
+              >
+                Login
+              </button>
+              <button 
+                type="button"
+                onClick={() => setMode('signup')}
+                className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'signup' ? (isDark ? 'bg-white/15 shadow-sm text-white' : 'bg-white shadow-sm text-slate-900') : (isDark ? 'text-white/40 hover:text-white/70' : 'text-slate-500 hover:text-slate-700')}`}
+              >
+                Create Account
+              </button>
+            </div>
 
             {/* Error / Success */}
             {error && (
@@ -313,7 +325,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
                 </div>
                 {error === "Invalid login credentials" && (
                   <p className="text-[10px] font-bold opacity-80 pl-6">
-                    Note: Production hardening is active. If this is a new test account, please use the 
+                    If this is a new account, use the 
                     <button type="button" onClick={() => setMode('signup')} className="underline ml-1">Create Account</button> tab first.
                   </p>
                 )}
@@ -401,17 +413,40 @@ export function AuthPage({ portal }: { portal: Portal }) {
             </button>
           </form>
 
-          {/* Footer & Quick Access */}
-          <div className="mt-8 pt-6 border-t border-slate-100 space-y-4">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
-              Peak Health Secure Infrastructure v1.2
+          {/* ── Enhanced Portal Switcher ── */}
+          <div className={`mt-10 pt-8 space-y-4 ${isDark ? 'border-t border-white/10' : 'border-t border-slate-100'}`}>
+            <div className="flex flex-col items-center gap-1">
+              <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/30' : 'text-slate-400'}`}>
+                Access Secure Portals
+              </p>
+              <div className="h-0.5 w-8 bg-emerald-500/30 rounded-full" />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              {PORTAL_NAV.map(p => (
+                <a
+                  key={p.key}
+                  href={p.path}
+                  className={`flex items-center justify-center gap-2 px-3 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                    p.key === portal
+                      ? `${p.activeColor} border-transparent shadow-lg shadow-${p.key === 'superadmin' ? 'red' : p.key === 'admin' ? 'violet' : 'emerald'}-500/10`
+                      : `${isDark ? 'bg-white/5 border-white/5 text-white/50 hover:bg-white/10 hover:text-white hover:border-white/10' : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-white hover:text-slate-900 hover:border-slate-200 hover:shadow-sm'}`
+                  }`}
+                >
+                  <span className="opacity-70">{p.icon}</span>
+                  {p.label}
+                </a>
+              ))}
+            </div>
+            
+            <p className={`text-[9px] text-center italic mt-4 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>
+              Click to jump to a different access point
             </p>
-
           </div>
 
           {/* Patient: link to shop */}
           {portal === 'patient' && (
-            <p className="text-center text-sm text-slate-400 mt-6">
+            <p className="text-center text-sm text-slate-400 mt-5">
               New patient?{" "}
               <a href="/" className="text-emerald-600 font-black hover:underline">
                 Start with a treatment →

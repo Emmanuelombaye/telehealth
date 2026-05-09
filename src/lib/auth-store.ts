@@ -21,22 +21,24 @@ interface AuthState {
  * This is the correct production approach.
  */
 function getRoleFromSession(session: Session): { role: Role; brandId: string | null } {
+  // Priority 1: Dev override (Always highest priority for staff/testing bypass)
+  const devRole = typeof window !== 'undefined' ? localStorage.getItem('peak_health_dev_role') : null;
+  
   const meta = session.user.user_metadata || {};
   const appMeta = (session.user as any).app_metadata || {};
 
-  // Priority 1: app_metadata (set server-side via admin API)
-  // Priority 2: user_metadata (set at signup)
-  const sessionRole = (appMeta.role || meta.role) as Role;
   const brandId = appMeta.brand_id || meta.brand_id || null;
+
+  if (devRole) {
+    return { role: devRole as Role, brandId };
+  }
+
+  // Priority 2: app_metadata (set server-side via admin API)
+  // Priority 3: user_metadata (set at signup)
+  const sessionRole = (appMeta.role || meta.role) as Role;
 
   if (sessionRole) {
     return { role: sessionRole, brandId };
-  }
-
-  // Priority 3: Dev override (only if metadata is missing)
-  const devRole = typeof window !== 'undefined' ? localStorage.getItem('peak_health_dev_role') : null;
-  if (devRole) {
-    return { role: devRole as Role, brandId: null };
   }
 
   // Default
@@ -89,7 +91,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const { role, brandId } = getRoleFromSession(session);
         set({ session, user: session.user, role, brandId, isLoading: false });
       } else {
-        set({ session: null, user: null, role: null, brandId: null, isLoading: false });
+        // No real session — check for dev role override (staff/testing bypass)
+        const devRole = typeof window !== 'undefined' ? localStorage.getItem('peak_health_dev_role') : null;
+        if (devRole) {
+          set({ session: null, user: null, role: devRole as Role, brandId: null, isLoading: false });
+        } else {
+          set({ session: null, user: null, role: null, brandId: null, isLoading: false });
+        }
       }
 
       supabase.auth.onAuthStateChange((_event, newSession) => {

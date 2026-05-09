@@ -16,6 +16,12 @@ const STAFF = [
     name: 'Clinical Provider'
   },
   {
+    email: 'admin@peakbodyco.com',
+    password: 'password123',
+    role: 'brand_admin',
+    name: 'Brand Administrator'
+  },
+  {
     email: 'pharmacy@peakbodyco.com',
     password: 'password123',
     role: 'pharmacy',
