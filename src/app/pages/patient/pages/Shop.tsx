@@ -407,7 +407,30 @@ export function PatientShopPage() {
         }
       }
 
+      if (zoomWanted === null) throw new Error("Please select your consultation preference.");
+      if (zoomWanted === true && !consultationTime) throw new Error("Please select a date and time for your consultation.");
+      if (!idFile) throw new Error("Please upload a photo of your government ID.");
+
       if (!userId) throw new Error("Could not determine user ID — please try again.");
+
+      // ── Auto sign-in for new patients BEFORE order insertion (fixes RLS) ──────
+      if (!existingUser) {
+        if (sessionToSet) {
+          await supabase.auth.setSession(sessionToSet);
+        } else {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: resolvedEmail.trim().toLowerCase(),
+            password
+          });
+          if (signInError) {
+             console.error("Auto-login error:", signInError);
+             // We still try to proceed, but if RLS strictly requires auth.uid(), it will fail on insert
+          } else if (signInData.session) {
+             await supabase.auth.setSession(signInData.session);
+          }
+        }
+        await initialize(); // Refresh auth store so the rest of the app knows the user is logged in
+      }
 
       // ── Generate a fresh unique order number (prevents 409 on retry) ─────────
       const freshOrderRef = "RX-" + Date.now().toString(36).toUpperCase() +
@@ -440,19 +463,6 @@ export function PatientShopPage() {
       }]);
 
       if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
-
-      // ── Auto sign-in for new patients ─────────────────────────────────────────
-      if (!existingUser) {
-        if (sessionToSet) {
-          await supabase.auth.setSession(sessionToSet);
-        } else {
-          await supabase.auth.signInWithPassword({
-            email: resolvedEmail.trim().toLowerCase(),
-            password
-          });
-        }
-        await initialize();
-      }
 
       // ── Refresh patient store so new order appears immediately ────────────────
       await usePatientStore.getState().fetchOrders();
@@ -1067,7 +1077,7 @@ export function PatientShopPage() {
 
         <Button
           className="w-full rounded-xl h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2"
-          disabled={zoomWanted === null || (zoomWanted === true && !consultationTime) || !idFile || isSubmitting}
+          disabled={isSubmitting}
           onClick={() => handleCompleteSetup()}>
           {isSubmitting ? (
             <>
