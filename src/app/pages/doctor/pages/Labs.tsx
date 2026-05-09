@@ -110,7 +110,35 @@ export function DoctorLabsPage() {
   }
 
   async function handleMarkReady(id: string) {
+    // 1. Update the lab_order status
     await supabase.from('lab_orders').update({ status: 'results-ready' }).eq('id', id);
+    
+    // 2. Fetch the order details to generate the patient result
+    const { data: order } = await supabase.from('lab_orders').select('*').eq('id', id).single();
+    
+    if (order && order.patient_id) {
+      // Generate some mock test results based on the requested tests
+      const mockTests = (order.tests || []).map((t: string) => {
+        const isNormal = Math.random() > 0.3; // 70% chance of normal
+        return {
+          name: t,
+          status: isNormal ? 'normal' : (Math.random() > 0.5 ? 'high' : 'low'),
+          value: (Math.random() * 100).toFixed(1),
+          unit: 'mg/dL',
+          range: '10.0 - 50.0'
+        };
+      });
+
+      // Insert into lab_results so the patient can see it
+      await supabase.from('lab_results').insert({
+        patient_id: order.patient_id,
+        panel_name: `${order.priority === 'urgent' || order.priority === 'stat' ? 'Urgent ' : ''}Blood Panel`,
+        ordered_by: order.ordered_by,
+        status: 'new',
+        tests: mockTests
+      });
+    }
+
     await fetchLabOrders();
   }
 
