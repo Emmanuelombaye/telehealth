@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Truck, CheckCircle, Edit2, Search, Printer, ArrowDownUp, CloudDownload, RefreshCw, ChevronDown, Columns, Filter, MoreHorizontal, ArrowUpRight, Package, ShieldCheck } from "lucide-react";
 import { Card, Button, Badge } from "../../../components/ui/shared.tsx";
 import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminDataTable";
-import { OrderStatus, useAuthStore } from "../../../../lib/patient-store";
+import { OrderStatus } from "../../../../lib/patient-store";
+import { useAuthStore } from "../../../../lib/auth-store";
 import { supabase } from "../../../../lib/supabaseClient";
 import { cn } from "../../../components/ui/utils";
 

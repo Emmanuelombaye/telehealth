@@ -155,10 +155,13 @@ export function AppLayout() {
             <Outlet />
           </div>
         </main>
-          <div className="w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Outlet />
+
+        {/* Mobile bottom nav (patient portal) */}
+        {sidebarRole === "patient" && (
+          <div className="md:hidden">
+            <BottomNav />
           </div>
-        </main>
+        )}
       </div>
     </div>
   );
