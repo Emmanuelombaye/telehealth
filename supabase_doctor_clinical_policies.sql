@@ -4,6 +4,100 @@
 -- while implicitly maintaining the restriction that Admin/SuperAdmin cannot.
 -- ==============================================================================
 
+-- 0. Ensure Clinical Tables Exist (Safe Create without wiping data)
+CREATE TABLE IF NOT EXISTS public.intake_forms (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in-progress', 'completed')),
+    required BOOLEAN DEFAULT true,
+    completed_date TEXT,
+    form_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.visit_forms (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    visit_name TEXT,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'in-progress')),
+    urgent BOOLEAN DEFAULT false,
+    form_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.prescriptions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    doctor_id UUID REFERENCES auth.users(id),
+    medication TEXT NOT NULL,
+    dosage TEXT NOT NULL,
+    frequency TEXT,
+    refills_remaining INTEGER DEFAULT 0,
+    pharmacy_name TEXT,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'fulfilled', 'expired', 'discontinued')),
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.visit_summaries (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    doctor_id UUID REFERENCES auth.users(id),
+    doctor_name TEXT,
+    specialty TEXT,
+    date TIMESTAMPTZ DEFAULT now(),
+    type TEXT DEFAULT 'video' CHECK (type IN ('video', 'async')),
+    diagnosis TEXT,
+    follow_up_date TIMESTAMPTZ,
+    report_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.lab_results (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    doctor_id UUID REFERENCES auth.users(id),
+    panel_name TEXT NOT NULL,
+    ordered_by TEXT,
+    tests JSONB DEFAULT '[]'::jsonb,
+    report_url TEXT,
+    status TEXT DEFAULT 'new' CHECK (status IN ('new', 'pending', 'partial', 'final')),
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.patient_documents (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    type TEXT DEFAULT 'Other' CHECK (type IN ('Lab Report', 'Diagnostic', 'Prescription', 'Insurance', 'Immunization', 'Referral', 'Other')),
+    url TEXT NOT NULL,
+    size TEXT,
+    storage_path TEXT,
+    new BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.medical_records (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    doctor_id UUID REFERENCES auth.users(id),
+    record_type TEXT NOT NULL,
+    description TEXT,
+    attachments JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS on all of them
+ALTER TABLE public.intake_forms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.visit_forms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.prescriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.visit_summaries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lab_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.patient_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.medical_records ENABLE ROW LEVEL SECURITY;
+
 -- 1. Intake Forms (Doctors)
 CREATE POLICY "Doctors can view intake forms" 
     ON public.intake_forms FOR SELECT 
