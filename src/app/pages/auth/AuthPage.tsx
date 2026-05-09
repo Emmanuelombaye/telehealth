@@ -83,6 +83,8 @@ export function AuthPage({ portal }: { portal: Portal }) {
         if (signInError) throw signInError;
         
         if (data.user) {
+          // Clear any previous dev bypasses to ensure "real" roles apply
+          localStorage.removeItem('peak_health_dev_role');
           await initialize();
           const role = useAuthStore.getState().role;
           
@@ -103,10 +105,12 @@ export function AuthPage({ portal }: { portal: Portal }) {
         }
       } else {
         // Sign Up Flow — assign role based on which portal
-        const portalRole = portal === 'doctor' ? 'doctor'
-          : (portal === 'admin' || portal === 'superadmin') ? 'brand_admin'
-          : portal === 'pharmacy' ? 'pharmacy' as any
-          : 'patient';
+        const portalRole = 
+          portal === 'doctor' ? 'doctor' : 
+          portal === 'admin' ? 'brand_admin' : 
+          portal === 'superadmin' ? 'super_admin' : 
+          portal === 'pharmacy' ? 'pharmacy' : 
+          'patient';
 
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),

@@ -35,21 +35,25 @@ export function DoctorDashboard() {
     ? `Dr. ${user.user_metadata.first_name} ${user.user_metadata.last_name}`
     : "Dr. Brandon 👨‍⚕️";
 
-  const orders = usePatientStore(state => state.orders);
+  const { orders, fetchOrders, subscribeToOrders } = usePatientStore();
   
   // Real metrics from database
   const pendingConsults = orders.filter(o => {
-    const isNew = o.status === "order_submitted" || o.status === "doctor_reviewing";
+    const isActive = o.status === "order_submitted" || o.status === "doctor_reviewing" || o.status === "rx_sent";
     const needsRefill = o.nextRefillAt && new Date(o.nextRefillAt) <= new Date();
-    return isNew || needsRefill;
+    return isActive || needsRefill;
   });
-  const completedVisits = orders.filter(o => o.status !== "order_submitted" && o.status !== "doctor_reviewing").length;
+  const completedVisits = orders.filter(o => o.status === "shipped" || o.status === "delivered").length;
   const patientsToday = pendingConsults.length;
 
   useEffect(() => {
+    const unsubscribe = subscribeToOrders();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+    return () => {
+      unsubscribe();
+      clearInterval(timer);
+    };
+  }, [subscribeToOrders]);
 
   const theme = {
     bg: "bg-[#060807]",

@@ -21,20 +21,26 @@ interface AuthState {
  * This is the correct production approach.
  */
 function getRoleFromSession(session: Session): { role: Role; brandId: string | null } {
-  // Dev override — allows quick staff access without changing Supabase user metadata
+  const meta = session.user.user_metadata || {};
+  const appMeta = (session.user as any).app_metadata || {};
+
+  // Priority 1: app_metadata (set server-side via admin API)
+  // Priority 2: user_metadata (set at signup)
+  const sessionRole = (appMeta.role || meta.role) as Role;
+  const brandId = appMeta.brand_id || meta.brand_id || null;
+
+  if (sessionRole) {
+    return { role: sessionRole, brandId };
+  }
+
+  // Priority 3: Dev override (only if metadata is missing)
   const devRole = typeof window !== 'undefined' ? localStorage.getItem('peak_health_dev_role') : null;
   if (devRole) {
     return { role: devRole as Role, brandId: null };
   }
 
-  const meta = session.user.user_metadata || {};
-  const appMeta = (session.user as any).app_metadata || {};
-
-  // Priority: app_metadata (set server-side) > user_metadata (set at signup)
-  const role = (appMeta.role || meta.role || 'patient') as Role;
-  const brandId = appMeta.brand_id || meta.brand_id || null;
-
-  return { role, brandId };
+  // Default
+  return { role: 'patient', brandId };
 }
 
 /**

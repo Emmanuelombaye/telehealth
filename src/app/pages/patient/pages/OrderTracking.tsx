@@ -3,6 +3,7 @@ import {
   Package, CheckCircle2, Stethoscope, Pill, Truck, ShoppingBag, Hourglass, FileText,
   ChevronRight, Search, MapPin, ExternalLink, MessageSquare, Copy
 } from "lucide-react";
+import { Link } from "react-router";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { ORDER_STEPS, getStepIndex, type Order } from "../../../../lib/patient-store";
 import { useAuthStore } from "../../../../lib";
@@ -175,9 +176,11 @@ export function PatientOrderTrackingPage() {
         )}
 
         {/* Message doctor */}
-        <Button variant="outline" className="w-full rounded-xl gap-2">
-          <MessageSquare className="h-4 w-4" /> Message {activeSelected.doctor}
-        </Button>
+        <Link to={`/patient/messages?userId=${activeSelected.doctor_id}`}>
+          <Button variant="outline" className="w-full rounded-xl gap-2">
+            <MessageSquare className="h-4 w-4" /> Message {activeSelected.doctor || "Medical Provider"}
+          </Button>
+        </Link>
       </div>
     );
   }

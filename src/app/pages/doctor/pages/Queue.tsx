@@ -31,19 +31,29 @@ const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg:
 };
 
 export function DoctorQueuePage() {
-  const { orders, updateOrderStatus, updateOrderRx, fetchOrders } = usePatientStore();
+  const { orders, updateOrderStatus, updateOrderRx, fetchOrders, subscribeToOrders } = usePatientStore();
   const [availability, setAvailability] = useState<AvailabilityStatus>("available");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rxNote, setRxNote] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Filter orders for the queue
+  // Shipping state
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [carrier, setCarrier] = useState("UPS");
+  const [estDelivery, setEstDelivery] = useState("");
+
+  // Filter orders for the queue - Include rx_sent so they can be shipped
   const queue = orders.filter(o => {
-    const isNew = o.status === "order_submitted" || o.status === "doctor_reviewing";
+    const isActive = o.status === "order_submitted" || o.status === "doctor_reviewing" || o.status === "rx_sent";
     const needsRefill = o.nextRefillAt && new Date(o.nextRefillAt) <= new Date();
-    return isNew || needsRefill;
+    return isActive || needsRefill;
   });
   const selected = queue.find(o => o.id === selectedId) || null;
+
+  useEffect(() => {
+    const unsubscribe = subscribeToOrders();
+    return () => unsubscribe();
+  }, [subscribeToOrders]);
 
   useEffect(() => {
     if (queue.length > 0 && !selectedId) {
@@ -229,14 +239,20 @@ export function DoctorQueuePage() {
                       </div>
                    </div>
 
-                   <div className="flex gap-3">
-                      <Button className="rounded-2xl bg-[#22c55e] text-black font-black uppercase italic px-6 h-12 shadow-lg shadow-[#22c55e]/20 group">
-                        <Video className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" /> Launch Consultation
+                    <div className="flex gap-3">
+                      <Button 
+                        onClick={() => updateOrderStatus(selected.id, 'doctor_reviewing')}
+                        className="rounded-2xl bg-[#22c55e] text-black font-black uppercase italic px-6 h-12 shadow-lg shadow-[#22c55e]/20 group"
+                      >
+                        <Video className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" /> 
+                        {selected.zoomStatus === 'requested' ? 'Join Zoom Call' : 'Launch Consultation'}
                       </Button>
-                      <Button variant="outline" className="rounded-2xl border-white/10 bg-white/5 h-12 w-12 p-0 hover:bg-white/10">
-                        <MessageSquare className="h-5 w-5 text-[#d4c4a8]" />
-                      </Button>
-                   </div>
+                      <Link to={`/doctor/messages?userId=${selected.userId || selected.user_id}`}>
+                        <Button variant="outline" className="rounded-2xl border-white/10 bg-white/5 h-12 w-12 p-0 hover:bg-white/10">
+                          <MessageSquare className="h-5 w-5 text-[#d4c4a8]" />
+                        </Button>
+                      </Link>
+                    </div>
                 </div>
 
                 <div className="flex-1 grid md:grid-cols-2 gap-6 overflow-hidden">
@@ -292,59 +308,135 @@ export function DoctorQueuePage() {
 
                   {/* Rx Dispatch Terminal */}
                   <div className="space-y-6">
-                    <div className={`${theme.card} border-[#22c55e]/30 border rounded-[2rem] p-8 relative overflow-hidden bg-gradient-to-br from-[#0c120f] to-[#1a2620]`}>
-                       <div className="absolute top-0 right-0 p-6 opacity-10">
-                          <Pill className="h-24 w-24 text-[#22c55e]" />
-                       </div>
+                    {selected.status === 'rx_sent' ? (
+                      /* Shipping Terminal */
+                      <div className={`${theme.card} border-blue-500/30 border rounded-[2rem] p-8 relative overflow-hidden bg-gradient-to-br from-[#0c120f] to-[#121a24]`}>
+                        <div className="absolute top-0 right-0 p-6 opacity-10">
+                           <Globe className="h-24 w-24 text-blue-500" />
+                        </div>
 
-                       <div className="flex items-center gap-3 mb-8">
-                         <div className="h-10 w-10 rounded-xl bg-[#22c55e] flex items-center justify-center">
-                            <Lock className="h-5 w-5 text-black" />
-                         </div>
-                         <div>
-                            <h3 className="text-sm font-black text-white italic uppercase tracking-tighter">Secure Dispatch Terminal</h3>
-                            <p className="text-[9px] font-bold text-[#22c55e] uppercase">Encryption Layer Active</p>
-                         </div>
-                       </div>
-
-                       <div className="space-y-6 relative z-10">
+                        <div className="flex items-center gap-3 mb-8">
+                          <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center">
+                             <Truck className="h-5 w-5 text-black" />
+                          </div>
                           <div>
-                            <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2 block">Clinical Directive / Rx Note</label>
-                            <textarea 
-                              value={rxNote}
-                              onChange={(e) => setRxNote(e.target.value)}
-                              placeholder="INJECT 0.25MG SUBCUTANEOUSLY ONCE WEEKLY FOR 4 WEEKS..."
-                              className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none h-32 transition-all"
-                            />
+                             <h3 className="text-sm font-black text-white italic uppercase tracking-tighter">Shipping & Logistics</h3>
+                             <p className="text-[9px] font-bold text-blue-500 uppercase">Ready for Dispatch</p>
                           </div>
+                        </div>
 
-                          <div className="grid grid-cols-2 gap-4 pt-4">
-                             <Button 
-                              variant="outline" 
-                              className="rounded-2xl border-white/10 bg-white/5 text-[10px] font-black uppercase italic tracking-widest h-14 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50 transition-all"
-                             >
-                               Deny Request
-                             </Button>
-                             <Button 
-                              onClick={() => {
-                                updateOrderStatus(selected.id, 'rx_sent');
-                                setRxNote("");
-                              }}
-                              className="rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-black font-black uppercase italic tracking-tighter h-14 group shadow-xl shadow-[#22c55e]/20"
-                             >
-                               Approve & Dispatch <Sparkles className="ml-2 h-4 w-4 group-hover:animate-spin" />
-                             </Button>
-                          </div>
-                       </div>
+                        <div className="space-y-6 relative z-10">
+                           <div className="grid grid-cols-2 gap-4">
+                             <div>
+                               <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2 block">Carrier</label>
+                               <select 
+                                 value={carrier}
+                                 onChange={(e) => setCarrier(e.target.value)}
+                                 className="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-xs font-bold italic text-white focus:border-blue-500/50 outline-none transition-all"
+                               >
+                                 <option value="UPS">UPS Express</option>
+                                 <option value="FedEx">FedEx Priority</option>
+                                 <option value="DHL">DHL Global</option>
+                                 <option value="USPS">USPS First Class</option>
+                               </select>
+                             </div>
+                             <div>
+                               <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2 block">Est. Delivery</label>
+                               <input 
+                                 type="date"
+                                 value={estDelivery}
+                                 onChange={(e) => setEstDelivery(e.target.value)}
+                                 className="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-xs font-bold italic text-white focus:border-blue-500/50 outline-none transition-all"
+                               />
+                             </div>
+                           </div>
 
-                       <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                             <ShieldCheck className="h-3 w-3 text-[#22c55e]" />
-                             <span className="text-[9px] font-bold text-[#7f9488] uppercase italic">Provider Auth: Verified</span>
+                           <div>
+                             <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2 block">Tracking Number</label>
+                             <input 
+                               type="text"
+                               value={trackingNumber}
+                               onChange={(e) => setTrackingNumber(e.target.value)}
+                               placeholder="ENTER TRACKING ID..."
+                               className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-blue-500/50 outline-none transition-all"
+                             />
+                           </div>
+
+                           <Button 
+                            onClick={() => {
+                              updateOrderStatus(selected.id, 'shipped', trackingNumber, carrier, undefined, estDelivery);
+                              setTrackingNumber("");
+                            }}
+                            className="w-full rounded-2xl bg-blue-500 hover:bg-blue-600 text-black font-black uppercase italic tracking-tighter h-14 group shadow-xl shadow-blue-500/20"
+                           >
+                             Dispatch Shipment <ArrowUpRight className="ml-2 h-4 w-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                           </Button>
+                        </div>
+
+                        <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                              <ShieldCheck className="h-3 w-3 text-blue-500" />
+                              <span className="text-[9px] font-bold text-[#7f9488] uppercase italic">Logistics Auth: Active</span>
+                           </div>
+                           <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                        </div>
+                      </div>
+                    ) : (
+                      /* Rx Dispatch Terminal */
+                      <div className={`${theme.card} border-[#22c55e]/30 border rounded-[2rem] p-8 relative overflow-hidden bg-gradient-to-br from-[#0c120f] to-[#1a2620]`}>
+                        <div className="absolute top-0 right-0 p-6 opacity-10">
+                           <Pill className="h-24 w-24 text-[#22c55e]" />
+                        </div>
+
+                        <div className="flex items-center gap-3 mb-8">
+                          <div className="h-10 w-10 rounded-xl bg-[#22c55e] flex items-center justify-center">
+                             <Lock className="h-5 w-5 text-black" />
                           </div>
-                          <div className="h-1.5 w-1.5 rounded-full bg-[#22c55e] animate-pulse" />
-                       </div>
-                    </div>
+                          <div>
+                             <h3 className="text-sm font-black text-white italic uppercase tracking-tighter">Secure Dispatch Terminal</h3>
+                             <p className="text-[9px] font-bold text-[#22c55e] uppercase">Encryption Layer Active</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-6 relative z-10">
+                           <div>
+                             <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2 block">Clinical Directive / Rx Note</label>
+                             <textarea 
+                               value={rxNote}
+                               onChange={(e) => setRxNote(e.target.value)}
+                               placeholder="INJECT 0.25MG SUBCUTANEOUSLY ONCE WEEKLY FOR 4 WEEKS..."
+                               className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none h-32 transition-all"
+                             />
+                           </div>
+
+                           <div className="grid grid-cols-2 gap-4 pt-4">
+                              <Button 
+                               variant="outline" 
+                               className="rounded-2xl border-white/10 bg-white/5 text-[10px] font-black uppercase italic tracking-widest h-14 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50 transition-all"
+                              >
+                                Deny Request
+                              </Button>
+                              <Button 
+                               onClick={() => {
+                                 updateOrderRx(selected.id, selected.medication, selected.dosageInstructions, rxNote);
+                                 setRxNote("");
+                               }}
+                               className="rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-black font-black uppercase italic tracking-tighter h-14 group shadow-xl shadow-[#22c55e]/20"
+                              >
+                                Approve & Dispatch <Sparkles className="ml-2 h-4 w-4 group-hover:animate-spin" />
+                              </Button>
+                           </div>
+                        </div>
+
+                        <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                              <ShieldCheck className="h-3 w-3 text-[#22c55e]" />
+                              <span className="text-[9px] font-bold text-[#7f9488] uppercase italic">Provider Auth: Verified</span>
+                           </div>
+                           <div className="h-1.5 w-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+                        </div>
+                      </div>
+                    )}
 
                     {/* Infrastructure Stats */}
                     <div className="grid grid-cols-2 gap-4">

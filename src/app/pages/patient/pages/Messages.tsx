@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router";
 import { Send, Lock, Search, ChevronLeft, Paperclip, Loader2 } from "lucide-react";
 import { Button, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
@@ -12,6 +13,8 @@ export function MessagesPage() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const targetUserId = searchParams.get('userId');
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversation threads (unique senders/receivers the user has talked to)
@@ -56,7 +59,33 @@ export function MessagesPage() {
       }
     }
     fetchThreads();
-  }, [user]);
+  }, [user, targetUserId]);
+
+  // Handle targetUserId from URL to start a new chat
+  useEffect(() => {
+    if (!targetUserId || !user || threads.length === 0) return;
+    const existing = threads.find(t => t.id === targetUserId);
+    if (existing) {
+      setActiveThread(existing);
+    } else {
+      // If the thread doesn't exist yet, we'd need to fetch the profile of targetUserId
+      // For now, we wait for the first message to create the thread in the list
+      async function fetchTargetProfile() {
+        const { data } = await supabase.from('profiles').select('id, full_name, role').eq('id', targetUserId).single();
+        if (data) {
+          setActiveThread({
+            id: data.id,
+            name: data.full_name,
+            role: data.role,
+            lastMsg: "Start of conversation",
+            time: "Now",
+            unread: 0
+          });
+        }
+      }
+      fetchTargetProfile();
+    }
+  }, [targetUserId, threads, user]);
 
   // Fetch messages for a thread
   useEffect(() => {

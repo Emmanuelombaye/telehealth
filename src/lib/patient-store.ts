@@ -123,6 +123,7 @@ interface AppState {
   addOrder: (order: Order) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus, tracking?: string, carrier?: string) => Promise<void>;
   updateOrderRx: (orderId: string, medication: string, dosage: string, note: string) => Promise<void>;
+  subscribeToOrders: () => (() => void);
   setIntakeFormData: (data: Record<string, any>) => void;
   updateDoctorAvailability: (doctorId: number, available: boolean) => Promise<void>;
   approveRefill: (orderId: string) => Promise<void>;
@@ -138,6 +139,26 @@ export const usePatientStore = create<AppState>()(
       orders: [], // Start fresh
       doctorAvailability: [],
       intakeFormData: {},
+
+      subscribeToOrders: () => {
+        const { user, role } = useAuthStore.getState();
+        
+        const channel = supabase
+          .channel('global-orders-sync')
+          .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'orders'
+          }, (payload) => {
+            // Real-time update for the specific order if possible, or just re-fetch
+            get().fetchOrders();
+          })
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      },
 
       fetchDoctorAvailability: async () => {
         try {
@@ -205,6 +226,12 @@ export const usePatientStore = create<AppState>()(
             urgent: d.urgent,
             intakeComplete: d.intake_complete,
             intakeNotes: d.intake_notes,
+            intakeAnswers: d.intake_answers,
+            patientVitals: d.patient_vitals,
+            zoomStatus: d.zoom_status,
+            zoomDoctorMessage: d.zoom_doctor_message,
+            zoomRescheduledTime: d.zoom_rescheduled_time,
+            consultationTime: d.consultation_time,
             waitMins: d.wait_mins,
             time: d.time,
             mrn: d.mrn || generateMRN(),
@@ -252,7 +279,7 @@ export const usePatientStore = create<AppState>()(
         }
       },
 
-      updateOrderStatus: async (orderId: string, status: OrderStatus, tracking?: string, carrier?: string) => {
+      updateOrderStatus: async (orderId: string, status: OrderStatus, tracking?: string, carrier?: string, trackingUrl?: string, estimatedDelivery?: string) => {
         const orderToUpdate = get().orders.find(o => o.id === orderId);
         if (!orderToUpdate) return;
         
@@ -266,6 +293,8 @@ export const usePatientStore = create<AppState>()(
                   status,
                   ...(tracking && { tracking }),
                   ...(carrier && { carrier }),
+                  ...(trackingUrl && { trackingUrl }),
+                  ...(estimatedDelivery && { estimatedDelivery }),
                   timeline: newTimeline
                 }
               : order
@@ -277,6 +306,8 @@ export const usePatientStore = create<AppState>()(
             status,
             ...(tracking && { tracking }),
             ...(carrier && { carrier }),
+            ...(trackingUrl && { tracking_url: trackingUrl }),
+            ...(estimatedDelivery && { estimated_delivery: estimatedDelivery }),
             timeline: newTimeline
           }).eq('order_number', orderId);
         } catch (error) {
@@ -293,6 +324,7 @@ export const usePatientStore = create<AppState>()(
               medication: medication,
               dosage_instructions: dosage,
               doctor_note: note,
+              doctor_id: useAuthStore.getState().user?.id,
               last_approved_at: new Date().toISOString()
             })
             .eq('order_number', orderId);
