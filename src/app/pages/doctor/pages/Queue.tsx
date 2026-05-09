@@ -411,10 +411,10 @@ export function DoctorQueuePage() {
                              />
                            </div>
 
-                           <div className="grid grid-cols-2 gap-4 pt-4">
+                           <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
                               <Button 
                                variant="outline" 
-                               className="rounded-2xl border-white/10 bg-white/5 text-[10px] font-black uppercase italic tracking-widest h-14 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50 transition-all"
+                               className="w-full sm:flex-1 rounded-2xl border-white/10 bg-white/5 text-[10px] font-black uppercase italic tracking-widest h-14 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50 transition-all"
                               >
                                 Deny Request
                               </Button>
@@ -423,9 +423,10 @@ export function DoctorQueuePage() {
                                  updateOrderRx(selected.id, selected.medication, selected.dosageInstructions, rxNote);
                                  setRxNote("");
                                }}
-                               className="rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-black font-black uppercase italic tracking-tighter h-14 group shadow-xl shadow-[#22c55e]/20"
+                               className="w-full sm:flex-[2] flex items-center justify-center rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-black font-black uppercase italic tracking-tighter text-sm h-14 group shadow-xl shadow-[#22c55e]/20 whitespace-nowrap px-4"
                               >
-                                Approve & Dispatch <Sparkles className="ml-2 h-4 w-4 group-hover:animate-spin" />
+                                Approve & Dispatch 
+                                <Sparkles className="ml-2 h-4 w-4 shrink-0 group-hover:animate-spin" />
                               </Button>
                            </div>
                         </div>
