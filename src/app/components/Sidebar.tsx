@@ -69,7 +69,7 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
   superadmin: [
     { icon: LayoutDashboard, label: "Overview", href: "/superadmin" },
     { icon: Home, label: "Brand Admin", href: "/admin" },
-    { icon: Users, label: "Doctor Queue", href: "/doctor/queue" },
+    { icon: Stethoscope, label: "Doctors", href: "/superadmin/doctors" },
     { icon: Building2, label: "Brands", href: "/superadmin/brands" },
     { icon: BarChart3, label: "Analytics", href: "/superadmin/analytics" },
     { icon: Users, label: "All Users", href: "/superadmin/users" },

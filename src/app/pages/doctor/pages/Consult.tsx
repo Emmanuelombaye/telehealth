@@ -287,6 +287,7 @@ export function DoctorConsultPage() {
         status: 'active',
         refills_remaining: 3,
         doctor_id: currentUser?.id,
+        pharmacy_name: order.pharmacy || "VIALSRX EXPRESS"
       }]);
 
       // 3. Update order status → rx_sent

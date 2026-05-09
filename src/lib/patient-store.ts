@@ -326,21 +326,42 @@ export const usePatientStore = create<AppState>()(
         try {
           const orderToUpdate = get().orders.find(o => o.id === orderId);
           const newTimeline = orderToUpdate ? [...orderToUpdate.timeline, { status: 'rx_sent', date: new Date().toLocaleString() }] : undefined;
+          const currentUser = useAuthStore.getState().user;
+          const doctorName = currentUser?.user_metadata?.first_name
+            ? `Dr. ${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}`
+            : "Attending Physician";
 
-          const { error } = await supabase
+          // 1. Update Order status
+          const { error: orderError } = await supabase
             .from('orders')
             .update({
               status: 'rx_sent',
               medication: medication,
               dosage_instructions: dosage,
               doctor_note: note,
-              doctor_id: useAuthStore.getState().user?.id,
+              doctor: doctorName,
+              doctor_id: currentUser?.id,
               last_approved_at: new Date().toISOString(),
               ...(newTimeline && { timeline: newTimeline })
             })
             .eq('order_number', orderId);
             
-          if (error) throw error;
+          if (orderError) throw orderError;
+
+          // 2. Create Prescription entry for Patient Portal
+          if (orderToUpdate) {
+            await supabase.from('prescriptions').insert([{
+              patient_id: orderToUpdate.userId || orderToUpdate.user_id,
+              doctor_id: currentUser?.id,
+              medication: medication,
+              dosage: dosage,
+              frequency: note,
+              status: 'active',
+              refills_remaining: 5,
+              pharmacy_name: orderToUpdate.pharmacy || "VIALSRX EXPRESS"
+            }]);
+          }
+
           await get().fetchOrders();
         } catch (error) {
           console.error("Failed to update rx:", error);

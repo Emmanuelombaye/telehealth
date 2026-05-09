@@ -38,12 +38,7 @@ export function DoctorQueuePage() {
   const [rxNote, setRxNote] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Shipping state
-  const [trackingNumber, setTrackingNumber] = useState("");
-  const [carrier, setCarrier] = useState("UPS");
-  const [estDelivery, setEstDelivery] = useState("");
-
-  // Filter orders for the queue - Include rx_sent so they can be shipped
+  // Filter orders for the queue
   const queue = orders.filter(o => {
     const isActive = o.status === "order_submitted" || o.status === "doctor_reviewing" || o.status === "rx_sent";
     const needsRefill = o.nextRefillAt && new Date(o.nextRefillAt) <= new Date();
@@ -56,12 +51,6 @@ export function DoctorQueuePage() {
     return () => unsubscribe();
   }, [subscribeToOrders]);
 
-  useEffect(() => {
-    if (queue.length > 0 && !selectedId) {
-      setSelectedId(queue[0].id);
-    }
-  }, [queue, selectedId]);
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await fetchOrders();
@@ -70,7 +59,7 @@ export function DoctorQueuePage() {
 
   const theme = {
     bg: "bg-[#060807]",
-    sidebar: "bg-[#111814]", // Brighter panel for the left list to separate it
+    sidebar: "bg-[#111814]",
     card: "bg-[#0c120f]/80",
     cardSolid: "bg-[#0c120f]",
     border: "border-[#1a2620]",
@@ -79,8 +68,6 @@ export function DoctorQueuePage() {
     textGreen: "text-[#22c55e]",
     textBeige: "text-[#d4c4a8]",
   };
-
-  const avail = availabilityConfig[availability];
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
@@ -116,365 +103,278 @@ export function DoctorQueuePage() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-6 h-[calc(100vh-220px)] min-h-[600px]">
-        {/* Left Side: Queue List */}
-        <div className="lg:col-span-4 flex flex-col gap-4 overflow-hidden">
+      <div className="grid lg:grid-cols-12 gap-6 min-h-[600px] relative">
+        {/* Main Queue Table */}
+        <div className="lg:col-span-12 overflow-hidden flex flex-col">
           <div className={`${theme.sidebar} border-[#1a2620] border rounded-[2.5rem] flex-1 flex flex-col overflow-hidden shadow-2xl`}>
-            <div className="p-6 border-b border-white/5 bg-white/[0.02]">
-              <div className="relative">
+            <div className="p-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between gap-4">
+              <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-4 top-3 h-4 w-4 text-[#7f9488]" />
                 <input 
-                  placeholder="SEARCH SPECIMENS..." 
+                  placeholder="SEARCH PATIENTS OR PRODUCTS..." 
                   className="w-full bg-black/40 border border-white/5 rounded-2xl py-2.5 pl-12 pr-4 text-xs font-bold italic text-white focus:border-[#22c55e]/50 outline-none transition-all"
                 />
               </div>
+              <div className="flex items-center gap-3">
+                 <Button 
+                  onClick={handleRefresh}
+                  variant="outline"
+                  className="rounded-2xl bg-white/5 border-white/5 text-[10px] font-black uppercase italic tracking-widest hover:bg-white/10 gap-2 h-10 px-6"
+                 >
+                   <Activity className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
+                   Sync Matrix
+                 </Button>
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-              <AnimatePresence mode="popLayout">
-                {queue.map((order, i) => (
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    key={order.id}
-                    onClick={() => setSelectedId(order.id)}
-                    className={cn(
-                      "group p-5 rounded-[2rem] border transition-all cursor-pointer relative overflow-hidden",
-                      selectedId === order.id 
-                        ? "bg-[#22c55e]/10 border-[#22c55e]/40 shadow-xl shadow-[#22c55e]/5" 
-                        : "bg-white/[0.02] border-white/5 hover:border-white/20"
-                    )}
-                  >
-                    {selectedId === order.id && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#22c55e]" />
-                    )}
-                    
-                    <div className="flex items-center gap-4">
-                      <div className={cn(
-                        "h-12 w-12 rounded-2xl flex items-center justify-center font-black text-xs border transition-all",
-                        selectedId === order.id 
-                          ? "bg-[#22c55e] text-black border-[#22c55e]" 
-                          : "bg-white/5 text-[#7f9488] border-white/5 group-hover:border-white/20"
-                      )}>
-                        {order.patientName.charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                           <p className={cn("text-sm font-black italic truncate transition-colors", selectedId === order.id ? "text-white" : "text-[#d4c4a8]")}>
-                             {order.patientName}
-                           </p>
-                           {order.urgent && <Zap className="h-3.5 w-3.5 text-red-500 fill-red-500 animate-pulse shrink-0" />}
-                        </div>
-                        <p className={`${theme.textMuted} text-[10px] font-bold uppercase tracking-widest mt-1 truncate`}>
-                          {order.medication}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
-                       <span className={cn(
-                         "text-[9px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md",
-                         queueStatusConfig[order.status]?.bg,
-                         queueStatusConfig[order.status]?.color
-                       )}>
-                         {queueStatusConfig[order.status]?.label}
-                       </span>
-                       <span className={`${theme.textMuted} text-[9px] font-bold`}>{order.time || '12m ago'}</span>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+            <div className="flex-1 overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/5 bg-white/[0.01]">
+                    <th className="px-8 py-5 text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em]">Patient</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em]">Brand</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em]">Product</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em]">Submission Date</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em]">Status</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em] text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.03]">
+                  <AnimatePresence mode="popLayout">
+                    {queue.map((order) => (
+                      <motion.tr
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        key={order.id}
+                        onClick={() => setSelectedId(order.id)}
+                        className={cn(
+                          "group cursor-pointer transition-all hover:bg-[#22c55e]/[0.02]",
+                          selectedId === order.id ? "bg-[#22c55e]/5" : ""
+                        )}
+                      >
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-4">
+                            <div className={cn(
+                              "h-10 w-10 rounded-xl flex items-center justify-center font-black text-xs border transition-all",
+                              selectedId === order.id 
+                                ? "bg-[#22c55e] text-black border-[#22c55e]" 
+                                : "bg-white/5 text-[#7f9488] border-white/5"
+                            )}>
+                              {order.patientName?.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-black text-white italic uppercase tracking-tight">
+                                {order.patientName}
+                              </p>
+                              <p className="text-[10px] font-bold text-[#7f9488] mt-0.5">MRN: {order.mrn || 'PENDING'}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <Badge variant="outline" className="bg-white/5 border-white/5 text-[10px] font-black uppercase tracking-widest text-[#d4c4a8]">
+                            {order.subBrand || "Peak Health"}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div>
+                            <p className="text-xs font-bold text-white uppercase italic">{order.medication}</p>
+                            <p className="text-[10px] text-[#7f9488] mt-0.5">{order.category || "General Wellness"}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-2 text-[#7f9488]">
+                            <Clock className="h-3.5 w-3.5" />
+                            <span className="text-xs font-bold">{order.orderedDate || new Date(order.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                           <span className={cn(
+                             "text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border",
+                             queueStatusConfig[order.status]?.bg,
+                             queueStatusConfig[order.status]?.color,
+                             "border-white/5"
+                           )}>
+                             {queueStatusConfig[order.status]?.label}
+                           </span>
+                        </td>
+                        <td className="px-8 py-5 text-right">
+                          <Button 
+                            variant="outline"
+                            className="h-8 rounded-xl border-[#22c55e]/20 text-[#22c55e] text-[9px] font-black uppercase tracking-widest hover:bg-[#22c55e] hover:text-black transition-all px-4"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedId(order.id);
+                            }}
+                          >
+                            Review Specimen
+                          </Button>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                </tbody>
+              </table>
 
               {queue.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-center p-10">
+                <div className="py-20 flex flex-col items-center justify-center text-center">
                   <Database className="h-12 w-12 text-white/5 mb-4" />
                   <p className="text-sm font-black uppercase tracking-[0.2em] text-white/10 italic">Queue Void</p>
                 </div>
               )}
             </div>
-
-            <div className="p-4 border-t border-white/5 bg-white/[0.01]">
-               <Button 
-                onClick={handleRefresh}
-                className="w-full rounded-2xl bg-white/5 border border-white/5 text-[10px] font-black uppercase italic tracking-widest hover:bg-white/10 gap-2 h-10"
-               >
-                 <Activity className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
-                 Force Re-Sync Matrix
-               </Button>
-            </div>
           </div>
         </div>
 
-        {/* Right Side: Patient Detail & Clinical Interface */}
-        <div className="lg:col-span-8 overflow-hidden flex flex-col gap-6">
-          <AnimatePresence mode="wait">
-            {selected ? (
-              <motion.div
-                key={selected.id}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                className="flex-1 flex flex-col gap-6 overflow-hidden"
-              >
-                {/* Patient Profile Ribbon */}
-                <div className={`${theme.card} ${theme.border} border rounded-[2.5rem] p-8 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6`}>
-                   <div className="flex items-center gap-6">
-                      <div className="h-20 w-20 rounded-[2rem] bg-gradient-to-br from-[#22c55e] to-[#0c120f] p-[1px] shadow-2xl shadow-black">
-                         <div className="h-full w-full rounded-[2rem] bg-[#0c120f] flex items-center justify-center font-black text-2xl text-[#22c55e] italic">
-                            {selected.patientName.charAt(0)}
-                         </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-3 mb-1">
-                          <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">{selected.patientName}</h2>
-                          <Globe className="h-4 w-4 text-[#7f9488]" />
-                        </div>
-                        <div className="flex items-center gap-4">
-                           <span className={`${theme.textMuted} text-[10px] font-black uppercase tracking-widest`}>
-                             {selected.patientVitals?.sex || 'Unknown Sex'} • AGE {selected.patientAge} • BMI {selected.patientVitals?.bmi || 'N/A'}
-                           </span>
-                           <div className="h-1 w-1 rounded-full bg-white/20" />
-                           <span className={`${theme.textGreen} text-[10px] font-black uppercase tracking-widest`}>AUTHORIZED ACCESS • MRN: {selected.mrn || 'PENDING'}</span>
-                        </div>
-                      </div>
-                   </div>
-
-                    <div className="flex gap-3">
-                      <Button 
-                        onClick={() => navigate(`/doctor/consult?orderId=${selected.id}`)}
-                        className="rounded-2xl bg-[#22c55e] text-black font-black uppercase italic px-6 h-12 shadow-lg shadow-[#22c55e]/20 group whitespace-nowrap flex-shrink-0"
-                      >
-                        <Video className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" /> 
-                        {selected.zoomStatus === 'requested' ? 'Join Zoom Call' : 'Launch Consultation'}
-                      </Button>
-                      <Link to={`/doctor/messages?userId=${selected.userId || selected.user_id}`}>
-                        <Button variant="outline" className="rounded-2xl border-white/10 bg-white/5 h-12 w-12 p-0 hover:bg-white/10">
-                          <MessageSquare className="h-5 w-5 text-[#d4c4a8]" />
-                        </Button>
-                      </Link>
+        {/* Selected Patient Detail Overlay */}
+        <AnimatePresence>
+          {selectedId && selected && (
+            <motion.div
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 100 }}
+              className="absolute inset-0 z-50 flex flex-col gap-6"
+            >
+              <div className="absolute inset-0 bg-[#060807] border border-[#1a2620] rounded-[3rem] shadow-2xl" />
+              
+              <div className="relative flex-1 flex flex-col p-8 overflow-hidden">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-6">
+                    <div className="h-16 w-16 rounded-2xl bg-[#22c55e] flex items-center justify-center font-black text-2xl text-black italic">
+                      {selected.patientName.charAt(0)}
                     </div>
+                    <div>
+                      <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">{selected.patientName}</h2>
+                      <div className="flex items-center gap-4 mt-1">
+                         <span className={`${theme.textMuted} text-[10px] font-black uppercase tracking-widest`}>
+                           AGE {selected.patientAge} • {selected.patientVitals?.sex || 'MALE'} • BMI {selected.patientVitals?.bmi || '24.5'}
+                         </span>
+                         <Badge className="bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/20 text-[9px] font-black uppercase">Verified Specimen</Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setSelectedId(null)}
+                    className="h-12 w-12 rounded-full hover:bg-white/5 text-[#7f9488] hover:text-white"
+                  >
+                    <ChevronRight className="h-6 w-6 rotate-90" />
+                  </Button>
                 </div>
 
-                <div className="flex-1 grid md:grid-cols-2 gap-6 overflow-hidden">
+                <div className="flex-1 grid md:grid-cols-2 gap-8 overflow-hidden">
                   {/* Intake & History */}
-                  <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar">
-                     <div className={`${theme.card} ${theme.border} border rounded-[2rem] p-6`}>
+                  <div className="space-y-6 overflow-y-auto pr-4 custom-scrollbar">
+                     <div className="bg-white/[0.02] border border-white/5 rounded-[2rem] p-6">
                         <div className="flex items-center gap-2 mb-6">
                           <FileText className="h-4 w-4 text-[#22c55e]" />
-                          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#d4c4a8]">Intake Telemetry</h3>
+                          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#d4c4a8]">Intake Diagnostics</h3>
                         </div>
                         
-                        <div className="space-y-4">
-                           <div className="grid grid-cols-2 gap-4">
-                              <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                                 <p className="text-[9px] font-black text-[#7f9488] uppercase mb-1">Requested Agent</p>
-                                 <p className="text-xs font-bold text-white italic">{selected.medication}</p>
-                              </div>
-                              <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                                 <p className="text-[9px] font-black text-[#7f9488] uppercase mb-1">Intake Compliance</p>
-                                 <p className="text-xs font-bold text-[#22c55e] italic">100% VERIFIED</p>
-                              </div>
-                           </div>
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                          <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                             <p className="text-[9px] font-black text-[#7f9488] uppercase mb-1">Skin Condition</p>
+                             <p className="text-xs font-bold text-white italic">{selected.intakeAnswers?.skin_condition || 'Healthy'}</p>
+                          </div>
+                          <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                             <p className="text-[9px] font-black text-[#7f9488] uppercase mb-1">Allergies</p>
+                             <p className="text-xs font-bold text-red-400 italic">{selected.intakeAnswers?.allergies || 'None Reported'}</p>
+                          </div>
+                          <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                             <p className="text-[9px] font-black text-[#7f9488] uppercase mb-1">Medications</p>
+                             <p className="text-xs font-bold text-white italic">{selected.intakeAnswers?.current_meds || 'None'}</p>
+                          </div>
+                          <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                             <p className="text-[9px] font-black text-[#7f9488] uppercase mb-1">Chief Complaint</p>
+                             <p className="text-xs font-bold text-amber-500 italic">{selected.medication}</p>
+                          </div>
+                        </div>
 
-                           <div className="p-5 bg-amber-500/5 rounded-2xl border border-amber-500/20">
-                              <div className="flex items-center gap-2 mb-2">
-                                <AlertCircle className="h-3 w-3 text-amber-500" />
-                                <p className="text-[9px] font-black text-amber-500 uppercase">Primary Complaint</p>
-                              </div>
-                              <p className="text-xs font-bold text-[#d4c4a8] leading-relaxed italic">
-                                "{selected.intakeNotes || 'Patient requesting weight management protocol via GLP-1 therapy.'}"
-                              </p>
+                        <div className="space-y-4 pt-4 border-t border-white/5">
+                           <div className="flex items-center gap-2 mb-4">
+                             <Activity className="h-4 w-4 text-[#7f9488]" />
+                             <h4 className="text-[10px] font-black text-[#d4c4a8] uppercase tracking-[0.2em]">Detailed Questionnaire</h4>
                            </div>
-
-                           <div className="space-y-4 pt-4">
-                              <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-                                <Activity className="h-4 w-4 text-[#7f9488]" />
-                                <h4 className="text-[11px] font-black text-[#d4c4a8] uppercase tracking-[0.2em]">Diagnostic Intake</h4>
-                              </div>
-                               {selected.intakeAnswers && Object.entries(selected.intakeAnswers).length > 0 ? (
-                                 <div className="flex flex-col gap-3">
-                                   {Object.entries(selected.intakeAnswers).map(([q, a], i) => (
-                                     <div key={i} className="group relative p-4 bg-gradient-to-r from-[#22c55e]/[0.03] to-transparent border-l-2 border-[#22c55e]/40 hover:border-[#22c55e] hover:bg-[#22c55e]/5 rounded-r-2xl transition-all">
-                                       <p className="text-[11px] font-bold text-[#7f9488] mb-2 leading-relaxed pr-4">{q}</p>
-                                       <div className="flex items-start gap-2">
-                                         <div className="h-1.5 w-1.5 rounded-full bg-[#22c55e] mt-1.5 shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                                         <p className="text-sm text-white font-medium">{Array.isArray(a) ? a.join(", ") : a}</p>
-                                       </div>
-                                     </div>
-                                   ))}
-                                 </div>
-                               ) : (
-                                 <div className="p-10 text-center border-2 border-dashed border-white/5 rounded-3xl bg-white/[0.01]">
-                                    <Database className="h-8 w-8 text-white/10 mx-auto mb-3" />
-                                    <p className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest">No Intake Diagnostics Detected</p>
-                                    <p className="text-[9px] text-[#7f9488]/60 mt-1">Patient did not submit a clinical questionnaire.</p>
-                                 </div>
-                               )}
+                           <div className="space-y-4">
+                             {selected.intakeAnswers && Object.entries(selected.intakeAnswers).map(([q, a], i) => (
+                               <div key={i} className="p-4 bg-white/[0.01] border border-white/5 rounded-2xl">
+                                 <p className="text-[10px] font-bold text-[#7f9488] mb-1">{q.replace(/_/g, ' ').toUpperCase()}</p>
+                                 <p className="text-sm text-white font-medium">{Array.isArray(a) ? a.join(", ") : a}</p>
+                               </div>
+                             ))}
                            </div>
                         </div>
                      </div>
                   </div>
 
-                  {/* Rx Dispatch Terminal */}
-                  <div className="space-y-6">
-                    {selected.status === 'rx_sent' ? (
-                      /* Shipping Terminal */
-                      <div className={`${theme.card} border-blue-500/30 border rounded-[2rem] p-8 relative overflow-hidden bg-gradient-to-br from-[#0c120f] to-[#121a24]`}>
-                        <div className="absolute top-0 right-0 p-6 opacity-10">
-                           <Globe className="h-24 w-24 text-blue-500" />
+                  {/* Prescription Dispatch */}
+                  <div className="flex flex-col gap-6 overflow-hidden">
+                    <div className="flex-1 bg-gradient-to-br from-[#1a2620] to-[#0c120f] border border-[#22c55e]/30 rounded-[2rem] p-8 relative overflow-hidden flex flex-col">
+                      <div className="absolute top-0 right-0 p-8 opacity-5">
+                         <Pill className="h-32 w-32 text-[#22c55e]" />
+                      </div>
+
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className="h-12 w-12 rounded-xl bg-[#22c55e] flex items-center justify-center">
+                           <ShieldCheck className="h-6 w-6 text-black" />
                         </div>
-
-                        <div className="flex items-center gap-3 mb-8">
-                          <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center">
-                             <Truck className="h-5 w-5 text-black" />
-                          </div>
-                          <div>
-                             <h3 className="text-sm font-black text-white italic uppercase tracking-tighter">Shipping & Logistics</h3>
-                             <p className="text-[9px] font-bold text-blue-500 uppercase">Ready for Dispatch</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-6 relative z-10">
-                           <div className="grid grid-cols-2 gap-4">
-                             <div>
-                               <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2 block">Carrier</label>
-                               <select 
-                                 value={carrier}
-                                 onChange={(e) => setCarrier(e.target.value)}
-                                 className="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-xs font-bold italic text-white focus:border-blue-500/50 outline-none transition-all"
-                               >
-                                 <option value="UPS">UPS Express</option>
-                                 <option value="FedEx">FedEx Priority</option>
-                                 <option value="DHL">DHL Global</option>
-                                 <option value="USPS">USPS First Class</option>
-                               </select>
-                             </div>
-                             <div>
-                               <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2 block">Est. Delivery</label>
-                               <input 
-                                 type="date"
-                                 value={estDelivery}
-                                 onChange={(e) => setEstDelivery(e.target.value)}
-                                 className="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-xs font-bold italic text-white focus:border-blue-500/50 outline-none transition-all"
-                               />
-                             </div>
-                           </div>
-
-                           <div>
-                             <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2 block">Tracking Number</label>
-                             <input 
-                               type="text"
-                               value={trackingNumber}
-                               onChange={(e) => setTrackingNumber(e.target.value)}
-                               placeholder="ENTER TRACKING ID..."
-                               className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-blue-500/50 outline-none transition-all"
-                             />
-                           </div>
-
-                           <Button 
-                            onClick={() => {
-                              updateOrderStatus(selected.id, 'shipped', trackingNumber, carrier, undefined, estDelivery);
-                              setTrackingNumber("");
-                            }}
-                            className="w-full rounded-2xl bg-blue-500 hover:bg-blue-600 text-black font-black uppercase italic tracking-tighter h-14 group shadow-xl shadow-blue-500/20"
-                           >
-                             Dispatch Shipment <ArrowUpRight className="ml-2 h-4 w-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                           </Button>
-                        </div>
-
-                        <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
-                           <div className="flex items-center gap-2">
-                              <ShieldCheck className="h-3 w-3 text-blue-500" />
-                              <span className="text-[9px] font-bold text-[#7f9488] uppercase italic">Logistics Auth: Active</span>
-                           </div>
-                           <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                        <div>
+                           <h3 className="text-lg font-black text-white italic uppercase tracking-tighter">Clinical Directive Terminal</h3>
+                           <p className="text-[10px] font-bold text-[#22c55e] uppercase tracking-widest">Provider: DR. MARCUS THORNE</p>
                         </div>
                       </div>
-                    ) : (
-                      /* Rx Dispatch Terminal */
-                      <div className={`${theme.card} border-[#22c55e]/30 border rounded-[2rem] p-8 relative overflow-hidden bg-gradient-to-br from-[#0c120f] to-[#1a2620]`}>
-                        <div className="absolute top-0 right-0 p-6 opacity-10">
-                           <Pill className="h-24 w-24 text-[#22c55e]" />
-                        </div>
 
-                        <div className="flex items-center gap-3 mb-8">
-                          <div className="h-10 w-10 rounded-xl bg-[#22c55e] flex items-center justify-center">
-                             <Lock className="h-5 w-5 text-black" />
-                          </div>
-                          <div>
-                             <h3 className="text-sm font-black text-white italic uppercase tracking-tighter">Secure Dispatch Terminal</h3>
-                             <p className="text-[9px] font-bold text-[#22c55e] uppercase">Encryption Layer Active</p>
-                          </div>
-                        </div>
+                      <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                         <div>
+                           <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em] mb-2 block">Dosage Instructions</label>
+                           <input 
+                             placeholder="E.G. INJECT 0.25MG WEEKLY..."
+                             className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none transition-all"
+                           />
+                         </div>
+                         <div className="flex-1">
+                           <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em] mb-2 block">Clinical Visit Notes</label>
+                           <textarea 
+                             placeholder="PATIENT EXHIBITS NO CONTRAINDICATIONS..."
+                             className="w-full h-32 bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none transition-all resize-none"
+                           />
+                         </div>
 
-                        <div className="space-y-6 relative z-10">
-                           <div>
-                             <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2 block">Clinical Directive / Rx Note</label>
-                             <textarea 
-                               value={rxNote}
-                               onChange={(e) => setRxNote(e.target.value)}
-                               placeholder="INJECT 0.25MG SUBCUTANEOUSLY ONCE WEEKLY FOR 4 WEEKS..."
-                               className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none h-32 transition-all"
-                             />
-                           </div>
-
-                           <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-                              <Button 
-                               variant="outline" 
-                               className="w-full sm:flex-1 rounded-2xl border-white/10 bg-white/5 text-[10px] font-black uppercase italic tracking-widest h-14 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50 transition-all"
-                              >
-                                Deny Request
-                              </Button>
-                              <Button 
-                               onClick={() => {
-                                 updateOrderRx(selected.id, selected.medication, selected.dosageInstructions, rxNote);
-                                 setRxNote("");
-                               }}
-                               className="w-full sm:flex-[2] flex items-center justify-center rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-black font-black uppercase italic tracking-tighter text-sm h-14 group shadow-xl shadow-[#22c55e]/20 whitespace-nowrap px-4"
-                              >
-                                Approve & Dispatch 
-                                <Sparkles className="ml-2 h-4 w-4 shrink-0 group-hover:animate-spin" />
-                              </Button>
-                           </div>
-                        </div>
-
-                        <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
-                           <div className="flex items-center gap-2">
-                              <ShieldCheck className="h-3 w-3 text-[#22c55e]" />
-                              <span className="text-[9px] font-bold text-[#7f9488] uppercase italic">Provider Auth: Verified</span>
-                           </div>
-                           <div className="h-1.5 w-1.5 rounded-full bg-[#22c55e] animate-pulse" />
-                        </div>
+                         <div className="grid grid-cols-2 gap-4 pt-4">
+                            <Button 
+                              onClick={() => {
+                                updateOrderRx(selected.id, selected.medication, selected.dosageInstructions, rxNote);
+                                setSelectedId(null);
+                              }}
+                              className="bg-[#22c55e] hover:bg-[#16a34a] text-black h-14 rounded-2xl font-black uppercase italic text-sm tracking-tighter shadow-xl shadow-[#22c55e]/20"
+                            >
+                              Finalize & Approve
+                            </Button>
+                            <Button 
+                              variant="outline"
+                              className="border-[#22c55e]/40 text-[#22c55e] h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-[#22c55e]/10"
+                              onClick={() => window.open('https://surescripts.com', '_blank')}
+                            >
+                              SureScripts e-Rx
+                            </Button>
+                         </div>
                       </div>
-                    )}
 
-                    {/* Infrastructure Stats */}
-                    <div className="grid grid-cols-2 gap-4">
-                       <div className={`${theme.card} ${theme.border} border rounded-[1.5rem] p-5`}>
-                          <p className="text-[9px] font-black text-[#7f9488] uppercase tracking-widest mb-1">Network Ping</p>
-                          <p className="text-xl font-black text-[#d4c4a8] italic">14ms</p>
-                       </div>
-                       <div className={`${theme.card} ${theme.border} border rounded-[1.5rem] p-5`}>
-                          <p className="text-[9px] font-black text-[#7f9488] uppercase tracking-widest mb-1">Queue Load</p>
-                          <p className="text-xl font-black text-[#22c55e] italic">LOW</p>
-                       </div>
+                      <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between shrink-0">
+                         <div className="flex items-center gap-2">
+                           <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
+                           <span className="text-[9px] font-black text-[#7f9488] uppercase tracking-widest italic">Encrypted Pharmacy Link Active</span>
+                         </div>
+                         <p className="text-[10px] font-black text-[#22c55e] uppercase">Refill: 1 of 6 Authorized</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </motion.div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center">
-                 <div className="h-20 w-20 rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 mb-6">
-                    <Activity className="h-10 w-10 text-white/20 animate-pulse" />
-                 </div>
-                 <h2 className="text-xl font-black text-white/40 italic uppercase tracking-widest">Select Patient Profile</h2>
-                 <p className="text-xs font-bold text-white/10 uppercase tracking-widest mt-2 italic">Awaiting Matrix Selection...</p>
               </div>
-            )}
-          </AnimatePresence>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

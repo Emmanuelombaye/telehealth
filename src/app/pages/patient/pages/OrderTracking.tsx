@@ -140,6 +140,23 @@ export function PatientOrderTrackingPage() {
           </Card>
         )}
 
+        {/* Pharmacy update note */}
+        {(activeSelected.pharmacy_note || activeSelected.pharmacyNote) && (
+          <Card className="border-amber-200 bg-amber-50 shadow-sm rounded-2xl overflow-hidden mt-4">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                  <Package className="h-4 w-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">Pharmacy Update</p>
+                  <p className="text-xs font-bold text-amber-900 italic mt-1">"{activeSelected.pharmacy_note || activeSelected.pharmacyNote}"</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tracking */}
         {(activeSelected.tracking_number || activeSelected.tracking) && (
           <Card>

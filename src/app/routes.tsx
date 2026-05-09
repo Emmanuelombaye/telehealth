@@ -65,6 +65,7 @@ import { SuperAdminDashboard } from "./pages/superadmin/Dashboard";
 import { SuperAdminBrandsPage } from "./pages/superadmin/pages/Brands";
 import { SuperAdminAnalyticsPage } from "./pages/superadmin/pages/Analytics";
 import { SuperAdminUsersPage } from "./pages/superadmin/pages/Users";
+import { SuperAdminDoctorsPage } from "./pages/superadmin/pages/Doctors";
 import { SuperAdminFinancePage } from "./pages/superadmin/pages/Finance";
 import { SuperAdminSecurityPage } from "./pages/superadmin/pages/Security";
 
@@ -190,6 +191,7 @@ export const router = createBrowserRouter([
               { path: "brands/:slug", Component: SuperAdminBrandsPage },
               { path: "analytics", Component: SuperAdminAnalyticsPage },
               { path: "users", Component: SuperAdminUsersPage },
+              { path: "doctors", Component: SuperAdminDoctorsPage },
               { path: "finance", Component: SuperAdminFinancePage },
               { path: "security", Component: SuperAdminSecurityPage },
             ],
