@@ -70,6 +70,7 @@ export function DoctorQueuePage() {
 
   const theme = {
     bg: "bg-[#060807]",
+    sidebar: "bg-[#111814]", // Brighter panel for the left list to separate it
     card: "bg-[#0c120f]/80",
     cardSolid: "bg-[#0c120f]",
     border: "border-[#1a2620]",
@@ -118,7 +119,7 @@ export function DoctorQueuePage() {
       <div className="grid lg:grid-cols-12 gap-6 h-[calc(100vh-220px)] min-h-[600px]">
         {/* Left Side: Queue List */}
         <div className="lg:col-span-4 flex flex-col gap-4 overflow-hidden">
-          <div className={`${theme.card} ${theme.border} border rounded-[2.5rem] flex-1 flex flex-col overflow-hidden`}>
+          <div className={`${theme.sidebar} border-[#1a2620] border rounded-[2.5rem] flex-1 flex flex-col overflow-hidden shadow-2xl`}>
             <div className="p-6 border-b border-white/5 bg-white/[0.02]">
               <div className="relative">
                 <Search className="absolute left-4 top-3 h-4 w-4 text-[#7f9488]" />
