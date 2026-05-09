@@ -3,55 +3,231 @@ import { Link, useSearchParams, useNavigate } from "react-router";
 import { 
   ArrowLeft, Video, Mic, MicOff, VideoOff, MessageSquare, 
   Pill, Zap, ShieldCheck, Activity, Users, 
-  Sparkles, CheckCircle2, MoreHorizontal, Loader2
+  Sparkles, CheckCircle2, MoreHorizontal, Loader2,
+  Stethoscope, Clock, ChevronRight, AlertCircle, Search, Filter
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { useAuthStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
 
+// ─── Patient Picker (shown when no orderId in URL) ───────────────────────────
+function PatientPicker() {
+  const navigate = useNavigate();
+  const [queue, setQueue] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    async function fetchQueue() {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .in('status', ['order_submitted', 'doctor_reviewing', 'rx_sent'])
+          .order('created_at', { ascending: true });
+        if (error) throw error;
+        setQueue(data || []);
+      } catch (err) {
+        console.error("Queue fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchQueue();
+
+    // Real-time sync
+    const channel = supabase
+      .channel('consult-queue-watch')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchQueue())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const statusConfig: Record<string, { label: string; color: string; bg: string; dot: string }> = {
+    order_submitted:  { label: "Awaiting Review", color: "text-amber-400",  bg: "bg-amber-400/10",  dot: "bg-amber-400" },
+    doctor_reviewing: { label: "In Review",       color: "text-[#22c55e]",  bg: "bg-[#22c55e]/10", dot: "bg-[#22c55e]" },
+    rx_sent:          { label: "Rx Dispatched",   color: "text-blue-400",   bg: "bg-blue-400/10",  dot: "bg-blue-400" },
+  };
+
+  const filtered = queue.filter(o =>
+    !search || o.patient_name?.toLowerCase().includes(search.toLowerCase()) ||
+    o.medication?.toLowerCase().includes(search.toLowerCase()) ||
+    o.order_number?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
+            <span className="text-[10px] font-black text-[#22c55e] uppercase tracking-[0.2em]">Live Queue Active</span>
+          </div>
+          <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter">Consultation Hub</h1>
+          <p className="text-[#7f9488] text-xs font-bold uppercase tracking-widest mt-1">
+            Select a patient to begin — {filtered.length} awaiting review
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7f9488]" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search patient or Rx..."
+              className="w-64 bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-9 pr-4 text-xs font-bold text-white focus:border-[#22c55e]/50 outline-none transition-all"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: "Awaiting Review", value: queue.filter(o => o.status === 'order_submitted').length, color: "text-amber-400", bg: "bg-amber-400/10" },
+          { label: "In Active Review", value: queue.filter(o => o.status === 'doctor_reviewing').length, color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
+          { label: "Rx Dispatched", value: queue.filter(o => o.status === 'rx_sent').length, color: "text-blue-400", bg: "bg-blue-400/10" },
+        ].map((stat, i) => (
+          <div key={i} className={`${stat.bg} border border-white/5 rounded-2xl p-4`}>
+            <p className={`text-2xl font-black ${stat.color} italic`}>{stat.value}</p>
+            <p className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mt-0.5">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Patient list */}
+      <div className="space-y-3">
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <Loader2 className="h-8 w-8 animate-spin text-[#22c55e]" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
+            <div className="h-16 w-16 rounded-3xl bg-white/5 flex items-center justify-center border border-white/5">
+              <Stethoscope className="h-8 w-8 text-white/20" />
+            </div>
+            <p className="text-lg font-black text-white/30 italic uppercase tracking-wider">
+              {search ? "No matching patients" : "Queue is clear"}
+            </p>
+            <p className="text-xs font-bold text-[#7f9488] uppercase tracking-widest">
+              {search ? "Try a different search term" : "No patients awaiting consultation"}
+            </p>
+          </div>
+        ) : filtered.map((order, i) => {
+          const cfg = statusConfig[order.status] || statusConfig.order_submitted;
+          return (
+            <button
+              key={order.id}
+              onClick={() => navigate(`/doctor/consult?orderId=${order.order_number}`)}
+              className="w-full group flex items-center gap-5 p-5 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:border-[#22c55e]/30 hover:bg-[#22c55e]/5 transition-all duration-200 text-left relative overflow-hidden"
+            >
+              {/* Priority number */}
+              <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/5 group-hover:border-[#22c55e]/30 flex items-center justify-center font-black text-lg text-[#7f9488] group-hover:text-[#22c55e] transition-all shrink-0">
+                {i + 1}
+              </div>
+
+              {/* Avatar */}
+              <div className="h-12 w-12 rounded-2xl bg-[#22c55e]/10 border border-[#22c55e]/20 flex items-center justify-center font-black text-[#22c55e] text-lg shrink-0">
+                {order.patient_name?.charAt(0) || '?'}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-1">
+                  <p className="text-sm font-black text-white italic truncate">{order.patient_name || "Unknown Patient"}</p>
+                  {order.urgent && (
+                    <span className="text-[9px] font-black text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full uppercase tracking-wide animate-pulse shrink-0">
+                      URGENT
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] font-bold text-[#7f9488] uppercase tracking-widest truncate">
+                  {order.medication} · {order.category}
+                </p>
+                <p className="text-[9px] text-[#7f9488]/60 mt-0.5 font-mono">#{order.order_number}</p>
+              </div>
+
+              {/* Status */}
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${cfg.bg} shrink-0`}>
+                <div className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+                <span className={`text-[9px] font-black uppercase tracking-widest ${cfg.color}`}>{cfg.label}</span>
+              </div>
+
+              {/* Wait time */}
+              <div className="flex items-center gap-1.5 text-[#7f9488] shrink-0 hidden md:flex">
+                <Clock className="h-3 w-3" />
+                <span className="text-[10px] font-bold">
+                  {Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000)}m
+                </span>
+              </div>
+
+              {/* Arrow */}
+              <ChevronRight className="h-5 w-5 text-[#7f9488] group-hover:text-[#22c55e] group-hover:translate-x-0.5 transition-all shrink-0" />
+
+              {/* Hover glow */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#22c55e]/0 to-[#22c55e]/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Consult Page ────────────────────────────────────────────────────────
 export function DoctorConsultPage() {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
   const navigate = useNavigate();
 
   const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!orderId); // only load if orderId present
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
-  const [isScribeActive, setIsScribeActive] = useState(true);
-  const [transcription, setTranscription] = useState<string[]>([]);
   const [isFinalizing, setIsFinalizing] = useState(false);
 
   const [soapNotes, setSoapNotes] = useState({
-    subjective: "Loading...",
-    objective: "Loading...",
-    assessment: "Loading...",
-    plan: "Loading..."
+    subjective: "",
+    objective: "",
+    assessment: "",
+    plan: ""
   });
 
   useEffect(() => {
-    if (!orderId) {
-      setLoading(false);
-      return;
-    }
+    if (!orderId) return;
+    setLoading(true);
+
     async function fetchOrder() {
-      const { data, error } = await supabase
+      // Try matching by order_number first, then by id
+      let { data, error } = await supabase
         .from('orders')
         .select('*')
         .eq('order_number', orderId)
-        .single();
+        .maybeSingle();
+
+      if (!data) {
+        ({ data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .maybeSingle());
+      }
+
       if (!error && data) {
         setOrder(data);
-        
-        // Dynamically build professional SOAP notes from patient data
-        const vitals = data.patient_vitals ? JSON.stringify(data.patient_vitals) : 'No recent vitals reported.';
-        
-        setSoapNotes({ 
+        const vitals = data.patient_vitals
+          ? (typeof data.patient_vitals === 'object' ? JSON.stringify(data.patient_vitals) : data.patient_vitals)
+          : 'No recent vitals reported.';
+        setSoapNotes({
           subjective: data.intake_notes || `Patient seeking consultation for ${data.category || 'general condition'}.`,
           objective: `Age: ${data.patient_age || 'N/A'}. Gender: ${data.patient_sex || 'Not specified'}. Vitals: ${vitals}. Intake Complete: ${data.intake_complete ? 'Yes' : 'No'}.`,
           assessment: `Patient requesting evaluation for ${data.medication || 'treatment'}.`,
-          plan: `Prescribe ${data.medication || 'medication'} ${data.dosage_instructions ? `(${data.dosage_instructions})` : 'as directed'}.`
+          plan: `Prescribe ${data.medication || 'medication'} ${data.dosage_instructions ? `(${data.dosage_instructions})` : 'as directed'}.`,
         });
+      } else {
+        console.warn("Order not found:", orderId, error);
       }
       setLoading(false);
     }
@@ -63,12 +239,13 @@ export function DoctorConsultPage() {
     setIsFinalizing(true);
     try {
       const currentUser = useAuthStore.getState().user;
-      const doctorName = currentUser?.user_metadata?.first_name ? `Dr. ${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}` : "Attending Physician";
+      const doctorName = currentUser?.user_metadata?.first_name
+        ? `Dr. ${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}`
+        : "Attending Physician";
 
-      // 1. Create Visit Summary
-      let summaryError = null;
+      // 1. Visit summary
       try {
-        const { error } = await supabase.from('visit_summaries').insert([{
+        await supabase.from('visit_summaries').insert([{
           patient_id: order.user_id,
           doctor_name: doctorName,
           specialty: order.category,
@@ -76,13 +253,12 @@ export function DoctorConsultPage() {
           type: 'video',
           date: new Date().toISOString(),
         }]);
-        summaryError = error;
       } catch (e) {
-        console.warn("Visit summaries table may not exist yet", e);
+        console.warn("visit_summaries insert failed (table may not exist):", e);
       }
 
-      // 2. Create Prescription
-      const { error: rxError } = await supabase.from('prescriptions').insert([{
+      // 2. Prescription
+      await supabase.from('prescriptions').insert([{
         patient_id: order.user_id,
         medication: order.medication,
         dosage: order.dosage_instructions || "As directed",
@@ -92,62 +268,90 @@ export function DoctorConsultPage() {
         doctor_id: currentUser?.id,
       }]);
 
-      // 3. Update Order Status
-      const newTimeline = order.timeline 
-        ? [...order.timeline, { status: 'rx_sent', date: new Date().toLocaleString() }] 
+      // 3. Update order status → rx_sent
+      const newTimeline = order.timeline
+        ? [...order.timeline, { status: 'rx_sent', date: new Date().toLocaleString() }]
         : [{ status: 'rx_sent', date: new Date().toLocaleString() }];
 
-      const { error: orderError } = await supabase.from('orders').update({
-        status: 'rx_sent',
-        doctor: doctorName,
-        last_approved_at: new Date().toISOString(),
-        timeline: newTimeline
-      }).eq('id', order.id);
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({
+          status: 'rx_sent',
+          doctor: doctorName,
+          doctor_note: soapNotes.plan,
+          last_approved_at: new Date().toISOString(),
+          timeline: newTimeline,
+        })
+        .eq('id', order.id);
 
-      if (!rxError && !orderError) {
+      if (!orderError) {
         navigate('/doctor/queue');
       } else {
-        console.error("Rx Error:", rxError);
-        console.error("Order Error:", orderError);
+        console.error("Order update error:", orderError);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Finalize error:", err);
     } finally {
       setIsFinalizing(false);
     }
   };
 
-  if (loading) return <div className="flex justify-center py-40"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
-  if (!order) return <div className="p-20 text-center font-bold">Patient record not found. Please select a patient from the queue.</div>;
+  // ── Loading ──
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-[#22c55e]" />
+        <p className="text-[#7f9488] text-xs font-black uppercase tracking-widest">Loading Patient Record...</p>
+      </div>
+    );
+  }
 
+  // ── No orderId or order not found → show picker ──
+  if (!orderId || !order) {
+    return <PatientPicker />;
+  }
+
+  // ── Full Consultation UI ──
   return (
     <div className="h-[calc(100vh-140px)] flex flex-col gap-4 overflow-hidden -mt-2">
       {/* Header */}
       <div className="flex items-center justify-between px-2">
         <div className="flex items-center gap-3">
-          <Link to="/doctor/queue" className="h-8 w-8 rounded-full hover:bg-muted flex items-center justify-center transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+          <button
+            onClick={() => navigate('/doctor/consult')}
+            className="h-8 w-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 text-white" />
+          </button>
           <div>
-            <h1 className="text-lg font-black text-[#0A0D14]">{order.patient_name || 'Patient Details'}</h1>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+            <h1 className="text-lg font-black text-white">{order.patient_name || 'Patient Details'}</h1>
+            <p className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest">
               Consultation #{order.order_number} · {order.category}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="rounded-full bg-emerald-50 text-emerald-700 border-emerald-100 gap-1.5 py-1 text-[10px] font-black">
+          <Badge variant="outline" className="rounded-full bg-emerald-500/10 text-emerald-400 border-emerald-500/20 gap-1.5 py-1 text-[10px] font-black">
             <ShieldCheck className="h-3 w-3" /> HIPAA SECURE
           </Badge>
-          <div className="h-8 w-[1px] bg-slate-200 mx-2" />
+          <div className="h-8 w-[1px] bg-white/10 mx-2" />
           {order.zoom_status === 'confirmed' && (
-             <Button variant="outline" size="sm" className="rounded-xl h-9 text-xs font-bold"
-               onClick={() => window.open(order.zoom_join_url || 'https://zoom.us', '_blank')}>
-               <Video className="h-3.5 w-3.5 mr-2" /> Join Zoom Call
-             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl h-9 text-xs font-bold border-white/10 bg-white/5 text-white hover:bg-white/10"
+              onClick={() => window.open(order.zoom_join_url || 'https://zoom.us', '_blank')}
+            >
+              <Video className="h-3.5 w-3.5 mr-2" /> Join Zoom Call
+            </Button>
           )}
-          <Button variant="outline" size="sm" className="rounded-xl h-9 text-xs font-bold">
-            <Users className="h-3.5 w-3.5 mr-2" /> Patient History
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-xl h-9 text-xs font-bold border-white/10 bg-white/5 text-white hover:bg-white/10"
+            onClick={() => navigate(`/doctor/consult`)}
+          >
+            <Users className="h-3.5 w-3.5 mr-2" /> All Patients
           </Button>
         </div>
       </div>
@@ -156,15 +360,16 @@ export function DoctorConsultPage() {
         {/* Left Column: Video & Controls */}
         <div className="flex-1 flex flex-col gap-4 overflow-hidden">
           <div className="flex-1 bg-slate-900 rounded-[32px] relative overflow-hidden group shadow-2xl flex items-center justify-center">
-            {/* If no active video, show a professional placeholder */}
             <div className="text-center">
-               <div className="h-24 w-24 rounded-full bg-slate-800 border-4 border-slate-700 mx-auto flex items-center justify-center mb-4">
-                  <span className="text-3xl font-black text-slate-500">{order.patient_name?.charAt(0) || '?'}</span>
-               </div>
-               <p className="text-white font-bold">{order.patient_name}</p>
-               <p className="text-slate-400 text-sm">Secure Connection Ready</p>
+              <div className="h-24 w-24 rounded-full bg-slate-800 border-4 border-slate-700 mx-auto flex items-center justify-center mb-4 shadow-xl">
+                <span className="text-3xl font-black text-slate-400">
+                  {order.patient_name?.charAt(0) || '?'}
+                </span>
+              </div>
+              <p className="text-white font-bold">{order.patient_name}</p>
+              <p className="text-slate-400 text-sm mt-1">Secure Connection Ready</p>
             </div>
-            
+
             <div className="absolute top-6 left-6 space-y-2">
               <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/10">
                 <Activity className="h-3.5 w-3.5 text-emerald-400" />
@@ -173,94 +378,105 @@ export function DoctorConsultPage() {
                 </span>
               </div>
             </div>
+
+            {/* Controls */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 px-6 py-3 bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl transition-all duration-300 group-hover:bottom-10">
-              <button onClick={() => setIsMuted(!isMuted)} className={cn("h-12 w-12 rounded-full flex items-center justify-center transition-all", isMuted ? "bg-red-500 text-white" : "bg-white/10 text-white hover:bg-white/20")}>
+              <button
+                onClick={() => setIsMuted(!isMuted)}
+                className={cn("h-12 w-12 rounded-full flex items-center justify-center transition-all",
+                  isMuted ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/10 text-white hover:bg-white/20")}
+              >
                 {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               </button>
-              <button onClick={() => setIsVideoOff(!isVideoOff)} className={cn("h-12 w-12 rounded-full flex items-center justify-center transition-all", isVideoOff ? "bg-red-500 text-white" : "bg-white/10 text-white hover:bg-white/20")}>
+              <button
+                onClick={() => setIsVideoOff(!isVideoOff)}
+                className={cn("h-12 w-12 rounded-full flex items-center justify-center transition-all",
+                  isVideoOff ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/10 text-white hover:bg-white/20")}
+              >
                 {isVideoOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
               </button>
               <button className="h-14 w-20 bg-red-600 hover:bg-red-700 text-white rounded-2xl flex items-center justify-center transition-all shadow-lg shadow-red-600/40">
                 <Zap className="h-6 w-6 fill-current rotate-12" />
               </button>
               <Link to={`/doctor/messages?userId=${order.user_id}`}>
-                <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-full flex items-center justify-center">
+                <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-full flex items-center justify-center transition-all">
                   <MessageSquare className="h-5 w-5" />
                 </button>
               </Link>
-              <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-full flex items-center justify-center">
+              <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-full flex items-center justify-center transition-all">
                 <MoreHorizontal className="h-5 w-5" />
               </button>
             </div>
           </div>
-          <Card className="h-40 border-none bg-emerald-50/50 dark:bg-emerald-950/20 overflow-hidden shrink-0">
+
+          {/* AI Scribe */}
+          <Card className="h-40 border-none bg-emerald-500/5 border border-emerald-500/10 overflow-hidden shrink-0">
             <CardContent className="p-4 flex flex-col h-full">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">AI Scribe Live Transcription</span>
-                </div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">AI Scribe · Live Transcription</span>
               </div>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                <p className="text-xs text-slate-400 italic">Listening to conversation and securely transcribing clinical notes...</p>
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <p className="text-xs text-slate-400 italic">Listening and securely transcribing clinical notes...</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Right Column: SOAP Notes & e-Rx */}
         <div className="w-[380px] flex flex-col gap-4 overflow-hidden shrink-0">
-          <Card className="flex-1 overflow-hidden border-slate-200 shadow-xl flex flex-col">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <Card className="flex-1 overflow-hidden border-[#1a2620] bg-[#0c120f] shadow-xl flex flex-col">
+            <div className="p-4 border-b border-[#1a2620] flex items-center justify-between bg-white/[0.02]">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <h3 className="font-black text-xs uppercase tracking-widest">Clinical Documentation</h3>
+                <Sparkles className="h-4 w-4 text-[#22c55e]" />
+                <h3 className="font-black text-xs uppercase tracking-widest text-white">Clinical Documentation</h3>
               </div>
-              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[9px] font-black uppercase tracking-tight">AI ASSISTED</Badge>
+              <Badge variant="outline" className="bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/20 text-[9px] font-black uppercase">AI ASSISTED</Badge>
             </div>
             <CardContent className="p-0 overflow-y-auto flex-1 custom-scrollbar">
-              <div className="p-4 space-y-6">
-                <div>
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between">Subjective</p>
-                   <textarea value={soapNotes.subjective} onChange={e => setSoapNotes({...soapNotes, subjective: e.target.value})} className="w-full text-xs font-medium leading-relaxed bg-white border border-slate-100 p-3 rounded-xl shadow-sm italic text-slate-600 resize-none h-24" />
-                </div>
-                <div>
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Objective</p>
-                   <textarea value={soapNotes.objective} onChange={e => setSoapNotes({...soapNotes, objective: e.target.value})} className="w-full text-xs font-medium leading-relaxed bg-white border border-slate-100 p-3 rounded-xl shadow-sm text-slate-700 resize-none h-20" />
-                </div>
-                <div>
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Assessment</p>
-                   <textarea value={soapNotes.assessment} onChange={e => setSoapNotes({...soapNotes, assessment: e.target.value})} className="w-full text-xs font-bold text-primary bg-primary/5 border border-primary/20 p-3 rounded-xl resize-none h-20" />
-                </div>
-                <div>
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Plan</p>
-                   <textarea value={soapNotes.plan} onChange={e => setSoapNotes({...soapNotes, plan: e.target.value})} className="w-full text-xs font-medium leading-relaxed bg-white border border-slate-100 p-3 rounded-xl shadow-sm text-slate-700 resize-none h-20" />
-                </div>
+              <div className="p-4 space-y-5">
+                {(['subjective', 'objective', 'assessment', 'plan'] as const).map(field => (
+                  <div key={field}>
+                    <p className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2">{field}</p>
+                    <textarea
+                      value={soapNotes[field]}
+                      onChange={e => setSoapNotes({ ...soapNotes, [field]: e.target.value })}
+                      className={cn(
+                        "w-full text-xs font-medium leading-relaxed bg-black/30 border p-3 rounded-xl resize-none transition-all focus:outline-none",
+                        field === 'assessment'
+                          ? "border-[#22c55e]/30 text-[#22c55e] focus:border-[#22c55e]/60 h-20"
+                          : "border-white/5 text-[#d4c4a8] focus:border-white/20 h-20"
+                      )}
+                    />
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-emerald-200 shadow-xl overflow-hidden bg-emerald-50/20 shrink-0">
-            <div className="p-4 bg-emerald-500 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Pill className="h-4 w-4" />
-                <h3 className="font-black text-xs uppercase tracking-widest">E-Prescribing</h3>
-              </div>
+          {/* E-Prescribing */}
+          <Card className="border-[#1a2620] bg-[#0c120f] shadow-xl overflow-hidden shrink-0">
+            <div className="p-4 bg-[#22c55e] text-black flex items-center gap-2">
+              <Pill className="h-4 w-4" />
+              <h3 className="font-black text-xs uppercase tracking-widest">E-Prescribing</h3>
             </div>
             <CardContent className="p-4 space-y-4">
-              <div className="space-y-3">
-                <div className="p-3 bg-white border border-emerald-100 rounded-2xl flex items-center justify-between shadow-sm">
-                  <div>
-                    <p className="text-sm font-black text-[#0A0D14]">{order.medication}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">{order.dosage_instructions}</p>
-                  </div>
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              <div className="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-black text-white">{order.medication}</p>
+                  <p className="text-[10px] font-bold text-[#7f9488] uppercase mt-0.5">{order.dosage_instructions || "As directed"}</p>
                 </div>
+                <CheckCircle2 className="h-5 w-5 text-[#22c55e] shrink-0" />
               </div>
-              <Button onClick={handleFinalize} disabled={isFinalizing} className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 h-11 font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-600/20">
-                {isFinalizing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              <Button
+                onClick={handleFinalize}
+                disabled={isFinalizing}
+                className="w-full rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-black h-11 font-black uppercase text-xs tracking-widest shadow-lg shadow-[#22c55e]/20"
+              >
+                {isFinalizing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 Finalize & Send to Pharmacy
               </Button>
-              <p className="text-center text-[9px] font-black text-emerald-700/60 uppercase tracking-widest">
+              <p className="text-center text-[9px] font-black text-[#7f9488] uppercase tracking-widest">
                 Sent to: {order.pharmacy || "Patient's Preferred Network Pharmacy"}
               </p>
             </CardContent>
