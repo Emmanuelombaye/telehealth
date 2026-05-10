@@ -480,14 +480,41 @@ export function DoctorQueuePage() {
                              className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none transition-all"
                            />
                          </div>
-                         <div className="flex-1">
-                           <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em] mb-2 block">Clinical Visit Notes</label>
-                           <textarea 
-                             value={rxNote}
-                             onChange={(e) => setRxNote(e.target.value)}
-                             placeholder="PATIENT EXHIBITS NO CONTRAINDICATIONS..."
-                             className="w-full h-32 bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none transition-all resize-none"
-                           />
+                           <div className="grid grid-cols-2 gap-4 mt-6">
+                             <div>
+                               <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em] mb-2 block flex items-center gap-2">
+                                 <Truck className="h-3 w-3" /> Pharmacy Routing
+                               </label>
+                               <select 
+                                 className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-bold text-white focus:border-[#22c55e]/50 outline-none transition-all appearance-none"
+                               >
+                                 <option value="truepill">Truepill Pharmacy (Recommended)</option>
+                                 <option value="alto">Alto Pharmacy</option>
+                                 <option value="capsule">Capsule Pharmacy</option>
+                               </select>
+                             </div>
+                             <div>
+                               <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em] mb-2 block flex items-center gap-2">
+                                 <Globe className="h-3 w-3" /> Tracking Sync
+                               </label>
+                               <div className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-bold text-[#7f9488] italic flex items-center justify-between">
+                                 {selected.trackingNumber ? (
+                                   <span className="text-[#22c55e] not-italic">{selected.carrier} - {selected.trackingNumber}</span>
+                                 ) : (
+                                   "Awaiting Pharmacy Fulfillment"
+                                 )}
+                               </div>
+                             </div>
+                           </div>
+                           <div className="mt-6">
+                             <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em] mb-2 block">Clinical Visit Notes</label>
+                             <textarea 
+                               value={rxNote}
+                               onChange={(e) => setRxNote(e.target.value)}
+                               placeholder="PATIENT EXHIBITS NO CONTRAINDICATIONS..."
+                               className="w-full h-24 bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none transition-all resize-none"
+                             />
+                           </div>
                            <div className="space-y-3 pt-6">
                             <div className="grid grid-cols-2 gap-3">
                               <Button 
