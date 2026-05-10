@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { supabase } from "../../../../lib/supabaseClient";
 
 const brands = [
   {
@@ -76,11 +77,57 @@ type Brand = typeof brands[0];
 export function SuperAdminBrandsPage() {
   const [selected, setSelected] = useState<Brand | null>(null);
   const [search, setSearch] = useState("");
+  const [dbBrands, setDbBrands] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = brands.filter(b =>
-    b.name.toLowerCase().includes(search.toLowerCase()) ||
-    b.domain.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    async function fetchBrands() {
+      try {
+        const { data, error } = await supabase.from('brands').select('*').order('created_at', { ascending: true });
+        if (error) throw error;
+        
+        // If DB has records, use them, otherwise fallback to the mock array while seeding happens
+        if (data && data.length > 0) {
+          const mappedData = data.map(d => ({
+            id: d.id, name: d.name, slug: d.slug, domain: d.domain,
+            country: d.country, timezone: d.timezone, status: d.status,
+            plan: d.plan, since: d.since_date, patients: d.patients_count,
+            doctors: d.doctors_count, staff: d.staff_count, mrr: Number(d.mrr),
+            growth: Number(d.growth), products: d.products || [],
+            gateways: d.gateways || [], languages: d.languages || [],
+            revenueData: d.revenue_data || [], orders: d.orders_data || {},
+            compliance: d.compliance || {}
+          }));
+          setDbBrands(mappedData);
+        } else {
+          setDbBrands(brands);
+        }
+      } catch (err) {
+        console.error("Error fetching brands:", err);
+        setDbBrands(brands); // fallback to mock
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBrands();
+
+    const channel = supabase.channel('brands-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'brands' }, () => {
+        fetchBrands();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const filtered = dbBrands.filter(b =>
+    b.name?.toLowerCase().includes(search.toLowerCase()) ||
+    b.domain?.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500 font-bold animate-pulse">Loading Live Brands Matrix...</div>;
+  }
 
   if (selected) {
     return (
@@ -227,14 +274,17 @@ export function SuperAdminBrandsPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-in fade-in duration-700">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">Brands</h1>
-          <p className="text-sm text-muted-foreground">{brands.length} brands on platform</p>
+          <h1 className="text-xl font-bold">Platform Brands</h1>
+          <p className="text-sm text-muted-foreground">
+            <span className="text-emerald-600 font-bold uppercase text-[10px] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 mr-2">LIVE SYNC</span>
+            {dbBrands.length} active instances on infrastructure
+          </p>
         </div>
-        <Button size="sm" className="rounded-full gap-1.5 text-xs bg-violet-600 hover:bg-violet-700">
-          <Plus className="h-3.5 w-3.5" /> New Brand
+        <Button size="sm" className="rounded-full gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20">
+          <Plus className="h-3.5 w-3.5" /> Provision New Brand
         </Button>
       </div>
 
@@ -246,15 +296,15 @@ export function SuperAdminBrandsPage() {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-bounce-in" style={{ animationDelay: "0.1s" }}>
         {[
-          { label: "Total MRR", value: "$318,600", color: "text-emerald-600" },
-          { label: "Total Patients", value: "40,700", color: "text-violet-600" },
-          { label: "Total Doctors", value: "329", color: "text-violet-600" },
-          { label: "Active Brands", value: "3 / 4", color: "text-amber-600" },
+          { label: "Aggregate MRR", value: `$${(dbBrands.reduce((sum, b) => sum + (b.mrr || 0), 0) / 1000).toFixed(1)}k`, color: "text-[#D4AF37]" },
+          { label: "Total Patients", value: dbBrands.reduce((sum, b) => sum + (b.patients || 0), 0).toLocaleString(), color: "text-emerald-600" },
+          { label: "Total Doctors", value: dbBrands.reduce((sum, b) => sum + (b.doctors || 0), 0), color: "text-emerald-600" },
+          { label: "Active Brands", value: `${dbBrands.filter(b => b.status === 'active').length} / ${dbBrands.length}`, color: "text-amber-600" },
         ].map((s, i) => (
-          <Card key={i} className="border-none bg-muted/50">
-            <CardContent className="p-3 text-center">
+          <Card key={i} className={cn("border-none", i === 0 ? "bg-amber-50 shadow-[0_0_15px_rgba(212,175,55,0.15)] animate-pulse-gold" : "bg-white shadow-sm")}>
+            <CardContent className="p-4 text-center">
               <p className={`text-xl font-extrabold ${s.color}`}>{s.value}</p>
               <p className="text-[11px] text-muted-foreground">{s.label}</p>
             </CardContent>
@@ -263,12 +313,12 @@ export function SuperAdminBrandsPage() {
       </div>
 
       <div className="space-y-3">
-        {filtered.map(brand => (
-          <Card key={brand.id} className="hover:border-violet-400/50 transition-all cursor-pointer hover:shadow-md"
+        {filtered.map((brand, i) => (
+          <Card key={brand.id || i} className="hover:border-emerald-400/50 transition-all cursor-pointer hover:shadow-xl animate-bounce-in" style={{ animationDelay: `${0.2 + (i * 0.1)}s` }}
             onClick={() => setSelected(brand)}>
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center font-bold text-white text-lg shrink-0">
+                <div className="h-12 w-12 rounded-2xl bg-emerald-50 flex items-center justify-center font-black text-emerald-600 text-lg shrink-0 border border-emerald-100">
                   {brand.name.split(" ")[1]}
                 </div>
                 <div className="flex-1 min-w-0">
