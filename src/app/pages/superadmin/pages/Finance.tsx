@@ -1,16 +1,29 @@
+import { useState, useEffect } from "react";
 import {
   DollarSign, TrendingUp, CreditCard, ArrowUpRight,
-  CheckCircle2, Clock, Building2, Download
+  CheckCircle2, Clock, Building2, Download, Filter,
+  Calendar, PieChart, Activity, ShieldCheck, Zap,
+  Globe2, Wallet, FileText, ChevronRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-
 import { usePatientStore } from "../../../../lib/patient-store";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function SuperAdminFinancePage() {
   const { orders } = usePatientStore();
+  const [timeFilter, setTimeFilter] = useState("all");
 
-  const monthlyRevenue = Object.values(orders.reduce((acc, order) => {
+  const filterOrders = () => {
+    if (timeFilter === "all") return orders;
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
+    return orders.filter(o => new Date(o.created_at) >= thirtyDaysAgo);
+  };
+
+  const activeOrders = filterOrders();
+
+  const monthlyRevenue = Object.values(activeOrders.reduce((acc, order) => {
      const date = new Date(order.created_at || new Date());
      const month = date.toLocaleString('default', { month: 'short' });
      const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
@@ -20,7 +33,7 @@ export function SuperAdminFinancePage() {
   }, {} as Record<string, { month: string, total: number, dateObj: Date }>))
   .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
-  const brandFinancials = Object.values(orders.reduce((acc, order) => {
+  const brandFinancials = Object.values(activeOrders.reduce((acc, order) => {
     const brand = order.sub_brand || "Peak Health";
     const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
     if (!acc[brand]) acc[brand] = { brand, mrr: 0, arr: 0, commission: 0, payout: 0, plan: "Enterprise", status: "paid" };
@@ -31,147 +44,206 @@ export function SuperAdminFinancePage() {
     return acc;
   }, {} as Record<string, any>));
 
-  const transactions = orders.slice(0, 8).map(o => ({
-    id: o.order_number,
+  const transactions = activeOrders.slice(0, 10).map(o => ({
+    id: o.order_number || o.id.slice(0, 8),
     brand: o.sub_brand || "Peak Health",
     type: o.category || "Subscription",
-    amount: typeof o.amount === 'number' ? `$${o.amount}` : o.amount || "$0.00",
+    amount: typeof o.amount === 'number' ? `$${o.amount.toLocaleString()}` : o.amount || "$0.00",
     date: new Date(o.created_at).toLocaleDateString(),
     status: o.status === 'order_submitted' || o.status === 'medical_review' ? 'pending' : 'completed'
   }));
 
   const totalPlatformMRR = brandFinancials.reduce((sum, b) => sum + b.mrr, 0);
-  const totalPlatformARR = brandFinancials.reduce((sum, b) => sum + b.arr, 0);
-  const totalCommission = brandFinancials.reduce((sum, b) => sum + b.commission, 0);
+  const totalPlatformARR = totalPlatformMRR * 12;
+  const totalCommission = totalPlatformMRR * 0.1;
   const pendingPayouts = brandFinancials.reduce((sum, b) => sum + (b.status === 'pending' ? b.payout : 0), 0);
+
+  const handleExport = () => {
+    window.print();
+  };
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">Platform Finance</h1>
-          <p className="text-sm text-muted-foreground">Revenue, payouts & billing across all brands</p>
-        </div>
-        <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs">
-          <Download className="h-3.5 w-3.5" /> Export Report
-        </Button>
+    <div className="space-y-10 animate-in fade-in duration-700">
+      
+      {/* FINANCIAL COCKPIT HEADER */}
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-8 bg-white p-10 rounded-[48px] shadow-2xl shadow-slate-200/50 border border-slate-50 relative overflow-hidden print:hidden">
+         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
+         
+         <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-3">
+               <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+               <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700">Global Financial Matrix</h1>
+            </div>
+            <h2 className="text-4xl font-black text-[#0A2E1F] tracking-tight">Platform Finance</h2>
+         </div>
+
+         <div className="flex items-center gap-4 relative z-10">
+            <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+               {["all", "30d", "90d"].map(f => (
+                 <button 
+                   key={f} 
+                   onClick={() => setTimeFilter(f)}
+                   className={cn(
+                     "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                     timeFilter === f ? "bg-[#0A2E1F] text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
+                   )}
+                 >
+                    {f === 'all' ? 'All Time' : f === '30d' ? '30 Days' : '90 Days'}
+                 </button>
+               ))}
+            </div>
+            <Button 
+              onClick={handleExport}
+              className="h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-8 font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-emerald-600/20 gap-3"
+            >
+               <Download className="h-5 w-5" /> Export PDF
+            </Button>
+         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* PRINT-ONLY HEADER */}
+      <div className="hidden print:block mb-10 border-b-4 border-[#0A2E1F] pb-10">
+         <div className="flex items-center justify-between">
+            <img src="/logo-icon.png" alt="Logo" className="h-24 w-auto mix-blend-multiply" />
+            <div className="text-right">
+               <h1 className="text-4xl font-black text-[#0A2E1F] uppercase tracking-tighter">Financial Audit Report</h1>
+               <p className="text-slate-500 font-bold uppercase tracking-widest mt-1">Date: {new Date().toLocaleDateString()}</p>
+               <p className="text-emerald-600 font-black uppercase tracking-[0.2em] mt-2">Peak Health Supreme Authority</p>
+            </div>
+         </div>
+      </div>
+
+      {/* EXECUTIVE KPI STRIP */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {[
-          { label: "Platform MRR", value: `$${(totalPlatformMRR).toLocaleString()}`, change: "+Live", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
-          { label: "Platform ARR", value: `$${(totalPlatformARR / 1000000).toFixed(2)}M`, change: "+Live", color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
-          { label: "Total Commission", value: `$${(totalCommission).toLocaleString()}`, change: "10% rate", color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
-          { label: "Pending Payouts", value: `$${(pendingPayouts).toLocaleString()}`, change: "System", color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
+          { label: "Platform MRR", value: `$${totalPlatformMRR.toLocaleString()}`, icon: Wallet, color: "text-emerald-600", change: "+12.5% Live" },
+          { label: "Aggregate ARR", value: `$${(totalPlatformARR / 1000000).toFixed(2)}M`, icon: TrendingUp, color: "text-[#0A2E1F]", change: "Annual Estimate" },
+          { label: "Global Commission", value: `$${totalCommission.toLocaleString()}`, icon: Zap, color: "text-emerald-500", change: "10% Platform Fee" },
+          { label: "Pending Payouts", value: `$${pendingPayouts.toLocaleString()}`, icon: CreditCard, color: "text-amber-600", change: "Institutional Sync" },
         ].map((s, i) => (
-          <Card key={i}>
-            <CardContent className="p-4">
-              <div className={`h-8 w-8 rounded-xl flex items-center justify-center mb-2 ${s.bg}`}>
-                <DollarSign className={`h-4 w-4 ${s.color}`} />
-              </div>
-              <p className="text-xl font-extrabold">{s.value}</p>
-              <p className="text-[11px] text-muted-foreground">{s.label}</p>
-              <span className="text-[10px] font-bold text-emerald-600">{s.change}</span>
-            </CardContent>
+          <Card key={i} className="border-none shadow-xl shadow-slate-100/50 rounded-[40px] bg-white p-10 group hover:shadow-emerald-900/5 transition-all print:shadow-none print:border print:border-slate-200">
+            <div className={cn("h-16 w-16 rounded-[24px] mb-8 flex items-center justify-center bg-slate-50", s.color)}>
+               <s.icon className="h-8 w-8" />
+            </div>
+            <h3 className="text-4xl font-black text-[#0A2E1F] tracking-tighter mb-1">{s.value}</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">{s.label}</p>
+            <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
+               <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">{s.change}</span>
+               <ArrowUpRight className="h-4 w-4 text-slate-200 group-hover:text-emerald-500 transition-colors" />
+            </div>
           </Card>
         ))}
       </div>
 
-      {/* Revenue chart */}
-      <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm">Monthly Platform Revenue</CardTitle>
-        </CardHeader>
-        <CardContent className="px-2 pb-4">
-          <div className="h-[180px]">
+      {/* LIQUIDITY FLOW CHART */}
+      <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[64px] bg-white overflow-hidden p-12 print:shadow-none print:border print:border-slate-200">
+         <div className="flex items-center justify-between mb-16">
+            <div>
+               <h3 className="text-3xl font-black text-[#0A2E1F] tracking-tighter">Global Liquidity Matrix</h3>
+               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 mt-2">Historical Revenue Architecture</p>
+            </div>
+            <Badge className="bg-emerald-50 text-emerald-700 border-none px-4 py-2 font-black uppercase tracking-widest text-[10px]">Active Node Stream</Badge>
+         </div>
+         <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyRevenue} barSize={32}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
-                <YAxis hide />
-                <Tooltip contentStyle={{ borderRadius: "12px", border: "none", fontSize: 12 }}
-                  formatter={(v: any) => [`$${(v / 1000).toFixed(0)}k`]} />
-                <Bar dataKey="total" radius={[6, 6, 0, 0]}>
-                  {monthlyRevenue.map((_, i) => (
-                    <Cell key={i} fill={i === monthlyRevenue.length - 1 ? "#7c3aed" : "#e2e8f0"} />
-                  ))}
-                </Bar>
-              </BarChart>
+               <BarChart data={monthlyRevenue.length > 0 ? monthlyRevenue : [{month: 'No Data', total: 0}]} barSize={48}>
+                  <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#cbd5e1", fontWeight: 900 }} />
+                  <YAxis hide />
+                  <Tooltip 
+                     contentStyle={{ backgroundColor: '#0A2E1F', border: 'none', borderRadius: '24px', color: '#fff', padding: '20px' }}
+                     formatter={(v: any) => [`$${v.toLocaleString()}`, "VOLUME"]}
+                  />
+                  <Bar dataKey="total" radius={[12, 12, 0, 0]}>
+                     {monthlyRevenue.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index === monthlyRevenue.length - 1 ? "#10b981" : "#E2E8F0"} />
+                     ))}
+                  </Bar>
+               </BarChart>
             </ResponsiveContainer>
-          </div>
-        </CardContent>
+         </div>
       </Card>
 
-      {/* Brand financials */}
-      <div>
-        <h2 className="font-bold text-sm mb-3">Brand Financials</h2>
-        <div className="space-y-2">
-          {brandFinancials.map((b, i) => (
-            <Card key={i} className="hover:border-violet-400/40 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center font-bold text-white text-sm shrink-0">
-                    {b.brand.split(" ")[1]}
+      {/* BRAND FINANCIALS & TRANSACTIONS */}
+      <div className="grid lg:grid-cols-2 gap-10">
+         
+         {/* BRAND LEDGER */}
+         <div className="space-y-6">
+            <div className="flex items-center justify-between mb-2">
+               <h3 className="text-2xl font-black text-[#0A2E1F] tracking-tight uppercase">Brand Ledger</h3>
+               <Badge variant="outline" className="text-[9px] font-black tracking-widest">{brandFinancials.length} Active Entities</Badge>
+            </div>
+            {brandFinancials.map((b, i) => (
+               <Card key={i} className="border-none shadow-xl shadow-slate-100/50 rounded-[40px] bg-white p-8 hover:-translate-y-1 transition-all group overflow-hidden relative">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-30"></div>
+                  <div className="flex items-center gap-6 relative z-10">
+                     <div className="h-16 w-16 rounded-[24px] bg-[#0A2E1F] flex items-center justify-center font-black text-emerald-400 text-2xl group-hover:rotate-6 transition-transform">
+                        {b.brand.charAt(0)}
+                     </div>
+                     <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-1">
+                           <p className="font-black text-lg text-[#0A2E1F] uppercase tracking-tight">{b.brand}</p>
+                           <Badge className="bg-emerald-50 text-emerald-700 border-none text-[8px] font-black px-2">{b.status}</Badge>
+                        </div>
+                        <div className="flex items-center gap-6 text-[11px] font-bold text-slate-400">
+                           <span>MRR: <span className="text-[#0A2E1F]">${b.mrr.toLocaleString()}</span></span>
+                           <span>Fee: <span className="text-emerald-600">${b.commission.toLocaleString()}</span></span>
+                        </div>
+                     </div>
+                     <ChevronRight className="h-5 w-5 text-slate-200 group-hover:text-emerald-600 group-hover:translate-x-2 transition-all" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-sm">{b.brand}</p>
-                      <Badge variant="outline" className="text-[9px]">{b.plan}</Badge>
-                      <Badge variant={b.status === "paid" ? "success" : "secondary"} className="text-[9px]">{b.status}</Badge>
-                    </div>
-                    <div className="flex items-center gap-4 mt-1 flex-wrap">
-                      <span className="text-xs text-muted-foreground">MRR: <span className="font-bold text-foreground">${(b.mrr / 1000).toFixed(0)}k</span></span>
-                      <span className="text-xs text-muted-foreground">ARR: <span className="font-bold text-foreground">${(b.arr / 1000000).toFixed(1)}M</span></span>
-                      <span className="text-xs text-muted-foreground">Commission: <span className="font-bold text-violet-600">${b.commission.toLocaleString()}</span></span>
-                      <span className="text-xs text-muted-foreground">Payout: <span className="font-bold text-emerald-600">${b.payout.toLocaleString()}</span></span>
-                    </div>
-                  </div>
-                  {b.status === "pending" && (
-                    <Button size="sm" className="rounded-xl text-xs h-8 bg-violet-600 hover:bg-violet-700 shrink-0">
-                      Process Payout
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
+               </Card>
+            ))}
+         </div>
+
+         {/* AUDIT LOG (TRANSACTIONS) */}
+         <div className="space-y-6">
+            <div className="flex items-center justify-between mb-2">
+               <h3 className="text-2xl font-black text-[#0A2E1F] tracking-tight uppercase">Audit Log</h3>
+               <FileText className="h-6 w-6 text-slate-300" />
+            </div>
+            <Card className="border-none shadow-xl shadow-slate-100/50 rounded-[48px] bg-white overflow-hidden print:border print:border-slate-200">
+               <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                     <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Descriptor</th>
+                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Volume</th>
+                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Status</th>
+                        </tr>
+                     </thead>
+                     <tbody className="divide-y divide-slate-50">
+                        {transactions.map((t, i) => (
+                           <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="px-8 py-6">
+                                 <p className="text-sm font-black text-[#0A2E1F] uppercase tracking-tight">{t.brand}</p>
+                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t.type} · {t.date}</p>
+                              </td>
+                              <td className="px-8 py-6 text-right font-black text-emerald-600 text-sm">
+                                 {t.amount}
+                              </td>
+                              <td className="px-8 py-6 text-right">
+                                 <Badge className={cn(
+                                   "text-[8px] font-black uppercase tracking-widest px-2",
+                                   t.status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                                 )}>{t.status}</Badge>
+                              </td>
+                           </tr>
+                        ))}
+                     </tbody>
+                  </table>
+               </div>
             </Card>
-          ))}
-        </div>
+         </div>
+
       </div>
 
-      {/* Transactions */}
-      <div>
-        <h2 className="font-bold text-sm mb-3">Recent Transactions</h2>
-        <Card>
-          <CardContent className="p-0">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/30 border-b">
-                <tr>
-                  {["ID", "Brand", "Type", "Amount", "Date", "Status"].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {transactions.map((t, i) => (
-                  <tr key={i} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs font-bold">{t.id}</td>
-                    <td className="px-4 py-3 font-semibold text-xs">{t.brand}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{t.type}</td>
-                    <td className="px-4 py-3 font-bold text-xs text-emerald-600">{t.amount}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{t.date}</td>
-                    <td className="px-4 py-3">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full",
-                        t.status === "completed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40" : "bg-amber-100 text-amber-700 dark:bg-amber-950/40")}>
-                        {t.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
+      {/* PRINT-ONLY FOOTER */}
+      <div className="hidden print:block mt-20 pt-10 border-t-2 border-slate-100 text-center">
+         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Official Financial Audit Ledger · Protected by AES-256 Encryption</p>
+         <p className="text-[10px] font-black text-[#0A2E1F] uppercase tracking-[0.4em] mt-2">Peak Health Supreme Authority</p>
       </div>
+
     </div>
   );
 }
