@@ -43,18 +43,28 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
   const effectiveRole = role || devRole;
   const isAuthenticated = !!user || !!devRole;
 
-  useEffect(() => {
-    if (isLoading || redirected.current) return;
+  // Memoize allowed roles check to prevent infinite loops from unstable array props
+  const rolesKey = allowedRoles?.join(',') || '';
 
+  useEffect(() => {
+    // 1. Wait for auth to resolve
+    if (isLoading) return;
+
+    // 2. Prevent repeated redirects in the same component lifecycle
+    if (redirected.current) return;
+
+    // 3. Handle Unauthenticated users
     if (!isAuthenticated) {
+      console.log(`[ProtectedRoute] Not authenticated on ${window.location.pathname}. Redirecting to login.`);
       redirected.current = true;
       navigate(portalLoginUrl(window.location.pathname), { replace: true });
       return;
     }
 
+    // 4. Handle Role-based Access Control (RBAC)
     if (allowedRoles && effectiveRole && !allowedRoles.includes(effectiveRole)) {
       redirected.current = true;
-      // Arranging Access: Redirect to the user's appropriate portal instead of showing 404
+      
       const targetPortal = 
         effectiveRole === 'doctor' ? '/doctor' : 
         effectiveRole === 'pharmacy' ? '/pharmacy' :
@@ -62,10 +72,10 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
         effectiveRole === 'brand_admin' ? '/admin' : 
         '/patient';
       
-      console.log(`[ProtectedRoute] Role ${effectiveRole} not allowed on ${window.location.pathname}. Redirecting to ${targetPortal}`);
+      console.log(`[ProtectedRoute] RBAC mismatch: User role "${effectiveRole}" not in [${rolesKey}]. Redirecting to ${targetPortal}`);
       navigate(targetPortal, { replace: true });
     }
-  }, [isAuthenticated, effectiveRole, isLoading, navigate, allowedRoles]);
+  }, [isAuthenticated, effectiveRole, isLoading, navigate, rolesKey]);
 
   // Show branded loading screen while auth is resolving
   if (isLoading) return <AuthLoadingScreen />;
