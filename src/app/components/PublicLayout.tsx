@@ -87,7 +87,7 @@ export function PublicLayout() {
               </Link>
             </div>
 
-            {/* Middle: Links - Exactly like the requested screenshot */}
+            {/* Middle: Links */}
             <nav className="hidden lg:flex items-center justify-center gap-12 flex-1">
               <div className="relative" onMouseEnter={() => setShowTreatments(true)} onMouseLeave={() => setShowTreatments(false)}>
                 <Link to="/explore-treatments" className="flex items-center gap-1.5 text-[15px] font-medium text-slate-600 hover:text-[#0A2E1F] transition-all py-2">
@@ -125,12 +125,12 @@ export function PublicLayout() {
                 How It Works
               </Link>
               
-              <div className="flex items-center gap-3">
-                 <div className="h-2.5 w-2.5 rounded-full bg-[#D4F0E2] border border-white shadow-sm flex items-center justify-center">
-                    <div className="h-1 w-1 rounded-full bg-emerald-500"></div>
+              <div className="flex items-center gap-3 cursor-pointer group">
+                 <div className="h-2.5 w-2.5 rounded-full bg-[#D4F0E2] border border-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse"></div>
                  </div>
-                 <span className="text-[15px] font-medium text-slate-600">
-                   Peptides <span className="text-slate-400 font-normal ml-0.5">(Coming Soon)</span>
+                 <span className="text-[15px] font-medium text-slate-600 group-hover:text-[#0A2E1F] transition-colors">
+                   Bio-Optimizers
                  </span>
               </div>
             </nav>
@@ -229,7 +229,7 @@ export function PublicLayout() {
                    { name: "Personalized Semaglutide+", sub: "Weight Management" },
                    { name: "NAD+ Longevity", sub: "Anti-Aging & Focus" },
                    { name: "Sermorelin Recovery", sub: "Performance" },
-                   { name: "Clinical Peptides", sub: "Coming Soon", highlight: true },
+                   { name: "Bio-Optimizers", sub: "Exclusive Selection", highlight: true },
                  ].map(item => (
                    <li key={item.name} className="group cursor-pointer">
                       <span className="block text-sm font-black text-slate-800 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{item.name}</span>
