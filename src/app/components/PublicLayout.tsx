@@ -5,7 +5,7 @@ import {
   ArrowRight, ChevronDown, X, Menu, ShieldCheck, Lock, Star, 
   Activity, Heart, Pill, Plus, Plane, MapPin, Shield, Flag,
   Instagram, Facebook, Linkedin, ExternalLink, HeartPulse,
-  Brain, Zap, Sparkles
+  Brain, Zap, Sparkles, Rocket, Microscope, Wind, Layers
 } from "lucide-react";
 import { Button, cn } from "./ui/shared.tsx";
 import { PageErrorBoundary } from "./PageErrorBoundary";
@@ -37,10 +37,50 @@ const treatments = [
   }
 ];
 
+const bioOptimizers = [
+  {
+    name: "NAD+ Longevity",
+    href: "/bio/nad-plus",
+    desc: "Fuel cellular energy and DNA repair.",
+    icon: Zap,
+    color: "text-yellow-600",
+    bg: "bg-yellow-50",
+    tag: "Most Popular"
+  },
+  {
+    name: "Cognitive Elite",
+    href: "/bio/nootropics",
+    desc: "Precision neuro-optimization for high performers.",
+    icon: Brain,
+    color: "text-purple-600",
+    bg: "bg-purple-50",
+    tag: "Exclusive"
+  },
+  {
+    name: "Regenerative Peptides",
+    href: "/bio/peptides",
+    desc: "Accelerated tissue repair and recovery.",
+    icon: Microscope,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+    tag: "New"
+  },
+  {
+    name: "Vitality BHRT",
+    href: "/bio/hormones",
+    desc: "Optimized hormone replacement protocols.",
+    icon: Wind,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+    tag: "Clinical"
+  }
+];
+
 export function PublicLayout() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [showTreatments, setShowTreatments] = useState(false);
+  const [showBio, setShowBio] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -75,7 +115,7 @@ export function PublicLayout() {
           scrolled ? "py-3 shadow-md" : "py-5 shadow-sm"
         )}>
           <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-            {/* Left: Original Logo (UNTOUCHED) */}
+            {/* Left: Logo */}
             <div className="flex-1">
               <Link to="/" className="flex items-center gap-3 group w-fit">
                 <img 
@@ -95,11 +135,11 @@ export function PublicLayout() {
               </Link>
             </div>
 
-            {/* Middle: Links - ADDED AND VISIBLE */}
+            {/* Middle: Links */}
             <nav className="hidden md:flex items-center justify-center gap-8 lg:gap-12 flex-1">
               <div className="relative" onMouseEnter={() => setShowTreatments(true)} onMouseLeave={() => setShowTreatments(false)}>
                 <Link to="/explore-treatments" className="flex items-center gap-1.5 text-[15px] font-medium text-slate-700 hover:text-[#0A2E1F] transition-all py-2">
-                  Explore Treatments <ChevronDown className="h-4 w-4 opacity-50" />
+                  Treatments <ChevronDown className="h-4 w-4 opacity-50" />
                 </Link>
                 
                 <AnimatePresence>
@@ -133,13 +173,71 @@ export function PublicLayout() {
                 How It Works
               </Link>
               
-              <div className="flex items-center gap-3 cursor-pointer group">
-                 <div className="h-2.5 w-2.5 rounded-full bg-[#D4F0E2] border border-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse"></div>
-                 </div>
-                 <span className="text-[15px] font-medium text-slate-700 group-hover:text-[#0A2E1F] transition-colors">
-                   Bio-Optimizers
-                 </span>
+              {/* MEGA MENU: BIO-OPTIMIZERS (THE BEST EVER) */}
+              <div className="relative" onMouseEnter={() => setShowBio(true)} onMouseLeave={() => setShowBio(false)}>
+                <div className="flex items-center gap-3 cursor-pointer group py-2">
+                   <div className="h-2.5 w-2.5 rounded-full bg-[#D4F0E2] border border-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse"></div>
+                   </div>
+                   <span className="text-[15px] font-medium text-slate-700 group-hover:text-[#0A2E1F] transition-colors flex items-center gap-1.5">
+                     Bio-Optimizers <ChevronDown className="h-4 w-4 opacity-50" />
+                   </span>
+                </div>
+
+                <AnimatePresence>
+                  {showBio && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute top-full -left-40 w-[560px] pt-4"
+                    >
+                      <div className="bg-white rounded-[40px] shadow-2xl border border-slate-100 p-8 grid grid-cols-2 gap-6 overflow-hidden relative">
+                         {/* Decorative background for luxury feel */}
+                         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50"></div>
+                         
+                         <div className="col-span-2 flex items-center justify-between mb-2">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Biological Optimization Selection</h4>
+                            <Link to="/bio" className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+                               View All Bio-Protocols <ArrowRight className="h-3 w-3" />
+                            </Link>
+                         </div>
+
+                         {bioOptimizers.map((b) => (
+                           <Link key={b.name} to={b.href} className="flex flex-col gap-3 p-5 rounded-3xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
+                              <div className="flex items-center justify-between">
+                                 <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center", b.bg)}>
+                                    <b.icon className={cn("h-5 w-5", b.color)} />
+                                 </div>
+                                 <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors">
+                                    {b.tag}
+                                 </span>
+                              </div>
+                              <div className="space-y-1">
+                                 <p className="font-black text-sm text-[#0A0D14] uppercase tracking-wide group-hover:text-emerald-700 transition-colors">{b.name}</p>
+                                 <p className="text-[11px] text-slate-400 font-medium leading-relaxed group-hover:text-slate-500 transition-colors">{b.desc}</p>
+                              </div>
+                           </Link>
+                         ))}
+
+                         <div className="col-span-2 mt-4 p-4 bg-emerald-900 rounded-[28px] flex items-center justify-between shadow-xl shadow-emerald-900/10">
+                            <div className="flex items-center gap-4">
+                               <div className="h-10 w-10 rounded-2xl bg-emerald-400/20 flex items-center justify-center">
+                                  <Rocket className="h-5 w-5 text-emerald-400" />
+                               </div>
+                               <div>
+                                  <p className="text-white text-xs font-black uppercase tracking-widest">Master Protocol</p>
+                                  <p className="text-emerald-300 text-[10px] font-medium">Customized Longevity Consultation</p>
+                               </div>
+                            </div>
+                            <Button className="h-9 px-6 rounded-full bg-white text-emerald-900 font-black text-[10px] uppercase tracking-widest hover:bg-emerald-50 transition-colors">
+                               Book Now
+                            </Button>
+                         </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </nav>
 
