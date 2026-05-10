@@ -71,30 +71,27 @@ export function PublicLayout() {
 
         {/* Header */}
         <header className={cn(
-          "transition-all duration-500 bg-white/80 backdrop-blur-xl border-b border-slate-100", 
-          scrolled ? "py-2 shadow-md" : "py-4 shadow-sm"
+          "transition-all duration-500 bg-white/95 backdrop-blur-md border-b border-slate-100", 
+          scrolled ? "py-3 shadow-md" : "py-5 shadow-sm"
         )}>
-          <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-6 flex items-center justify-between gap-12">
             {/* Left: Logo */}
-            <div className="flex-1">
-              <Link to="/" className="flex items-center gap-3 group w-fit">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#0A2E1F] to-[#051810] flex items-center justify-center shadow-lg shadow-emerald-900/20 group-hover:scale-105 transition-all duration-500">
-                  <Activity className="h-6 w-6 text-emerald-400" />
+            <div className="shrink-0">
+              <Link to="/" className="flex items-center gap-3 group">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#0A2E1F] to-[#051810] flex items-center justify-center shadow-lg shadow-emerald-900/20 group-hover:scale-105 transition-all duration-500">
+                  <Activity className="h-5 w-5 text-emerald-400" />
                 </div>
-                <span className={cn(
-                  "font-serif italic tracking-tighter text-[#0A2E1F] transition-all duration-700 whitespace-nowrap",
-                  scrolled ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
-                )}>
+                <span className="font-serif italic tracking-tighter text-[#0A2E1F] text-2xl whitespace-nowrap">
                   Peak Health
                 </span>
               </Link>
             </div>
 
-            {/* Middle: Links */}
-            <nav className="hidden lg:flex items-center justify-center gap-10 flex-1">
+            {/* Middle: Links - Exactly like the requested screenshot */}
+            <nav className="hidden lg:flex items-center justify-center gap-12 flex-1">
               <div className="relative" onMouseEnter={() => setShowTreatments(true)} onMouseLeave={() => setShowTreatments(false)}>
-                <Link to="/explore-treatments" className="flex items-center gap-1 text-[13px] font-black uppercase tracking-widest text-slate-600 hover:text-emerald-600 transition-colors py-2">
-                  Treatments <ChevronDown className="h-3 w-3" />
+                <Link to="/explore-treatments" className="flex items-center gap-1.5 text-[15px] font-medium text-slate-600 hover:text-[#0A2E1F] transition-all py-2">
+                  Explore Treatments <ChevronDown className="h-4 w-4 opacity-50" />
                 </Link>
                 
                 <AnimatePresence>
@@ -112,7 +109,7 @@ export function PublicLayout() {
                               <t.icon className={cn("h-6 w-6", t.color)} />
                             </div>
                             <div>
-                              <p className="font-black text-sm text-[#0A0D14] uppercase tracking-wide">{t.name}</p>
+                              <p className="font-bold text-sm text-[#0A0D14] uppercase tracking-wide">{t.name}</p>
                               <p className="text-xs text-slate-500 font-medium">{t.desc}</p>
                             </div>
                             <ArrowRight className="h-4 w-4 ml-auto text-slate-200 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
@@ -124,25 +121,28 @@ export function PublicLayout() {
                 </AnimatePresence>
               </div>
 
-              <Link to="/how-it-works" className="text-[13px] font-black uppercase tracking-widest text-slate-600 hover:text-emerald-600 transition-colors">How It Works</Link>
+              <Link to="/how-it-works" className="text-[15px] font-medium text-slate-600 hover:text-[#0A2E1F] transition-all">
+                How It Works
+              </Link>
               
-              <div className="flex items-center gap-2">
-                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                 <span className="text-[13px] font-black uppercase tracking-widest text-slate-600">Peptides</span>
+              <div className="flex items-center gap-3">
+                 <div className="h-2.5 w-2.5 rounded-full bg-[#D4F0E2] border border-white shadow-sm flex items-center justify-center">
+                    <div className="h-1 w-1 rounded-full bg-emerald-500"></div>
+                 </div>
+                 <span className="text-[15px] font-medium text-slate-600">
+                   Peptides <span className="text-slate-400 font-normal ml-0.5">(Coming Soon)</span>
+                 </span>
               </div>
             </nav>
 
             {/* Right: Actions */}
-            <div className="flex items-center justify-end gap-6 flex-1">
-              <Link to="/patient/login" className="hidden sm:block text-[13px] font-black uppercase tracking-widest text-slate-600 hover:text-emerald-600 transition-colors">
+            <div className="flex items-center justify-end gap-10 shrink-0">
+              <Link to="/patient/login" className="hidden sm:block text-[15px] font-medium text-slate-600 hover:text-[#0A2E1F] transition-all">
                 Log In
               </Link>
               <Link to="/patient/shop">
-                <Button className={cn(
-                  "rounded-full bg-[#0A2E1F] text-white hover:bg-emerald-800 font-black uppercase tracking-widest transition-all border-none shadow-xl shadow-emerald-900/10",
-                  scrolled ? "px-6 py-2 text-[10px]" : "px-8 py-3 text-[11px]"
-                )}>
-                  Start Journey
+                <Button className="rounded-full bg-[#1A1F2C] text-white hover:bg-[#2A303C] px-8 py-3 h-auto text-[15px] font-bold transition-all border-none shadow-none">
+                  Explore Treatments
                 </Button>
               </Link>
               <button className="lg:hidden text-slate-800" onClick={() => setMobileMenu(!mobileMenu)}>
