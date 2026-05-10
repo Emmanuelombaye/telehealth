@@ -72,7 +72,7 @@ export function SuperAdminDashboard() {
     <div className="min-h-screen bg-[#F8FAF9] p-6 lg:p-10 font-sans text-[#0A0D14] animate-in fade-in duration-700">
       
       {/* GLOBAL HEADER */}
-      <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-4">
+      <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-4 animate-slide-in-right">
         <div className="flex items-center gap-5">
            <div className="h-16 w-16 rounded-2xl bg-emerald-600/10 flex items-center justify-center">
              <ShieldCheck className="h-8 w-8 text-emerald-600" />
@@ -98,13 +98,14 @@ export function SuperAdminDashboard() {
       {/* KPI GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {[
-          { label: "Aggregate MRR", value: `$${totalMRR.toLocaleString(undefined, {minimumFractionDigits: 2})}`, sub: "GLOBAL PAYMENTS", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { label: "Aggregate MRR", value: `$${totalMRR.toLocaleString(undefined, {minimumFractionDigits: 2})}`, sub: "GLOBAL PAYMENTS", icon: DollarSign, color: "text-[#D4AF37]", bg: "bg-amber-50 border border-amber-200 shadow-[0_0_15px_rgba(212,175,55,0.2)] animate-pulse-gold" },
           { label: "Active Brands", value: activeBrandsCount.toString(), sub: "READY FOR SCALE", icon: Building2, color: "text-blue-600", bg: "bg-blue-50" },
           { label: "Global Users", value: uniquePatients.toString() || "0", sub: "CROSS-PORTAL", icon: Users, color: "text-violet-600", bg: "bg-violet-50" },
           { label: "System Health", value: "99.98%", sub: "INFRASTRUCTURE", icon: Server, color: "text-amber-500", bg: "bg-amber-50" },
         ].map((s, i) => (
-          <Card key={i} className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] hover:-translate-y-1 transition-all duration-300">
-            <CardContent className="p-8">
+          <Card key={i} className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] hover:-translate-y-2 hover:shadow-2xl transition-all duration-500 animate-bounce-in" style={{ animationDelay: `${i * 0.15}s` }}>
+            <CardContent className="p-8 relative overflow-hidden">
+              {i === 0 && <div className="absolute inset-0 opacity-20 pointer-events-none animate-shimmer"></div>}
               <div className="flex items-start justify-between mb-6">
                 <div className={`h-14 w-14 rounded-2xl ${s.bg} flex items-center justify-center`}>
                   <s.icon className={`h-7 w-7 ${s.color}`} />
@@ -122,10 +123,10 @@ export function SuperAdminDashboard() {
       {/* CHARTS GRID */}
       <div className="grid lg:grid-cols-3 gap-8">
         
-        <div className="lg:col-span-2">
-          <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] h-full overflow-hidden relative">
-             <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-               <Globe size={160} />
+        <div className="lg:col-span-2 animate-bounce-in" style={{ animationDelay: "0.4s" }}>
+          <Card className="border-none shadow-2xl shadow-slate-200/60 rounded-[32px] h-full overflow-hidden relative group">
+             <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 group-hover:opacity-[0.05] transition-all duration-1000 pointer-events-none">
+               <Globe size={200} />
              </div>
              
              <CardContent className="p-8 h-full flex flex-col">
@@ -162,9 +163,9 @@ export function SuperAdminDashboard() {
           </Card>
         </div>
 
-        <div>
-          <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] h-full flex flex-col">
-             <CardContent className="p-8 h-full flex flex-col">
+        <div className="animate-bounce-in" style={{ animationDelay: "0.5s" }}>
+          <Card className="border-none shadow-2xl shadow-slate-200/60 rounded-[32px] h-full flex flex-col hover:-translate-y-1 transition-all duration-500">
+             <CardContent className="p-8 h-full flex flex-col relative">
                <div className="flex items-center justify-between mb-8">
                   <h3 className="text-2xl font-black text-[#0A0D14] tracking-tight">Market Distribution</h3>
                   <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center">

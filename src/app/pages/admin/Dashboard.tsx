@@ -67,7 +67,7 @@ export function AdminDashboard() {
     <div className="min-h-screen bg-[#F8FAF9] p-6 lg:p-10 font-sans text-[#0A0D14] animate-in fade-in duration-700">
       
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-4">
+      <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-4 animate-slide-in-right">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-[#0A0D14]">
             Welcome back, <span className="text-emerald-600 italic font-serif">{adminName}</span>
@@ -93,13 +93,14 @@ export function AdminDashboard() {
       {/* KPI GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {[
-          { label: "Total Revenue", value: `$${totalRevenue.toLocaleString()}`, sub: "+12.5% this month", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { label: "Total Revenue", value: `$${totalRevenue.toLocaleString()}`, sub: "+12.5% this month", icon: DollarSign, color: "text-[#D4AF37]", bg: "bg-amber-50 border border-amber-200 shadow-[0_0_15px_rgba(212,175,55,0.2)] animate-pulse-gold" },
           { label: "Active Orders", value: orders.length.toString(), sub: "All time", icon: ShoppingCart, color: "text-blue-600", bg: "bg-blue-50" },
           { label: "Pending Review", value: pendingCount.toString(), sub: "Requires attention", icon: AlertCircle, color: "text-amber-600", bg: "bg-amber-50" },
           { label: "Successfully Shipped", value: shippedCount.toString(), sub: "Completed flow", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
         ].map((stat, i) => (
-          <Card key={i} className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] hover:-translate-y-1 transition-all duration-300">
-            <CardContent className="p-8">
+          <Card key={i} className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] hover:-translate-y-2 hover:shadow-2xl transition-all duration-500 animate-bounce-in" style={{ animationDelay: `${i * 0.15}s` }}>
+            <CardContent className="p-8 relative overflow-hidden">
+              {i === 0 && <div className="absolute inset-0 opacity-20 pointer-events-none animate-shimmer"></div>}
               <div className="flex items-start justify-between mb-6">
                 <div className={`h-14 w-14 rounded-2xl ${stat.bg} flex items-center justify-center`}>
                   <stat.icon className={`h-7 w-7 ${stat.color}`} />
@@ -119,10 +120,10 @@ export function AdminDashboard() {
       <div className="grid lg:grid-cols-3 gap-8">
         
         {/* CHART SECTION */}
-        <div className="lg:col-span-2">
-          <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] h-full overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-              <Activity size={160} />
+        <div className="lg:col-span-2 animate-bounce-in" style={{ animationDelay: "0.4s" }}>
+          <Card className="border-none shadow-2xl shadow-slate-200/60 rounded-[32px] h-full overflow-hidden relative group">
+            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 group-hover:opacity-[0.05] transition-all duration-1000 pointer-events-none">
+              <Activity size={200} />
             </div>
             <CardContent className="p-8 h-full flex flex-col">
               <div className="flex items-center justify-between mb-8">
@@ -158,9 +159,9 @@ export function AdminDashboard() {
         </div>
 
         {/* RECENT ORDERS */}
-        <div className="lg:col-span-1">
-          <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] h-full flex flex-col">
-            <CardContent className="p-8 flex flex-col h-full">
+        <div className="lg:col-span-1 animate-bounce-in" style={{ animationDelay: "0.5s" }}>
+          <Card className="border-none shadow-2xl shadow-slate-200/60 rounded-[32px] h-full flex flex-col hover:-translate-y-1 transition-all duration-500">
+            <CardContent className="p-8 flex flex-col h-full relative">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-2xl font-black text-[#0A0D14] tracking-tight">Recent Orders</h3>
                 <Link to="/admin/orders">

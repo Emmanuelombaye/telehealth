@@ -257,3 +257,45 @@
 .animate-fade-in-up {
   animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Luxury Dashboard Animations */
+@keyframes bounce-in {
+  0% { opacity: 0; transform: scale(0.9) translateY(30px); }
+  60% { opacity: 1; transform: scale(1.02) translateY(-10px); }
+  80% { transform: scale(0.98) translateY(2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes slide-in-right {
+  0% { opacity: 0; transform: translateX(30px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.2); border-color: rgba(212, 175, 55, 0.2); }
+  50% { box-shadow: 0 0 25px 5px rgba(212, 175, 55, 0.4); border-color: rgba(212, 175, 55, 0.6); }
+}
+@keyframes float-luxury {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-pulse-gold {
+  animation: pulse-gold 3s ease-in-out infinite;
+}
+.animate-float-luxury {
+  animation: float-luxury 4s ease-in-out infinite;
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}

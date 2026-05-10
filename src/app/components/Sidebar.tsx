@@ -174,12 +174,13 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                 onClick={onMobileClose}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center justify-between rounded-xl px-3 py-2.5 text-[14px] font-medium transition-all duration-200 group relative mb-0.5",
+                    "flex items-center justify-between rounded-xl px-3 py-2.5 text-[14px] font-medium transition-all duration-200 group relative mb-0.5 animate-slide-in-right",
                     isActive
                       ? isAdminPortal ? "bg-emerald-50 text-emerald-700 font-bold shadow-sm" : "bg-primary/10 text-primary font-semibold"
                       : isAdminPortal ? "text-slate-500 hover:bg-slate-50 hover:text-slate-900" : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
                   )
                 }
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
                 {({ isActive }) => (
                   <>
