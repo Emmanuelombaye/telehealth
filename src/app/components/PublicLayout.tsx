@@ -3,7 +3,9 @@ import { Link, Outlet } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowRight, ChevronDown, X, Menu, ShieldCheck, Lock, Star, 
-  Activity, Heart, Pill, Plus, Plane, MapPin 
+  Activity, Heart, Pill, Plus, Plane, MapPin, Shield, Flag,
+  Instagram, Facebook, Linkedin, ExternalLink, HeartPulse,
+  Brain, Zap, Sparkles
 } from "lucide-react";
 import { Button, cn } from "./ui/shared.tsx";
 import { PageErrorBoundary } from "./PageErrorBoundary";
@@ -54,14 +56,14 @@ export function PublicLayout() {
         <motion.div 
           animate={{ height: scrolled ? 0 : "auto", opacity: scrolled ? 0 : 1 }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
-          className="bg-[#FDFBF7] text-slate-700 overflow-hidden whitespace-nowrap border-b border-slate-100 flex"
+          className="bg-[#0A2E1F] text-emerald-100 overflow-hidden whitespace-nowrap flex"
         >
-          <div className="py-2.5 animate-marquee flex gap-12 items-center text-sm font-medium w-max">
+          <div className="py-2 animate-marquee flex gap-12 items-center text-[11px] font-black uppercase tracking-[0.2em] w-max">
             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
               <span key={i} className="flex items-center gap-12">
-                <span className="flex items-center gap-2 text-slate-800"><Plus className="h-4 w-4 text-orange-400 stroke-[2.5]" /> Licensed Providers in all 50 States</span>
-                <span className="flex items-center gap-2 text-slate-800"><Plane className="h-4 w-4 text-purple-400 stroke-[2.5]" /> Free Expedited Shipment</span>
-                <span className="flex items-center gap-2 text-slate-800"><MapPin className="h-4 w-4 text-blue-500 stroke-[2.5]" /> U.S. Licensed Pharmacies</span>
+                <span className="flex items-center gap-2"><Sparkles className="h-3 w-3 text-emerald-400" /> Licensed Providers in all 50 States</span>
+                <span className="flex items-center gap-2"><Plane className="h-3 w-3 text-emerald-400" /> Free Expedited Shipment</span>
+                <span className="flex items-center gap-2"><ShieldCheck className="h-3 w-3 text-emerald-400" /> U.S. Licensed Pharmacies</span>
               </span>
             ))}
           </div>
@@ -69,23 +71,18 @@ export function PublicLayout() {
 
         {/* Header */}
         <header className={cn(
-          "transition-all duration-500 bg-white border-b border-slate-100", 
-          scrolled ? "py-3 shadow-sm" : "py-4 shadow-sm"
+          "transition-all duration-500 bg-white/80 backdrop-blur-xl border-b border-slate-100", 
+          scrolled ? "py-2 shadow-md" : "py-4 shadow-sm"
         )}>
           <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
             {/* Left: Logo */}
             <div className="flex-1">
               <Link to="/" className="flex items-center gap-3 group w-fit">
-                <img 
-                  src="/logo-icon.png" 
-                  alt="Peak Health" 
-                  className={cn(
-                    "w-auto transition-all duration-700 group-hover:scale-105 mix-blend-multiply contrast-125",
-                    scrolled ? "h-8 md:h-10" : "h-10 md:h-12"
-                  )} 
-                />
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#0A2E1F] to-[#051810] flex items-center justify-center shadow-lg shadow-emerald-900/20 group-hover:scale-105 transition-all duration-500">
+                  <Activity className="h-6 w-6 text-emerald-400" />
+                </div>
                 <span className={cn(
-                  "font-serif italic tracking-tighter text-[#0A0D14] transition-all duration-700 whitespace-nowrap",
+                  "font-serif italic tracking-tighter text-[#0A2E1F] transition-all duration-700 whitespace-nowrap",
                   scrolled ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
                 )}>
                   Peak Health
@@ -94,10 +91,10 @@ export function PublicLayout() {
             </div>
 
             {/* Middle: Links */}
-            <nav className="hidden lg:flex items-center justify-center gap-8 flex-1">
+            <nav className="hidden lg:flex items-center justify-center gap-10 flex-1">
               <div className="relative" onMouseEnter={() => setShowTreatments(true)} onMouseLeave={() => setShowTreatments(false)}>
-                <Link to="/explore-treatments" className="flex items-center gap-1 text-[15px] font-medium text-slate-700 hover:text-slate-900 transition-colors py-2">
-                  Explore Treatments
+                <Link to="/explore-treatments" className="flex items-center gap-1 text-[13px] font-black uppercase tracking-widest text-slate-600 hover:text-emerald-600 transition-colors py-2">
+                  Treatments <ChevronDown className="h-3 w-3" />
                 </Link>
                 
                 <AnimatePresence>
@@ -110,12 +107,12 @@ export function PublicLayout() {
                     >
                       <div className="bg-white rounded-[32px] shadow-2xl border border-slate-100 p-4 grid grid-cols-1 gap-2">
                         {treatments.map((t) => (
-                          <Link key={t.name} to={t.href} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors group" onClick={() => setShowTreatments(false)}>
+                          <Link key={t.name} to={t.href} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-colors group" onClick={() => setShowTreatments(false)}>
                             <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0", t.bg)}>
                               <t.icon className={cn("h-6 w-6", t.color)} />
                             </div>
                             <div>
-                              <p className="font-bold text-sm text-[#0A0D14]">{t.name}</p>
+                              <p className="font-black text-sm text-[#0A0D14] uppercase tracking-wide">{t.name}</p>
                               <p className="text-xs text-slate-500 font-medium">{t.desc}</p>
                             </div>
                             <ArrowRight className="h-4 w-4 ml-auto text-slate-200 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
@@ -127,25 +124,25 @@ export function PublicLayout() {
                 </AnimatePresence>
               </div>
 
-              <Link to="/how-it-works" className="text-[15px] font-medium text-slate-700 hover:text-slate-900 transition-colors">How It Works</Link>
+              <Link to="/how-it-works" className="text-[13px] font-black uppercase tracking-widest text-slate-600 hover:text-emerald-600 transition-colors">How It Works</Link>
               
               <div className="flex items-center gap-2">
-                 <div className="h-2.5 w-2.5 rounded-full bg-green-200 border-2 border-white shadow-[0_0_0_2px_rgba(187,247,208,0.5)]"></div>
-                 <span className="text-[15px] font-medium text-slate-700">Peptides <span className="text-slate-400">(Coming Soon)</span></span>
+                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                 <span className="text-[13px] font-black uppercase tracking-widest text-slate-600">Peptides</span>
               </div>
             </nav>
 
             {/* Right: Actions */}
             <div className="flex items-center justify-end gap-6 flex-1">
-              <Link to="/patient/login" className="hidden sm:block text-[15px] font-medium text-slate-700 hover:text-slate-900 transition-colors">
+              <Link to="/patient/login" className="hidden sm:block text-[13px] font-black uppercase tracking-widest text-slate-600 hover:text-emerald-600 transition-colors">
                 Log In
               </Link>
               <Link to="/patient/shop">
                 <Button className={cn(
-                  "rounded-full bg-[#1A1F2C] text-white hover:bg-[#2A303C] font-medium transition-all border-none shadow-none",
-                  scrolled ? "px-5 py-2 text-sm" : "px-6 py-2.5 text-[15px]"
+                  "rounded-full bg-[#0A2E1F] text-white hover:bg-emerald-800 font-black uppercase tracking-widest transition-all border-none shadow-xl shadow-emerald-900/10",
+                  scrolled ? "px-6 py-2 text-[10px]" : "px-8 py-3 text-[11px]"
                 )}>
-                  Explore Treatments
+                  Start Journey
                 </Button>
               </Link>
               <button className="lg:hidden text-slate-800" onClick={() => setMobileMenu(!mobileMenu)}>
@@ -163,62 +160,144 @@ export function PublicLayout() {
         </PageErrorBoundary>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-100 pt-32 pb-12 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-24">
-            <div className="space-y-8">
-              <div className="flex items-center gap-4">
-                <img src="/logo-icon.png" alt="Peak Health" className="h-24 w-auto mix-blend-multiply contrast-125 brightness-110" />
-                <span className="font-serif italic tracking-tighter text-[#0A0D14] text-5xl whitespace-nowrap">Peak Health</span>
+      {/* ULTRA-LUXURY EXECUTIVE FOOTER */}
+      <footer className="bg-white pt-32 pb-16 px-6 lg:px-20 border-t border-slate-100 overflow-hidden relative">
+        {/* Decorative Background Element */}
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-emerald-50/30 rounded-full blur-[120px] -mr-64 -mb-64 pointer-events-none"></div>
+        
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 mb-32">
+            
+            {/* BRAND & TRUST COLUMN */}
+            <div className="lg:col-span-2 space-y-12">
+              <div className="space-y-6">
+                <Link to="/" className="flex items-center gap-4 group">
+                  <div className="h-16 w-16 rounded-[24px] bg-gradient-to-br from-[#0A2E1F] to-[#051810] flex items-center justify-center shadow-2xl shadow-emerald-900/30 group-hover:scale-105 transition-all duration-500">
+                    <Activity className="h-8 w-8 text-emerald-400" />
+                  </div>
+                  <span className="font-serif italic tracking-tighter text-[#0A2E1F] text-5xl">Peak Health</span>
+                </Link>
+                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-300 leading-relaxed max-w-xs">
+                  © {new Date().getFullYear()} Peak Health Technology Group, Inc. <br/> All clinical rights reserved.
+                </p>
               </div>
-              <p className="text-slate-400 font-medium leading-relaxed">
-                Empowering individuals through clinical rigor and personalized wellness protocols. The future of healthcare is biological.
-              </p>
-              <div className="flex items-center gap-4">
-                 <ShieldCheck className="h-10 w-10 text-emerald-500/20" />
-                 <Lock className="h-10 w-10 text-emerald-500/20" />
-                 <Star className="h-10 w-10 text-emerald-500/20" />
+
+              {/* TRUST BADGES */}
+              <div className="flex items-center gap-4 flex-wrap">
+                 <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-[#0A2E1F] text-white shadow-xl shadow-emerald-900/10 border border-emerald-400/20">
+                    <Shield className="h-5 w-5 text-emerald-400" />
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black uppercase tracking-widest leading-none">LegitScript</span>
+                      <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-widest mt-1">Certified</span>
+                    </div>
+                 </div>
+                 <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white text-[#0A2E1F] shadow-xl shadow-slate-200/50 border border-slate-100">
+                    <Flag className="h-5 w-5 text-emerald-600" />
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black uppercase tracking-widest leading-none">Compounded</span>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">In USA</span>
+                    </div>
+                 </div>
+                 <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white text-[#0A2E1F] shadow-xl shadow-slate-200/50 border border-slate-100">
+                    <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black uppercase tracking-widest leading-none">HIPAA</span>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Compliant</span>
+                    </div>
+                 </div>
+              </div>
+
+              {/* SOCIALS */}
+              <div className="flex items-center gap-8 pt-4">
+                 <a href="#" className="text-slate-400 hover:text-[#0A2E1F] transition-all hover:scale-110"><Instagram size={22} /></a>
+                 <a href="#" className="text-slate-400 hover:text-[#0A2E1F] transition-all hover:scale-110"><Facebook size={22} /></a>
+                 <a href="#" className="text-slate-400 hover:text-[#0A2E1F] transition-all hover:scale-110"><Linkedin size={22} /></a>
+                 <div className="h-6 w-px bg-slate-100"></div>
+                 <div className="flex items-center gap-2 group cursor-pointer">
+                    <Star size={20} className="text-[#0A2E1F] fill-current" />
+                    <span className="text-sm font-black text-[#0A0D14] uppercase tracking-widest group-hover:text-emerald-600 transition-colors">Trustpilot</span>
+                 </div>
               </div>
             </div>
 
-            <div className="space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Treatments</h4>
-               <ul className="space-y-4">
-                 {treatments.map(t => (
-                   <li key={t.name}><Link to={t.href} className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">{t.name}</Link></li>
+            {/* TREATMENTS COLUMN */}
+            <div className="space-y-10">
+               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Clinical Focus</h4>
+               <ul className="space-y-6">
+                 {[
+                   { name: "Personalized Tirzepatide+", sub: "Weight Management" },
+                   { name: "Personalized Semaglutide+", sub: "Weight Management" },
+                   { name: "NAD+ Longevity", sub: "Anti-Aging & Focus" },
+                   { name: "Sermorelin Recovery", sub: "Performance" },
+                   { name: "Clinical Peptides", sub: "Coming Soon", highlight: true },
+                 ].map(item => (
+                   <li key={item.name} className="group cursor-pointer">
+                      <span className="block text-sm font-black text-slate-800 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{item.name}</span>
+                      <span className={cn("block text-[10px] font-bold mt-1 uppercase tracking-widest transition-colors", item.highlight ? "text-emerald-500" : "text-slate-400 group-hover:text-slate-500")}>
+                        {item.sub}
+                      </span>
+                   </li>
                  ))}
-                 <li><Link to="/explore-treatments" className="text-sm font-black text-emerald-600 uppercase tracking-widest">View All</Link></li>
                </ul>
             </div>
 
-            <div className="space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Platform</h4>
-               <ul className="space-y-4">
-                 <li><Link to="/how-it-works" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">How It Works</Link></li>
-                 <li><Link to="/faq" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">FAQ</Link></li>
-                 <li><Link to="/clinical-research" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Clinical Research</Link></li>
-                 <li><Link to="/support-hub" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Support Hub</Link></li>
+            {/* PLATFORM COLUMN */}
+            <div className="space-y-10">
+               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Infrastructure</h4>
+               <ul className="space-y-6">
+                 {[
+                   { name: "How It Works", path: "/how-it-works" },
+                   { name: "Patient Login", path: "/patient/login" },
+                   { name: "Start Treatment", path: "/patient/shop" },
+                   { name: "Referral Program", path: "/referral", gift: true },
+                   { name: "Platform FAQ", path: "/faq" },
+                   { name: "Clinical Blog", path: "/blog" },
+                 ].map(item => (
+                   <li key={item.name}>
+                      <Link to={item.path} className="flex items-center gap-2 group">
+                        <span className="text-sm font-black text-slate-800 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{item.name}</span>
+                        {item.gift && <Plus size={14} className="text-emerald-500 animate-pulse" />}
+                      </Link>
+                   </li>
+                 ))}
                </ul>
             </div>
 
-            <div className="space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Secure Portals</h4>
-               <ul className="space-y-4">
-                 <li><Link to="/patient/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Patient Login</Link></li>
-                 <li><Link to="/doctor/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Provider Portal</Link></li>
-                 <li><Link to="/admin/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Brand Admin</Link></li>
-                 <li><Link to="/superadmin/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Super Admin</Link></li>
+            {/* MEDICAL COLUMN */}
+            <div className="space-y-10">
+               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Safety & Ethics</h4>
+               <ul className="space-y-6">
+                 {[
+                   { name: "Safety Information" },
+                   { name: "Consent to Telehealth" },
+                   { name: "Physician Code of Conduct" },
+                   { name: "Privacy Policy" },
+                   { name: "Terms of Service" },
+                   { name: "Clinical Research" },
+                 ].map(item => (
+                   <li key={item.name} className="group cursor-pointer">
+                      <span className="text-sm font-black text-slate-800 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{item.name}</span>
+                   </li>
+                 ))}
                </ul>
             </div>
           </div>
 
-          <div className="pt-12 border-t border-slate-100 text-center space-y-6">
-             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-loose">
-               © {new Date().getFullYear()} Peak Health Technology Group, Inc. All rights reserved.
-             </p>
-             <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-[#0A0D14] leading-none opacity-10">
-               it's about <span className="text-emerald-500 font-serif italic font-medium">you.</span>
+          {/* SIGNATURE SECTION */}
+          <div className="pt-20 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-12">
+             <div className="flex flex-wrap justify-center md:justify-start gap-8 opacity-40">
+                <div className="flex items-center gap-2">
+                   <ShieldCheck size={14} />
+                   <span className="text-[9px] font-black uppercase tracking-[0.2em]">AES-256 Encrypted</span>
+                </div>
+                <div className="flex items-center gap-2">
+                   <Lock size={14} />
+                   <span className="text-[9px] font-black uppercase tracking-[0.2em]">HIPAA Secure Network</span>
+                </div>
+             </div>
+             
+             <h2 className="text-6xl md:text-8xl font-black tracking-tighter text-[#0A0D14] leading-none select-none">
+               it's about <span className="text-emerald-600 font-serif italic font-medium">you.</span>
              </h2>
           </div>
         </div>
