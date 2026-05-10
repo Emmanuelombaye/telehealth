@@ -5,7 +5,7 @@ import { LandingPage } from "./pages/Landing";
 import { PatientDashboard } from "./pages/patient/Dashboard";
 import { DoctorDashboard } from "./pages/doctor/Dashboard";
 import { AdminDashboard } from "./pages/admin/Dashboard";
-import { WeightLossPage, SexualWellnessPage, HairLossPage, LongevityPage } from "./pages/treatments";
+import { WeightLossPage, SexualWellnessPage, HairLossPage, LongevityPage, BioOptimizerPage } from "./pages/treatments";
 import { ClinicalResearchPage } from "./pages/authority/ClinicalResearch";
 import { SupportHubPage } from "./pages/SupportHub";
 import { HowItWorksPage } from "./pages/HowItWorks";
@@ -111,6 +111,10 @@ export const router = createBrowserRouter([
           { path: "frequently-asked-questions", Component: FrequentlyAskedQuestionsPage },
           { path: "faq", Component: FrequentlyAskedQuestionsPage },
           
+          // Bio-Optimizer Hubs (Public)
+          { path: "bio", Component: BioOptimizerPage },
+          { path: "bio/:slug", Component: BioOptimizerPage },
+
           // Quiz Funnel
           { path: "quiz/select-treatment", Component: SelectTreatmentPage },
           { path: "quiz/:condition/reviews", Component: ReviewsPage },
