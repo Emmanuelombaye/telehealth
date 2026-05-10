@@ -137,7 +137,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
       )}>
         <Link to="/" className="flex items-center justify-center w-full py-2 group transition-all" onClick={onMobileClose}>
           <img src="/logo-icon.png" alt="Peak Health Logo" className={cn(
-            "h-32 w-auto object-contain transition-transform duration-300 group-hover:scale-105",
+            "h-32 w-auto object-contain mix-blend-multiply contrast-125 brightness-110 transition-transform duration-300 group-hover:scale-105",
             isAdminPortal ? "" : ""
           )} />
         </Link>

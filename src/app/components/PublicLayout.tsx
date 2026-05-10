@@ -71,7 +71,7 @@ export function PublicLayout() {
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-12">
             <Link to="/" className="flex items-center group">
-              <img src="/logo-icon.png" alt="Peak Health" className="h-16 md:h-24 w-auto transition-transform group-hover:scale-105" />
+              <img src="/logo-icon.png" alt="Peak Health" className="h-16 md:h-24 w-auto transition-transform group-hover:scale-105 mix-blend-multiply contrast-125 brightness-110" />
             </Link>
 
             {/* Desktop Nav */}
@@ -137,7 +137,7 @@ export function PublicLayout() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-24">
             <div className="space-y-8">
-              <img src="/logo-icon.png" alt="Peak Health" className="h-24 w-auto" />
+              <img src="/logo-icon.png" alt="Peak Health" className="h-24 w-auto mix-blend-multiply contrast-125 brightness-110" />
               <p className="text-slate-400 font-medium leading-relaxed">
                 Empowering individuals through clinical rigor and personalized wellness protocols. The future of healthcare is biological.
               </p>
