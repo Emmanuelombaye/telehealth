@@ -80,7 +80,7 @@ export function PublicLayout() {
                   src="/logo-icon.png" 
                   alt="Peak Health" 
                   className={cn(
-                    "w-auto transition-all duration-700 group-hover:scale-105",
+                    "w-auto transition-all duration-700 group-hover:scale-105 mix-blend-multiply contrast-125",
                     scrolled ? "h-8 md:h-10" : "h-10 md:h-12"
                   )} 
                 />
