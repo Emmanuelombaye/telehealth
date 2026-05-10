@@ -12,8 +12,16 @@ const portals = [
   { name: 'Doctor Portal',      path: '/doctor' },
   { name: 'Admin Login',        path: '/admin/login' },
   { name: 'Admin Portal',       path: '/admin' },
+  { name: 'Admin Brands',       path: '/admin/brands' },
+  { name: 'Admin Doctors',      path: '/admin/doctors' },
+  { name: 'Admin Finance',      path: '/admin/finance' },
+  { name: 'Admin Patients',     path: '/admin/patients' },
+  { name: 'Admin Orders',       path: '/admin/orders' },
+  { name: 'Admin Inventory',    path: '/admin/inventory' },
   { name: 'SuperAdmin Login',   path: '/superadmin/login' },
   { name: 'SuperAdmin Portal',  path: '/superadmin' },
+  { name: 'SuperAdmin Finance', path: '/superadmin/finance' },
+  { name: 'SuperAdmin Brands',  path: '/superadmin/brands' },
   { name: 'Pharmacy Login',     path: '/pharmacy/login' },
   { name: 'Pharmacy Portal',    path: '/pharmacy' },
   { name: 'Patient Shop',       path: '/patient/shop' },
@@ -32,7 +40,7 @@ function checkUrl(name, url) {
       console.log(`  ❌  [ERR] ${name.padEnd(22)} ${url} — ${err.message}`);
       resolve({ name, status: 0, ok: false });
     });
-    req.setTimeout(8000, () => {
+    req.setTimeout(10000, () => {
       console.log(`  ⏱️  [TMO] ${name.padEnd(22)} ${url} — Timed out`);
       req.destroy();
       resolve({ name, status: 0, ok: false });

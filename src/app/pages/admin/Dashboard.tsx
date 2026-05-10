@@ -41,8 +41,9 @@ export function AdminDashboard() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const totalRevenue = orders.reduce((sum, order) => {
-    const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
+  const totalRevenue = (orders || []).reduce((sum, order) => {
+    if (!order) return sum;
+    const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount || 0).replace(/[^0-9.-]+/g,"")) || 0;
     return sum + amt;
   }, 0);
 
@@ -52,9 +53,12 @@ export function AdminDashboard() {
   const recentOrders = orders.slice(0, 5);
 
   // Group revenue by day for the chart
-  const revenueByDay = orders.reduce((acc, order) => {
-    const date = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
+  const revenueByDay = (orders || []).reduce((acc, order) => {
+    if (!order?.created_at) return acc;
+    const d = new Date(order.created_at);
+    if (isNaN(d.getTime())) return acc;
+    const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount || 0).replace(/[^0-9.-]+/g,"")) || 0;
     if (!acc[date]) acc[date] = 0;
     acc[date] += amt;
     return acc;

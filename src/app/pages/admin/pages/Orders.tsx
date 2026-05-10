@@ -206,8 +206,8 @@ export function AdminOrdersPage() {
                     <div className="text-xs font-bold text-slate-500">{item.ordered_date || item.orderedDate || new Date(item.created_at).toLocaleDateString()}</div>
                   </td>
                   <td className="py-5 px-6">
-                    <span className={cn("px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border shadow-sm", statusStyles[item.status] || "bg-slate-100 border-slate-200")}>
-                      {statusLabels[item.status]}
+                    <span className={cn("px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border shadow-sm", statusStyles[item.status as OrderStatus] || "bg-slate-100 border-slate-200")}>
+                      {statusLabels[item.status as OrderStatus] || String(item.status).replace(/_/g, ' ')}
                     </span>
                     {item.pharmacy_note && (
                       <div className="mt-2 text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-1 rounded-lg max-w-[150px]">

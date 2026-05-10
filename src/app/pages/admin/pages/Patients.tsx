@@ -26,10 +26,12 @@ export function AdminPatientsPage() {
           const pId = order.patient_name || order.id;
           if (!seen.has(pId)) {
             seen.add(pId);
+            const d = new Date(order.created_at);
+            const dateStr = isNaN(d.getTime()) ? "N/A" : d.toLocaleDateString();
             uniquePatients.push({
               id: order.id,
               name: order.patient_name || "New Patient",
-              date: new Date(order.created_at).toLocaleDateString(),
+              date: dateStr,
               mrn: order.mrn || "Pending",
               subscription: typeof order.amount === 'number' ? `$${order.amount}` : order.amount || "$0",
               product: "Telehealth Visit"
