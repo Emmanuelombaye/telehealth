@@ -3,7 +3,7 @@ import { Link, Outlet } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowRight, ChevronDown, X, Menu, ShieldCheck, Lock, Star, 
-  Activity, Heart, Pill 
+  Activity, Heart, Pill, Plus, Plane, MapPin 
 } from "lucide-react";
 import { Button, cn } from "./ui/shared.tsx";
 import { PageErrorBoundary } from "./PageErrorBoundary";
@@ -54,102 +54,95 @@ export function PublicLayout() {
         <motion.div 
           animate={{ height: scrolled ? 0 : "auto", opacity: scrolled ? 0 : 1 }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
-          className="bg-[#0A0D14] text-white overflow-hidden whitespace-nowrap"
+          className="bg-[#FDFBF7] text-slate-700 overflow-hidden whitespace-nowrap border-b border-slate-100"
         >
-          <div className="py-2.5 animate-marquee-fast flex gap-12 items-center text-[10px] font-black uppercase tracking-[0.2em]">
-            {[1, 2, 3].map(i => (
-              <span key={i} className="flex items-center gap-12">
-                <span>⚕️ 50-State Provider Network</span>
-                <span className="h-1 w-1 bg-white/30 rounded-full"></span>
-                <span>🔒 HIPAA SECURE PLATFORM</span>
-                <span className="h-1 w-1 bg-white/30 rounded-full"></span>
-                <span>📦 Free Expedited Delivery</span>
-                <span className="h-1 w-1 bg-white/30 rounded-full"></span>
+          <div className="py-2.5 animate-marquee flex gap-8 items-center text-sm font-medium">
+            {[1, 2, 3, 4].map(i => (
+              <span key={i} className="flex items-center gap-8">
+                <span className="flex items-center gap-2"><Plus className="h-4 w-4 text-orange-400" /> Licensed Providers in all 50 States</span>
+                <span className="flex items-center gap-2"><Plane className="h-4 w-4 text-purple-400" /> Free Expedited Shipment</span>
+                <span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-blue-400" /> U.S. Licensed Pharmacies</span>
               </span>
             ))}
           </div>
         </motion.div>
 
-        {/* Header - Airbnb Style Transition */}
+        {/* Header */}
         <header className={cn(
           "transition-all duration-500 bg-white border-b border-slate-100", 
-          scrolled ? "py-2 shadow-xl" : "py-6 shadow-sm"
+          scrolled ? "py-3 shadow-sm" : "py-4 shadow-sm"
         )}>
           <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-            <div className="flex items-center gap-12">
-              <Link to="/" className="flex items-center group">
+            {/* Left: Logo */}
+            <div className="flex-1">
+              <Link to="/" className="flex items-center group w-fit">
                 <img 
                   src="/logo-icon.png" 
                   alt="Peak Health" 
                   className={cn(
-                    "w-auto transition-all duration-700 group-hover:scale-105 mix-blend-multiply contrast-125 brightness-110",
-                    scrolled ? "h-10 md:h-12" : "h-16 md:h-20"
+                    "w-auto transition-all duration-700 group-hover:scale-105",
+                    scrolled ? "h-8 md:h-10" : "h-10 md:h-12"
                   )} 
                 />
               </Link>
-
-              {/* Desktop Nav */}
-              <nav className="hidden lg:flex items-center gap-8">
-                <div className="relative" onMouseEnter={() => setShowTreatments(true)} onMouseLeave={() => setShowTreatments(false)}>
-                  <Link to="/explore-treatments" className={cn(
-                    "flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-all py-2",
-                    scrolled ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
-                  )}>
-                    Explore Treatments <ChevronDown className={cn("h-3 w-3 transition-transform", showTreatments && "rotate-180")} />
-                  </Link>
-                  
-                  <AnimatePresence>
-                    {showTreatments && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className="absolute top-full -left-4 w-[480px] pt-4"
-                      >
-                        <div className="bg-white rounded-[32px] shadow-2xl border border-slate-100 p-4 grid grid-cols-1 gap-2">
-                          {treatments.map((t) => (
-                            <Link key={t.name} to={t.href} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors group" onClick={() => setShowTreatments(false)}>
-                              <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0", t.bg)}>
-                                <t.icon className={cn("h-6 w-6", t.color)} />
-                              </div>
-                              <div>
-                                <p className="font-black text-sm text-[#0A0D14]">{t.name}</p>
-                                <p className="text-xs text-slate-400 font-bold">{t.desc}</p>
-                              </div>
-                              <ArrowRight className="h-4 w-4 ml-auto text-slate-200 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
-                            </Link>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                <Link to="/how-it-works" className={cn(
-                  "text-[11px] font-black uppercase tracking-widest transition-all",
-                  scrolled ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
-                )}>How It Works</Link>
-                <Link to="/faq" className={cn(
-                  "text-[11px] font-black uppercase tracking-widest transition-all",
-                  scrolled ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
-                )}>FAQ</Link>
-              </nav>
             </div>
 
-            <div className="flex items-center gap-4 md:gap-6">
-              <Link to="/patient/login" className={cn(
-                "hidden sm:block text-[11px] font-black uppercase tracking-widest transition-all",
-                scrolled ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
-              )}>Sign In</Link>
+            {/* Middle: Links */}
+            <nav className="hidden lg:flex items-center justify-center gap-8 flex-1">
+              <div className="relative" onMouseEnter={() => setShowTreatments(true)} onMouseLeave={() => setShowTreatments(false)}>
+                <Link to="/explore-treatments" className="flex items-center gap-1 text-[15px] font-medium text-slate-700 hover:text-slate-900 transition-colors py-2">
+                  Explore Treatments
+                </Link>
+                
+                <AnimatePresence>
+                  {showTreatments && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute top-full -left-20 w-[480px] pt-4"
+                    >
+                      <div className="bg-white rounded-[32px] shadow-2xl border border-slate-100 p-4 grid grid-cols-1 gap-2">
+                        {treatments.map((t) => (
+                          <Link key={t.name} to={t.href} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors group" onClick={() => setShowTreatments(false)}>
+                            <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0", t.bg)}>
+                              <t.icon className={cn("h-6 w-6", t.color)} />
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-[#0A0D14]">{t.name}</p>
+                              <p className="text-xs text-slate-500 font-medium">{t.desc}</p>
+                            </div>
+                            <ArrowRight className="h-4 w-4 ml-auto text-slate-200 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
+                          </Link>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <Link to="/how-it-works" className="text-[15px] font-medium text-slate-700 hover:text-slate-900 transition-colors">How It Works</Link>
+              
+              <div className="flex items-center gap-2">
+                 <div className="h-2.5 w-2.5 rounded-full bg-green-200 border-2 border-white shadow-[0_0_0_2px_rgba(187,247,208,0.5)]"></div>
+                 <span className="text-[15px] font-medium text-slate-700">Peptides <span className="text-slate-400">(Coming Soon)</span></span>
+              </div>
+            </nav>
+
+            {/* Right: Actions */}
+            <div className="flex items-center justify-end gap-6 flex-1">
+              <Link to="/patient/login" className="hidden sm:block text-[15px] font-medium text-slate-700 hover:text-slate-900 transition-colors">
+                Log In
+              </Link>
               <Link to="/patient/shop">
                 <Button className={cn(
-                  "rounded-full bg-[#0A0D14] text-white hover:bg-[#1A1D24] font-black tracking-widest shadow-xl active:scale-95 transition-all",
-                  scrolled ? "px-6 py-4 text-[10px]" : "px-8 py-6 text-xs"
+                  "rounded-full bg-[#1A1F2C] text-white hover:bg-[#2A303C] font-medium transition-all border-none shadow-none",
+                  scrolled ? "px-5 py-2 text-sm" : "px-6 py-2.5 text-[15px]"
                 )}>
-                  GET STARTED
+                  Explore Treatments
                 </Button>
               </Link>
-              <button className="lg:hidden" onClick={() => setMobileMenu(!mobileMenu)}>
+              <button className="lg:hidden text-slate-800" onClick={() => setMobileMenu(!mobileMenu)}>
                 {mobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </div>
