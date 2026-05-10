@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Building2, Plus, Search, Globe, Users, Activity, DollarSign,
   ChevronRight, ToggleLeft, ToggleRight, Edit2, ExternalLink,
