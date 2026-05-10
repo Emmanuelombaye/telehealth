@@ -61,13 +61,15 @@ export function AuthPage({ portal }: { portal: Portal }) {
   }, [initialize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Portal target path — always go to the portal the user is logging into
+  // Added cache-buster to prevent unusual redirection/caching between portals
   const portalTarget = (p: Portal) => {
+    const buster = `?v=${Date.now()}`;
     switch (p) {
-      case 'doctor':     return '/doctor';
-      case 'admin':      return '/admin';
-      case 'superadmin': return '/superadmin';
-      case 'pharmacy':   return '/pharmacy';
-      default:           return '/patient';
+      case 'doctor':     return `/doctor${buster}`;
+      case 'admin':      return `/admin${buster}`;
+      case 'superadmin': return `/superadmin${buster}`;
+      case 'pharmacy':   return `/pharmacy${buster}`;
+      default:           return `/patient${buster}`;
     }
   };
 

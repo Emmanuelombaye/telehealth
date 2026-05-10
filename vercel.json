@@ -8,5 +8,53 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
+  ],
+  "headers": [
+    {
+      "source": "/patient/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "X-Portal", "value": "patient" }
+      ]
+    },
+    {
+      "source": "/doctor/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "X-Portal", "value": "doctor" }
+      ]
+    },
+    {
+      "source": "/admin/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "X-Portal", "value": "admin" }
+      ]
+    },
+    {
+      "source": "/superadmin/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "X-Portal", "value": "superadmin" }
+      ]
+    },
+    {
+      "source": "/pharmacy/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "X-Portal", "value": "pharmacy" }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
   ]
 }

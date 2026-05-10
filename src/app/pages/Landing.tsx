@@ -240,7 +240,58 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Staff Portals Access */}
+      <section className="py-24 bg-[#0A0D14] px-6 overflow-hidden relative">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.08),transparent_60%)]" />
+        <div className="max-w-7xl mx-auto relative z-10">
+          <Reveal>
+            <div className="text-center mb-16 space-y-4">
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-emerald-500/20">
+                🔐 Secure Staff Access
+              </div>
+              <h2 className="text-4xl font-black text-white tracking-tight">Platform Portals</h2>
+              <p className="text-slate-400 font-medium max-w-xl mx-auto">
+                Each portal is independently secured and isolated. Select your role to access your dedicated workspace.
+              </p>
+            </div>
+          </Reveal>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {[
+              { label: "Patient",    path: "/patient/login",    icon: "🧬", color: "from-emerald-500/20 to-emerald-500/5", border: "border-emerald-500/30", badge: "bg-emerald-500/20 text-emerald-400", desc: "Your health dashboard" },
+              { label: "Provider",   path: "/doctor/login",     icon: "🩺", color: "from-blue-500/20 to-blue-500/5",     border: "border-blue-500/30",    badge: "bg-blue-500/20 text-blue-400",    desc: "Clinical queue & Rx" },
+              { label: "Admin",      path: "/admin/login",      icon: "🏢", color: "from-violet-500/20 to-violet-500/5", border: "border-violet-500/30",  badge: "bg-violet-500/20 text-violet-400",  desc: "Brand management" },
+              { label: "SuperAdmin", path: "/superadmin/login", icon: "⚡", color: "from-amber-500/20 to-amber-500/5",   border: "border-amber-500/30",   badge: "bg-amber-500/20 text-amber-400",    desc: "Global platform control" },
+              { label: "Pharmacy",   path: "/pharmacy/login",   icon: "💊", color: "from-teal-500/20 to-teal-500/5",    border: "border-teal-500/30",    badge: "bg-teal-500/20 text-teal-400",     desc: "Fulfillment & dispatch" },
+            ].map((portal, i) => (
+              <Reveal key={portal.label} delay={0.1 * i} direction="up">
+                <a
+                  href={`${portal.path}?t=${Date.now()}`}
+                  className={`group relative flex flex-col items-center text-center gap-4 p-8 rounded-[32px] bg-gradient-to-b ${portal.color} border ${portal.border} hover:scale-[1.04] transition-all duration-300 hover:shadow-2xl cursor-pointer block`}
+                >
+                  <div className="text-5xl mb-2">{portal.icon}</div>
+                  <div>
+                    <p className="text-white font-black text-lg tracking-tight">{portal.label}</p>
+                    <p className="text-slate-400 text-xs font-medium mt-1">{portal.desc}</p>
+                  </div>
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${portal.badge}`}>
+                    Sign In →
+                  </span>
+                </a>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal>
+            <p className="text-center text-slate-600 text-xs font-bold uppercase tracking-widest mt-12">
+              🔒 All portals are independently isolated · HIPAA Compliant · Session-encrypted
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
       {/* Bottom CTA */}
+
       <section className="py-32 bg-white text-center px-6">
         <Reveal>
           <div className="max-w-5xl mx-auto bg-[#0A0D14] rounded-[64px] p-12 md:p-24 text-white relative overflow-hidden">
