@@ -75,7 +75,7 @@ export function PublicLayout() {
           <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
             {/* Left: Logo */}
             <div className="flex-1">
-              <Link to="/" className="flex items-center group w-fit">
+              <Link to="/" className="flex items-center gap-3 group w-fit">
                 <img 
                   src="/logo-icon.png" 
                   alt="Peak Health" 
@@ -84,6 +84,12 @@ export function PublicLayout() {
                     scrolled ? "h-8 md:h-10" : "h-10 md:h-12"
                   )} 
                 />
+                <span className={cn(
+                  "font-serif italic tracking-tight text-[#0A0D14] transition-all duration-700",
+                  scrolled ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
+                )}>
+                  Peak
+                </span>
               </Link>
             </div>
 
@@ -162,7 +168,10 @@ export function PublicLayout() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-24">
             <div className="space-y-8">
-              <img src="/logo-icon.png" alt="Peak Health" className="h-24 w-auto mix-blend-multiply contrast-125 brightness-110" />
+              <div className="flex items-center gap-4">
+                <img src="/logo-icon.png" alt="Peak Health" className="h-24 w-auto mix-blend-multiply contrast-125 brightness-110" />
+                <span className="font-serif italic tracking-tight text-[#0A0D14] text-5xl">Peak</span>
+              </div>
               <p className="text-slate-400 font-medium leading-relaxed">
                 Empowering individuals through clinical rigor and personalized wellness protocols. The future of healthcare is biological.
               </p>
