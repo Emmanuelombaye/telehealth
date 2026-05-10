@@ -243,11 +243,9 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
           <div className={cn("h-2 w-2 rounded-full animate-pulse shrink-0", isAdminPortal ? "bg-emerald-500" : "bg-emerald-500")} />
         </div>
         <button 
-          onClick={() => {
-            if (window.confirm("Are you sure you want to sign out?")) {
-              useAuthStore.getState().signOut();
-              window.location.href = "/";
-            }
+          onClick={async () => {
+            await useAuthStore.getState().signOut();
+            window.location.href = "/";
           }}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors group text-left"
         >

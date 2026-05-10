@@ -43,7 +43,7 @@ export function AppLayout() {
   const path = location.pathname;
   const { user, role: authRole, signOut } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const onScroll = (e: React.UIEvent<HTMLElement>) => {
@@ -75,35 +75,6 @@ export function AppLayout() {
       "flex h-screen w-full overflow-hidden font-sans antialiased",
       "bg-[#f8faf9] text-slate-900" 
     )}>
-      {/* Logout Confirmation Modal */}
-      {isLogoutModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2rem] w-full max-w-sm p-8 shadow-2xl border border-slate-100 animate-in zoom-in duration-300">
-            <div className="h-16 w-16 rounded-2xl bg-red-50 flex items-center justify-center mb-6 mx-auto">
-              <LogOut className="h-8 w-8 text-red-500" />
-            </div>
-            <h3 className="text-xl font-black italic uppercase tracking-tighter text-center mb-2">Secure Logout?</h3>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest text-center mb-8">Your clinical session will be terminated</p>
-            
-            <div className="flex flex-col gap-3">
-              <Button 
-                variant="destructive"
-                className="h-12 rounded-xl font-black uppercase italic tracking-widest bg-red-600 hover:bg-red-700"
-                onClick={handleLogout}
-              >
-                Terminate Session
-              </Button>
-              <Button 
-                variant="ghost"
-                className="h-12 rounded-xl font-black uppercase italic tracking-widest text-slate-400 hover:bg-slate-50"
-                onClick={() => setIsLogoutModalOpen(false)}
-              >
-                Stay Logged In
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Desktop Sidebar (Left) */}
       <div className="hidden md:block h-full">
@@ -165,7 +136,7 @@ export function AppLayout() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => setIsLogoutModalOpen(true)}
+                onClick={handleLogout}
                 className="h-11 w-11 rounded-2xl transition-colors bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600"
               >
                 <LogOut className="h-5 w-5" />
