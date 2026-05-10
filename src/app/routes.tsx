@@ -122,7 +122,7 @@ export const router = createBrowserRouter([
       { path: "doctor/login", element: <AuthPage portal="doctor" /> },
       { path: "admin/login", element: <AuthPage portal="admin" /> },
       { path: "superadmin/login", element: <AuthPage portal="superadmin" /> },
-      { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
+      // { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
 
       // Patient Shop flow (Standalone)
       { path: "patient/shop", Component: PatientShopPage },
@@ -216,7 +216,8 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // Pharmacy portal
+          // Pharmacy portal (Disabled for automated webhook flow)
+          /* 
           {
             path: "pharmacy",
             element: <ProtectedRoute allowedRoles={['pharmacy', 'doctor', 'brand_admin', 'super_admin']} />,
@@ -231,6 +232,7 @@ export const router = createBrowserRouter([
               { path: "settings", Component: PharmacySettingsPage },
             ],
           },
+          */
         ],
       },
 
