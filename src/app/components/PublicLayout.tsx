@@ -50,9 +50,13 @@ export function PublicLayout() {
     <div className="min-h-screen bg-white font-sans text-[#0A0D14] selection:bg-emerald-100 selection:text-emerald-900">
       {/* Sticky Header Wrapper */}
       <div className="sticky top-0 z-50">
-        {/* Announcement Ticker */}
-        <div className="bg-[#0A0D14] text-white py-2 overflow-hidden whitespace-nowrap">
-          <div className="animate-marquee-fast flex gap-12 items-center text-[10px] font-black uppercase tracking-[0.2em]">
+        {/* Announcement Ticker - Collapses on scroll */}
+        <motion.div 
+          animate={{ height: scrolled ? 0 : "auto", opacity: scrolled ? 0 : 1 }}
+          transition={{ duration: 0.4, ease: "easeInOut" }}
+          className="bg-[#0A0D14] text-white overflow-hidden whitespace-nowrap"
+        >
+          <div className="py-2.5 animate-marquee-fast flex gap-12 items-center text-[10px] font-black uppercase tracking-[0.2em]">
             {[1, 2, 3].map(i => (
               <span key={i} className="flex items-center gap-12">
                 <span>⚕️ 50-State Provider Network</span>
@@ -64,12 +68,12 @@ export function PublicLayout() {
               </span>
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        {/* Header */}
+        {/* Header - Airbnb Style Transition */}
         <header className={cn(
-          "transition-all duration-500 bg-white/95 backdrop-blur-xl border-b border-slate-100", 
-          scrolled ? "py-3 shadow-md" : "py-5 shadow-sm"
+          "transition-all duration-500 bg-white border-b border-slate-100", 
+          scrolled ? "py-2 shadow-xl" : "py-6 shadow-sm"
         )}>
           <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
             <div className="flex items-center gap-12">
@@ -78,8 +82,8 @@ export function PublicLayout() {
                   src="/logo-icon.png" 
                   alt="Peak Health" 
                   className={cn(
-                    "w-auto transition-all duration-500 group-hover:scale-105 mix-blend-multiply contrast-125 brightness-110",
-                    scrolled ? "h-12 md:h-16" : "h-16 md:h-20"
+                    "w-auto transition-all duration-700 group-hover:scale-105 mix-blend-multiply contrast-125 brightness-110",
+                    scrolled ? "h-10 md:h-12" : "h-16 md:h-20"
                   )} 
                 />
               </Link>
@@ -87,8 +91,11 @@ export function PublicLayout() {
               {/* Desktop Nav */}
               <nav className="hidden lg:flex items-center gap-8">
                 <div className="relative" onMouseEnter={() => setShowTreatments(true)} onMouseLeave={() => setShowTreatments(false)}>
-                  <Link to="/explore-treatments" className="flex items-center gap-1.5 text-[12px] font-black uppercase tracking-widest text-slate-600 hover:text-[#0A0D14] transition-colors py-2">
-                    Explore Treatments <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showTreatments && "rotate-180")} />
+                  <Link to="/explore-treatments" className={cn(
+                    "flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-all py-2",
+                    scrolled ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
+                  )}>
+                    Explore Treatments <ChevronDown className={cn("h-3 w-3 transition-transform", showTreatments && "rotate-180")} />
                   </Link>
                   
                   <AnimatePresence>
@@ -118,15 +125,27 @@ export function PublicLayout() {
                   </AnimatePresence>
                 </div>
 
-                <Link to="/how-it-works" className="text-[12px] font-black uppercase tracking-widest text-slate-600 hover:text-[#0A0D14] transition-colors">How It Works</Link>
-                <Link to="/faq" className="text-[12px] font-black uppercase tracking-widest text-slate-600 hover:text-[#0A0D14] transition-colors">FAQ</Link>
+                <Link to="/how-it-works" className={cn(
+                  "text-[11px] font-black uppercase tracking-widest transition-all",
+                  scrolled ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
+                )}>How It Works</Link>
+                <Link to="/faq" className={cn(
+                  "text-[11px] font-black uppercase tracking-widest transition-all",
+                  scrolled ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
+                )}>FAQ</Link>
               </nav>
             </div>
 
             <div className="flex items-center gap-4 md:gap-6">
-              <Link to="/patient/login" className="hidden sm:block text-[12px] font-black uppercase tracking-widest text-slate-600 hover:text-[#0A0D14]">Sign In</Link>
+              <Link to="/patient/login" className={cn(
+                "hidden sm:block text-[11px] font-black uppercase tracking-widest transition-all",
+                scrolled ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
+              )}>Sign In</Link>
               <Link to="/patient/shop">
-                <Button className="rounded-full bg-[#0A0D14] text-white hover:bg-[#1A1D24] px-8 py-6 font-black text-xs tracking-widest shadow-xl active:scale-95 transition-all">
+                <Button className={cn(
+                  "rounded-full bg-[#0A0D14] text-white hover:bg-[#1A1D24] font-black tracking-widest shadow-xl active:scale-95 transition-all",
+                  scrolled ? "px-6 py-4 text-[10px]" : "px-8 py-6 text-xs"
+                )}>
                   GET STARTED
                 </Button>
               </Link>

@@ -45,6 +45,7 @@ export function DoctorQueuePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiSummary, setAiSummary] = useState("");
+  const [showIntakeModal, setShowIntakeModal] = useState(false);
 
   // Filter orders for the queue - show anything that needs attention
   const queue = orders.filter(o => {
@@ -563,13 +564,13 @@ export function DoctorQueuePage() {
                   </div>
                 </div>
               </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-      </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
-  );
+  </div>
+);
 }
 
 function Lock(props: any) {
