@@ -85,10 +85,10 @@ export function PublicLayout() {
                   )} 
                 />
                 <span className={cn(
-                  "font-serif italic tracking-tight text-[#0A0D14] transition-all duration-700",
+                  "font-serif italic tracking-tighter text-[#0A0D14] transition-all duration-700 whitespace-nowrap",
                   scrolled ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
                 )}>
-                  Peak
+                  Peak Health
                 </span>
               </Link>
             </div>
@@ -170,7 +170,7 @@ export function PublicLayout() {
             <div className="space-y-8">
               <div className="flex items-center gap-4">
                 <img src="/logo-icon.png" alt="Peak Health" className="h-24 w-auto mix-blend-multiply contrast-125 brightness-110" />
-                <span className="font-serif italic tracking-tight text-[#0A0D14] text-5xl">Peak</span>
+                <span className="font-serif italic tracking-tighter text-[#0A0D14] text-5xl whitespace-nowrap">Peak Health</span>
               </div>
               <p className="text-slate-400 font-medium leading-relaxed">
                 Empowering individuals through clinical rigor and personalized wellness protocols. The future of healthcare is biological.
