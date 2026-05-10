@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { useState, useEffect } from "react";
 import { cn } from "./ui/utils";
 import { supabase } from "../../lib/supabaseClient";
+import { PageErrorBoundary } from "./PageErrorBoundary";
 
 export function AppLayout() {
   const { fetchOrders, fetchDoctorAvailability } = usePatientStore();
@@ -150,9 +151,11 @@ export function AppLayout() {
           "flex-1 overflow-y-auto overflow-x-hidden scroll-smooth",
           "pb-12"
         )}>
-          <div className="w-full max-w-7xl mx-auto p-4 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Outlet />
-          </div>
+          <PageErrorBoundary>
+            <div className="w-full max-w-7xl mx-auto p-4 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <Outlet />
+            </div>
+          </PageErrorBoundary>
         </main>
 
         {/* Mobile bottom nav (patient portal) */}

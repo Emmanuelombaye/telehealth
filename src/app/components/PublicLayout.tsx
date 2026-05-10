@@ -6,6 +6,7 @@ import {
   Activity, Heart, Pill 
 } from "lucide-react";
 import { Button, cn } from "./ui/shared.tsx";
+import { PageErrorBoundary } from "./PageErrorBoundary";
 
 const treatments = [
   { 
@@ -129,7 +130,9 @@ export function PublicLayout() {
 
       {/* Main Content */}
       <main>
-        <Outlet />
+        <PageErrorBoundary>
+          <Outlet />
+        </PageErrorBoundary>
       </main>
 
       {/* Footer */}
