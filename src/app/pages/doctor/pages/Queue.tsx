@@ -502,8 +502,8 @@ export function DoctorQueuePage() {
                                  <Globe className="h-3 w-3" /> Tracking Sync
                                </label>
                                <div className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-bold text-[#7f9488] italic flex items-center justify-between">
-                                 {selected.trackingNumber ? (
-                                   <span className="text-[#22c55e] not-italic">{selected.carrier} - {selected.trackingNumber}</span>
+                                 {selected.trackingUrl ? (
+                                   <span className="text-[#22c55e] not-italic">{selected.carrier} - {selected.trackingUrl}</span>
                                  ) : (
                                    "Awaiting Pharmacy Fulfillment"
                                  )}
@@ -602,44 +602,23 @@ export function DoctorQueuePage() {
                               Disqualify Specimen & Refund
                             </Button>
                           </div>
-                         </div>
-                      </div>
 
-                      <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between shrink-0">
-                         <div className="flex items-center gap-2">
-                           <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
-                           <span className="text-[9px] font-black text-[#7f9488] uppercase tracking-widest italic">Encrypted Pharmacy Link Active</span>
-                         </div>
-                         <p className="text-[10px] font-black text-[#22c55e] uppercase">Refill: 1 of 6 Authorized</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  </div>
+                       <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between shrink-0">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
+                            <span className="text-[9px] font-black text-[#7f9488] uppercase tracking-widest italic">Encrypted Pharmacy Link Active</span>
+                          </div>
+                          <p className="text-[10px] font-black text-[#22c55e] uppercase">Refill: 1 of 6 Authorized</p>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </motion.div>
+           </div>
+         )}
+       </AnimatePresence>
+     </div>
+   </div>
 );
-}
-
-function Lock(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
 }
