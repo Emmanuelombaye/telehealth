@@ -75,6 +75,12 @@ export type Order = {
   userId?: string;
   user_id?: string;
   doctor_id?: string;
+  // DB column aliases (snake_case from Supabase)
+  created_at?: string;
+  sub_brand?: string;
+  order_number?: string;
+  patient_name?: string;
+  ordered_date?: string;
 }
 
 // Helper: Generate a unique Medical Record Number (MRN)

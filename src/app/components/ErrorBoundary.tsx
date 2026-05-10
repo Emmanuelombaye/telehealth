@@ -1,7 +1,8 @@
-import { useRouteError, isRouteErrorResponse, useNavigate } from "react-router";
+/// <reference types="vite/client" />
+import { useRouteError, isRouteErrorResponse } from "react-router";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 
-const isDev = import.meta.env.DEV;
+const isDev = typeof import.meta !== "undefined" && (import.meta as any).env?.DEV === true;
 
 export function ErrorBoundary() {
   const error = useRouteError();

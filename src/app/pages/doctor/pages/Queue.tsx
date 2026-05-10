@@ -66,8 +66,10 @@ export function DoctorQueuePage() {
       
       const intake = selected.intakeAnswers || {};
       const risks = [];
-      if (intake.allergies && intake.allergies.toLowerCase() !== 'none' && intake.allergies.toLowerCase() !== 'none reported') risks.push(`Allergy alert: ${intake.allergies}`);
-      if (intake.current_meds && intake.current_meds.toLowerCase() !== 'none') risks.push(`Current meds: ${intake.current_meds}`);
+      const allergies = String(intake.allergies || '');
+      const currentMeds = String(intake.current_meds || '');
+      if (allergies && allergies.toLowerCase() !== 'none' && allergies.toLowerCase() !== 'none reported') risks.push(`Allergy alert: ${allergies}`);
+      if (currentMeds && currentMeds.toLowerCase() !== 'none') risks.push(`Current meds: ${currentMeds}`);
       
       const aiText = `PATIENT SUMMARY:\n- 30-point intake form analyzed.\n- Primary Request: ${selected.medication}.\n- Risk Assessment: ${risks.length > 0 ? 'MODERATE' : 'LOW'}.\n${risks.length > 0 ? '- Flags: ' + risks.join(', ') : '- No contraindications detected.'}\n- Clearance: Safe to prescribe standard protocol.`;
       

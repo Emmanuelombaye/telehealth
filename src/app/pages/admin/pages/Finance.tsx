@@ -88,7 +88,7 @@ export function AdminFinancePage() {
               <h3 className="font-semibold">Billing Cycle</h3>
             </div>
             <div className="p-6 grid grid-cols-2 gap-y-6">
-              {role === 'superadmin' && (
+              {(role as string) === 'superadmin' && (
                 <>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Doctor Costs</p>

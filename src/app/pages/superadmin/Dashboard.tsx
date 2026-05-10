@@ -54,17 +54,17 @@ export function SuperAdminDashboard() {
     return acc;
   }, {} as Record<string, { name: string, revenue: number }>);
   
-  const liveBrandRevenue = Object.values(liveBrandRevenueObj).sort((a, b) => b.revenue - a.revenue).slice(0, 4);
+  const liveBrandRevenue = (Object.values(liveBrandRevenueObj) as { name: string, revenue: number }[]).sort((a, b) => b.revenue - a.revenue).slice(0, 4);
   const activeBrandsCount = Object.keys(liveBrandRevenueObj).length || 1;
 
-  const liveRevenueData = Object.values(orders.reduce((acc, order) => {
+  const liveRevenueData = (Object.values(orders.reduce((acc, order) => {
      const date = new Date(order.created_at || new Date());
      const monthYear = date.toLocaleString('default', { month: 'short', year: '2-digit' });
      const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
      if (!acc[monthYear]) acc[monthYear] = { month: monthYear, revenue: 0, dateObj: date };
      acc[monthYear].revenue += amt;
      return acc;
-  }, {} as Record<string, { month: string, revenue: number, dateObj: Date }>))
+  }, {} as Record<string, { month: string, revenue: number, dateObj: Date }>)) as { month: string, revenue: number, dateObj: Date }[])
   .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
   .map(item => ({ month: item.month, revenue: item.revenue }));
 
