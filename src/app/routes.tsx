@@ -11,6 +11,8 @@ import { SupportHubPage } from "./pages/SupportHub";
 import { HowItWorksPage } from "./pages/HowItWorks";
 import { FrequentlyAskedQuestionsPage } from "./pages/FAQ";
 import { ExploreTreatmentsPage } from "./pages/ExploreTreatments";
+import { SelectTreatmentPage } from "./pages/quiz/SelectTreatment";
+import { ReviewsPage } from "./pages/quiz/Reviews";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Patient pages
@@ -108,6 +110,10 @@ export const router = createBrowserRouter([
           { path: "explore-treatments", Component: ExploreTreatmentsPage },
           { path: "frequently-asked-questions", Component: FrequentlyAskedQuestionsPage },
           { path: "faq", Component: FrequentlyAskedQuestionsPage },
+          
+          // Quiz Funnel
+          { path: "quiz/select-treatment", Component: SelectTreatmentPage },
+          { path: "quiz/:condition/reviews", Component: ReviewsPage },
         ]
       },
 

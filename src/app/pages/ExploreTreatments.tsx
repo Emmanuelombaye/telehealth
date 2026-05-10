@@ -77,7 +77,7 @@ export function ExploreTreatmentsPage() {
                             </div>
                             <div className="text-right">
                               <p className="text-2xl font-black text-[#0A0D14]">{item.price}<span className="text-sm text-slate-400">/mo</span></p>
-                              <Link to="/patient/shop" className="text-emerald-600 font-black text-[10px] uppercase tracking-widest flex items-center justify-end gap-1 group-hover:gap-2 transition-all">
+                              <Link to="/quiz/select-treatment" className="text-emerald-600 font-black text-[10px] uppercase tracking-widest flex items-center justify-end gap-1 group-hover:gap-2 transition-all">
                                 See if I qualify <ArrowRight className="h-3 w-3" />
                               </Link>
                             </div>
@@ -87,7 +87,7 @@ export function ExploreTreatmentsPage() {
                     </div>
 
                     <div className="pt-8">
-                      <Link to="/patient/shop">
+                      <Link to="/quiz/select-treatment">
                         <Button className="h-16 px-10 rounded-2xl bg-[#0A0D14] text-white font-black uppercase text-xs tracking-widest shadow-2xl shadow-slate-900/20 group">
                           Get Started <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </Button>

@@ -9,28 +9,28 @@ const treatments = [
     category: "Weight Management",
     title: "Personalized Semaglutide+",
     desc: "A weekly injection designed to support weight management by helping regulate appetite and reduce hunger signals.",
-    href: "/patient/shop",
+    href: "/quiz/select-treatment",
     bg: "bg-emerald-50",
   },
   {
     category: "Weight Management",
     title: "Personalized Tirzepatide+",
     desc: "A dual-action weekly injection targeting multiple receptors to support significant weight loss and metabolic health.",
-    href: "/patient/shop",
+    href: "/quiz/select-treatment",
     bg: "bg-teal-50",
   },
   {
     category: "Anti-Aging & Focus",
     title: "NAD+ Longevity",
     desc: "A therapy designed to support cellular energy, focus, metabolism, and healthy aging through replenishment of NAD+ levels.",
-    href: "/patient/shop",
+    href: "/quiz/select-treatment",
     bg: "bg-blue-50",
   },
   {
     category: "Performance",
     title: "Sermorelin Muscle Recovery",
     desc: "A daily peptide injection designed to support natural growth hormone production, energy, sleep quality, and recovery.",
-    href: "/patient/shop",
+    href: "/quiz/select-treatment",
     bg: "bg-indigo-50",
   }
 ];
@@ -78,9 +78,10 @@ export function LandingPage() {
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
         >
-          <Link to="/patient/shop">
-            <Button className="h-14 px-10 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-sm tracking-wide shadow-lg shadow-emerald-500/20">
+          <Link to="/quiz/select-treatment">
+            <Button className="h-14 px-10 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-sm tracking-wide shadow-lg shadow-emerald-500/20 group">
               See if I qualify
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
           <Link to="/explore-treatments">
