@@ -46,6 +46,8 @@ export function DoctorQueuePage() {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiSummary, setAiSummary] = useState("");
   const [showIntakeModal, setShowIntakeModal] = useState(false);
+  const [selectedPharmacy, setSelectedPharmacy] = useState("truepill");
+  const [isDispatching, setIsDispatching] = useState(false);
 
   // Filter orders for the queue - show anything that needs attention
   const queue = orders.filter(o => {
@@ -485,7 +487,9 @@ export function DoctorQueuePage() {
                                <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em] mb-2 block flex items-center gap-2">
                                  <Truck className="h-3 w-3" /> Pharmacy Routing
                                </label>
-                               <select 
+                               <select
+                                 value={selectedPharmacy}
+                                 onChange={(e) => setSelectedPharmacy(e.target.value)}
                                  className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-bold text-white focus:border-[#22c55e]/50 outline-none transition-all appearance-none"
                                >
                                  <option value="truepill">Truepill Pharmacy (Recommended)</option>
@@ -517,16 +521,37 @@ export function DoctorQueuePage() {
                            </div>
                            <div className="space-y-3 pt-6">
                             <div className="grid grid-cols-2 gap-3">
-                              <Button 
-                                onClick={() => {
-                                  updateOrderRx(selected.id, selected.medication, dosage || selected.dosageInstructions, rxNote);
-                                  setSelectedId(null);
-                                }}
-                                className="bg-[#22c55e] hover:bg-[#16a34a] text-[#060807] h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest shadow-xl shadow-[#22c55e]/10 flex items-center justify-center gap-2"
-                              >
-                                <CheckCircle2 className="h-4 w-4" />
-                                Finalize & Approve
-                              </Button>
+                               <Button
+                                 disabled={isDispatching}
+                                 onClick={async () => {
+                                   setIsDispatching(true);
+                                   try {
+                                     const res = await supabase.functions.invoke('dispatch-prescription', {
+                                       body: {
+                                         order_id: selected.id,
+                                         dosage_instructions: dosage || selected.dosageInstructions,
+                                         doctor_note: rxNote,
+                                         pharmacy: selectedPharmacy,
+                                       },
+                                     });
+                                     if (res.error) throw res.error;
+                                     toast.success(`Rx dispatched to ${selectedPharmacy}!`);
+                                     await fetchOrders();
+                                     setSelectedId(null);
+                                   } catch (err: any) {
+                                     toast.error(`Dispatch failed: ${err.message}`);
+                                   } finally {
+                                     setIsDispatching(false);
+                                   }
+                                 }}
+                                 className="bg-[#22c55e] hover:bg-[#16a34a] disabled:opacity-50 text-[#060807] h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest shadow-xl shadow-[#22c55e]/10 flex items-center justify-center gap-2"
+                               >
+                                 {isDispatching ? (
+                                   <><Activity className="h-4 w-4 animate-spin" /> Dispatching...</>
+                                 ) : (
+                                   <><CheckCircle2 className="h-4 w-4" /> Finalize & Approve</>
+                                 )}
+                               </Button>
                               <Button 
                                 variant="outline"
                                 className="border-white/10 text-white/60 h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-white/5 transition-all"
