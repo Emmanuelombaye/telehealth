@@ -4,6 +4,7 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 import { usePatientStore } from "../../../../lib/patient-store";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
+import { toast } from "sonner";
 
 const steps = ["Personal Info", "Medical History", "Symptoms", "Medications", "Review"];
 
@@ -66,6 +67,27 @@ export function IntakeFormsPage() {
       
       if (error) throw error;
 
+      // --- SYNC TO ACTIVE ORDER ---
+      // This ensures the doctor sees the intake answers in the clinical queue
+      const { data: activeOrders } = await supabase
+        .from('orders')
+        .select('order_number')
+        .eq('user_id', user!.id)
+        .in('status', ['order_submitted', 'medical_review', 'account_created', 'id_verified'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (activeOrders && activeOrders.length > 0) {
+        await supabase
+          .from('orders')
+          .update({ 
+            intake_answers: intakeFormData,
+            status: 'intake_completed',
+            intake_complete: true
+          })
+          .eq('order_number', activeOrders[0].order_number);
+      }
+
       setForms(forms.map(f => f.id === activeForm ? { 
         ...f, 
         status: 'completed', 
@@ -73,6 +95,9 @@ export function IntakeFormsPage() {
         form_data: intakeFormData
       } : f));
       setActiveForm(null);
+      toast.success("Health Form Submitted", {
+        description: "Your answers have been securely synced with your doctor.",
+      });
     } catch (err) {
       console.error(err);
       alert("Failed to save intake form. Please try again.");

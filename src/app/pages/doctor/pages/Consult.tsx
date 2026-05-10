@@ -319,6 +319,35 @@ export function DoctorConsultPage() {
     }
   };
 
+  const [transcript, setTranscript] = useState<string[]>([]);
+  const [isSyncingVitals, setIsSyncingVitals] = useState(false);
+
+  useEffect(() => {
+    if (!order) return;
+    
+    // Simulate AI Scribe Typing
+    const messages = [
+      `Initializing clinical scribe for ${order.patient_name}...`,
+      "Analyzing patient intake forms...",
+      `Subjective: Patient reports ${order.medication} requirement.`,
+      "Vitals synchronization in progress...",
+      "AI: Listening for clinical contraindications...",
+      "Detected mention of previous history: No major allergies.",
+    ];
+
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < messages.length) {
+        setTranscript(prev => [...prev, messages[i]]);
+        i++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [order]);
+
   // ── Loading ──
   if (loading) {
     return (
@@ -390,43 +419,57 @@ export function DoctorConsultPage() {
                 </span>
               </div>
               <p className="text-white font-bold">{order.patient_name}</p>
-              <p className="text-slate-400 text-sm mt-1">Secure Connection Ready</p>
+              <p className="text-slate-400 text-sm mt-1">Secure Connection Active</p>
             </div>
 
             <div className="absolute top-6 left-6 space-y-2">
-              <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/10">
-                <Activity className="h-3.5 w-3.5 text-emerald-400" />
+              <div 
+                className={cn(
+                  "bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/10 transition-all",
+                  isSyncingVitals ? "border-emerald-500/50" : ""
+                )}
+                onMouseEnter={() => setIsSyncingVitals(true)}
+                onMouseLeave={() => setIsSyncingVitals(false)}
+              >
+                <Activity className={cn("h-3.5 w-3.5", isSyncingVitals ? "text-emerald-400 animate-pulse" : "text-emerald-400")} />
                 <span className="text-[10px] font-black text-white uppercase tracking-widest">
-                  {order.patient_vitals ? 'Vitals Synced' : 'Vitals Pending'}
+                  {isSyncingVitals ? 'Syncing Live Vitals...' : 'Vitals Synced'}
                 </span>
               </div>
             </div>
 
-            {/* Controls */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 px-6 py-3 bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl transition-all duration-300 group-hover:bottom-10">
+            {/* Controls - Optimized for full visibility */}
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 px-4 py-3 bg-black/60 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:bottom-12 z-50 whitespace-nowrap min-w-fit">
               <button
                 onClick={() => setIsMuted(!isMuted)}
-                className={cn("h-12 w-12 rounded-full flex items-center justify-center transition-all",
+                className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300",
                   isMuted ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/10 text-white hover:bg-white/20")}
               >
                 {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               </button>
+              
               <button
                 onClick={() => setIsVideoOff(!isVideoOff)}
-                className={cn("h-12 w-12 rounded-full flex items-center justify-center transition-all",
+                className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300",
                   isVideoOff ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/10 text-white hover:bg-white/20")}
               >
                 {isVideoOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
               </button>
-              <button className="h-14 w-20 bg-red-600 hover:bg-red-700 text-white rounded-2xl flex items-center justify-center transition-all shadow-lg shadow-red-600/40">
-                <Zap className="h-6 w-6 fill-current rotate-12" />
+
+              <button 
+                onClick={() => navigate('/doctor/queue')}
+                className="h-12 w-20 bg-red-600 hover:bg-red-700 text-white rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl shadow-red-600/40 group/zap"
+              >
+                <Zap className="h-6 w-6 fill-current group-hover:scale-110 transition-transform" />
               </button>
+
               <Link to={`/doctor/messages?userId=${order.user_id}`}>
-                <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-full flex items-center justify-center transition-all">
+                <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all duration-300">
                   <MessageSquare className="h-5 w-5" />
                 </button>
               </Link>
-              <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-full flex items-center justify-center transition-all">
+
+              <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all duration-300">
                 <MoreHorizontal className="h-5 w-5" />
               </button>
             </div>
@@ -439,8 +482,17 @@ export function DoctorConsultPage() {
                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">AI Scribe · Live Transcription</span>
               </div>
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <p className="text-xs text-slate-400 italic">Listening and securely transcribing clinical notes...</p>
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-1">
+                {transcript.length === 0 ? (
+                   <p className="text-xs text-slate-400 italic">Listening and securely transcribing clinical notes...</p>
+                ) : (
+                  transcript.map((line, idx) => (
+                    <p key={idx} className="text-xs text-emerald-400/80 font-medium font-mono animate-in slide-in-from-left-1 duration-300">
+                      <span className="text-emerald-500/40 mr-2">[{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
+                      {line}
+                    </p>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>

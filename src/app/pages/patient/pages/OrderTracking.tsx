@@ -129,6 +129,32 @@ export function PatientOrderTrackingPage() {
           </CardContent>
         </Card>
 
+        {/* Zoom/Video request banner */}
+        {activeSelected.zoom_status === 'requested' && (
+          <Card className="border-blue-200 bg-blue-50/50 shadow-sm animate-pulse">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-blue-100 flex items-center justify-center shrink-0">
+                  <Video className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-black text-blue-900 uppercase tracking-tight">Video Consult Requested</h3>
+                  <p className="text-xs text-blue-700 mt-1 leading-relaxed">
+                    {activeSelected.zoom_doctor_message || "Your physician has requested a live video consultation to finalize your treatment plan."}
+                  </p>
+                  <div className="flex gap-2 mt-4">
+                    <Link to="/patient/appointments" className="flex-1">
+                      <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10 rounded-xl text-xs font-bold gap-2">
+                         View Schedule <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Doctor note */}
         {(activeSelected.doctor_note || activeSelected.doctorNote) && (
           <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30">

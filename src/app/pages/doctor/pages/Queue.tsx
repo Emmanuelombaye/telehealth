@@ -12,6 +12,7 @@ import { OrderStatus, Order, usePatientStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
 import { cn } from "../../../components/ui/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 type AvailabilityStatus = "available" | "busy" | "break" | "offline";
 
@@ -261,19 +262,18 @@ export function DoctorQueuePage() {
           </div>
         </div>
 
-        {/* Selected Patient Detail Overlay */}
+        {/* Selected Patient Detail Modal */}
         <AnimatePresence>
           {selectedId && selected && (
-            <motion.div
-              initial={{ opacity: 0, y: 100 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 100 }}
-              className="absolute inset-0 z-50 flex flex-col gap-6"
-            >
-              <div className="absolute inset-0 bg-[#060807] border border-[#1a2620] rounded-[3rem] shadow-2xl" />
-              
-              <div className="relative flex-1 flex flex-col p-8 overflow-hidden">
-                <div className="flex items-center justify-between mb-8">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-md overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative w-full max-w-7xl min-h-[80vh] max-h-[90vh] bg-[#060807] border border-[#1a2620] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden"
+              >
+                <div className="flex-1 flex flex-col p-8 overflow-hidden">
+                  <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-6">
                     <div className="h-16 w-16 rounded-2xl bg-[#22c55e] flex items-center justify-center font-black text-2xl text-black italic">
                       {selected.patientName.charAt(0)}
@@ -344,20 +344,111 @@ export function DoctorQueuePage() {
                           )}
                         </div>
 
-                        <div className="space-y-4 pt-4 border-t border-white/5">
-                           <div className="flex items-center gap-2 mb-4">
-                             <Activity className="h-4 w-4 text-[#7f9488]" />
-                             <h4 className="text-[10px] font-black text-[#d4c4a8] uppercase tracking-[0.2em]">Detailed Questionnaire</h4>
-                           </div>
-                           <div className="space-y-4">
-                             {selected.intakeAnswers && Object.entries(selected.intakeAnswers).map(([q, a], i) => (
-                               <div key={i} className="p-4 bg-white/[0.01] border border-white/5 rounded-2xl">
-                                 <p className="text-[10px] font-bold text-[#7f9488] mb-1">{q.replace(/_/g, ' ').toUpperCase()}</p>
-                                 <p className="text-sm text-white font-medium">{Array.isArray(a) ? a.join(", ") : a}</p>
-                               </div>
-                             ))}
-                           </div>
-                        </div>
+                         <div className="pt-6 border-t border-white/5 text-center">
+                            <Button 
+                              onClick={() => setShowIntakeModal(true)}
+                              className="w-full bg-[#22c55e]/5 border border-[#22c55e]/20 text-[#22c55e] h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-[#22c55e]/10 transition-all flex items-center justify-center gap-3 shadow-lg shadow-[#22c55e]/5"
+                            >
+                              <Activity className="h-4 w-4" />
+                              View Full Intake Specimen
+                            </Button>
+                         </div>
+                      </div>
+
+                      {/* Luxury Intake Modal */}
+                      <AnimatePresence>
+                        {showIntakeModal && (
+                          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-12 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-300">
+                            <motion.div 
+                              initial={{ opacity: 0, scale: 0.9, y: 40 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.9, y: 40 }}
+                              className="relative w-full max-w-5xl h-[85vh] bg-[#060807] border border-[#1a2620] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden"
+                            >
+                              {/* Header */}
+                              <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
+                                <div className="flex items-center gap-4">
+                                  <div className="h-12 w-12 rounded-2xl bg-[#22c55e]/10 flex items-center justify-center border border-[#22c55e]/20">
+                                    <Activity className="h-6 w-6 text-[#22c55e]" />
+                                  </div>
+                                  <div>
+                                    <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Clinical Intake Terminal</h3>
+                                    <p className="text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em] mt-0.5">Verified Medical Specimen: {selected.patientName}</p>
+                                  </div>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  onClick={() => setShowIntakeModal(false)}
+                                  className="h-12 w-12 rounded-full hover:bg-white/5 text-[#7f9488] hover:text-white"
+                                >
+                                  <ChevronRight className="h-6 w-6 rotate-90" />
+                                </Button>
+                              </div>
+
+                              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                                <div className="grid md:grid-cols-3 gap-8">
+                                  {/* Left Column: Vitals */}
+                                  <div className="space-y-6">
+                                    <h4 className="text-[10px] font-black text-[#22c55e] uppercase tracking-[0.2em] border-b border-[#22c55e]/20 pb-2">Clinical Vitals</h4>
+                                    <div className="space-y-4">
+                                      {[
+                                        { label: "Height", value: selected.patientVitals?.height || "5'11\"", unit: "FT/IN" },
+                                        { label: "Weight", value: selected.patientVitals?.weight || "185", unit: "LBS" },
+                                        { label: "BMI", value: selected.patientVitals?.bmi || "25.8", unit: "INDEX" },
+                                        { label: "Blood Pressure", value: selected.patientVitals?.bp || "120/80", unit: "MMHG" },
+                                        { label: "Heart Rate", value: selected.patientVitals?.hr || "72", unit: "BPM" },
+                                      ].map((vital, idx) => (
+                                        <div key={idx} className="p-5 bg-white/[0.02] border border-white/5 rounded-[1.5rem] flex items-center justify-between">
+                                          <div>
+                                            <p className="text-[9px] font-black text-[#7f9488] uppercase mb-1">{vital.label}</p>
+                                            <p className="text-lg font-black text-white italic">{vital.value}</p>
+                                          </div>
+                                          <span className="text-[8px] font-black text-[#22c55e] bg-[#22c55e]/10 px-2 py-1 rounded-md">{vital.unit}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Right Column: Questionnaire Answers */}
+                                  <div className="md:col-span-2 space-y-6">
+                                    <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] border-b border-amber-500/20 pb-2">Full Diagnostic Questionnaire</h4>
+                                    <div className="grid gap-4">
+                                      {selected.intakeAnswers && Object.entries(selected.intakeAnswers).map(([q, a], i) => (
+                                        <div key={i} className="p-6 bg-white/[0.01] border border-white/5 rounded-[1.5rem] hover:bg-white/[0.02] transition-colors">
+                                          <div className="flex items-start gap-4">
+                                            <span className="text-[10px] font-black text-[#22c55e] mt-1 shrink-0">Q{i + 1}</span>
+                                            <div>
+                                              <p className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2 leading-relaxed">
+                                                {q.replace(/_/g, ' ')}
+                                              </p>
+                                              <p className="text-sm text-white font-medium italic">
+                                                {Array.isArray(a) ? a.join(", ") : a}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                      {(!selected.intakeAnswers || Object.keys(selected.intakeAnswers).length === 0) && (
+                                        <div className="py-20 text-center space-y-4">
+                                           <AlertCircle className="h-10 w-10 text-[#7f9488]/20 mx-auto" />
+                                           <p className="text-sm font-black text-[#7f9488] uppercase tracking-widest italic">Intake answers pending transmission</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Footer Branding */}
+                              <div className="p-6 bg-white/[0.01] border-t border-white/5 flex items-center justify-center gap-4">
+                                <div className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
+                                <span className="text-[9px] font-black text-[#7f9488] uppercase tracking-[0.4em] italic">Peak Health Clinical Intelligence System</span>
+                                <div className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
+                              </div>
+                            </motion.div>
+                          </div>
+                        )}
+                      </AnimatePresence>
                      </div>
                   </div>
 
@@ -396,73 +487,68 @@ export function DoctorQueuePage() {
                              placeholder="PATIENT EXHIBITS NO CONTRAINDICATIONS..."
                              className="w-full h-32 bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none transition-all resize-none"
                            />
-                         </div>
-
-                         <div className="grid grid-cols-2 gap-4 pt-4">
-                            <Button 
-                              onClick={() => {
-                                updateOrderRx(selected.id, selected.medication, dosage || selected.dosageInstructions, rxNote);
-                                setSelectedId(null);
-                              }}
-                              className="bg-[#22c55e] hover:bg-[#16a34a] text-black h-12 rounded-2xl font-black uppercase italic text-xs tracking-widest shadow-xl shadow-[#22c55e]/20"
-                            >
-                              Finalize & Approve
-                            </Button>
-                            <div className="flex flex-col gap-2">
+                           <div className="space-y-3 pt-6">
+                            <div className="grid grid-cols-2 gap-3">
+                              <Button 
+                                onClick={() => {
+                                  updateOrderRx(selected.id, selected.medication, dosage || selected.dosageInstructions, rxNote);
+                                  setSelectedId(null);
+                                }}
+                                className="bg-[#22c55e] hover:bg-[#16a34a] text-[#060807] h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest shadow-xl shadow-[#22c55e]/10 flex items-center justify-center gap-2"
+                              >
+                                <CheckCircle2 className="h-4 w-4" />
+                                Finalize & Approve
+                              </Button>
                               <Button 
                                 variant="outline"
-                                className="border-[#22c55e]/40 text-[#22c55e] h-10 rounded-xl font-black uppercase italic text-[10px] tracking-widest hover:bg-[#22c55e]/10 gap-2"
+                                className="border-white/10 text-white/60 h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-white/5 transition-all"
                                 onClick={() => window.open('https://surescripts.com', '_blank')}
                               >
-                                SureScripts e-Rx
-                              </Button>
-                              <Button 
-                                variant="outline"
-                                className="border-amber-500/40 text-amber-500 h-10 rounded-xl font-black uppercase italic text-[10px] tracking-widest hover:bg-amber-500/10 gap-2"
-                                onClick={async (e) => {
-                                  const btn = e.currentTarget;
-                                  const originalContent = btn.innerHTML;
-                                  btn.innerText = "SENDING CALENDAR INVITE...";
-                                  btn.disabled = true;
-                                  
-                                  await supabase.from('orders').update({ 
-                                    zoom_status: 'requested', 
-                                    zoom_doctor_message: rxNote || "Please book a time on my calendar." 
-                                  }).eq('order_number', selected.id);
-                                  
-                                  await fetchOrders();
-                                  btn.innerText = "INVITE SENT ✓";
-                                  
-                                  setTimeout(() => {
-                                    btn.innerHTML = originalContent;
-                                    btn.disabled = false;
-                                    setSelectedId(null);
-                                  }, 2000);
-                                }}
-                              >
-                                <Video size={14} /> Request Video Call
-                              </Button>
-                              <Button 
-                                variant="outline"
-                                className="border-red-500/40 text-red-500 h-10 rounded-xl font-black uppercase italic text-[10px] tracking-widest hover:bg-red-500/10 gap-2"
-                                onClick={async (e) => {
-                                  const btn = e.currentTarget;
-                                  const originalContent = btn.innerHTML;
-                                  btn.innerText = "DISQUALIFYING...";
-                                  btn.disabled = true;
-                                  await supabase.from('orders').update({ status: 'cancelled', doctor_note: rxNote }).eq('order_number', selected.id);
-                                  await fetchOrders();
-                                  btn.innerText = "DISQUALIFIED ✓";
-                                  setTimeout(() => {
-                                    btn.innerHTML = originalContent;
-                                    btn.disabled = false;
-                                    setSelectedId(null);
-                                  }, 1000);
-                                }}
-                              >
-                                Disqualify & Refund
+                                Surescripts e-Rx
                               </Button>
                             </div>
+
+                            <Button 
+                              variant="outline"
+                              className="w-full border-[#22c55e]/20 text-[#22c55e] h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-[#22c55e]/5 gap-3 transition-all flex items-center justify-center"
+                              onClick={async (e) => {
+                                const btn = e.currentTarget;
+                                const originalContent = btn.innerHTML;
+                                btn.innerText = "CALENDAR INVITE SENT ✓";
+                                btn.disabled = true;
+                                
+                                await supabase.from('orders').update({ 
+                                  zoom_status: 'requested', 
+                                  zoom_doctor_message: rxNote || "Please book a time on my calendar." 
+                                }).eq('order_number', selected.id);
+                                
+                                await fetchOrders();
+                                
+                                setTimeout(() => {
+                                  btn.innerHTML = originalContent;
+                                  btn.disabled = false;
+                                  setSelectedId(null);
+                                }, 2000);
+                              }}
+                            >
+                              <Video className="h-4 w-4" /> Request Video Call Visit
+                            </Button>
+
+                            <Button 
+                              variant="ghost"
+                              className="w-full text-red-500/40 hover:text-red-500 hover:bg-red-500/5 h-10 rounded-xl font-black uppercase italic text-[9px] tracking-[0.2em] transition-all"
+                              onClick={async (e) => {
+                                const btn = e.currentTarget;
+                                btn.innerText = "DISQUALIFYING PATIENT...";
+                                btn.disabled = true;
+                                await supabase.from('orders').update({ status: 'cancelled', doctor_note: rxNote }).eq('order_number', selected.id);
+                                await fetchOrders();
+                                setSelectedId(null);
+                              }}
+                            >
+                              Disqualify Specimen & Refund
+                            </Button>
+                          </div>
                          </div>
                       </div>
 
@@ -477,7 +563,8 @@ export function DoctorQueuePage() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
       </div>

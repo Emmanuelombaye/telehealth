@@ -6,6 +6,7 @@ import { OrderStatus } from "../../../../lib/patient-store";
 import { useAuthStore } from "../../../../lib/auth-store";
 import { supabase } from "../../../../lib/supabaseClient";
 import { cn } from "../../../components/ui/utils";
+import { toast } from "sonner";
 
 const statusStyles: Record<OrderStatus, string> = {
   "order_submitted": "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200",
@@ -35,20 +36,21 @@ export function AdminOrdersPage() {
   const { role, brandId } = useAuthStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [editingOrder, setEditingOrder] = useState<string | null>(null);
-  const [trackingNumber, setTrackingNumber] = useState("");
-  const [carrier, setCarrier] = useState("USPS");
-  const [pharmacyNote, setPharmacyNote] = useState("");
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [newOrder, setNewOrder] = useState({ patientName: "", medication: "", amount: "" });
 
   const fetchOrders = async () => {
     try {
+      setLoadingOrders(true);
       let query = supabase
         .from('orders')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (role === 'brand_admin' && brandId) {
-        query = query.eq('sub_brand', brandId);
+        // If brand admin, filter by their brand. 
+        // Note: For demo purposes, if brandId is 'Brand A', we also show 'Peak Health' orders
+        query = query.or(`sub_brand.eq."${brandId}",sub_brand.eq."Peak Health"`);
       }
 
       const { data, error } = await query;
@@ -59,6 +61,46 @@ export function AdminOrdersPage() {
     } finally {
       setLoadingOrders(false);
     }
+  };
+
+  const handleCreateManual = async () => {
+    if (!newOrder.patientName || !newOrder.medication) return;
+    try {
+      const orderRef = "MAN-" + Math.random().toString(36).substring(7).toUpperCase();
+      const { error } = await supabase.from('orders').insert([{
+        order_number: orderRef,
+        patient_name: newOrder.patientName,
+        medication: newOrder.medication,
+        amount: newOrder.amount || "0",
+        sub_brand: brandId || "Peak Health",
+        status: "order_submitted",
+        ordered_date: new Date().toLocaleDateString(),
+        timeline: [{ status: "order_submitted", date: new Date().toLocaleString() }]
+      }]);
+      if (error) throw error;
+      toast.success("Order Synced to Matrix", {
+        description: `Reference ${orderRef} has been added to dispatch queue.`,
+      });
+      setIsManualModalOpen(false);
+      setNewOrder({ patientName: "", medication: "", amount: "" });
+      fetchOrders();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = "Order #,Patient,Medication,Status,Amount\n";
+    const rows = orders.map(o => `${o.order_number},${o.patient_name},${o.medication},${o.status},${o.amount}`).join("\n");
+    const blob = new Blob([headers + rows], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-export-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    toast.info("Exporting Clinical Ledger", {
+      description: "Your CSV file is being prepared for download.",
+    });
   };
 
   useEffect(() => {
@@ -128,7 +170,71 @@ export function AdminOrdersPage() {
   };
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6 pb-10">
+    <div className="max-w-[1600px] mx-auto space-y-6 pb-10 relative">
+      {/* Manual Entry Modal */}
+      {isManualModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[2rem] w-full max-w-lg p-8 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Package className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black italic uppercase tracking-tighter">Manual Dispatch Entry</h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Create offline medication order</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Patient Name</label>
+                <input 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-primary/40 transition-all"
+                  placeholder="e.g. John Doe"
+                  value={newOrder.patientName}
+                  onChange={e => setNewOrder({...newOrder, patientName: e.target.value})}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Clinical Product</label>
+                <input 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-primary/40 transition-all"
+                  placeholder="e.g. Semaglutide 0.25mg"
+                  value={newOrder.medication}
+                  onChange={e => setNewOrder({...newOrder, medication: e.target.value})}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Amount ($)</label>
+                <input 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-primary/40 transition-all"
+                  placeholder="e.g. 245"
+                  type="number"
+                  value={newOrder.amount}
+                  onChange={e => setNewOrder({...newOrder, amount: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-8">
+              <Button 
+                className="flex-1 rounded-xl h-12 bg-primary hover:bg-primary/90 text-white font-black uppercase italic tracking-widest"
+                onClick={handleCreateManual}
+              >
+                Sync to Matrix
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="flex-1 rounded-xl h-12 text-slate-400 font-black uppercase italic tracking-widest hover:bg-slate-50"
+                onClick={() => setIsManualModalOpen(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between px-2">
         <div>
           <h1 className="text-3xl font-black italic uppercase tracking-tighter">Order Dispatch</h1>
@@ -137,10 +243,17 @@ export function AdminOrdersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-           <Button variant="outline" className="rounded-xl border-border/60 gap-2 h-10 px-4 text-xs font-bold uppercase italic">
+           <Button 
+            variant="outline" 
+            className="rounded-xl border-border/60 gap-2 h-10 px-4 text-xs font-bold uppercase italic"
+            onClick={handleExportCSV}
+           >
              <CloudDownload className="h-4 w-4" /> Export CSV
            </Button>
-           <Button className="rounded-xl bg-primary hover:bg-primary/90 gap-2 h-10 px-4 text-xs font-bold uppercase italic shadow-lg shadow-primary/20">
+           <Button 
+            className="rounded-xl bg-primary hover:bg-primary/90 gap-2 h-10 px-4 text-xs font-bold uppercase italic shadow-lg shadow-primary/20"
+            onClick={() => setIsManualModalOpen(true)}
+           >
              <Plus className="h-4 w-4" /> Create Manual Entry
            </Button>
         </div>

@@ -43,6 +43,13 @@ export function AppLayout() {
   const path = location.pathname;
   const { user, role: authRole, signOut } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+    setIsLogoutModalOpen(false);
+  };
   
   // Determine Role for Sidebar based on current URL path
   let sidebarRole: "patient" | "doctor" | "admin" | "superadmin" | "pharmacy" = "patient";
@@ -58,16 +65,41 @@ export function AppLayout() {
   
   const displayRole = authRole?.replace('_', ' ').toUpperCase() || sidebarRole.toUpperCase();
 
-  // Breadcrumb/Back support
-  const canGoBack = path.split("/").filter(Boolean).length > 1;
-
-  const isAdminPortal = sidebarRole === "admin" || sidebarRole === "superadmin" || sidebarRole === "doctor" || (authRole as string) === "brand_admin";
-
   return (
     <div className={cn(
       "flex h-screen w-full overflow-hidden font-sans antialiased",
-      "bg-[#f8faf9] text-slate-900" // Global clean background
+      "bg-[#f8faf9] text-slate-900" 
     )}>
+      {/* Logout Confirmation Modal */}
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] w-full max-w-sm p-8 shadow-2xl border border-slate-100 animate-in zoom-in duration-300">
+            <div className="h-16 w-16 rounded-2xl bg-red-50 flex items-center justify-center mb-6 mx-auto">
+              <LogOut className="h-8 w-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-black italic uppercase tracking-tighter text-center mb-2">Secure Logout?</h3>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest text-center mb-8">Your clinical session will be terminated</p>
+            
+            <div className="flex flex-col gap-3">
+              <Button 
+                variant="destructive"
+                className="h-12 rounded-xl font-black uppercase italic tracking-widest bg-red-600 hover:bg-red-700"
+                onClick={handleLogout}
+              >
+                Terminate Session
+              </Button>
+              <Button 
+                variant="ghost"
+                className="h-12 rounded-xl font-black uppercase italic tracking-widest text-slate-400 hover:bg-slate-50"
+                onClick={() => setIsLogoutModalOpen(false)}
+              >
+                Stay Logged In
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Desktop Sidebar (Left) */}
       <div className="hidden md:block h-full">
         <Sidebar role={sidebarRole} />
@@ -80,7 +112,6 @@ export function AppLayout() {
           "border-slate-100 bg-white/80 text-slate-900"
         )}>
           <div className="flex items-center gap-3">
-            {/* Mobile Sidebar Trigger */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden h-10 w-10 rounded-xl hover:bg-slate-50 transition-all">
@@ -92,53 +123,37 @@ export function AppLayout() {
               </SheetContent>
             </Sheet>
 
-            {/* Portal Identity */}
             <div className="flex items-center gap-4">
-            <Link to="/" className="hidden sm:block hover:scale-105 transition-transform">
-               <img src="/logo-icon.png" alt="Logo" className="h-16 w-auto mix-blend-multiply contrast-125 brightness-110" />
-            </Link>
-               <div className={cn("h-6 w-[1px] hidden sm:block", "bg-slate-200")} />
-               <span className={cn(
-                 "text-[10px] font-black tracking-[0.2em] uppercase px-3 py-1.5 rounded-lg border",
-                 "text-[#0a2e1f] bg-[#0a2e1f]/5 border-[#0a2e1f]/10"
-               )}>
-                 {displayRole} PORTAL
-               </span>
+              <Link to="/" className="hidden sm:block hover:scale-105 transition-transform">
+                <img src="/logo-icon.png" alt="Logo" className="h-16 w-auto mix-blend-multiply contrast-125 brightness-110" />
+              </Link>
+              <div className="h-6 w-[1px] hidden sm:block bg-slate-200" />
+              <span className="text-[10px] font-black tracking-[0.2em] uppercase px-3 py-1.5 rounded-lg border text-[#0a2e1f] bg-[#0a2e1f]/5 border-[#0a2e1f]/10">
+                {displayRole} PORTAL
+              </span>
             </div>
           </div>
 
-          {/* Right Actions */}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className={cn(
-              "relative h-10 w-10 rounded-xl group hover:bg-slate-50"
-            )}>
-              <Bell className={cn("h-5 w-5 transition-colors text-slate-400 group-hover:text-[#0a2e1f]")} />
+            <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl group hover:bg-slate-50">
+              <Bell className="h-5 w-5 transition-colors text-slate-400 group-hover:text-[#0a2e1f]" />
               <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-[#ef4444] border-2 border-white animate-pulse" />
             </Button>
             
-            <div className={cn("h-8 w-[1px] mx-1 hidden sm:block bg-slate-200")} />
+            <div className="h-8 w-[1px] mx-1 hidden sm:block bg-slate-200" />
 
             <div className="flex items-center gap-3 pl-1">
               <div className="hidden sm:flex flex-col text-right">
-                <span className={cn("text-xs font-bold leading-tight text-slate-900")}>{fullName}</span>
-                <span className={cn(
-                  "text-[10px] uppercase font-bold tracking-widest opacity-70 text-slate-500"
-                )}>
+                <span className="text-xs font-bold leading-tight text-slate-900">{fullName}</span>
+                <span className="text-[10px] uppercase font-bold tracking-widest opacity-70 text-slate-500">
                   {sidebarRole === 'doctor' ? 'Clinical Provider' : sidebarRole === 'admin' ? 'Brand Admin' : sidebarRole === 'superadmin' ? 'Super Admin' : 'Patient'}
                 </span>
               </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => {
-                  if (window.confirm("Are you sure you want to sign out?")) {
-                    signOut();
-                    navigate("/");
-                  }
-                }}
-                className={cn(
-                  "h-11 w-11 rounded-2xl transition-colors bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                )}
+                onClick={() => setIsLogoutModalOpen(true)}
+                className="h-11 w-11 rounded-2xl transition-colors bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600"
               >
                 <LogOut className="h-5 w-5" />
               </Button>
@@ -146,11 +161,7 @@ export function AppLayout() {
           </div>
         </header>
 
-        {/* Scrollable Content Area */}
-        <main className={cn(
-          "flex-1 overflow-y-auto overflow-x-hidden scroll-smooth",
-          "pb-12"
-        )}>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth pb-12">
           <PageErrorBoundary>
             <div className="w-full max-w-7xl mx-auto p-4 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <Outlet />
@@ -158,7 +169,6 @@ export function AppLayout() {
           </PageErrorBoundary>
         </main>
 
-        {/* Mobile bottom nav (patient portal) */}
         {sidebarRole === "patient" && (
           <div className="md:hidden">
             <BottomNav />
