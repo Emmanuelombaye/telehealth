@@ -81,9 +81,9 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col overflow-hidden relative">
         {/* Header - Glassmorphic Design */}
         <header className={cn(
-          "sticky top-0 z-50 flex w-full items-center justify-between border-b px-4 md:px-8 shadow-sm backdrop-blur-xl transition-all duration-500",
+          "sticky top-0 z-50 flex w-full h-20 items-center justify-between border-b px-4 md:px-8 shadow-sm backdrop-blur-xl transition-all duration-300",
           "border-slate-100 bg-white/95 text-slate-900",
-          scrolled ? "h-16 shadow-md" : "h-24 shadow-sm"
+          scrolled && "shadow-md"
         )}>
           <div className="flex items-center gap-3">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
