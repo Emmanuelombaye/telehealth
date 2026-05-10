@@ -52,7 +52,7 @@ export function PublicLayout() {
     <div className="min-h-screen bg-white font-sans text-[#0A0D14] selection:bg-emerald-100 selection:text-emerald-900">
       {/* Sticky Header Wrapper */}
       <div className="sticky top-0 z-50">
-        {/* Announcement Ticker - Collapses on scroll */}
+        {/* Announcement Ticker */}
         <motion.div 
           animate={{ height: scrolled ? 0 : "auto", opacity: scrolled ? 0 : 1 }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
@@ -74,23 +74,31 @@ export function PublicLayout() {
           "transition-all duration-500 bg-white/95 backdrop-blur-md border-b border-slate-100", 
           scrolled ? "py-3 shadow-md" : "py-5 shadow-sm"
         )}>
-          <div className="max-w-7xl mx-auto px-6 flex items-center justify-between gap-12">
-            {/* Left: Logo */}
-            <div className="shrink-0">
-              <Link to="/" className="flex items-center gap-3 group">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#0A2E1F] to-[#051810] flex items-center justify-center shadow-lg shadow-emerald-900/20 group-hover:scale-105 transition-all duration-500">
-                  <Activity className="h-5 w-5 text-emerald-400" />
-                </div>
-                <span className="font-serif italic tracking-tighter text-[#0A2E1F] text-2xl whitespace-nowrap">
+          <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+            {/* Left: Original Logo (UNTOUCHED) */}
+            <div className="flex-1">
+              <Link to="/" className="flex items-center gap-3 group w-fit">
+                <img 
+                  src="/logo-icon.png" 
+                  alt="Peak Health" 
+                  className={cn(
+                    "w-auto transition-all duration-700 group-hover:scale-105 mix-blend-multiply contrast-125",
+                    scrolled ? "h-8 md:h-10" : "h-10 md:h-12"
+                  )} 
+                />
+                <span className={cn(
+                  "font-serif italic tracking-tighter text-[#0A2E1F] transition-all duration-700 whitespace-nowrap",
+                  scrolled ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
+                )}>
                   Peak Health
                 </span>
               </Link>
             </div>
 
-            {/* Middle: Links */}
-            <nav className="hidden lg:flex items-center justify-center gap-12 flex-1">
+            {/* Middle: Links - ADDED AND VISIBLE */}
+            <nav className="hidden md:flex items-center justify-center gap-8 lg:gap-12 flex-1">
               <div className="relative" onMouseEnter={() => setShowTreatments(true)} onMouseLeave={() => setShowTreatments(false)}>
-                <Link to="/explore-treatments" className="flex items-center gap-1.5 text-[15px] font-medium text-slate-600 hover:text-[#0A2E1F] transition-all py-2">
+                <Link to="/explore-treatments" className="flex items-center gap-1.5 text-[15px] font-medium text-slate-700 hover:text-[#0A2E1F] transition-all py-2">
                   Explore Treatments <ChevronDown className="h-4 w-4 opacity-50" />
                 </Link>
                 
@@ -121,7 +129,7 @@ export function PublicLayout() {
                 </AnimatePresence>
               </div>
 
-              <Link to="/how-it-works" className="text-[15px] font-medium text-slate-600 hover:text-[#0A2E1F] transition-all">
+              <Link to="/how-it-works" className="text-[15px] font-medium text-slate-700 hover:text-[#0A2E1F] transition-all">
                 How It Works
               </Link>
               
@@ -129,19 +137,19 @@ export function PublicLayout() {
                  <div className="h-2.5 w-2.5 rounded-full bg-[#D4F0E2] border border-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
                     <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse"></div>
                  </div>
-                 <span className="text-[15px] font-medium text-slate-600 group-hover:text-[#0A2E1F] transition-colors">
+                 <span className="text-[15px] font-medium text-slate-700 group-hover:text-[#0A2E1F] transition-colors">
                    Bio-Optimizers
                  </span>
               </div>
             </nav>
 
             {/* Right: Actions */}
-            <div className="flex items-center justify-end gap-10 shrink-0">
-              <Link to="/patient/login" className="hidden sm:block text-[15px] font-medium text-slate-600 hover:text-[#0A2E1F] transition-all">
+            <div className="flex items-center justify-end gap-6 lg:gap-10 flex-1">
+              <Link to="/patient/login" className="hidden sm:block text-[15px] font-medium text-slate-700 hover:text-[#0A2E1F] transition-all">
                 Log In
               </Link>
               <Link to="/patient/shop">
-                <Button className="rounded-full bg-[#1A1F2C] text-white hover:bg-[#2A303C] px-8 py-3 h-auto text-[15px] font-bold transition-all border-none shadow-none">
+                <Button className="rounded-full bg-[#1A1F2C] text-white hover:bg-[#2A303C] px-6 lg:px-8 py-2.5 lg:py-3 h-auto text-[14px] lg:text-[15px] font-bold transition-all border-none shadow-none">
                   Explore Treatments
                 </Button>
               </Link>
@@ -162,19 +170,15 @@ export function PublicLayout() {
 
       {/* ULTRA-LUXURY EXECUTIVE FOOTER */}
       <footer className="bg-white pt-32 pb-16 px-6 lg:px-20 border-t border-slate-100 overflow-hidden relative">
-        {/* Decorative Background Element */}
         <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-emerald-50/30 rounded-full blur-[120px] -mr-64 -mb-64 pointer-events-none"></div>
         
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 mb-32">
             
-            {/* BRAND & TRUST COLUMN */}
             <div className="lg:col-span-2 space-y-12">
               <div className="space-y-6">
                 <Link to="/" className="flex items-center gap-4 group">
-                  <div className="h-16 w-16 rounded-[24px] bg-gradient-to-br from-[#0A2E1F] to-[#051810] flex items-center justify-center shadow-2xl shadow-emerald-900/30 group-hover:scale-105 transition-all duration-500">
-                    <Activity className="h-8 w-8 text-emerald-400" />
-                  </div>
+                  <img src="/logo-icon.png" alt="Peak Health" className="h-16 w-auto mix-blend-multiply contrast-125 transition-transform group-hover:scale-105" />
                   <span className="font-serif italic tracking-tighter text-[#0A2E1F] text-5xl">Peak Health</span>
                 </Link>
                 <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-300 leading-relaxed max-w-xs">
@@ -182,7 +186,6 @@ export function PublicLayout() {
                 </p>
               </div>
 
-              {/* TRUST BADGES */}
               <div className="flex items-center gap-4 flex-wrap">
                  <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-[#0A2E1F] text-white shadow-xl shadow-emerald-900/10 border border-emerald-400/20">
                     <Shield className="h-5 w-5 text-emerald-400" />
@@ -207,7 +210,6 @@ export function PublicLayout() {
                  </div>
               </div>
 
-              {/* SOCIALS */}
               <div className="flex items-center gap-8 pt-4">
                  <a href="#" className="text-slate-400 hover:text-[#0A2E1F] transition-all hover:scale-110"><Instagram size={22} /></a>
                  <a href="#" className="text-slate-400 hover:text-[#0A2E1F] transition-all hover:scale-110"><Facebook size={22} /></a>
@@ -220,7 +222,6 @@ export function PublicLayout() {
               </div>
             </div>
 
-            {/* TREATMENTS COLUMN */}
             <div className="space-y-10">
                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Clinical Focus</h4>
                <ul className="space-y-6">
@@ -241,7 +242,6 @@ export function PublicLayout() {
                </ul>
             </div>
 
-            {/* PLATFORM COLUMN */}
             <div className="space-y-10">
                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Infrastructure</h4>
                <ul className="space-y-6">
@@ -263,7 +263,6 @@ export function PublicLayout() {
                </ul>
             </div>
 
-            {/* MEDICAL COLUMN */}
             <div className="space-y-10">
                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Safety & Ethics</h4>
                <ul className="space-y-6">
@@ -283,7 +282,6 @@ export function PublicLayout() {
             </div>
           </div>
 
-          {/* SIGNATURE SECTION */}
           <div className="pt-20 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-12">
              <div className="flex flex-wrap justify-center md:justify-start gap-8 opacity-40">
                 <div className="flex items-center gap-2">
