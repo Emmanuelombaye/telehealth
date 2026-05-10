@@ -52,15 +52,13 @@ export function AppLayout() {
   const handleLogout = async () => {
     await signOut();
     navigate("/");
-    setIsLogoutModalOpen(false);
   };
   
   // Determine Role for Sidebar based on current URL path
-  let sidebarRole: "patient" | "doctor" | "admin" | "superadmin" | "pharmacy" = "patient";
+  let sidebarRole: "patient" | "doctor" | "admin" | "superadmin" = "patient";
   if (path.startsWith("/doctor")) sidebarRole = "doctor";
   else if (path.startsWith("/admin")) sidebarRole = "admin";
   else if (path.startsWith("/superadmin")) sidebarRole = "superadmin";
-  else if (path.startsWith("/pharmacy")) sidebarRole = "pharmacy";
 
   // Dynamic user info
   const fullName = user?.user_metadata?.first_name 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import { TrendingUp, Users, DollarSign, Activity, Globe } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "../../../components/ui/shared.tsx";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";

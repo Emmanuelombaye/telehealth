@@ -38,6 +38,10 @@ export function AdminOrdersPage() {
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [newOrder, setNewOrder] = useState({ patientName: "", medication: "", amount: "" });
+  const [editingOrder, setEditingOrder] = useState<string | null>(null);
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [carrier, setCarrier] = useState("USPS");
+  const [pharmacyNote, setPharmacyNote] = useState("");
 
   const fetchOrders = async () => {
     try {

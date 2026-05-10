@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Package, CheckCircle2, Stethoscope, Pill, Truck, ShoppingBag, Hourglass, FileText,
-  ChevronRight, Search, MapPin, ExternalLink, MessageSquare, Copy, Activity
+  ChevronRight, Search, MapPin, ExternalLink, MessageSquare, Copy, Activity, Video
 } from "lucide-react";
 import { Link } from "react-router";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
