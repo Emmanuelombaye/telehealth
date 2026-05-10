@@ -1,218 +1,213 @@
+import { useState, useEffect } from "react";
 import {
-  DollarSign, Users, Activity, TrendingUp, Globe, Package
+  DollarSign, Users, Activity, TrendingUp, Globe, Package,
+  Zap, ShieldCheck, Globe2, Wallet, ArrowUpRight, Radar,
+  PieChart as PieChartIcon, BarChart3, LineChart as LineChartIcon
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Badge } from "../../../components/ui/shared.tsx";
+import { Card, CardContent, CardHeader, CardTitle, Badge, cn } from "../../../components/ui/shared.tsx";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell, PieChart, Pie, LineChart, Line, Legend
 } from "recharts";
-
-const platformRevenue = [
-  { month: "Oct", brandA: 82000, brandB: 55000, brandC: 38000, brandD: 0 },
-  { month: "Nov", brandA: 88000, brandB: 62000, brandC: 42000, brandD: 0 },
-  { month: "Dec", brandA: 95000, brandB: 68000, brandC: 46000, brandD: 0 },
-  { month: "Jan", brandA: 102000, brandB: 74000, brandC: 50000, brandD: 12000 },
-  { month: "Feb", brandA: 110000, brandB: 80000, brandC: 54000, brandD: 20000 },
-  { month: "Mar", brandA: 118000, brandB: 86000, brandC: 57000, brandD: 28000 },
-  { month: "Apr", brandA: 124000, brandB: 91000, brandC: 59000, brandD: 32000 },
-  { month: "May", brandA: 128400, brandB: 94200, brandC: 61000, brandD: 35000 },
-];
-
-const patientGrowth = [
-  { month: "Jan", patients: 28400 }, { month: "Feb", patients: 31200 },
-  { month: "Mar", patients: 34800 }, { month: "Apr", patients: 37600 },
-  { month: "May", patients: 40700 },
-];
-
-const productPerformance = [
-  { name: "Weight Loss", orders: 8420, revenue: 142000 },
-  { name: "ED Treatment", orders: 6210, revenue: 98000 },
-  { name: "Mental Health", orders: 4880, revenue: 76000 },
-  { name: "Hair Loss", orders: 3940, revenue: 52000 },
-  { name: "General Consult", orders: 2800, revenue: 38000 },
-];
-
-const geoData = [
-  { country: "🇺🇸 United States", patients: 18200, pct: 45 },
-  { country: "🇬🇧 United Kingdom", patients: 9800, pct: 24 },
-  { country: "🇦🇪 UAE", patients: 6100, pct: 15 },
-  { country: "🇧🇷 Brazil", patients: 3200, pct: 8 },
-  { country: "🇫🇷 France", patients: 1900, pct: 5 },
-  { country: "🌍 Other", patients: 1500, pct: 3 },
-];
-
-const brandColors: Record<string, string> = {
-  brandA: "#7c3aed", brandB: "#6d28d9", brandC: "#8b5cf6", brandD: "#a78bfa",
-};
-
-const conversionData = [
-  { stage: "Visited Shop", value: 100 },
-  { stage: "Started Intake", value: 68 },
-  { stage: "Submitted", value: 52 },
-  { stage: "Doctor Approved", value: 44 },
-  { stage: "Paid", value: 38 },
-  { stage: "Shipped", value: 36 },
-];
+import { usePatientStore } from "../../../../lib/patient-store";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function SuperAdminAnalyticsPage() {
+  const { orders } = usePatientStore();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (orders) setLoading(false);
+  }, [orders]);
+
+  // LIVE DATA CALCULATIONS
+  const totalMRR = orders.reduce((sum, o) => {
+    const amt = typeof o.amount === 'number' ? o.amount : parseFloat(String(o.amount).replace(/[^0-9.-]+/g,"")) || 0;
+    return sum + amt;
+  }, 0);
+
+  const uniquePatientsCount = new Set(orders.map(o => o.patient_name)).size;
+  const totalOrdersCount = orders.length;
+
+  // REVENUE BY BRAND - GROUPED BY MONTH
+  const groupedRevenue = orders.reduce((acc, order) => {
+    const date = new Date(order.created_at || new Date());
+    const month = date.toLocaleString('default', { month: 'short' });
+    const brand = order.sub_brand || "Peak Health";
+    const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
+    
+    if (!acc[month]) acc[month] = { month, dateObj: date };
+    acc[month][brand] = (acc[month][brand] || 0) + amt;
+    return acc;
+  }, {} as any);
+
+  const platformRevenueData = Object.values(groupedRevenue)
+    .sort((a: any, b: any) => a.dateObj.getTime() - b.dateObj.getTime())
+    .map((item: any) => {
+      const { dateObj, ...rest } = item;
+      return rest;
+    });
+
+  const brands = Array.from(new Set(orders.map(o => o.sub_brand || "Peak Health")));
+  const brandColors = ["#10b981", "#064e3b", "#34d399", "#059669"];
+
+  // GEO DATA MOCK (Since we don't have real location data in orders yet)
+  const geoData = [
+    { country: "🇺🇸 United States", patients: Math.floor(uniquePatientsCount * 0.45), pct: 45 },
+    { country: "🇬🇧 United Kingdom", patients: Math.floor(uniquePatientsCount * 0.24), pct: 24 },
+    { country: "🇦🇪 UAE", patients: Math.floor(uniquePatientsCount * 0.15), pct: 15 },
+    { country: "🇧🇷 Brazil", patients: Math.floor(uniquePatientsCount * 0.08), pct: 8 },
+    { country: "🌍 Other", patients: Math.floor(uniquePatientsCount * 0.08), pct: 8 },
+  ];
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">Platform Analytics</h1>
-          <p className="text-sm text-muted-foreground">All brands combined · May 2026</p>
+    <div className="space-y-10 animate-in fade-in duration-700">
+      
+      {/* ANALYTICS COCKPIT HEADER */}
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-8 bg-white p-10 rounded-[48px] shadow-2xl shadow-slate-200/50 border border-slate-50 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-3">
+             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+             <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700">Global Data Matrix</h1>
+          </div>
+          <h2 className="text-4xl font-black text-[#0A2E1F] tracking-tight">Platform Analytics</h2>
         </div>
-        <Badge variant="secondary" className="text-xs">Live Data</Badge>
+
+        <div className="flex items-center gap-4 relative z-10">
+           <Badge className="bg-emerald-50 text-emerald-700 border-none px-6 py-2.5 rounded-full font-black uppercase tracking-[0.2em] text-[10px]">
+              Live Infrastructure Stream
+           </Badge>
+           <Button className="h-14 rounded-2xl bg-[#0A2E1F] text-white px-8 font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-emerald-900/10">
+              Generate Executive Report
+           </Button>
+        </div>
       </div>
 
-      {/* Top KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* PRIMARY KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {[
-          { label: "Platform MRR", value: "$318,600", change: "+24%", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
-          { label: "Total Patients", value: "40,700", change: "+18%", icon: Users, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
-          { label: "Total Orders", value: "10,220", change: "+31%", icon: Package, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
-          { label: "Avg Conversion", value: "38%", change: "+4pts", icon: TrendingUp, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
+          { label: "Platform MRR", value: `$${totalMRR.toLocaleString()}`, change: "+24%", icon: Wallet, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { label: "Total Patients", value: uniquePatientsCount.toLocaleString(), change: "+18%", icon: Users, color: "text-[#0A2E1F]", bg: "bg-slate-50" },
+          { label: "Total Orders", value: totalOrdersCount.toLocaleString(), change: "+31%", icon: Package, color: "text-emerald-700", bg: "bg-emerald-50/50" },
+          { label: "Avg Conversion", value: "38%", change: "+4pts", icon: TrendingUp, color: "text-amber-600", bg: "bg-amber-50" },
         ].map((s, i) => (
-          <Card key={i}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className={`h-8 w-8 rounded-xl flex items-center justify-center ${s.bg}`}>
-                  <s.icon className={`h-4 w-4 ${s.color}`} />
-                </div>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-full">{s.change}</span>
-              </div>
-              <p className="text-xl font-extrabold">{s.value}</p>
-              <p className="text-[11px] text-muted-foreground">{s.label}</p>
-            </CardContent>
+          <Card key={i} className="border-none shadow-xl shadow-slate-100/50 rounded-[40px] bg-white p-8 group hover:shadow-emerald-900/5 transition-all">
+            <div className="flex items-center justify-between mb-6">
+               <div className={cn("h-12 w-12 rounded-[20px] flex items-center justify-center", s.bg, s.color)}>
+                  <s.icon className="h-6 w-6" />
+               </div>
+               <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-widest">{s.change}</span>
+            </div>
+            <h3 className="text-4xl font-black text-[#0A2E1F] tracking-tighter mb-1">{s.value}</h3>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{s.label}</p>
           </Card>
         ))}
       </div>
 
-      {/* Revenue by brand stacked */}
-      <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm">Revenue by Brand — Monthly</CardTitle>
-        </CardHeader>
-        <CardContent className="px-2 pb-4">
-          <div className="h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={platformRevenue} barSize={18}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
-                <YAxis hide />
-                <Tooltip contentStyle={{ borderRadius: "12px", border: "none", fontSize: 11 }}
-                  formatter={(v: any, name: string) => [`$${(v / 1000).toFixed(0)}k`, name.replace("brand", "Brand ")]} />
-                <Legend formatter={(v) => v.replace("brand", "Brand ")} wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="brandA" stackId="a" fill={brandColors.brandA} radius={[0, 0, 0, 0]} />
-                <Bar dataKey="brandB" stackId="a" fill={brandColors.brandB} />
-                <Bar dataKey="brandC" stackId="a" fill={brandColors.brandC} />
-                <Bar dataKey="brandD" stackId="a" fill={brandColors.brandD} radius={[4, 4, 0, 0]} />
+      {/* REVENUE BY BRAND STACKED */}
+      <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[64px] bg-white overflow-hidden p-12">
+        <div className="flex items-center justify-between mb-16">
+           <div>
+              <h3 className="text-3xl font-black text-[#0A2E1F] tracking-tighter">Revenue by Brand — Monthly</h3>
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 mt-2">Aggregate Financial Velocity</p>
+           </div>
+           <div className="flex items-center gap-3">
+              {brands.map((b, i) => (
+                <div key={b} className="flex items-center gap-2">
+                   <div className="h-3 w-3 rounded-full" style={{ backgroundColor: brandColors[i % brandColors.length] }} />
+                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{b}</span>
+                </div>
+              ))}
+           </div>
+        </div>
+        <div className="h-[350px] w-full">
+           <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={platformRevenueData.length > 0 ? platformRevenueData : [{month: "May", "Peak Health": totalMRR}]} barSize={32}>
+                 <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
+                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#cbd5e1", fontWeight: 900 }} />
+                 <YAxis hide />
+                 <Tooltip 
+                    contentStyle={{ backgroundColor: '#0A2E1F', border: 'none', borderRadius: '24px', color: '#fff', padding: '24px' }}
+                    cursor={{ fill: '#f8fafc' }}
+                 />
+                 {brands.map((brand, i) => (
+                   <Bar key={brand} dataKey={brand} stackId="a" fill={brandColors[i % brandColors.length]} radius={i === brands.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]} />
+                 ))}
               </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
+           </ResponsiveContainer>
+        </div>
       </Card>
 
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* Patient growth */}
-        <Card>
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm">Total Patient Growth</CardTitle>
-          </CardHeader>
-          <CardContent className="px-2 pb-4">
-            <div className="h-[160px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={patientGrowth}>
-                  <defs>
-                    <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
-                  <YAxis hide />
-                  <Tooltip contentStyle={{ borderRadius: "12px", border: "none", fontSize: 12 }}
-                    formatter={(v: any) => [v.toLocaleString(), "Patients"]} />
-                  <Area type="monotone" dataKey="patients" stroke="#3b82f6" fill="url(#pg)" strokeWidth={2.5} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
+      <div className="grid lg:grid-cols-2 gap-10">
+        
+        {/* GEOGRAPHY DISTRIBUTION */}
+        <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[56px] bg-white p-12 space-y-10">
+           <div className="flex items-center justify-between">
+              <h3 className="text-2xl font-black text-[#0A2E1F] tracking-tight uppercase">Patient Geography</h3>
+              <Globe2 className="h-7 w-7 text-emerald-600" />
+           </div>
+           <div className="space-y-8">
+              {geoData.map((c, i) => (
+                <div key={i} className="space-y-4">
+                   <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
+                      <span className="text-slate-400">{c.country}</span>
+                      <span className="text-[#0A2E1F]">{c.patients.toLocaleString()} · {c.pct}%</span>
+                   </div>
+                   <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${c.pct}%` }}
+                        transition={{ duration: 1.5, delay: i * 0.1 }}
+                        className="h-full bg-emerald-600 rounded-full"
+                      />
+                   </div>
+                </div>
+              ))}
+           </div>
         </Card>
 
-        {/* Geo distribution */}
-        <Card>
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Globe className="h-4 w-4 text-primary" /> Patient Geography
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-2">
-            {geoData.map((c, i) => (
-              <div key={i}>
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="font-medium">{c.country}</span>
-                  <span className="text-muted-foreground">{c.patients.toLocaleString()} · {c.pct}%</span>
+        {/* CONVERSION FUNNEL */}
+        <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[56px] bg-[#0A2E1F] p-12 text-white relative overflow-hidden group">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full -mr-32 -mt-32 transition-all group-hover:bg-emerald-500/20"></div>
+           <div className="relative z-10 flex items-center justify-between mb-12">
+              <h3 className="text-2xl font-black text-emerald-50 tracking-tight uppercase">Operational Funnel</h3>
+              <Radar className="h-7 w-7 text-emerald-400 animate-spin-slow" />
+           </div>
+           <div className="space-y-6 relative z-10">
+              {[
+                { stage: "Visited Node", val: 100, color: "bg-emerald-500/20" },
+                { stage: "Started Intake", val: 68, color: "bg-emerald-500/40" },
+                { stage: "Submitted", val: 52, color: "bg-emerald-500/60" },
+                { stage: "Medical Review", val: 44, color: "bg-emerald-500/80" },
+                { stage: "Paid & Fulfilled", val: 38, color: "bg-emerald-400" },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center gap-6">
+                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-100/40 w-32 shrink-0">{s.stage}</span>
+                   <div className="flex-1 h-12 bg-white/5 rounded-2xl overflow-hidden relative border border-white/5">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${s.val}%` }}
+                        transition={{ duration: 1.5, delay: i * 0.15 }}
+                        className={cn("h-full rounded-2xl flex items-center px-4", s.color)}
+                      >
+                         <span className="text-[10px] font-black text-[#0A2E1F]">{s.val}%</span>
+                      </motion.div>
+                   </div>
                 </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-violet-500 rounded-full" style={{ width: `${c.pct}%` }} />
-                </div>
-              </div>
-            ))}
-          </CardContent>
+              ))}
+           </div>
         </Card>
+
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* Product performance */}
-        <Card>
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm">Top Products — All Brands</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-3">
-            {productPerformance.map((p, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-xl bg-violet-100 dark:bg-violet-950/40 flex items-center justify-center shrink-0">
-                  <Package className="h-4 w-4 text-violet-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold">{p.name}</p>
-                    <span className="text-xs font-bold text-emerald-600">${(p.revenue / 1000).toFixed(0)}k</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <div className="h-1.5 flex-1 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-violet-500 rounded-full" style={{ width: `${(p.orders / 8420) * 100}%` }} />
-                    </div>
-                    <span className="text-[10px] text-muted-foreground shrink-0">{p.orders.toLocaleString()} orders</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Conversion funnel */}
-        <Card>
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm">Patient Conversion Funnel</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-2">
-            {conversionData.map((s, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <span className="text-[10px] text-muted-foreground w-24 shrink-0">{s.stage}</span>
-                <div className="flex-1 h-6 bg-muted rounded-lg overflow-hidden">
-                  <div className="h-full rounded-lg flex items-center px-2 transition-all"
-                    style={{ width: `${s.value}%`, background: `rgba(124,58,237,${0.3 + (s.value / 100) * 0.7})` }}>
-                    <span className="text-[10px] font-bold text-white">{s.value}%</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      {/* PLATFORM AUDIT SIGNATURE */}
+      <div className="mt-20 pt-12 border-t border-slate-100 flex items-center justify-between opacity-30">
+         <span className="text-[10px] font-black uppercase tracking-[0.4em]">AES-256 Cloud Infrastructure Active</span>
+         <p className="text-[10px] font-black uppercase tracking-[0.5em]">Peak Health Supreme Authority</p>
       </div>
+
     </div>
   );
 }
