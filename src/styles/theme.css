@@ -176,29 +176,27 @@
   h2 { font-size: var(--text-xl); font-weight: 600; line-height: 1.4; }
   h3 { font-size: var(--text-lg); font-weight: 600; line-height: 1.5; }
 
-  /* Premium Modern Scrollbar */
+  /* Executive Emerald Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #E2E8F0;
+    background: #0A2E1F;
     border-radius: 10px;
-    border: 2px solid transparent;
-    background-clip: content-box;
+    border: 1px solid rgba(255,255,255,0.1);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #CBD5E1;
-    background-clip: content-box;
+    background: #10B981;
   }
   .dark ::-webkit-scrollbar-thumb {
-    background: #2D2644;
+    background: #10B981;
   }
   .dark ::-webkit-scrollbar-thumb:hover {
-    background: #3D3654;
+    background: #34D399;
   }
 }
 

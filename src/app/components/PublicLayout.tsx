@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link, Outlet } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
+import { Link, Outlet, useLocation } from "react-router";
+import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 import { 
   ArrowRight, ChevronDown, X, Menu, ShieldCheck, Lock, Star, 
   Activity, Heart, Pill, Plus, Plane, MapPin, Shield, Flag,
   Instagram, Facebook, Linkedin, ExternalLink, HeartPulse,
-  Brain, Zap, Sparkles, Rocket, Microscope, Wind, Layers
+  Brain, Zap, Sparkles, Rocket, Microscope, Wind, Layers,
+  ChevronUp
 } from "lucide-react";
 import { Button, cn } from "./ui/shared.tsx";
 import { PageErrorBoundary } from "./PageErrorBoundary";
@@ -81,6 +82,14 @@ export function PublicLayout() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [showTreatments, setShowTreatments] = useState(false);
   const [showBio, setShowBio] = useState(false);
+  const { pathname } = useLocation();
+
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -88,8 +97,52 @@ export function PublicLayout() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Smooth scroll to top
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-white font-sans text-[#0A0D14] selection:bg-emerald-100 selection:text-emerald-900">
+      
+      {/* GLOBAL SCROLL PROGRESS - "Smart Scroll" */}
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-1 bg-emerald-600 z-[100] origin-left"
+        style={{ scaleX }}
+      />
+
+      {/* RIGHT SIDE SCROLL NAVIGATOR */}
+      <div className="fixed right-6 bottom-32 z-50 flex flex-col items-center gap-6">
+         <AnimatePresence>
+           {scrolled && (
+             <motion.button
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: 20 }}
+               onClick={scrollToTop}
+               className="h-12 w-12 rounded-full bg-[#0A2E1F] text-white flex items-center justify-center shadow-2xl hover:bg-emerald-600 transition-all group"
+             >
+                <ChevronUp className="h-5 w-5 group-hover:-translate-y-1 transition-transform" />
+             </motion.button>
+           )}
+         </AnimatePresence>
+
+         <div className="flex flex-col gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div 
+                key={i} 
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full transition-all duration-500",
+                  i === 1 ? "bg-emerald-600 h-4" : "bg-slate-200"
+                )} 
+              />
+            ))}
+         </div>
+         <span className="[writing-mode:vertical-lr] text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">
+           Scroll Explore
+         </span>
+      </div>
+
       {/* Sticky Header Wrapper */}
       <div className="sticky top-0 z-50">
         {/* Announcement Ticker */}
@@ -173,7 +226,7 @@ export function PublicLayout() {
                 How It Works
               </Link>
               
-              {/* MEGA MENU: BIO-OPTIMIZERS (THE BEST EVER) */}
+              {/* MEGA MENU: BIO-OPTIMIZERS */}
               <div className="relative" onMouseEnter={() => setShowBio(true)} onMouseLeave={() => setShowBio(false)}>
                 <div className="flex items-center gap-3 cursor-pointer group py-2">
                    <div className="h-2.5 w-2.5 rounded-full bg-[#D4F0E2] border border-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -193,7 +246,6 @@ export function PublicLayout() {
                       className="absolute top-full -left-40 w-[560px] pt-4"
                     >
                       <div className="bg-white rounded-[40px] shadow-2xl border border-slate-100 p-8 grid grid-cols-2 gap-6 overflow-hidden relative">
-                         {/* Decorative background for luxury feel */}
                          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50"></div>
                          
                          <div className="col-span-2 flex items-center justify-between mb-2">
