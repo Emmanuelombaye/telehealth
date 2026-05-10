@@ -202,10 +202,13 @@ export function PublicLayout() {
 
             <div className="space-y-8">
                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Secure Portals</h4>
-               <div className="flex flex-col gap-3">
-                  <Link to="/patient/login"><Button className="w-full bg-[#0A0D14] text-white text-[10px] font-black uppercase tracking-widest h-12 rounded-xl">Patient Login</Button></Link>
-                  <Link to="/doctor/login"><Button variant="outline" className="w-full border-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest h-12 rounded-xl">Provider Portal</Button></Link>
-               </div>
+               <ul className="space-y-4">
+                 <li><Link to="/patient/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Patient Login</Link></li>
+                 <li><Link to="/doctor/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Provider Portal</Link></li>
+                 <li><Link to="/admin/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Brand Admin</Link></li>
+                 <li><Link to="/pharmacy/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Pharmacy Portal</Link></li>
+                 <li><Link to="/superadmin/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Super Admin</Link></li>
+               </ul>
             </div>
           </div>
 

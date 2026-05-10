@@ -1,313 +1,274 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowRight, ShieldCheck, Zap, 
-  Activity, Sparkles, Pill, Heart, 
-  Layout, Lock, Star 
-} from "lucide-react";
-import { Button, Card, CardContent, cn } from "../components/ui/shared.tsx";
-import { Reveal } from "../components/ui/Reveal";
+import { motion } from "framer-motion";
+import { ArrowRight, CheckCircle2, ChevronDown, Star } from "lucide-react";
+import { Button, cn } from "../components/ui/shared.tsx";
 
 const treatments = [
-  { 
-    name: "Weight Loss", 
-    href: "/treatments/weight-loss", 
-    desc: "GLP-1 medications for sustainable results.",
-    icon: Activity,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50"
+  {
+    category: "Weight Management",
+    title: "Personalized Semaglutide+",
+    desc: "A weekly injection designed to support weight management by helping regulate appetite and reduce hunger signals.",
+    href: "/patient/shop",
+    bg: "bg-emerald-50",
   },
-  { 
-    name: "Sexual Wellness", 
-    href: "/treatments/sexual-wellness", 
-    desc: "ED and PE treatments that actually work.",
-    icon: Heart,
-    color: "text-blue-600",
-    bg: "bg-blue-50"
+  {
+    category: "Weight Management",
+    title: "Personalized Tirzepatide+",
+    desc: "A dual-action weekly injection targeting multiple receptors to support significant weight loss and metabolic health.",
+    href: "/patient/shop",
+    bg: "bg-teal-50",
   },
-  { 
-    name: "Hair Loss", 
-    href: "/treatments/hair-loss", 
-    desc: "Clinically proven hair regrowth protocols.",
-    icon: Pill,
-    color: "text-orange-600",
-    bg: "bg-orange-50"
+  {
+    category: "Anti-Aging & Focus",
+    title: "NAD+ Longevity",
+    desc: "A therapy designed to support cellular energy, focus, metabolism, and healthy aging through replenishment of NAD+ levels.",
+    href: "/patient/shop",
+    bg: "bg-blue-50",
+  },
+  {
+    category: "Performance",
+    title: "Sermorelin Muscle Recovery",
+    desc: "A daily peptide injection designed to support natural growth hormone production, energy, sleep quality, and recovery.",
+    href: "/patient/shop",
+    bg: "bg-indigo-50",
   }
 ];
 
-const results = [
-  { name: "Lisa C.", lost: "75lbs", time: "10 Months", img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80" },
-  { name: "Blaze B.", lost: "50lbs", time: "6 Months", img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80" },
-  { name: "Crystal G.", lost: "50lbs", time: "6 Months", img: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=800&q=80" }
+const faqs = [
+  {
+    q: "What is Peak Health?",
+    a: "Peak Health is a telehealth platform connecting patients with licensed providers and pharmacies for personalized, compounded treatments. We support patients across various health needs with tailored, science-backed care."
+  },
+  {
+    q: "Who is eligible for treatment?",
+    a: "Eligibility depends on the specific treatment protocol. For weight management, you may qualify if your BMI is 30+, or 27+ with a weight-related condition. A licensed provider will review your medical history to determine appropriateness."
+  },
+  {
+    q: "How does Peak Health work?",
+    a: "Complete your intake online. A provider reviews it within 24 hours. If approved, your medication is compounded by a licensed pharmacy and shipped to your home via expedited delivery."
+  },
+  {
+    q: "Are these medications FDA-approved?",
+    a: "Peak Health provides compounded medications prepared by licensed U.S. pharmacies operating under strict state and federal oversight. While compounded medications are not FDA-approved, our pharmacy partners are fully licensed and held to rigorous standards."
+  }
 ];
 
 export function LandingPage() {
-  const [resultIdx, setResultIdx] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setResultIdx(prev => (prev + 1) % results.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="bg-white font-sans text-slate-900 selection:bg-emerald-100">
+      
       {/* Hero Section */}
-      <section className="relative pt-12 pb-24 md:pt-20 md:pb-32 px-6 bg-gradient-to-br from-[#0A0D14] to-[#111814] text-white overflow-hidden">
-         <div className="absolute top-0 right-0 w-1/2 h-full bg-emerald-500/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/4" />
-         
-         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 relative z-10">
-          <div className="lg:w-[55%] space-y-8 text-center lg:text-left">
-            <Reveal direction="up">
-              <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-emerald-500/20 shadow-sm">
-                designed around you.
-              </div>
-            </Reveal>
-
-            <Reveal direction="right" delay={0.3}>
-              <h1 className="text-6xl md:text-[80px] font-black leading-[0.9] tracking-tighter">
-                Clinical results<br/>
-                for <span className="text-emerald-500 font-serif italic font-medium tracking-normal">your biology.</span>
-              </h1>
-            </Reveal>
-
-            <Reveal direction="up" delay={0.4}>
-              <p className="text-lg md:text-xl text-slate-400 max-w-xl leading-relaxed font-medium">
-                U.S. licensed providers, pharmaceutical-grade treatments, and 24/7 care. Your health journey, reimagined for the modern world.
-              </p>
-            </Reveal>
-
-            <Reveal direction="up" delay={0.5}>
-              <div className="flex flex-col sm:flex-row gap-5 pt-4 justify-center lg:justify-start">
-                <Link to="/explore-treatments">
-                  <Button className="h-16 px-10 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 font-black uppercase text-xs tracking-widest shadow-2xl shadow-emerald-500/30 group border-none">
-                    View All Treatments <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-                <Link to="/patient/login">
-                  <Button variant="outline" className="h-16 px-10 rounded-2xl border-2 border-white/10 text-white font-black uppercase text-xs tracking-widest hover:bg-white/5">
-                    Patient Login
-                  </Button>
-                </Link>
-              </div>
-            </Reveal>
-          </div>
-
-          <Reveal direction="up" delay={0.4}>
-            <div className="lg:w-[45%] relative">
-               <div className="absolute -inset-10 bg-emerald-500/10 rounded-[64px] blur-3xl" />
-               <img 
-                src={results[resultIdx].img} 
-                alt="Patient Results" 
-                className="relative rounded-[64px] shadow-2xl z-10 w-full h-[550px] object-cover transition-all duration-1000"
-              />
-              <motion.div 
-                animate={{ y: [0, -15, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -right-8 top-20 bg-white p-6 rounded-[32px] shadow-2xl z-20 border border-slate-100 text-[#0A0D14]"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-emerald-500 flex items-center justify-center text-white">
-                    <Sparkles className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-black text-emerald-600">-{results[resultIdx].lost}</p>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lost in {results[resultIdx].time}</p>
-                    <p className="text-[10px] font-bold text-slate-900">{results[resultIdx].name} • Verified Patient</p>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </Reveal>
-        </div>
+      <section className="pt-20 pb-24 md:pt-32 md:pb-40 px-6 text-center max-w-4xl mx-auto space-y-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+        >
+          <span className="text-emerald-600 font-bold tracking-widest text-sm uppercase">designed around you.</span>
+          <h1 className="mt-4 text-5xl md:text-7xl font-black tracking-tighter leading-[1.1] text-[#0A0D14]">
+            Treatment that <span className="text-emerald-600 font-serif italic font-medium">works.</span>
+          </h1>
+          <p className="mt-6 text-xl text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">
+            Discover Peak Health's proven, science-backed programs. Personalized care, transparent pricing, and expert support to help you achieve lasting results.
+          </p>
+        </motion.div>
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+        >
+          <Link to="/patient/shop">
+            <Button className="h-14 px-10 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-sm tracking-wide shadow-lg shadow-emerald-500/20">
+              See if I qualify
+            </Button>
+          </Link>
+          <Link to="/explore-treatments">
+            <Button variant="outline" className="h-14 px-10 rounded-full border-2 border-slate-200 text-slate-700 font-bold text-sm tracking-wide hover:bg-slate-50">
+              Explore Treatments
+            </Button>
+          </Link>
+        </motion.div>
       </section>
 
-      {/* Treatments Section */}
-      <section className="py-32 bg-[#F8FAF9]">
+      {/* Trustpilot / Results Strip */}
+      <section className="border-y border-slate-100 bg-[#F8FAF9] py-12 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
-          <Reveal>
-            <div className="text-center mb-20 space-y-4">
-              <h2 className="text-5xl font-black tracking-tight">Our Specialty Programs</h2>
-              <p className="text-lg text-slate-500 font-medium max-w-xl mx-auto">Find your custom health plan by selecting a goal below.</p>
-            </div>
-          </Reveal>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {treatments.map((t, i) => (
-              <Reveal key={t.name} delay={0.2 * i} direction="up">
-                <Card
-                  className="border-none bg-white rounded-[48px] overflow-hidden shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group cursor-pointer"
-                  onClick={() => {}}
-                >
-                  <CardContent className="p-0">
-                    <div className={cn("h-48 flex items-center justify-center group-hover:scale-105 transition-transform duration-700", t.bg)}>
-                      <t.icon className={cn("h-20 w-20 opacity-20", t.color)} />
-                    </div>
-                    <div className="p-10 space-y-6">
-                      <h3 className="text-3xl font-black">{t.name}</h3>
-                      <p className="text-slate-500 font-medium leading-relaxed">{t.desc}</p>
-                      <Link to={t.href}>
-                        <Button className="w-full h-14 rounded-2xl bg-[#0A0D14] text-white font-black uppercase text-[10px] tracking-widest group-hover:bg-emerald-600 transition-all border-none">
-                          Learn More <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-32 bg-white overflow-hidden" id="how-it-works">
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-20">
-          <Reveal>
-            <div className="space-y-4">
-               <h2 className="text-5xl font-black leading-tight">Healthcare that <span className="text-emerald-600">moves</span> with you.</h2>
-               <p className="text-xl text-slate-500 font-medium max-w-2xl mx-auto">From onboarding through treatment, we'll be supporting and guiding you every step of the way.</p>
-            </div>
-          </Reveal>
-          
-          <div className="grid md:grid-cols-3 gap-12 relative">
-             <div className="hidden md:block absolute top-12 left-[20%] right-[20%] h-0.5 bg-slate-100 -z-10" />
-             {[
-               { title: "Choose a plan & checkout", icon: Layout, desc: "Complete a short questionnaire to confirm eligibility." },
-               { title: "Provider review", icon: ShieldCheck, desc: "A U.S. licensed provider reviews your intake within 24h." },
-               { title: "Start treatment", icon: Zap, desc: "Prescription filled and delivered with 2-day shipping." }
-             ].map((item, i) => (
-               <Reveal key={i} direction="up" delay={0.2 * i}>
-                 <div className="space-y-6">
-                   <div className="h-24 w-24 rounded-[32px] bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-xl shadow-emerald-500/20">
-                     <item.icon className="h-10 w-10" />
-                   </div>
-                   <h4 className="text-xl font-black">{item.title}</h4>
-                   <p className="text-slate-500 font-medium leading-relaxed">{item.desc}</p>
-                 </div>
-               </Reveal>
-             ))}
-          </div>
-
-          <Reveal>
-             <Link to="/how-it-works">
-               <Button variant="outline" className="h-14 px-8 rounded-2xl border-2 border-slate-100 font-black uppercase text-xs tracking-widest hover:bg-slate-50">
-                 Detailed Patient Experience
-               </Button>
-             </Link>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Science & Trust */}
-      <section className="py-32 bg-[#F8FAF9] px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-             <Reveal direction="right">
-                <div className="space-y-8">
-                   <h2 className="text-5xl font-black leading-tight">Trusted by experts.<br/>Backed by science.</h2>
-                   <p className="text-xl text-slate-500 font-medium leading-relaxed">
-                      All treatments are prescribed by U.S. licensed providers and filled by high-quality compounding pharmacies that adhere to strict safety standards.
-                   </p>
-                   <div className="flex flex-wrap gap-12 pt-8 grayscale opacity-30">
-                      <img src="https://www.legitscript.com/wp-content/themes/legitscript/assets/images/seal-healthcare.png" alt="LegitScript" className="h-16" />
-                      <div className="flex items-center gap-2">
-                         <ShieldCheck className="h-10 w-10" />
-                         <span className="font-black text-xl tracking-tighter">HIPAA SECURE</span>
-                      </div>
-                   </div>
-                </div>
-             </Reveal>
-             <Reveal direction="left">
-                <div className="grid grid-cols-2 gap-4">
-                   {[
-                     { label: "Providers", val: "50+", sub: "Across 50 states" },
-                     { label: "Success Rate", val: "94%", sub: "Patient satisfaction" },
-                     { label: "Processing", val: "24h", sub: "Clinical review" },
-                     { label: "Shipping", val: "2-Day", sub: "Expedited delivery" }
-                   ].map((stat, i) => (
-                     <Card key={i} className="bg-white border-none rounded-[32px] p-8 shadow-xl shadow-slate-200/50">
-                        <p className="text-4xl font-black text-emerald-600 mb-1">{stat.val}</p>
-                        <p className="text-xs font-black uppercase tracking-widest text-[#0A0D14] mb-1">{stat.label}</p>
-                        <p className="text-[10px] font-bold text-slate-400">{stat.sub}</p>
-                     </Card>
-                   ))}
-                </div>
-             </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* Staff Portals Access */}
-      <section className="py-24 bg-[#0A0D14] px-6 overflow-hidden relative">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.08),transparent_60%)]" />
-        <div className="max-w-7xl mx-auto relative z-10">
-          <Reveal>
-            <div className="text-center mb-16 space-y-4">
-              <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-emerald-500/20">
-                🔐 Secure Staff Access
-              </div>
-              <h2 className="text-4xl font-black text-white tracking-tight">Platform Portals</h2>
-              <p className="text-slate-400 font-medium max-w-xl mx-auto">
-                Each portal is independently secured and isolated. Select your role to access your dedicated workspace.
-              </p>
-            </div>
-          </Reveal>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <p className="text-center font-bold text-slate-900 text-xl mb-10">Our patients' results speak for themselves!</p>
+          <div className="flex flex-wrap justify-center gap-8 md:gap-16">
             {[
-              { label: "Patient",    path: "/patient/login",    icon: "🧬", color: "from-emerald-500/20 to-emerald-500/5", border: "border-emerald-500/30", badge: "bg-emerald-500/20 text-emerald-400", desc: "Your health dashboard" },
-              { label: "Provider",   path: "/doctor/login",     icon: "🩺", color: "from-blue-500/20 to-blue-500/5",     border: "border-blue-500/30",    badge: "bg-blue-500/20 text-blue-400",    desc: "Clinical queue & Rx" },
-              { label: "Admin",      path: "/admin/login",      icon: "🏢", color: "from-violet-500/20 to-violet-500/5", border: "border-violet-500/30",  badge: "bg-violet-500/20 text-violet-400",  desc: "Brand management" },
-              { label: "SuperAdmin", path: "/superadmin/login", icon: "⚡", color: "from-amber-500/20 to-amber-500/5",   border: "border-amber-500/30",   badge: "bg-amber-500/20 text-amber-400",    desc: "Global platform control" },
-              { label: "Pharmacy",   path: "/pharmacy/login",   icon: "💊", color: "from-teal-500/20 to-teal-500/5",    border: "border-teal-500/30",    badge: "bg-teal-500/20 text-teal-400",     desc: "Fulfillment & dispatch" },
-            ].map((portal, i) => (
-              <Reveal key={portal.label} delay={0.1 * i} direction="up">
-                <a
-                  href={`${portal.path}?t=${Date.now()}`}
-                  className={`group relative flex flex-col items-center text-center gap-4 p-8 rounded-[32px] bg-gradient-to-b ${portal.color} border ${portal.border} hover:scale-[1.04] transition-all duration-300 hover:shadow-2xl cursor-pointer block`}
-                >
-                  <div className="text-5xl mb-2">{portal.icon}</div>
-                  <div>
-                    <p className="text-white font-black text-lg tracking-tight">{portal.label}</p>
-                    <p className="text-slate-400 text-xs font-medium mt-1">{portal.desc}</p>
-                  </div>
-                  <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${portal.badge}`}>
-                    Sign In →
-                  </span>
-                </a>
-              </Reveal>
+              { name: "Lisa C.", lost: "75 lbs", time: "10 Months" },
+              { name: "Blaze B.", lost: "50 lbs", time: "6 Months" },
+              { name: "Crystal G.", lost: "50 lbs", time: "6 Months" },
+              { name: "Jamilyn C.", lost: "17 lbs", time: "6 Weeks" },
+            ].map((res, i) => (
+              <div key={i} className="text-center space-y-1">
+                <p className="text-2xl font-black text-emerald-600">-{res.lost}</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">in {res.time}</p>
+                <p className="text-[10px] font-bold text-slate-400">{res.name} • Verified</p>
+              </div>
             ))}
           </div>
-
-          <Reveal>
-            <p className="text-center text-slate-600 text-xs font-bold uppercase tracking-widest mt-12">
-              🔒 All portals are independently isolated · HIPAA Compliant · Session-encrypted
-            </p>
-          </Reveal>
         </div>
       </section>
 
-      {/* Bottom CTA */}
+      {/* How it Works */}
+      <section className="py-24 md:py-32 px-6 max-w-7xl mx-auto text-center" id="how-it-works">
+        <h2 className="text-4xl md:text-5xl font-black tracking-tight text-[#0A0D14] mb-4">How it works</h2>
+        <p className="text-lg text-slate-500 font-medium mb-16 max-w-2xl mx-auto">
+          From onboarding through treatment, we'll be supporting and guiding you every step of the way.
+        </p>
 
-      <section className="py-32 bg-white text-center px-6">
-        <Reveal>
-          <div className="max-w-5xl mx-auto bg-[#0A0D14] rounded-[64px] p-12 md:p-24 text-white relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(255,255,255,0.1),transparent)]" />
-             <div className="relative z-10 space-y-10">
-                <h2 className="text-5xl md:text-7xl font-black leading-tight">Start your <br/>transformation.</h2>
-                <p className="text-xl text-slate-400 font-medium max-w-2xl mx-auto">Join thousands of patients who have reclaimed their health and confidence with Peak Health.</p>
-                <Link to="/patient/shop" className="inline-block">
-                  <Button className="h-20 px-16 rounded-[24px] bg-emerald-600 text-white font-black uppercase text-sm tracking-[0.2em] shadow-2xl shadow-emerald-500/20 hover:scale-105 transition-transform">
-                    Check Eligibility Now
-                  </Button>
-                </Link>
-             </div>
-          </div>
-        </Reveal>
+        <div className="grid md:grid-cols-3 gap-12 relative text-left">
+          <div className="hidden md:block absolute top-8 left-[15%] right-[15%] h-px bg-slate-200 -z-10" />
+          {[
+            { step: "1", title: "Choose a treatment plan & checkout", desc: "Complete a short questionnaire to confirm your eligibility for treatment and authorize your payment." },
+            { step: "2", title: "Provider review", desc: "After verifying your identity, a licensed U.S. provider reviews your intake within 24 hours." },
+            { step: "3", title: "Start treatment", desc: "If approved, your prescription is filled by a licensed U.S. pharmacy and delivered to your door with 2-day shipping." }
+          ].map((s, i) => (
+            <div key={i} className="relative bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-100/50">
+              <div className="absolute -top-6 left-8 h-12 w-12 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-xl shadow-lg border-4 border-white">
+                {s.step}
+              </div>
+              <h3 className="text-xl font-black text-[#0A0D14] mb-3 mt-4">{s.title}</h3>
+              <p className="text-slate-500 leading-relaxed font-medium">{s.desc}</p>
+            </div>
+          ))}
+        </div>
       </section>
+
+      {/* Shop / Treatments */}
+      <section className="py-24 bg-[#F8FAF9] px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-12">
+            <h2 className="text-4xl font-black tracking-tight text-[#0A0D14] mb-4">Explore Treatments</h2>
+            <p className="text-lg text-slate-500 font-medium">Find your custom health plan by selecting a goal below.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {treatments.map((t, i) => (
+              <Link to={t.href} key={i} className="group block">
+                <div className="bg-white rounded-[32px] p-8 md:p-10 border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col">
+                  <div className={`w-16 h-16 rounded-2xl ${t.bg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                    <CheckCircle2 className="h-8 w-8 text-emerald-600 opacity-80" />
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{t.category}</p>
+                  <h3 className="text-2xl font-black text-[#0A0D14] mb-4">{t.title}</h3>
+                  <p className="text-slate-500 font-medium leading-relaxed mb-8 flex-1">{t.desc}</p>
+                  <div className="flex items-center gap-3 mt-auto">
+                    <span className="text-sm font-bold text-emerald-600">See if I qualify</span>
+                    <ArrowRight className="h-4 w-4 text-emerald-600 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Medical Team */}
+      <section className="py-24 px-6 max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-3 gap-12 items-center">
+          <div className="lg:col-span-1 space-y-6">
+            <h2 className="text-4xl font-black tracking-tight text-[#0A0D14] leading-tight">
+              Expert care from <br/>trusted providers.
+            </h2>
+            <p className="text-lg text-slate-500 font-medium leading-relaxed">
+              Our network of licensed U.S. physicians ensures you receive the highest standard of personalized medical care.
+            </p>
+          </div>
+          <div className="lg:col-span-2 grid sm:grid-cols-2 gap-6">
+            {[
+              { name: "Dr. Michael Wasef, MD", title: "Internal Medicine Physician", desc: "Licensed nationwide with clinical and administrative telemedicine expertise." },
+              { name: "Dr. Andrew Sakla, DO", title: "Internal Medicine Physician", desc: "Evidence-based virtual care prioritizing accessibility and patient experience." }
+            ].map((doc, i) => (
+              <div key={i} className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-lg shadow-slate-100/50">
+                <div className="h-16 w-16 rounded-full bg-slate-100 mb-6 flex items-center justify-center text-slate-400 font-serif italic text-2xl">
+                  {doc.name.charAt(4)}
+                </div>
+                <h4 className="text-xl font-black text-[#0A0D14] mb-1">{doc.name}</h4>
+                <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4">{doc.title}</p>
+                <p className="text-slate-500 font-medium text-sm leading-relaxed">{doc.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Value Props */}
+      <section className="py-24 bg-[#0A0D14] text-white px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-12">
+            {[
+              { title: "Transparent & Trusted", desc: "From ingredient sourcing to doorstep delivery, we prioritize pharmaceutical grade quality and complete transparency." },
+              { title: "Tailored Personalized Care", desc: "We create tailored plans based on your health goals, ensuring the best path to your success." },
+              { title: "Science-backed Results", desc: "Clinically guided care designed to support long-term health, performance, and overall wellbeing." }
+            ].map((v, i) => (
+              <div key={i} className="space-y-4">
+                <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-6">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <h4 className="text-2xl font-black">{v.title}</h4>
+                <p className="text-slate-400 font-medium leading-relaxed">{v.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Patient Reviews */}
+      <section className="py-24 px-6 max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <div className="flex justify-center gap-1 mb-6 text-amber-400">
+            {[1,2,3,4,5].map(i => <Star key={i} className="h-6 w-6 fill-current" />)}
+          </div>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight text-[#0A0D14]">
+            Effective treatment is only part of the equation.
+          </h2>
+          <p className="text-xl text-slate-500 font-medium mt-6">
+            What truly defines care is the support at every step of your journey.
+          </p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {[
+            { quote: "I only have good things to say about Peak Health. The approval process was easy and I received my order very quickly. The instructions were clear and support was super helpful!", author: "Gretchen" },
+            { quote: "I'm very impressed with the fast and efficient service. Their communication and efficiency is unparalleled. I can't recommend this company enough! Excellent 5 stars!", author: "Diana" },
+            { quote: "I absolutely love the great customer service and how fast I was provided with all the information to start my journey. I am so glad to be part of Peak Health.", author: "Laura G." }
+          ].map((r, i) => (
+            <div key={i} className="bg-[#F8FAF9] p-8 rounded-3xl">
+              <p className="text-slate-700 font-medium leading-relaxed italic mb-6">"{r.quote}"</p>
+              <p className="font-black text-[#0A0D14]">{r.author}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Verified Patient</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-24 bg-[#F8FAF9] px-6 border-t border-slate-100">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-4xl font-black tracking-tight text-center text-[#0A0D14] mb-12">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            {faqs.map((faq, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                <button 
+                  className="w-full px-6 py-5 flex items-center justify-between text-left font-bold text-[#0A0D14] focus:outline-none"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                >
+                  <span>{faq.q}</span>
+                  <ChevronDown className={cn("h-5 w-5 text-slate-400 transition-transform", openFaq === i && "rotate-180")} />
+                </button>
+                {openFaq === i && (
+                  <div className="px-6 pb-6 pt-0 text-slate-500 font-medium leading-relaxed">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 }
