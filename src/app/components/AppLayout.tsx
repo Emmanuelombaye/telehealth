@@ -44,6 +44,11 @@ export function AppLayout() {
   const { user, role: authRole, signOut } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  const onScroll = (e: React.UIEvent<HTMLElement>) => {
+    setScrolled(e.currentTarget.scrollTop > 20);
+  };
   
   const handleLogout = async () => {
     await signOut();
@@ -108,8 +113,9 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col overflow-hidden relative">
         {/* Header - Glassmorphic Design */}
         <header className={cn(
-          "sticky top-0 z-50 flex h-20 w-full items-center justify-between border-b px-4 md:px-8 shadow-sm backdrop-blur-xl",
-          "border-slate-100 bg-white/95 text-slate-900"
+          "sticky top-0 z-50 flex w-full items-center justify-between border-b px-4 md:px-8 shadow-sm backdrop-blur-xl transition-all duration-500",
+          "border-slate-100 bg-white/95 text-slate-900",
+          scrolled ? "h-16 shadow-md" : "h-24 shadow-sm"
         )}>
           <div className="flex items-center gap-3">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -125,7 +131,14 @@ export function AppLayout() {
 
             <div className="flex items-center gap-4">
               <Link to="/" className="hidden sm:block hover:scale-105 transition-transform">
-                <img src="/logo-icon.png" alt="Logo" className="h-16 w-auto mix-blend-multiply contrast-125 brightness-110" />
+                <img 
+                  src="/logo-icon.png" 
+                  alt="Logo" 
+                  className={cn(
+                    "w-auto mix-blend-multiply contrast-125 brightness-110 transition-all duration-500",
+                    scrolled ? "h-12" : "h-20"
+                  )} 
+                />
               </Link>
               <div className="h-6 w-[1px] hidden sm:block bg-slate-200" />
               <span className="text-[10px] font-black tracking-[0.2em] uppercase px-3 py-1.5 rounded-lg border text-[#0a2e1f] bg-[#0a2e1f]/5 border-[#0a2e1f]/10">
@@ -161,7 +174,10 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth pb-12">
+        <main 
+          onScroll={onScroll}
+          className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth pb-12"
+        >
           <PageErrorBoundary>
             <div className="w-full max-w-7xl mx-auto p-4 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <Outlet />
