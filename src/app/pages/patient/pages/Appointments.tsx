@@ -49,7 +49,7 @@ export function AppointmentsPage() {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('id, order_number, medication, consultation_time, zoom_status, zoom_doctor_message, zoom_rescheduled_time, status, ordered_date')
+        .select('id, order_number, medication, consultation_time, zoom_status, zoom_doctor_message, zoom_rescheduled_time, status, ordered_date, zoom_join_url')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -147,8 +147,11 @@ export function AppointmentsPage() {
                         )}
                       </div>
                       {status === 'confirmed' && (
-                        <Button className="ml-auto h-8 px-3 text-xs rounded-xl bg-blue-600 hover:bg-blue-700 text-white gap-1.5">
-                          <Video className="h-3 w-3" /> Join Zoom
+                        <Button 
+                          onClick={() => window.open(order.zoom_join_url || `https://meet.jit.si/telehealth-${order.id}`, '_blank')}
+                          className="ml-auto h-8 px-3 text-xs rounded-xl bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+                        >
+                          <Video className="h-3 w-3" /> Join Video
                         </Button>
                       )}
                     </div>
@@ -167,10 +170,18 @@ export function AppointmentsPage() {
 
                   {/* Status-specific guidance */}
                   {status === 'requested' && (
-                    <p className="text-xs text-amber-700 flex items-center gap-1.5">
-                      <Clock className="h-3 w-3" />
-                      Your doctor will confirm or reschedule this time. You'll see it update here automatically.
-                    </p>
+                    <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200 mt-2">
+                      <p className="text-xs text-amber-700 flex items-center gap-1.5">
+                        <Clock className="h-3 w-3" />
+                        Please book a time on the doctor's calendar.
+                      </p>
+                      <Button 
+                        onClick={() => window.open('https://calendly.com/your-doctor-calendar', '_blank')}
+                        className="h-8 px-3 text-xs rounded-xl bg-amber-500 hover:bg-amber-600 text-white gap-1.5"
+                      >
+                        <Calendar className="h-3 w-3" /> Book Time
+                      </Button>
+                    </div>
                   )}
                   {status === 'cancelled' && (
                     <p className="text-xs text-red-600 flex items-center gap-1.5">

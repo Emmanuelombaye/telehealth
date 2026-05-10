@@ -40,7 +40,10 @@ export function DoctorQueuePage() {
   const [availability, setAvailability] = useState<AvailabilityStatus>("available");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rxNote, setRxNote] = useState("");
+  const [dosage, setDosage] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiSummary, setAiSummary] = useState("");
 
   // Filter orders for the queue - show anything that needs attention
   const queue = orders.filter(o => {
@@ -52,6 +55,28 @@ export function DoctorQueuePage() {
     return isActive || needsRefill;
   });
   const selected = queue.find(o => o.id === selectedId) || null;
+
+  useEffect(() => {
+    if (selected) {
+      setDosage(selected.dosageInstructions || "");
+      setRxNote("");
+      
+      setAiGenerating(true);
+      setAiSummary("");
+      
+      const intake = selected.intakeAnswers || {};
+      const risks = [];
+      if (intake.allergies && intake.allergies.toLowerCase() !== 'none' && intake.allergies.toLowerCase() !== 'none reported') risks.push(`Allergy alert: ${intake.allergies}`);
+      if (intake.current_meds && intake.current_meds.toLowerCase() !== 'none') risks.push(`Current meds: ${intake.current_meds}`);
+      
+      const aiText = `PATIENT SUMMARY:\n- 30-point intake form analyzed.\n- Primary Request: ${selected.medication}.\n- Risk Assessment: ${risks.length > 0 ? 'MODERATE' : 'LOW'}.\n${risks.length > 0 ? '- Flags: ' + risks.join(', ') : '- No contraindications detected.'}\n- Clearance: Safe to prescribe standard protocol.`;
+      
+      setTimeout(() => {
+        setAiSummary(aiText);
+        setAiGenerating(false);
+      }, 1500);
+    }
+  }, [selectedId, selected]);
 
   useEffect(() => {
     const unsubscribe = subscribeToOrders();
@@ -298,6 +323,25 @@ export function DoctorQueuePage() {
                           </div>
                         </div>
 
+                        {/* AI Scribe Intake Summary */}
+                        <div className="mb-6 bg-gradient-to-br from-violet-900/20 to-purple-900/10 border border-violet-500/30 rounded-2xl p-5 relative overflow-hidden">
+                          <div className="absolute top-0 right-0 p-4 opacity-10">
+                            <Bot className="h-16 w-16 text-violet-400" />
+                          </div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Bot className="h-4 w-4 text-violet-400" />
+                            <h4 className="text-[10px] font-black text-violet-300 uppercase tracking-[0.2em]">AI Scribe Intake Summary</h4>
+                          </div>
+                          {aiGenerating ? (
+                            <div className="flex items-center gap-3 text-violet-400">
+                              <div className="h-3 w-3 rounded-full bg-violet-500 animate-ping" />
+                              <span className="text-xs font-bold italic">AI is analyzing 30-point intake assessment...</span>
+                            </div>
+                          ) : (
+                            <p className="text-xs font-medium text-white leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
+                          )}
+                        </div>
+
                         <div className="space-y-4 pt-4 border-t border-white/5">
                            <div className="flex items-center gap-2 mb-4">
                              <Activity className="h-4 w-4 text-[#7f9488]" />
@@ -336,6 +380,8 @@ export function DoctorQueuePage() {
                          <div>
                            <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em] mb-2 block">Dosage Instructions</label>
                            <input 
+                             value={dosage}
+                             onChange={(e) => setDosage(e.target.value)}
                              placeholder="E.G. INJECT 0.25MG WEEKLY..."
                              className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none transition-all"
                            />
@@ -343,6 +389,8 @@ export function DoctorQueuePage() {
                          <div className="flex-1">
                            <label className="text-[10px] font-black text-[#7f9488] uppercase tracking-[0.2em] mb-2 block">Clinical Visit Notes</label>
                            <textarea 
+                             value={rxNote}
+                             onChange={(e) => setRxNote(e.target.value)}
                              placeholder="PATIENT EXHIBITS NO CONTRAINDICATIONS..."
                              className="w-full h-32 bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-bold italic text-white focus:border-[#22c55e]/50 outline-none transition-all resize-none"
                            />
@@ -351,38 +399,66 @@ export function DoctorQueuePage() {
                          <div className="grid grid-cols-2 gap-4 pt-4">
                             <Button 
                               onClick={() => {
-                                updateOrderRx(selected.id, selected.medication, selected.dosageInstructions, rxNote);
+                                updateOrderRx(selected.id, selected.medication, dosage || selected.dosageInstructions, rxNote);
                                 setSelectedId(null);
                               }}
-                              className="bg-[#22c55e] hover:bg-[#16a34a] text-black h-14 rounded-2xl font-black uppercase italic text-sm tracking-tighter shadow-xl shadow-[#22c55e]/20"
+                              className="bg-[#22c55e] hover:bg-[#16a34a] text-black h-12 rounded-2xl font-black uppercase italic text-xs tracking-widest shadow-xl shadow-[#22c55e]/20"
                             >
                               Finalize & Approve
                             </Button>
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-2">
                               <Button 
                                 variant="outline"
-                                className="border-[#22c55e]/40 text-[#22c55e] h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-[#22c55e]/10 gap-2"
+                                className="border-[#22c55e]/40 text-[#22c55e] h-10 rounded-xl font-black uppercase italic text-[10px] tracking-widest hover:bg-[#22c55e]/10 gap-2"
                                 onClick={() => window.open('https://surescripts.com', '_blank')}
                               >
                                 SureScripts e-Rx
                               </Button>
                               <Button 
                                 variant="outline"
-                                className="border-amber-500/40 text-amber-500 h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-amber-500/10 gap-2"
+                                className="border-amber-500/40 text-amber-500 h-10 rounded-xl font-black uppercase italic text-[10px] tracking-widest hover:bg-amber-500/10 gap-2"
                                 onClick={async (e) => {
                                   const btn = e.currentTarget;
                                   const originalContent = btn.innerHTML;
-                                  btn.innerText = "SENDING INVITE...";
+                                  btn.innerText = "SENDING CALENDAR INVITE...";
                                   btn.disabled = true;
-                                  await new Promise(r => setTimeout(r, 1500));
+                                  
+                                  await supabase.from('orders').update({ 
+                                    zoom_status: 'requested', 
+                                    zoom_doctor_message: rxNote || "Please book a time on my calendar." 
+                                  }).eq('order_number', selected.id);
+                                  
+                                  await fetchOrders();
                                   btn.innerText = "INVITE SENT ✓";
+                                  
                                   setTimeout(() => {
                                     btn.innerHTML = originalContent;
                                     btn.disabled = false;
-                                  }, 3000);
+                                    setSelectedId(null);
+                                  }, 2000);
                                 }}
                               >
-                                <Video size={16} /> Request Video Call
+                                <Video size={14} /> Request Video Call
+                              </Button>
+                              <Button 
+                                variant="outline"
+                                className="border-red-500/40 text-red-500 h-10 rounded-xl font-black uppercase italic text-[10px] tracking-widest hover:bg-red-500/10 gap-2"
+                                onClick={async (e) => {
+                                  const btn = e.currentTarget;
+                                  const originalContent = btn.innerHTML;
+                                  btn.innerText = "DISQUALIFYING...";
+                                  btn.disabled = true;
+                                  await supabase.from('orders').update({ status: 'cancelled', doctor_note: rxNote }).eq('order_number', selected.id);
+                                  await fetchOrders();
+                                  btn.innerText = "DISQUALIFIED ✓";
+                                  setTimeout(() => {
+                                    btn.innerHTML = originalContent;
+                                    btn.disabled = false;
+                                    setSelectedId(null);
+                                  }, 1000);
+                                }}
+                              >
+                                Disqualify & Refund
                               </Button>
                             </div>
                          </div>

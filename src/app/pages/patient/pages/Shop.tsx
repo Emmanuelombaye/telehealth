@@ -12,220 +12,7 @@ import { usePatientStore } from "../../../../lib/patient-store";
 
 const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=600&q=80`;
 
-const localProductsWithQuestionnaires = [
-  {
-    id: 1, name: "Semaglutide (GLP-1)", category: "Weight Loss",
-    tagline: "Weekly subcutaneous injection · 0.25–2.4 mg", price: "$199/mo", priceUSD: 199,
-    rating: 4.9, reviews: 3241, badge: "Most Popular",
-    image: IMG("1490645935967-10de6ba17061"),
-    description: "Compounded semaglutide, a GLP-1 receptor agonist used for chronic weight management alongside diet and exercise. Titrated weekly by a licensed clinician.",
-    questionnaire: [
-      { id: "q1", label: "Current weight (lbs)?", type: "number", required: true },
-      { id: "q2", label: "Height (inches)?", type: "number", required: true },
-      { id: "q3", label: "Have you ever had pancreatitis?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q4", label: "Personal or family history of medullary thyroid carcinoma (MTC) or MEN-2 syndrome?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q5", label: "Are you pregnant, breastfeeding, or planning pregnancy in the next 2 months?", type: "radio", options: ["Yes", "No", "Not applicable"], required: true },
-      { id: "q6", label: "Have you used GLP-1 medications before (Ozempic, Wegovy, Saxenda, Mounjaro, Zepbound)?", type: "radio", options: ["Yes — currently", "Yes — in the past", "No"], required: true },
-      { id: "q7", label: "List all current medications and supplements", type: "textarea", required: false },
-      { id: "q8", label: "What are your weight-loss goals and timeline?", type: "textarea", required: true },
-    ],
-    gateways: ["stripe", "paypal", "apple_pay", "klarna"],
-  },
-  {
-    id: 2, name: "Tirzepatide (GIP/GLP-1)", category: "Weight Loss",
-    tagline: "Dual-agonist weekly injection · 2.5–15 mg", price: "$329/mo", priceUSD: 329,
-    rating: 4.9, reviews: 1987, badge: "New",
-    image: IMG("1505576399279-565b52d4ac71"),
-    description: "Compounded tirzepatide, a dual GIP and GLP-1 receptor agonist for chronic weight management. Greater average weight loss than GLP-1 alone in clinical trials.",
-    questionnaire: [
-      { id: "q1", label: "Current weight (lbs)?", type: "number", required: true },
-      { id: "q2", label: "Height (inches)?", type: "number", required: true },
-      { id: "q3", label: "Type 2 diabetes diagnosis?", type: "radio", options: ["Yes", "No", "Pre-diabetes"], required: true },
-      { id: "q4", label: "Personal or family history of medullary thyroid carcinoma or MEN-2?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q5", label: "History of pancreatitis or severe gallbladder disease?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q6", label: "Pregnant, breastfeeding, or planning pregnancy?", type: "radio", options: ["Yes", "No", "Not applicable"], required: true },
-      { id: "q7", label: "Currently using oral contraceptives? (tirzepatide can reduce their effectiveness — backup contraception is recommended)", type: "radio", options: ["Yes", "No", "Not applicable"], required: true },
-      { id: "q8", label: "List current medications and any prior weight-loss treatments", type: "textarea", required: false },
-    ],
-    gateways: ["stripe", "paypal", "apple_pay", "klarna"],
-  },
-  {
-    id: 3, name: "Metformin ER 500 mg", category: "Weight Loss",
-    tagline: "Daily oral biguanide · metabolic support", price: "$29/mo", priceUSD: 29,
-    rating: 4.6, reviews: 1422, badge: "Needle-free",
-    image: IMG("1587854692152-cbe660dbde88"),
-    description: "Extended-release metformin for type 2 diabetes, prediabetes, PCOS, or off-label adjunct to weight management. Titrated 500–2000 mg/day.",
-    questionnaire: [
-      { id: "q1", label: "Current weight (lbs)?", type: "number", required: true },
-      { id: "q2", label: "Reason for considering metformin?", type: "radio", options: ["Type 2 diabetes", "Prediabetes / insulin resistance", "PCOS", "Weight management"], required: true },
-      { id: "q3", label: "Most recent eGFR or kidney function?", type: "select", options: ["> 60 (normal)", "45–60 (mild reduction)", "30–45 (moderate reduction)", "Don't know"], required: true },
-      { id: "q4", label: "History of lactic acidosis, severe heart failure, or liver disease?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q5", label: "Alcoholic drinks per week?", type: "select", options: ["0", "1–7", "8–14", "15+"], required: true },
-      { id: "q6", label: "Pregnant or breastfeeding?", type: "radio", options: ["Yes", "No", "Not applicable"], required: true },
-      { id: "q7", label: "Current medications and any GI conditions (IBS, gastroparesis)", type: "textarea", required: false },
-    ],
-    gateways: ["stripe", "paypal", "apple_pay"],
-  },
-  {
-    id: 4, name: "Sildenafil 50 mg / 100 mg", category: "Sexual Wellness",
-    tagline: "PDE5 inhibitor · on-demand, 30–60 min before activity", price: "$2/dose", priceUSD: 2,
-    rating: 4.8, reviews: 5102, badge: "Discreet",
-    image: IMG("1631549916768-4119b2e5f926"),
-    description: "Generic sildenafil citrate (Viagra) for erectile dysfunction. On-demand dosing with a 4–6 hour window. Shipped in plain packaging.",
-    questionnaire: [
-      { id: "q1", label: "Over the past 6 months, how would you rate your ability to achieve and maintain an erection?", type: "radio", options: ["Severe difficulty", "Moderate difficulty", "Mild difficulty", "Occasional"], required: true },
-      { id: "q2", label: "Do you take any nitrate medications (nitroglycerin, isosorbide) or recreational 'poppers'?", type: "radio", options: ["Yes", "No", "Not sure"], required: true },
-      { id: "q3", label: "Do you take alpha-blockers (tamsulosin, doxazosin, terazosin)?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q4", label: "History of heart attack, stroke, or unstable angina in the past 6 months?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q5", label: "Have you ever experienced sudden vision loss (NAION) or hearing loss?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q6", label: "Resting blood pressure (if known)?", type: "select", options: ["Normal (< 130/80)", "Elevated (130–140 / 80–90)", "High (> 140/90)", "Don't know"], required: true },
-      { id: "q7", label: "Current medications and supplements", type: "textarea", required: false },
-    ],
-    gateways: ["stripe", "paypal"],
-  },
-  {
-    id: 5, name: "Tadalafil 5 mg Daily", category: "Sexual Wellness",
-    tagline: "Daily PDE5 inhibitor · also indicated for BPH", price: "$59/mo", priceUSD: 59,
-    rating: 4.8, reviews: 3104, badge: "Daily",
-    image: IMG("1582719471384-894fbb16e074"),
-    description: "Generic tadalafil (Cialis) once-daily for erectile dysfunction and lower urinary tract symptoms from BPH. Provides spontaneous readiness without timing doses to activity.",
-    questionnaire: [
-      { id: "q1", label: "Severity of ED over the past 6 months?", type: "radio", options: ["Severe", "Moderate", "Mild", "Occasional"], required: true },
-      { id: "q2", label: "Do you also experience BPH symptoms (urinary frequency, urgency, weak stream)?", type: "radio", options: ["Yes", "No", "Not sure"], required: true },
-      { id: "q3", label: "Currently taking nitrates or guanylate cyclase stimulators (riociguat)?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q4", label: "Currently taking alpha-blockers?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q5", label: "Any moderate-to-severe liver or kidney disease?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q6", label: "History of heart attack, stroke, or significant arrhythmia?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q7", label: "Current medications", type: "textarea", required: false },
-    ],
-    gateways: ["stripe", "paypal", "apple_pay"],
-  },
-  {
-    id: 6, name: "Sertraline 25 mg (for PE)", category: "Sexual Wellness",
-    tagline: "Off-label SSRI · taken 4–6 hours before activity", price: "$35/mo", priceUSD: 35,
-    rating: 4.5, reviews: 812, badge: null,
-    image: IMG("1587854692152-cbe660dbde88"),
-    description: "Sertraline used off-label for premature ejaculation. Taken on-demand or daily depending on protocol. Reviewed by a licensed clinician.",
-    questionnaire: [
-      { id: "q1", label: "On average, how quickly does ejaculation occur during intercourse?", type: "select", options: ["Less than 1 minute", "1–2 minutes", "2–4 minutes", "More than 4 minutes"], required: true },
-      { id: "q2", label: "How long has this been a concern?", type: "select", options: ["< 6 months", "6–12 months", "1–2 years", "Lifelong"], required: true },
-      { id: "q3", label: "Currently taking any SSRI, SNRI, or MAOI antidepressant?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q4", label: "Personal history of bipolar disorder or manic episodes?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q5", label: "Liver disease or seizure disorder?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q6", label: "In the past 2 weeks, have you had thoughts of harming yourself?", type: "radio", options: ["No", "Yes"], required: true },
-      { id: "q7", label: "Other current medications and supplements (especially serotonergic agents — triptans, tramadol, St. John's Wort)", type: "textarea", required: false },
-    ],
-    gateways: ["stripe", "paypal", "apple_pay"],
-  },
-  {
-    id: 7, name: "Finasteride 1 mg", category: "Hair",
-    tagline: "Daily oral · 5α-reductase inhibitor", price: "$25/mo", priceUSD: 25,
-    rating: 4.7, reviews: 2890, badge: null,
-    image: IMG("1522337360788-8b13dee7a37e"),
-    description: "Generic finasteride (Propecia) for male androgenetic alopecia. Reduces DHT to slow hair loss and promote regrowth in roughly 60–80% of men over 12 months.",
-    questionnaire: [
-      { id: "q1", label: "How long have you noticed hair thinning?", type: "select", options: ["< 1 year", "1–3 years", "3–5 years", "5+ years"], required: true },
-      { id: "q2", label: "Pattern of hair loss?", type: "radio", options: ["Receding hairline", "Crown / vertex thinning", "Both", "Diffuse / overall"], required: true },
-      { id: "q3", label: "Family history of male-pattern hair loss?", type: "radio", options: ["Father's side", "Mother's side", "Both", "No / unknown"], required: true },
-      { id: "q4", label: "Are you trying to father a child in the next 6 months? (finasteride affects sperm parameters)", type: "radio", options: ["Yes", "No", "Not applicable"], required: true },
-      { id: "q5", label: "I understand finasteride may rarely cause sexual side effects (decreased libido, ED) — usually reversible, occasionally persistent.", type: "radio", options: ["I understand and accept", "I have questions"], required: true },
-      { id: "q6", label: "Personal history of depression or mood disorders?", type: "radio", options: ["Yes — current", "Yes — past", "No"], required: true },
-      { id: "q7", label: "Liver disease or abnormal liver enzymes?", type: "radio", options: ["Yes", "No", "Don't know"], required: true },
-      { id: "q8", label: "Current medications", type: "textarea", required: false },
-    ],
-    gateways: ["stripe", "apple_pay", "google_pay"],
-  },
-  {
-    id: 8, name: "Minoxidil 5% Topical", category: "Hair",
-    tagline: "Twice-daily topical solution or foam", price: "$19/mo", priceUSD: 19,
-    rating: 4.6, reviews: 4120, badge: "OTC alternative",
-    image: IMG("1559599101-f09722fb4948"),
-    description: "5% minoxidil topical for androgenetic alopecia in men and women. Applied twice daily; visible results typically appear in 3–6 months.",
-    questionnaire: [
-      { id: "q1", label: "Pattern of hair loss?", type: "radio", options: ["Crown / vertex", "Frontal / hairline", "Diffuse", "Patchy"], required: true },
-      { id: "q2", label: "Any scalp conditions (psoriasis, dermatitis, severe acne)?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q3", label: "History of cardiovascular disease, low blood pressure, or significant fluid retention?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q4", label: "Pregnant or breastfeeding?", type: "radio", options: ["Yes", "No", "Not applicable"], required: true },
-      { id: "q5", label: "Known allergy to propylene glycol?", type: "radio", options: ["Yes", "No", "Don't know"], required: true },
-      { id: "q6", label: "Preferred formulation?", type: "radio", options: ["Liquid solution", "Foam (alcohol-free)", "No preference"], required: true },
-      { id: "q7", label: "Current medications and any prior hair-loss treatments", type: "textarea", required: false },
-    ],
-    gateways: ["stripe", "apple_pay", "google_pay", "paypal"],
-  },
-  {
-    id: 9, name: "Trazodone 50 mg", category: "Sleep",
-    tagline: "Off-label nightly · sleep onset and maintenance", price: "$29/mo", priceUSD: 29,
-    rating: 4.7, reviews: 1654, badge: "Non-habit forming",
-    image: IMG("1541781774459-bb2af2f05b55"),
-    description: "Trazodone used off-label for insomnia. Non-habit-forming alternative to benzodiazepines and Z-drugs. Reviewed by a clinician with sleep-medicine experience.",
-    questionnaire: [
-      { id: "q1", label: "How long does it usually take you to fall asleep?", type: "select", options: ["< 15 min", "15–30 min", "30–60 min", "More than 60 min"], required: true },
-      { id: "q2", label: "How many times do you wake during the night?", type: "select", options: ["0–1", "2–3", "4 or more"], required: true },
-      { id: "q3", label: "Do you fall asleep unintentionally during the day?", type: "radio", options: ["Never", "Sometimes", "Frequently"], required: true },
-      { id: "q4", label: "Currently taking an MAOI antidepressant or stopped one within the last 14 days?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q5", label: "Currently taking other serotonergic agents (SSRIs, SNRIs, triptans, tramadol, linezolid)?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q6", label: "Personal history of priapism or sickle cell disease?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q7", label: "Average alcohol intake per evening?", type: "select", options: ["None", "1 drink", "2–3 drinks", "4+ drinks"], required: true },
-      { id: "q8", label: "Current medications and any sleep-apnea diagnosis", type: "textarea", required: false },
-    ],
-    gateways: ["stripe", "paypal", "apple_pay"],
-  },
-  {
-    id: 10, name: "Escitalopram 10 mg", category: "Mental Health",
-    tagline: "SSRI · daily · for anxiety and depression", price: "$45/mo", priceUSD: 45,
-    rating: 4.7, reviews: 1876, badge: "Fast Rx",
-    image: IMG("1499209974431-9dddcece7f88"),
-    description: "Generic escitalopram (Lexapro) for generalized anxiety disorder and major depressive disorder. Reviewed within hours by a licensed psychiatric clinician.",
-    questionnaire: [
-      { id: "q1", label: "Over the past 2 weeks, how often have you felt nervous, worried, or on edge?", type: "radio", options: ["Not at all", "Several days", "More than half the days", "Nearly every day"], required: true },
-      { id: "q2", label: "Over the past 2 weeks, how often have you felt down, hopeless, or lost interest in activities you usually enjoy?", type: "radio", options: ["Not at all", "Several days", "More than half the days", "Nearly every day"], required: true },
-      { id: "q3", label: "In the past 2 weeks, have you had any thoughts of harming yourself?", type: "radio", options: ["No", "Yes"], required: true },
-      { id: "q4", label: "Personal history of bipolar disorder, mania, or psychosis?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q5", label: "Currently taking an MAOI or stopped one within the last 14 days?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q6", label: "Pregnant, breastfeeding, or planning pregnancy?", type: "radio", options: ["Yes", "No", "Not applicable"], required: true },
-      { id: "q7", label: "Current and past psychiatric medications and how they worked for you", type: "textarea", required: true },
-      { id: "q8", label: "Anything else you'd like the clinician to know?", type: "textarea", required: false },
-    ],
-    gateways: ["stripe", "paypal", "google_pay"],
-  },
-  {
-    id: 11, name: "Tretinoin 0.05% Cream", category: "Skincare",
-    tagline: "Custom-compounded retinoid · nightly", price: "$45/mo", priceUSD: 45,
-    rating: 4.9, reviews: 4210, badge: "Dermatologist",
-    image: IMG("1556228720-195a672e8a03"),
-    description: "Prescription tretinoin, optionally compounded with niacinamide, azelaic acid, clindamycin, or hydroquinone. For acne, fine lines, and pigmentation.",
-    questionnaire: [
-      { id: "q1", label: "Primary skin concern?", type: "radio", options: ["Acne", "Anti-aging / fine lines", "Hyperpigmentation / melasma", "Combination"], required: true },
-      { id: "q2", label: "Skin type?", type: "radio", options: ["Oily", "Dry", "Combination", "Sensitive"], required: true },
-      { id: "q3", label: "Pregnant, breastfeeding, or planning pregnancy?", type: "radio", options: ["Yes", "No", "Not applicable"], required: true },
-      { id: "q4", label: "Currently using any retinoid (tretinoin, adapalene, retinol)?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q5", label: "Currently using benzoyl peroxide, salicylic acid, or AHAs?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q6", label: "Personal history of eczema, rosacea, or very sensitive skin?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q7", label: "Daily SPF use?", type: "radio", options: ["Yes — daily", "Sometimes", "No"], required: true },
-      { id: "q8", label: "Add-ons to discuss with your dermatologist? (select all)", type: "checkbox", options: ["Niacinamide", "Azelaic acid", "Clindamycin (acne)", "Hydroquinone (pigmentation)", "None"], required: false },
-    ],
-    gateways: ["stripe", "apple_pay", "google_pay", "paypal"],
-  },
-  {
-    id: 12, name: "Testosterone Cypionate 200 mg/mL", category: "Hormone",
-    tagline: "Weekly intramuscular · TRT with quarterly labs", price: "$249/mo", priceUSD: 249,
-    rating: 4.7, reviews: 612, badge: "Lab included",
-    image: IMG("1559757175-5700dde675bc"),
-    description: "Physician-supervised testosterone replacement therapy with at-home blood draw, dosing protocol, and quarterly follow-up. Hematocrit and PSA monitoring included.",
-    questionnaire: [
-      { id: "q1", label: "Most recent total testosterone level (ng/dL), if known?", type: "text", required: false },
-      { id: "q2", label: "Symptoms experienced (select all that apply)", type: "checkbox", options: ["Low energy / fatigue", "Decreased libido", "Erectile dysfunction", "Mood changes / depression", "Loss of muscle mass", "Brain fog"], required: true },
-      { id: "q3", label: "Personal history of prostate cancer (any stage)?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q4", label: "Personal history of breast cancer?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q5", label: "Diagnosed or suspected untreated severe sleep apnea?", type: "radio", options: ["Yes — diagnosed", "Suspected", "No"], required: true },
-      { id: "q6", label: "History of polycythemia (hematocrit > 54%) or recent blood clot?", type: "radio", options: ["Yes", "No", "Don't know"], required: true },
-      { id: "q7", label: "Are you trying to father children in the next 12 months? (TRT suppresses sperm production)", type: "radio", options: ["Yes", "No", "Unsure"], required: true },
-      { id: "q8", label: "Willing to complete baseline labs (Total/Free T, PSA, CBC, lipid panel) before therapy?", type: "radio", options: ["Yes", "No"], required: true },
-      { id: "q9", label: "Current medications and supplements", type: "textarea", required: false },
-    ],
-    gateways: ["stripe", "klarna"],
-  },
-];
+// Products now fetched from Supabase directly
 
 const categories = ["All", "Weight Loss", "Sexual Wellness", "Hair", "Sleep", "Mental Health", "Skincare", "Hormone"] as const;
 
@@ -252,12 +39,37 @@ type Stage = "catalog" | "payment" | "account_setup" | "2fa" | "identity" | "que
 export function PatientShopPage() {
   const navigate = useNavigate();
   const { initialize } = useAuthStore();
-  const [dbProducts, setDbProducts] = useState<typeof localProductsWithQuestionnaires>([]);
+  const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
   useEffect(() => {
-    setDbProducts(localProductsWithQuestionnaires);
-    setIsLoadingProducts(false);
+    async function fetchProducts() {
+      try {
+        const { data, error } = await supabase.from('products').select('*').eq('active', true);
+        if (error) throw error;
+        const mapped = data.map(p => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          tagline: p.tagline,
+          price: `$${p.price_usd}/mo`,
+          priceUSD: p.price_usd,
+          rating: p.features?.rating || 4.9,
+          reviews: p.features?.reviews || 1000,
+          badge: p.features?.badge || null,
+          image: p.image_url,
+          description: p.description,
+          questionnaire: p.features?.questionnaire || [],
+          gateways: p.features?.gateways || ["stripe", "paypal", "apple_pay", "klarna"],
+        }));
+        setDbProducts(mapped);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    }
+    fetchProducts();
   }, []);
 
   const [stage, setStage] = useState<Stage>("catalog");
@@ -867,7 +679,9 @@ export function PatientShopPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="font-bold text-sm">{selected.name}</p>
-              <p className="text-xs text-muted-foreground">{selected.category} · {firstName} {lastName}</p>
+              <p className="text-xs text-muted-foreground">
+                {selected.category}{firstName || lastName ? ` · ${firstName} ${lastName}` : ''}
+              </p>
             </div>
             <span className="font-extrabold text-primary text-lg">{selected.price}</span>
           </CardContent>
@@ -880,7 +694,7 @@ export function PatientShopPage() {
             {selected.gateways.map(gw => (
               <button key={gw} onClick={() => setGateway(gw)}
                 className={cn("w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left",
-                  gateway === gw ? "border-primary bg-primary/5" : gatewayConfig[gw]?.color || "border-border")}>
+                  gateway === gw ? "border-primary bg-primary/5 text-primary" : "border-slate-200 bg-white hover:border-slate-300 text-slate-700")}>
                 <span className="text-2xl">{gatewayConfig[gw]?.icon}</span>
                 <span className="font-semibold text-sm">{gatewayConfig[gw]?.label}</span>
                 {gateway === gw && <CheckCircle2 className="h-5 w-5 text-primary ml-auto" />}
@@ -909,7 +723,7 @@ export function PatientShopPage() {
               <div className="flex justify-between items-end mt-2">
                 <div>
                   <p className="text-white/40 text-[8px] uppercase tracking-wide">Cardholder</p>
-                  <p className="text-white text-sm font-bold">{firstName && lastName ? `${firstName.toUpperCase()} ${lastName.toUpperCase()}` : 'YOUR NAME'}</p>
+                  <p className="text-white text-base font-bold">{firstName && lastName ? `${firstName.toUpperCase()} ${lastName.toUpperCase()}` : 'YOUR NAME'}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-white/40 text-[8px] uppercase tracking-wide">Expires</p>
@@ -963,9 +777,9 @@ export function PatientShopPage() {
                         value={cardCvc}
                         onChange={e => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 3))}
                         placeholder="3 digits"
-                        className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background"
+                        className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background placeholder:font-sans placeholder:text-muted-foreground"
                       />
-                      <span className="absolute right-3 top-3 text-[10px] text-muted-foreground font-bold">CVV</span>
+                      <span className="absolute right-3 top-3 text-[10px] text-muted-foreground font-bold mt-1">CVV</span>
                     </div>
                   </div>
                 </div>
@@ -980,8 +794,8 @@ export function PatientShopPage() {
           </div>
         )}
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Shield className="h-3.5 w-3.5 text-emerald-500" />
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pb-2">
+          <ShieldCheck className="h-4 w-4 text-emerald-500" />
           256-bit SSL encryption · HIPAA compliant · Cancel anytime
         </div>
 

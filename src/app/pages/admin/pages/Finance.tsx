@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { Download, CreditCard, ExternalLink, RefreshCw, Columns } from "lucide-react";
 import { Card, Button } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib/auth-store";
 
 const tabs = ["Overview", "Invoices", "Contracts"];
 const invoiceFilters = ["All", "Paid", "Open", "Failed", "Processing", "Canceled"];
 
 export function AdminFinancePage() {
+  const { role } = useAuthStore();
   const [activeTab, setActiveTab] = useState("Overview");
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,20 +88,24 @@ export function AdminFinancePage() {
               <h3 className="font-semibold">Billing Cycle</h3>
             </div>
             <div className="p-6 grid grid-cols-2 gap-y-6">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Doctor Costs</p>
-                <p className="text-xl font-bold">$0 <span className="text-sm font-medium text-muted-foreground">USD</span></p>
-              </div>
+              {role === 'superadmin' && (
+                <>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Doctor Costs</p>
+                    <p className="text-xl font-bold">$0 <span className="text-sm font-medium text-muted-foreground">USD</span></p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Pharmacy Cost</p>
+                    <p className="text-xl font-bold">$0 <span className="text-sm font-medium text-muted-foreground">USD</span></p>
+                  </div>
+                </>
+              )}
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Shipping & Dispense Costs</p>
                 <p className="text-xl font-bold">$0 <span className="text-sm font-medium text-muted-foreground">USD</span></p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Platform Fees</p>
-                <p className="text-xl font-bold">$0 <span className="text-sm font-medium text-muted-foreground">USD</span></p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Pharmacy Cost</p>
                 <p className="text-xl font-bold">$0 <span className="text-sm font-medium text-muted-foreground">USD</span></p>
               </div>
               <div>

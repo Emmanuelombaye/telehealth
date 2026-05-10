@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { AppLayout } from "./components/AppLayout";
+import { PublicLayout } from "./components/PublicLayout";
 import { LandingPage } from "./pages/Landing";
 import { PatientDashboard } from "./pages/patient/Dashboard";
 import { DoctorDashboard } from "./pages/doctor/Dashboard";
@@ -7,6 +8,9 @@ import { AdminDashboard } from "./pages/admin/Dashboard";
 import { WeightLossPage, SexualWellnessPage, HairLossPage, LongevityPage } from "./pages/treatments";
 import { ClinicalResearchPage } from "./pages/authority/ClinicalResearch";
 import { SupportHubPage } from "./pages/SupportHub";
+import { HowItWorksPage } from "./pages/HowItWorks";
+import { FrequentlyAskedQuestionsPage } from "./pages/FAQ";
+import { ExploreTreatmentsPage } from "./pages/ExploreTreatments";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Patient pages
@@ -85,17 +89,27 @@ export const router = createBrowserRouter([
     path: "/",
     errorElement: <ErrorBoundary />,
     children: [
-      { index: true, Component: LandingPage },
-      
-      // Treatment Hubs (Public)
-      { path: "treatments/weight-loss", Component: WeightLossPage },
-      { path: "treatments/sexual-wellness", Component: SexualWellnessPage },
-      { path: "treatments/hair-loss", Component: HairLossPage },
-      { path: "treatments/longevity", Component: LongevityPage },
-      
-      // Authority & Support (Public)
-      { path: "clinical-research", Component: ClinicalResearchPage },
-      { path: "support-hub", Component: SupportHubPage },
+      // --- PUBLIC PAGES (All use PublicLayout) ---
+      {
+        element: <PublicLayout />,
+        children: [
+          { index: true, Component: LandingPage },
+          
+          // Treatment Hubs (Public)
+          { path: "treatments/weight-loss", Component: WeightLossPage },
+          { path: "treatments/sexual-wellness", Component: SexualWellnessPage },
+          { path: "treatments/hair-loss", Component: HairLossPage },
+          { path: "treatments/longevity", Component: LongevityPage },
+          
+          // Authority & Support (Public)
+          { path: "clinical-research", Component: ClinicalResearchPage },
+          { path: "support-hub", Component: SupportHubPage },
+          { path: "how-it-works", Component: HowItWorksPage },
+          { path: "explore-treatments", Component: ExploreTreatmentsPage },
+          { path: "frequently-asked-questions", Component: FrequentlyAskedQuestionsPage },
+          { path: "faq", Component: FrequentlyAskedQuestionsPage },
+        ]
+      },
 
       // Auth (Isolated)
       { path: "patient/login", element: <AuthPage portal="patient" /> },
@@ -176,7 +190,6 @@ export const router = createBrowserRouter([
               { path: "discounts", Component: AdminDiscountsPage },
               { path: "affiliates", Component: AdminAffiliatesPage },
               { path: "users", Component: AdminUsersPage },
-              { path: "audit", Component: AdminAuditPage },
               { path: "settings", Component: AdminSettingsPage },
             ],
           },

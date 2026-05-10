@@ -151,7 +151,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
           }
           
           // ── Step 5: Navigate to THIS portal ──
-          navigate(portalTarget(portal), { replace: true });
+          if (role === 'super_admin') {
+            navigate('/superadmin', { replace: true });
+          } else {
+            navigate(portalTarget(portal), { replace: true });
+          }
         }
       } else {
         // ── Sign Up Flow ──

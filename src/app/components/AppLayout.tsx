@@ -93,9 +93,9 @@ export function AppLayout() {
 
             {/* Portal Identity */}
             <div className="flex items-center gap-4">
-               <div className="hidden sm:block">
-                 <img src="/originallogo.png" alt="Logo" className="h-10 w-auto" />
-               </div>
+            <Link to="/" className="hidden sm:block hover:scale-105 transition-transform">
+               <img src="/logo-icon.png" alt="Logo" className="h-16 w-auto" />
+            </Link>
                <div className={cn("h-6 w-[1px] hidden sm:block", "bg-slate-200")} />
                <span className={cn(
                  "text-[10px] font-black tracking-[0.2em] uppercase px-3 py-1.5 rounded-lg border",

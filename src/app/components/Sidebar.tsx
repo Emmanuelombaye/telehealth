@@ -128,22 +128,22 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const SidebarContent = () => (
     <div className={cn(
       "flex h-full flex-col overflow-hidden text-sidebar-foreground border-r",
-      isAdminPortal ? "bg-[#0c120f] border-[#1a2620]" : "bg-sidebar border-sidebar-border"
+      isAdminPortal ? "bg-white border-slate-200" : "bg-sidebar border-sidebar-border"
     )}>
       {/* Logo */}
       <div className={cn(
         "flex h-32 items-center justify-between border-b px-4 shrink-0",
-        isAdminPortal ? "bg-[#0c120f] border-[#1a2620]" : "bg-sidebar border-sidebar-border"
+        isAdminPortal ? "bg-white border-slate-200" : "bg-sidebar border-sidebar-border"
       )}>
-        <Link to="/" className="flex items-center justify-center w-full py-4 px-2 group transition-all" onClick={onMobileClose}>
-          <img src="/originallogo.png" alt="Peak Health Logo" className={cn(
-            "h-24 w-auto object-contain transition-transform duration-300 group-hover:scale-105",
-            isAdminPortal ? "brightness-110" : ""
+        <Link to="/" className="flex items-center justify-center w-full py-2 group transition-all" onClick={onMobileClose}>
+          <img src="/logo-icon.png" alt="Peak Health Logo" className={cn(
+            "h-32 w-auto object-contain transition-transform duration-300 group-hover:scale-105",
+            isAdminPortal ? "" : ""
           )} />
         </Link>
         {onMobileClose && (
-          <button onClick={onMobileClose} className="md:hidden p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors">
-            <X className="h-5 w-5 text-muted-foreground" />
+          <button onClick={onMobileClose} className="md:hidden p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+            <X className="h-5 w-5 text-slate-500" />
           </button>
         )}
       </div>
@@ -160,13 +160,13 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
               {showGroup && (
                 <div className={cn(
                   "px-3 pb-2 pt-4 text-[11px] font-bold uppercase tracking-widest",
-                  isAdminPortal ? "text-[#4f6458]" : "text-muted-foreground"
+                  isAdminPortal ? "text-slate-400" : "text-muted-foreground"
                 )}>
                   {item.group}
                 </div>
               )}
               {isBottom && (
-                <div className={cn("h-px my-3 mx-2", isAdminPortal ? "bg-[#1a2620]" : "bg-sidebar-border/60")} />
+                <div className={cn("h-px my-3 mx-2", isAdminPortal ? "bg-slate-100" : "bg-sidebar-border/60")} />
               )}
               <NavLink
                 to={item.href}
@@ -176,8 +176,8 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                   cn(
                     "flex items-center justify-between rounded-xl px-3 py-2.5 text-[14px] font-medium transition-all duration-200 group relative mb-0.5",
                     isActive
-                      ? isAdminPortal ? "bg-[#22c55e]/10 text-[#22c55e] font-bold" : "bg-primary/10 text-primary font-semibold"
-                      : isAdminPortal ? "text-[#7f9488] hover:bg-[#1a2620] hover:text-[#e2e8f0]" : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+                      ? isAdminPortal ? "bg-emerald-50 text-emerald-700 font-bold shadow-sm" : "bg-primary/10 text-primary font-semibold"
+                      : isAdminPortal ? "text-slate-500 hover:bg-slate-50 hover:text-slate-900" : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
                   )
                 }
               >
@@ -187,8 +187,8 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                       <item.icon className={cn(
                         "h-5 w-5 shrink-0 transition-colors", 
                         isActive 
-                          ? isAdminPortal ? "text-[#22c55e]" : "text-primary" 
-                          : isAdminPortal ? "text-[#4f6458] group-hover:text-[#22c55e]" : "text-muted-foreground group-hover:text-foreground"
+                          ? isAdminPortal ? "text-emerald-600" : "text-primary" 
+                          : isAdminPortal ? "text-slate-400 group-hover:text-emerald-500" : "text-muted-foreground group-hover:text-foreground"
                       )} />
                       <span className="truncate">{item.label}</span>
                     </div>
@@ -200,8 +200,8 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                         return (
                           <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm",
                             isActive 
-                              ? isAdminPortal ? "bg-white text-black" : "bg-primary text-white"
-                              : isAdminPortal ? "bg-[#22c55e]/20 text-[#22c55e]" : "bg-primary/10 text-primary"
+                              ? isAdminPortal ? "bg-emerald-600 text-white" : "bg-primary text-white"
+                              : isAdminPortal ? "bg-emerald-100 text-emerald-700" : "bg-primary/10 text-primary"
                           )}>
                             {badgeCount}
                           </span>
@@ -220,26 +220,26 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
       {/* User footer */}
       <div className={cn(
         "p-4 border-t shrink-0 space-y-2",
-        isAdminPortal ? "bg-[#0c120f]/50 border-[#1a2620]" : "bg-sidebar/50 border-sidebar-border"
+        isAdminPortal ? "bg-slate-50/50 border-slate-200" : "bg-sidebar/50 border-sidebar-border"
       )}>
         <div className={cn(
           "flex items-center gap-3 px-3 py-2.5 rounded-2xl border",
-          isAdminPortal ? "bg-[#1a2620] border-[#22c55e]/10" : "bg-sidebar-accent/50 border-sidebar-border"
+          isAdminPortal ? "bg-white border-slate-200 shadow-sm" : "bg-sidebar-accent/50 border-sidebar-border"
         )}>
           <div className={cn(
             "h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-inner", 
-            isAdminPortal ? "bg-[#d4c4a8] text-black" : roleColors[role],
+            isAdminPortal ? "bg-emerald-100 text-emerald-700" : roleColors[role],
             isAdminPortal ? "" : "text-white"
           )}>
-            {fullName.charAt(0)}
+            {fullName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className={cn("text-xs font-bold truncate", isAdminPortal ? "text-[#e2e8f0]" : "")}>
+            <p className={cn("text-xs font-bold truncate", isAdminPortal ? "text-slate-900" : "")}>
               {fullName}
             </p>
-            <p className="text-[10px] text-muted-foreground capitalize font-medium">{displayRole} · Online</p>
+            <p className="text-[10px] text-slate-500 capitalize font-medium">{displayRole} · Online</p>
           </div>
-          <div className={cn("h-2 w-2 rounded-full animate-pulse shrink-0", isAdminPortal ? "bg-[#22c55e]" : "bg-emerald-500")} />
+          <div className={cn("h-2 w-2 rounded-full animate-pulse shrink-0", isAdminPortal ? "bg-emerald-500" : "bg-emerald-500")} />
         </div>
         <button 
           onClick={() => {
@@ -248,7 +248,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
               window.location.href = "/";
             }
           }}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors group text-left"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors group text-left"
         >
           <LogOut className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           <span>{t("logout")}</span>

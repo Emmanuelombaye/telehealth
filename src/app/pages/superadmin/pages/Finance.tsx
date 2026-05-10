@@ -5,30 +5,45 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
-const monthlyRevenue = [
-  { month: "Nov", total: 197000 }, { month: "Dec", total: 209000 },
-  { month: "Jan", total: 238000 }, { month: "Feb", total: 264000 },
-  { month: "Mar", total: 288000 }, { month: "Apr", total: 306000 },
-  { month: "May", total: 318600 },
-];
-
-const brandFinancials = [
-  { brand: "Brand A", mrr: 128400, arr: 1540800, commission: 12840, payout: 115560, plan: "Enterprise", status: "paid" },
-  { brand: "Brand B", mrr: 94200, arr: 1130400, commission: 9420, payout: 84780, plan: "Growth", status: "paid" },
-  { brand: "Brand C", mrr: 61000, arr: 732000, commission: 6100, payout: 54900, plan: "Growth", status: "pending" },
-  { brand: "Brand D", mrr: 35000, arr: 420000, commission: 3500, payout: 31500, plan: "Starter", status: "pending" },
-];
-
-const transactions = [
-  { id: "TXN-9981", brand: "Brand A", type: "Subscription", amount: "$128,400", date: "May 1, 2026", status: "completed" },
-  { id: "TXN-9980", brand: "Brand B", type: "Subscription", amount: "$94,200", date: "May 1, 2026", status: "completed" },
-  { id: "TXN-9979", brand: "Brand C", type: "Subscription", amount: "$61,000", date: "May 1, 2026", status: "pending" },
-  { id: "TXN-9978", brand: "Brand D", type: "Subscription", amount: "$35,000", date: "May 1, 2026", status: "pending" },
-  { id: "TXN-9977", brand: "Brand A", type: "Payout", amount: "$115,560", date: "Apr 30, 2026", status: "completed" },
-  { id: "TXN-9976", brand: "Brand B", type: "Payout", amount: "$84,780", date: "Apr 30, 2026", status: "completed" },
-];
+import { usePatientStore } from "../../../../lib/patient-store";
 
 export function SuperAdminFinancePage() {
+  const { orders } = usePatientStore();
+
+  const monthlyRevenue = Object.values(orders.reduce((acc, order) => {
+     const date = new Date(order.created_at || new Date());
+     const month = date.toLocaleString('default', { month: 'short' });
+     const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
+     if (!acc[month]) acc[month] = { month, total: 0, dateObj: date };
+     acc[month].total += amt;
+     return acc;
+  }, {} as Record<string, { month: string, total: number, dateObj: Date }>))
+  .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+
+  const brandFinancials = Object.values(orders.reduce((acc, order) => {
+    const brand = order.sub_brand || "Peak Health";
+    const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
+    if (!acc[brand]) acc[brand] = { brand, mrr: 0, arr: 0, commission: 0, payout: 0, plan: "Enterprise", status: "paid" };
+    acc[brand].mrr += amt;
+    acc[brand].arr = acc[brand].mrr * 12;
+    acc[brand].commission = acc[brand].mrr * 0.1;
+    acc[brand].payout = acc[brand].mrr - acc[brand].commission;
+    return acc;
+  }, {} as Record<string, any>));
+
+  const transactions = orders.slice(0, 8).map(o => ({
+    id: o.order_number,
+    brand: o.sub_brand || "Peak Health",
+    type: o.category || "Subscription",
+    amount: typeof o.amount === 'number' ? `$${o.amount}` : o.amount || "$0.00",
+    date: new Date(o.created_at).toLocaleDateString(),
+    status: o.status === 'order_submitted' || o.status === 'medical_review' ? 'pending' : 'completed'
+  }));
+
+  const totalPlatformMRR = brandFinancials.reduce((sum, b) => sum + b.mrr, 0);
+  const totalPlatformARR = brandFinancials.reduce((sum, b) => sum + b.arr, 0);
+  const totalCommission = brandFinancials.reduce((sum, b) => sum + b.commission, 0);
+  const pendingPayouts = brandFinancials.reduce((sum, b) => sum + (b.status === 'pending' ? b.payout : 0), 0);
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -44,10 +59,10 @@ export function SuperAdminFinancePage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Platform MRR", value: "$318,600", change: "+24%", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
-          { label: "Platform ARR", value: "$3.82M", change: "+24%", color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
-          { label: "Total Commission", value: "$31,860", change: "10% rate", color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
-          { label: "Pending Payouts", value: "$86,400", change: "2 brands", color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
+          { label: "Platform MRR", value: `$${(totalPlatformMRR).toLocaleString()}`, change: "+Live", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
+          { label: "Platform ARR", value: `$${(totalPlatformARR / 1000000).toFixed(2)}M`, change: "+Live", color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
+          { label: "Total Commission", value: `$${(totalCommission).toLocaleString()}`, change: "10% rate", color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
+          { label: "Pending Payouts", value: `$${(pendingPayouts).toLocaleString()}`, change: "System", color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
         ].map((s, i) => (
           <Card key={i}>
             <CardContent className="p-4">
