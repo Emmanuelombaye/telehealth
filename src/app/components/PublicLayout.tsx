@@ -208,7 +208,6 @@ export function PublicLayout() {
                  <li><Link to="/patient/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Patient Login</Link></li>
                  <li><Link to="/doctor/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Provider Portal</Link></li>
                  <li><Link to="/admin/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Brand Admin</Link></li>
-                 <li><Link to="/pharmacy/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Pharmacy Portal</Link></li>
                  <li><Link to="/superadmin/login" className="text-sm font-black text-slate-600 hover:text-emerald-600 transition-colors">Super Admin</Link></li>
                </ul>
             </div>

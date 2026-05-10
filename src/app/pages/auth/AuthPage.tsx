@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuthStore, Role } from "../../../lib/auth-store";
-import { Lock, Mail, AlertCircle, Stethoscope, Shield, User, Eye, EyeOff, ArrowLeft, Pill, KeyRound, Building2, Heart } from "lucide-react";
+import { Lock, Mail, AlertCircle, Stethoscope, Shield, User, Eye, EyeOff, ArrowLeft, KeyRound, Building2, Heart } from "lucide-react";
 
-type Portal = 'patient' | 'doctor' | 'admin' | 'superadmin' | 'pharmacy';
+type Portal = 'patient' | 'doctor' | 'admin' | 'superadmin';
 
 // Portal navigation data for the quick-switch section
 const PORTAL_NAV: { key: Portal; label: string; path: string; icon: React.ReactNode; color: string; activeColor: string }[] = [
@@ -12,7 +12,6 @@ const PORTAL_NAV: { key: Portal; label: string; path: string; icon: React.ReactN
   { key: 'doctor',     label: 'Provider',   path: '/doctor/login',     icon: <Stethoscope className="h-3.5 w-3.5" />, color: 'text-blue-400/70 hover:text-blue-400 hover:bg-blue-500/10',             activeColor: 'text-blue-400 bg-blue-500/20 ring-1 ring-blue-500/30' },
   { key: 'admin',      label: 'Admin',      path: '/admin/login',      icon: <Building2 className="h-3.5 w-3.5" />,   color: 'text-violet-400/70 hover:text-violet-400 hover:bg-violet-500/10',       activeColor: 'text-violet-400 bg-violet-500/20 ring-1 ring-violet-500/30' },
   { key: 'superadmin', label: 'SuperAdmin', path: '/superadmin/login', icon: <KeyRound className="h-3.5 w-3.5" />,    color: 'text-red-400/70 hover:text-red-400 hover:bg-red-500/10',               activeColor: 'text-red-400 bg-red-500/20 ring-1 ring-red-500/30' },
-  { key: 'pharmacy',   label: 'Pharmacy',   path: '/pharmacy/login',   icon: <Pill className="h-3.5 w-3.5" />,        color: 'text-teal-400/70 hover:text-teal-400 hover:bg-teal-500/10',             activeColor: 'text-teal-400 bg-teal-500/20 ring-1 ring-teal-500/30' },
 ];
 
 
@@ -68,7 +67,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
       case 'doctor':     return `/doctor${buster}`;
       case 'admin':      return `/admin${buster}`;
       case 'superadmin': return `/superadmin${buster}`;
-      case 'pharmacy':   return `/pharmacy${buster}`;
       default:           return `/patient${buster}`;
     }
   };
@@ -93,7 +91,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
         const staffAccounts: Record<string, { role: Role; password?: string }> = {
           'doctor@peakbodyco.com':   { role: 'doctor' },
           'admin@peakbodyco.com':    { role: 'brand_admin' },
-          'pharmacy@peakbodyco.com': { role: 'pharmacy' },
           'brandon@peakbodyco.com':  { role: 'super_admin' },
         };
         const staffEntry = staffAccounts[email.toLowerCase()];
@@ -138,12 +135,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
               await initialize();
               return;
             }
-            if (portal === 'pharmacy' && role !== 'pharmacy') {
-              setError("Access denied. Pharmacy portal requires a pharmacy account.");
-              await supabase.auth.signOut();
-              await initialize();
-              return;
-            }
             if (portal === 'admin' && role !== 'brand_admin') {
               setError("Access denied. Admin portal only.");
               await supabase.auth.signOut();
@@ -165,7 +156,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
           portal === 'doctor' ? 'doctor' : 
           portal === 'admin' ? 'brand_admin' : 
           portal === 'superadmin' ? 'super_admin' : 
-          portal === 'pharmacy' ? 'pharmacy' : 
           'patient';
 
         const { data, error: signUpError } = await supabase.auth.signUp({
@@ -247,24 +237,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
       ring: "focus:border-red-400",
       iconBg: "bg-red-500/20",
       iconColor: "text-red-400",
-      icon: <Lock className="h-8 w-8" />,
+      icon: <KeyRound className="h-8 w-8" />,
       title: "System Access",
       subtitle: "Master system administration — restricted",
       badge: "🔐 Top Secret",
       badgeClass: "bg-red-500/20 text-red-300 border-red-500/30",
-    },
-    pharmacy: {
-      bg: "bg-gradient-to-br from-emerald-950 via-slate-950 to-slate-900",
-      card: "bg-white/8 backdrop-blur-xl border border-emerald-500/20 shadow-2xl",
-      accent: "bg-emerald-600 hover:bg-emerald-700",
-      ring: "focus:border-emerald-400",
-      iconBg: "bg-emerald-500/20",
-      iconColor: "text-emerald-400",
-      icon: <Pill className="h-8 w-8 text-emerald-400" />,
-      title: "Pharmacy Portal",
-      subtitle: "Inventory and prescription fulfillment control",
-      badge: "💊 Fulfillment Center",
-      badgeClass: "bg-emerald-500/20 text-emerald-200 border-emerald-500/30",
     },
   };
 
