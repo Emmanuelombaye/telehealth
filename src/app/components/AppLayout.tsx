@@ -98,16 +98,6 @@ export function AppLayout() {
             </Sheet>
 
             <div className="flex items-center gap-4">
-              <Link to="/" className="hidden sm:block hover:scale-105 transition-transform">
-                <img 
-                  src="/logo-icon.png" 
-                  alt="Logo" 
-                  className={cn(
-                    "w-auto mix-blend-multiply contrast-125 brightness-110 transition-all duration-500",
-                    scrolled ? "h-12" : "h-20"
-                  )} 
-                />
-              </Link>
               <div className="h-6 w-[1px] hidden sm:block bg-slate-200" />
               <span className="text-[10px] font-black tracking-[0.2em] uppercase px-3 py-1.5 rounded-lg border text-[#0a2e1f] bg-[#0a2e1f]/5 border-[#0a2e1f]/10">
                 {displayRole} PORTAL

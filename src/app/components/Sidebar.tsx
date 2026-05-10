@@ -124,13 +124,12 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
     )}>
       {/* Logo */}
       <div className={cn(
-        "flex h-32 items-center justify-between border-b px-4 shrink-0",
+        "flex h-24 items-center justify-between border-b px-4 shrink-0",
         isAdminPortal ? "bg-white border-slate-200" : "bg-sidebar border-sidebar-border"
       )}>
-        <Link to="/" className="flex items-center justify-center w-full py-2 group transition-all" onClick={onMobileClose}>
+        <Link to="/" className="flex items-center justify-center w-full py-4 group transition-all" onClick={onMobileClose}>
           <img src="/logo-icon.png" alt="Peak Health Logo" className={cn(
-            "h-32 w-auto object-contain mix-blend-multiply contrast-125 brightness-110 transition-transform duration-300 group-hover:scale-105",
-            isAdminPortal ? "" : ""
+            "h-24 w-auto object-contain mix-blend-multiply contrast-125 brightness-110 transition-transform duration-300 group-hover:scale-105"
           )} />
         </Link>
         {onMobileClose && (
