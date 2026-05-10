@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import {
   Calendar, Clock, FileText, Activity, MessageSquare, Plus,
   Droplets, Heart, ChevronRight, Video, Pill, Stethoscope,
-  ShieldCheck, TrendingUp, Truck, CheckCircle2, Package, ShoppingBag, Hourglass, Building2, Copy
+  ShieldCheck, TrendingUp, Truck, CheckCircle2, Package, ShoppingBag, Hourglass, Building2, Copy, RefreshCw
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, cn } from "../../components/ui/shared.tsx";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -15,10 +15,14 @@ import { supabase } from "../../../lib/supabaseClient";
 
 const stepIcon: Record<string, any> = {
   order_submitted: FileText,
+  account_created: CheckCircle2,
+  id_verified: ShieldCheck,
+  intake_completed: Activity,
   medical_review: Stethoscope,
   rx_sent: Pill,
   shipped: Package,
   delivered: Truck,
+  refill_eligible: RefreshCw,
 };
 
 const subBrandTint: Record<string, string> = {
