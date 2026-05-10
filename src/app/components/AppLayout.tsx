@@ -43,7 +43,6 @@ export function AppLayout() {
   const path = location.pathname;
   const { user, role: authRole, signOut } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const onScroll = (e: React.UIEvent<HTMLElement>) => {
