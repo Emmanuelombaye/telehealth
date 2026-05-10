@@ -54,14 +54,14 @@ export function PublicLayout() {
         <motion.div 
           animate={{ height: scrolled ? 0 : "auto", opacity: scrolled ? 0 : 1 }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
-          className="bg-[#FDFBF7] text-slate-700 overflow-hidden whitespace-nowrap border-b border-slate-100"
+          className="bg-[#FDFBF7] text-slate-700 overflow-hidden whitespace-nowrap border-b border-slate-100 flex"
         >
-          <div className="py-2.5 animate-marquee flex gap-8 items-center text-sm font-medium">
-            {[1, 2, 3, 4].map(i => (
-              <span key={i} className="flex items-center gap-8">
-                <span className="flex items-center gap-2"><Plus className="h-4 w-4 text-orange-400" /> Licensed Providers in all 50 States</span>
-                <span className="flex items-center gap-2"><Plane className="h-4 w-4 text-purple-400" /> Free Expedited Shipment</span>
-                <span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-blue-400" /> U.S. Licensed Pharmacies</span>
+          <div className="py-2.5 animate-marquee flex gap-12 items-center text-sm font-medium w-max">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <span key={i} className="flex items-center gap-12">
+                <span className="flex items-center gap-2 text-slate-800"><Plus className="h-4 w-4 text-orange-400 stroke-[2.5]" /> Licensed Providers in all 50 States</span>
+                <span className="flex items-center gap-2 text-slate-800"><Plane className="h-4 w-4 text-purple-400 stroke-[2.5]" /> Free Expedited Shipment</span>
+                <span className="flex items-center gap-2 text-slate-800"><MapPin className="h-4 w-4 text-blue-500 stroke-[2.5]" /> U.S. Licensed Pharmacies</span>
               </span>
             ))}
           </div>
