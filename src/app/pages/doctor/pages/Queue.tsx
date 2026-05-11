@@ -46,6 +46,8 @@ export function DoctorQueuePage() {
   const [aiSummary, setAiSummary] = useState("");
   const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [selectedPharmacy, setSelectedPharmacy] = useState("truepill");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [isDispatching, setIsDispatching] = useState(false);
 
   // Filter orders for the queue
@@ -55,7 +57,25 @@ export function DoctorQueuePage() {
       "intake_completed"
     ].includes(o.status);
     const needsRefill = o.status === "refill_eligible" || (o.nextRefillAt && new Date(o.nextRefillAt) <= new Date());
-    return isActive || needsRefill;
+    
+    if (!isActive && !needsRefill) return false;
+
+    // Apply specific status filter if selected
+    if (statusFilter !== "all" && o.status !== statusFilter) {
+      if (statusFilter === "refill_eligible" && !needsRefill) return false;
+      if (statusFilter !== "refill_eligible" && o.status !== statusFilter) return false;
+    }
+
+    // Apply text search filter
+    if (searchQuery.trim() !== "") {
+      const q = searchQuery.toLowerCase();
+      const matchName = o.patientName?.toLowerCase().includes(q);
+      const matchMed = o.medication?.toLowerCase().includes(q);
+      const matchMRN = o.mrn?.toLowerCase().includes(q);
+      if (!matchName && !matchMed && !matchMRN) return false;
+    }
+
+    return true;
   });
   
   const selected = queue.find(o => o.id === selectedId) || null;
@@ -136,14 +156,30 @@ export function DoctorQueuePage() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <Input 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search patients, MRN, or medications..." 
               className="bg-white border-slate-200 rounded-xl pl-9 text-sm focus:border-emerald-500 outline-none w-full"
             />
           </div>
           <div className="flex items-center gap-3">
-             <Button variant="outline" className="rounded-xl border-slate-200 bg-white h-10 w-10 p-0 text-slate-500 hover:bg-slate-50">
-               <Filter className="h-4 w-4" />
-             </Button>
+             <div className="relative">
+               <select
+                 value={statusFilter}
+                 onChange={(e) => setStatusFilter(e.target.value)}
+                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+               >
+                 <option value="all">All Patients</option>
+                 <option value="medical_review">Needs Medical Review</option>
+                 <option value="order_submitted">Order Submitted</option>
+                 <option value="intake_completed">Intake Complete</option>
+                 <option value="refill_eligible">Refill Eligible</option>
+               </select>
+               <Button variant="outline" className={cn("rounded-xl border-slate-200 bg-white h-10 px-3 text-slate-500 hover:bg-slate-50 pointer-events-none gap-2", statusFilter !== 'all' && "text-emerald-700 bg-emerald-50 border-emerald-200")}>
+                 <Filter className="h-4 w-4" />
+                 {statusFilter !== 'all' && <span className="text-[10px] font-bold uppercase">{statusFilter.replace('_', ' ')}</span>}
+               </Button>
+             </div>
              <Button 
               onClick={handleRefresh}
               variant="outline"
