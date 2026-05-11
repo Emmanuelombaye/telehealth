@@ -125,7 +125,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
     )}>
       <div className="flex h-24 items-center justify-between border-b border-slate-100 px-6 shrink-0 bg-white">
         <Link to="/" className="flex items-center justify-center w-full py-4 group transition-all" onClick={onMobileClose}>
-          <img src="/PeakHealthLogo.png" alt="Peak Health Logo" className="h-20 w-auto object-contain transition-transform duration-500 group-hover:scale-110" />
+          <img src="/PeakHealthLogo.png" alt="Peak Health Logo" className="h-24 md:h-32 w-auto object-contain transition-transform duration-500 group-hover:scale-105" />
         </Link>
         {onMobileClose && (
           <button onClick={onMobileClose} className="md:hidden p-1.5 rounded-lg hover:bg-slate-100 transition-colors">

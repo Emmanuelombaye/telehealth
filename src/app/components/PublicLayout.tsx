@@ -158,12 +158,12 @@ export function PublicLayout() {
                   alt="Peak Health" 
                   className={cn(
                     "w-auto transition-all duration-700 group-hover:scale-105 mix-blend-multiply contrast-125",
-                    scrolled ? "h-8 md:h-10" : "h-10 md:h-12"
+                    scrolled ? "h-12 md:h-16" : "h-16 md:h-24"
                   )} 
                 />
                 <span className={cn(
                   "font-serif italic tracking-tighter text-[#0A2E1F] transition-all duration-700 whitespace-nowrap",
-                  scrolled ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
+                  scrolled ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl"
                 )}>
                   Peak Health
                 </span>
@@ -312,7 +312,7 @@ export function PublicLayout() {
             <div className="lg:col-span-2 space-y-10">
               <div className="space-y-6">
                 <Link to="/" className="flex items-center gap-4 group">
-                  <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-14 w-auto mix-blend-multiply contrast-125 transition-transform group-hover:scale-105" />
+                  <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-20 md:h-28 w-auto mix-blend-multiply contrast-125 transition-transform group-hover:scale-105" />
                   <span className="font-serif italic tracking-tighter text-[#0A2E1F] text-4xl">Peak Health</span>
                 </Link>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 leading-relaxed max-w-xs">
