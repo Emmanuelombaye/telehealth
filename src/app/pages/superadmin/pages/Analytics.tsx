@@ -33,7 +33,7 @@ export function SuperAdminAnalyticsPage() {
   const groupedRevenue = orders.reduce((acc, order) => {
     const date = new Date(order.created_at || new Date());
     const month = date.toLocaleString('default', { month: 'short' });
-    const brand = order.sub_brand || "Peak Health";
+    const brand = order.subBrand || order.sub_brand || "Peak Health";
     const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
     
     if (!acc[month]) acc[month] = { month, dateObj: date };
@@ -48,7 +48,7 @@ export function SuperAdminAnalyticsPage() {
       return rest;
     });
 
-  const brands = Array.from(new Set(orders.map(o => o.sub_brand || "Peak Health")));
+  const brands = Array.from(new Set(orders.map(o => o.subBrand || o.sub_brand || "Peak Health")));
   const brandColors = ["#10b981", "#064e3b", "#34d399", "#059669"];
 
   // GEO DATA MOCK (Since we don't have real location data in orders yet)

@@ -303,7 +303,7 @@ export function AdminOrdersPage() {
                     <div>
                       <div className="font-black text-sm italic uppercase tracking-tight text-slate-900">{item.patient_name || item.patientName}</div>
                       <div className="flex items-center gap-2 mt-1">
-                        <div className="text-[10px] text-primary font-black uppercase tracking-tighter">ORD: {item.order_number || item.id.substring(0, 8)}</div>
+                        <div className="text-[10px] text-primary font-black uppercase tracking-tighter">ORD: {item.order_number || (item.id ? String(item.id).substring(0, 8) : "N/A")}</div>
                         {item.mrn && <div className="text-[9px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-black border border-emerald-100">MRN: {item.mrn}</div>}
                       </div>
                     </div>

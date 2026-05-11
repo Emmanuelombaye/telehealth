@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  Building2, Plus, Search, Globe, Users, Activity, DollarSign,
+  Building2, Search, Globe, Users, Activity, DollarSign,
   ChevronRight, ToggleLeft, ToggleRight, Edit2, ExternalLink,
   Stethoscope, Package, CreditCard, BarChart3, ArrowLeft,
   CheckCircle2, Clock, AlertTriangle, Settings, X, Loader2, Rocket,

@@ -30,6 +30,7 @@ const SPECIALTIES = [
 ];
 
 function initials(name: string) {
+  if (!name) return "DR";
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]).join("").toUpperCase() || "DR";
 }
 
@@ -127,7 +128,7 @@ export function SuperAdminDoctorsPage() {
     const q = search.trim().toLowerCase();
     if (!q) return doctors;
     return doctors.filter(d =>
-      d.name.toLowerCase().includes(q) ||
+      (d.name || "").toLowerCase().includes(q) ||
       (d.email || "").toLowerCase().includes(q) ||
       (d.specialty || "").toLowerCase().includes(q) ||
       (d.npi || "").includes(q)

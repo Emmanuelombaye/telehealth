@@ -258,7 +258,8 @@ export const usePatientStore = create<AppState>()(
             lastApprovedAt: d.last_approved_at,
             nextRefillAt: d.next_refill_at,
             refillIntervalDays: d.refill_interval_days,
-            doctor_id: d.doctor_id
+            doctor_id: d.doctor_id,
+            created_at: d.created_at
           }));
           set({ orders: mappedOrders });
         } catch (error) {

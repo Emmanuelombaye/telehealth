@@ -51,7 +51,7 @@ export function SuperAdminDashboard() {
   const uniquePatients = new Set(orders.map(o => o.patient_name)).size;
 
   const liveBrandRevenueObj = orders.reduce((acc, order) => {
-    const brand = order.sub_brand || "Peak Health";
+    const brand = order.subBrand || order.sub_brand || "Peak Health";
     const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
     if (!acc[brand]) acc[brand] = { name: brand, revenue: 0 };
     acc[brand].revenue += amt;

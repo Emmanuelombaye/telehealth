@@ -34,7 +34,7 @@ export function SuperAdminFinancePage() {
   .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
   const brandFinancials = Object.values(activeOrders.reduce((acc, order) => {
-    const brand = order.sub_brand || "Peak Health";
+    const brand = order.subBrand || order.sub_brand || "Peak Health";
     const amt = typeof order.amount === 'number' ? order.amount : parseFloat(String(order.amount).replace(/[^0-9.-]+/g,"")) || 0;
     if (!acc[brand]) acc[brand] = { brand, mrr: 0, arr: 0, commission: 0, payout: 0, plan: "Enterprise", status: "paid" };
     acc[brand].mrr += amt;
@@ -45,8 +45,8 @@ export function SuperAdminFinancePage() {
   }, {} as Record<string, any>));
 
   const transactions = activeOrders.slice(0, 10).map(o => ({
-    id: o.order_number || o.id.slice(0, 8),
-    brand: o.sub_brand || "Peak Health",
+    id: o.order_number || (o.id ? String(o.id).slice(0, 8) : "N/A"),
+    brand: o.subBrand || o.sub_brand || "Peak Health",
     type: o.category || "Subscription",
     amount: typeof o.amount === 'number' ? `$${o.amount.toLocaleString()}` : o.amount || "$0.00",
     date: new Date(o.created_at).toLocaleDateString(),

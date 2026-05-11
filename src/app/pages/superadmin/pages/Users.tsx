@@ -61,7 +61,7 @@ export function SuperAdminUsersPage() {
         full_name: newUser.full_name,
         email: newUser.email,
         role: newUser.role,
-        sub_brand: newUser.brand,
+        brand_id: newUser.brand,
         status: 'active'
       }]);
       if (error) throw error;
@@ -91,7 +91,7 @@ export function SuperAdminUsersPage() {
     const matchSearch = (u.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.email || "").toLowerCase().includes(search.toLowerCase());
     const matchRole = roleFilter === "all" || u.role === roleFilter;
-    const matchBrand = brandFilter === "all" || u.sub_brand === brandFilter;
+    const matchBrand = brandFilter === "all" || (u.brand_id || u.sub_brand) === brandFilter;
     return matchSearch && matchRole && matchBrand;
   });
 
@@ -215,7 +215,7 @@ export function SuperAdminUsersPage() {
                     </div>
                     <div className="flex items-center gap-4 text-slate-400 font-bold text-sm">
                        <span className="flex items-center gap-2"><Mail size={14} className="text-emerald-600" /> {u.email}</span>
-                       <span className="flex items-center gap-2"><Building2 size={14} /> {u.sub_brand || "Peak Health"}</span>
+                       <span className="flex items-center gap-2"><Building2 size={14} /> {u.brand_id || u.sub_brand || "Peak Health"}</span>
                     </div>
                  </div>
               </div>
