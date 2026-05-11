@@ -6,7 +6,7 @@ import {
   Activity, Heart, Pill, Plus, Plane, MapPin, Shield, Flag,
   Instagram, Facebook, Linkedin, ExternalLink, HeartPulse,
   Brain, Zap, Sparkles, Rocket, Microscope, Wind, Layers,
-  ChevronUp, ShieldAlert
+  ChevronUp, ShieldAlert, ChevronRight
 } from "lucide-react";
 import { Button, cn } from "./ui/shared.tsx";
 import { PageErrorBoundary } from "./PageErrorBoundary";
@@ -97,6 +97,16 @@ export function PublicLayout() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenu) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => { document.body.style.overflow = "unset"; };
+  }, [mobileMenu]);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -104,13 +114,13 @@ export function PublicLayout() {
   return (
     <div className="min-h-screen bg-white font-sans text-[#0A0D14] selection:bg-emerald-100 selection:text-emerald-900">
       
-      {/* GLOBAL SCROLL PROGRESS - Minimalist Line */}
+      {/* GLOBAL SCROLL PROGRESS */}
       <motion.div 
         className="fixed top-0 left-0 right-0 h-[2px] bg-emerald-600 z-[100] origin-left"
         style={{ scaleX }}
       />
 
-      {/* REFINED BACK TO TOP BUTTON - Right end fix */}
+      {/* BACK TO TOP BUTTON */}
       <AnimatePresence>
         {scrolled && (
           <motion.button
@@ -118,7 +128,7 @@ export function PublicLayout() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={scrollToTop}
-            className="fixed right-8 bottom-8 h-14 w-14 rounded-full bg-[#0A2E1F] text-white flex items-center justify-center shadow-2xl hover:bg-emerald-600 transition-all z-50 group border border-emerald-400/20"
+            className="fixed right-8 bottom-8 h-14 w-14 rounded-full bg-[#0A2E1F] text-white flex items-center justify-center shadow-2xl hover:bg-emerald-600 transition-all z-[60] group border border-emerald-400/20"
           >
              <ChevronUp className="h-6 w-6 group-hover:-translate-y-1 transition-transform" />
           </motion.button>
@@ -126,7 +136,7 @@ export function PublicLayout() {
       </AnimatePresence>
 
       {/* Sticky Header Wrapper */}
-      <div className="sticky top-0 z-50">
+      <div className="sticky top-0 z-[100]">
         {/* Announcement Ticker */}
         <motion.div 
           animate={{ height: scrolled ? 0 : "auto", opacity: scrolled ? 0 : 1 }}
@@ -146,13 +156,13 @@ export function PublicLayout() {
 
         {/* Header */}
         <header className={cn(
-          "transition-all duration-500 bg-white/95 backdrop-blur-md border-b border-slate-100", 
+          "transition-all duration-500 bg-white/95 backdrop-blur-md border-b border-slate-100 relative z-[101]", 
           scrolled ? "py-3 shadow-md" : "py-5 shadow-sm"
         )}>
           <div className="max-w-7xl mx-auto px-6 flex items-center justify-between gap-4">
             {/* Left: Logo */}
             <div className="flex-shrink-0">
-              <Link to="/" className="flex items-center gap-2 group w-fit">
+              <Link to="/" className="flex items-center gap-2 group w-fit" onClick={() => setMobileMenu(false)}>
                 <img 
                   src="/PeakHealthLogo.png" 
                   alt="Peak Health" 
@@ -170,7 +180,7 @@ export function PublicLayout() {
               </Link>
             </div>
 
-            {/* Middle: Links */}
+            {/* Middle: Links (Hidden on Mobile) */}
             <nav className="hidden lg:flex items-center justify-center gap-8 lg:gap-12 flex-1">
               <div className="relative" onMouseEnter={() => setShowTreatments(true)} onMouseLeave={() => setShowTreatments(false)}>
                 <Link to="/explore-treatments" className="flex items-center gap-1.5 text-[15px] font-medium text-slate-700 hover:text-[#0A2E1F] transition-all py-2">
@@ -253,23 +263,6 @@ export function PublicLayout() {
                               </div>
                            </Link>
                          ))}
-
-                         <div className="col-span-2 mt-4 p-4 bg-emerald-900 rounded-[28px] flex items-center justify-between shadow-xl shadow-emerald-900/10">
-                            <div className="flex items-center gap-4">
-                               <div className="h-10 w-10 rounded-2xl bg-emerald-400/20 flex items-center justify-center">
-                                  <Rocket className="h-5 w-5 text-emerald-400" />
-                               </div>
-                               <div>
-                                  <p className="text-white text-xs font-black uppercase tracking-widest">Master Protocol</p>
-                                  <p className="text-emerald-300 text-[10px] font-medium">Customized Longevity Consultation</p>
-                               </div>
-                            </div>
-                            <Link to="/patient/shop">
-                              <Button className="h-9 px-6 rounded-full bg-white text-emerald-900 font-black text-[10px] uppercase tracking-widest hover:bg-emerald-50 transition-colors">
-                                Book Now
-                              </Button>
-                            </Link>
-                         </div>
                       </div>
                     </motion.div>
                   )}
@@ -287,72 +280,101 @@ export function PublicLayout() {
                   Explore Treatments
                 </Button>
               </Link>
-              <button className="lg:hidden text-slate-800 p-1" onClick={() => setMobileMenu(!mobileMenu)}>
+              <button 
+                className="lg:hidden text-slate-800 p-2 hover:bg-slate-50 rounded-xl transition-colors active:scale-90" 
+                onClick={() => setMobileMenu(!mobileMenu)}
+                aria-label="Toggle Menu"
+              >
                 {mobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </div>
           </div>
         </header>
 
-        {/* MOBILE MENU DRAWER */}
+        {/* RE-ENGINEERED MOBILE MENU OVERLAY */}
         <AnimatePresence>
           {mobileMenu && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden bg-white border-b border-slate-100 overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="lg:hidden fixed inset-0 top-[header-height] bg-white z-[99] flex flex-col"
+              style={{ top: scrolled ? "57px" : "105px" }} // Adjusted based on scrolled header height
             >
-              <div className="px-6 py-8 space-y-8">
-                <div className="space-y-4">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-50 pb-2">Primary Protocols</p>
-                  <div className="grid grid-cols-1 gap-3">
+              <motion.div
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -20, opacity: 0 }}
+                transition={{ delay: 0.1 }}
+                className="flex-1 overflow-y-auto px-6 py-8 pb-32 space-y-10"
+              >
+                {/* Treatments Section */}
+                <div className="space-y-6">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Clinical Protocols</h4>
+                  <div className="space-y-4">
                     {treatments.map((t) => (
                       <Link 
                         key={t.name} 
                         to={t.href} 
-                        className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 hover:bg-emerald-50 transition-colors"
+                        className="flex items-center gap-4 p-4 rounded-[2rem] bg-slate-50 hover:bg-emerald-50 transition-all group"
                         onClick={() => setMobileMenu(false)}
                       >
-                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", t.bg)}>
-                          <t.icon className={cn("h-5 w-5", t.color)} />
+                        <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm", t.bg)}>
+                          <t.icon className={cn("h-6 w-6", t.color)} />
                         </div>
-                        <span className="font-bold text-sm text-[#0A0D14] uppercase tracking-wide">{t.name}</span>
+                        <div className="flex-1">
+                          <p className="font-black text-sm text-[#0A2E1F] uppercase tracking-wide">{t.name}</p>
+                          <p className="text-[11px] text-slate-500 font-medium">{t.desc}</p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-slate-200 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
                       </Link>
                     ))}
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-50 pb-2">Bio-Optimization</p>
-                  <div className="grid grid-cols-2 gap-3">
+                {/* Bio Section */}
+                <div className="space-y-6">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Bio-Optimization</h4>
+                  <div className="grid grid-cols-2 gap-4">
                     {bioOptimizers.map((b) => (
                       <Link 
                         key={b.name} 
                         to={b.href} 
-                        className="flex flex-col gap-2 p-4 rounded-2xl bg-slate-50 hover:bg-emerald-50 transition-colors"
+                        className="flex flex-col gap-4 p-6 rounded-[2rem] border border-slate-100 hover:bg-slate-50 transition-all group"
                         onClick={() => setMobileMenu(false)}
                       >
-                        <b.icon className={cn("h-5 w-5", b.color)} />
-                        <span className="font-bold text-[11px] text-[#0A0D14] uppercase tracking-tight">{b.name}</span>
+                        <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center", b.bg)}>
+                           <b.icon className={cn("h-5 w-5", b.color)} />
+                        </div>
+                        <span className="font-black text-[12px] text-[#0A2E1F] uppercase tracking-tight leading-tight">{b.name}</span>
+                        <div className="pt-2 flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                          View Protocol <ArrowRight className="h-2.5 w-2.5" />
+                        </div>
                       </Link>
                     ))}
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-slate-100">
-                  <Link to="/how-it-works" className="block text-sm font-bold text-slate-700 uppercase tracking-widest" onClick={() => setMobileMenu(false)}>
-                    How It Works
+                {/* Secondary Links */}
+                <div className="pt-10 border-t border-slate-100 space-y-6">
+                  <Link to="/how-it-works" className="flex items-center justify-between group" onClick={() => setMobileMenu(false)}>
+                    <span className="text-lg font-black text-[#0A2E1F] uppercase tracking-tighter group-hover:text-emerald-600 transition-colors">How It Works</span>
+                    <ArrowRight className="h-5 w-5 text-slate-300 group-hover:text-emerald-600 transition-all" />
                   </Link>
-                  <Link to="/patient/login" className="block text-sm font-bold text-slate-700 uppercase tracking-widest" onClick={() => setMobileMenu(false)}>
-                    Log In
-                  </Link>
-                  <Link to="/patient/shop" onClick={() => setMobileMenu(false)}>
-                    <Button className="w-full h-12 rounded-2xl bg-[#0A2E1F] text-white font-bold uppercase tracking-widest text-xs mt-4">
-                      Get Started
-                    </Button>
+                  <Link to="/patient/login" className="flex items-center justify-between group" onClick={() => setMobileMenu(false)}>
+                    <span className="text-lg font-black text-[#0A2E1F] uppercase tracking-tighter group-hover:text-emerald-600 transition-colors">Patient Login</span>
+                    <ArrowRight className="h-5 w-5 text-slate-300 group-hover:text-emerald-600 transition-all" />
                   </Link>
                 </div>
+              </motion.div>
+
+              {/* Bottom Sticky Action */}
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-slate-100">
+                <Link to="/patient/shop" onClick={() => setMobileMenu(false)}>
+                  <Button className="w-full h-14 rounded-3xl bg-[#0A2E1F] text-white font-black uppercase tracking-[0.2em] text-[13px] shadow-2xl shadow-emerald-900/20 active:scale-95 transition-transform">
+                    Begin Assessment
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           )}
@@ -366,13 +388,11 @@ export function PublicLayout() {
         </PageErrorBoundary>
       </main>
 
-      {/* REFINED LUXURY EXECUTIVE FOOTER */}
+      {/* FOOTER */}
       <footer className="bg-white pt-24 pb-12 px-6 lg:px-20 border-t border-slate-100 overflow-hidden relative">
         <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-emerald-50/30 rounded-full blur-[120px] -mr-64 -mb-64 pointer-events-none"></div>
-        
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 mb-24">
-            
             <div className="lg:col-span-2 space-y-10">
               <div className="space-y-6">
                 <Link to="/" className="flex items-center gap-4 group">
@@ -383,7 +403,6 @@ export function PublicLayout() {
                   © {new Date().getFullYear()} Peak Health Technology Group, Inc. <br/> All clinical rights reserved.
                 </p>
               </div>
-
               <div className="flex items-center gap-4 flex-wrap">
                  <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#0A2E1F] text-white shadow-xl shadow-emerald-900/10 border border-emerald-400/20">
                     <Shield className="h-4 w-4 text-emerald-400" />
@@ -394,36 +413,17 @@ export function PublicLayout() {
                     <span className="text-[8px] font-black uppercase tracking-widest">Compounded in USA</span>
                  </div>
               </div>
-
-              <div className="flex items-center gap-6 pt-4">
-                 <a href="#" className="text-slate-300 hover:text-[#0A2E1F] transition-all hover:scale-110"><Instagram size={20} /></a>
-                 <a href="#" className="text-slate-300 hover:text-[#0A2E1F] transition-all hover:scale-110"><Facebook size={20} /></a>
-                 <a href="#" className="text-slate-300 hover:text-[#0A2E1F] transition-all hover:scale-110"><Linkedin size={20} /></a>
-                 <div className="h-5 w-px bg-slate-100"></div>
-                 <div className="flex items-center gap-2 group cursor-pointer opacity-50 hover:opacity-100 transition-opacity">
-                    <Star size={18} className="text-[#0A2E1F] fill-current" />
-                    <span className="text-[10px] font-black text-[#0A0D14] uppercase tracking-widest">Trustpilot</span>
-                 </div>
-              </div>
             </div>
-
             <div className="space-y-8">
                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Clinical Focus</h4>
                <ul className="space-y-5">
-                 {[
-                   { name: "Metabolic Optimization" },
-                   { name: "Cognitive Performance" },
-                   { name: "Longevity Science" },
-                   { name: "Biological Recovery" },
-                   { name: "Signature Protocols" },
-                 ].map(item => (
-                   <li key={item.name} className="group cursor-pointer">
-                      <span className="text-sm font-bold text-slate-700 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{item.name}</span>
+                 {["Metabolic Optimization", "Cognitive Performance", "Longevity Science", "Biological Recovery", "Signature Protocols"].map(name => (
+                   <li key={name} className="group cursor-pointer">
+                      <span className="text-sm font-bold text-slate-700 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{name}</span>
                    </li>
                  ))}
                </ul>
             </div>
-
             <div className="space-y-8">
                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Infrastructure</h4>
                <ul className="space-y-5">
@@ -439,24 +439,17 @@ export function PublicLayout() {
                  ))}
                </ul>
             </div>
-
             <div className="space-y-8">
                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Compliance</h4>
                <ul className="space-y-5">
-                 {[
-                   { name: "Safety Information" },
-                   { name: "Consent to Telehealth" },
-                   { name: "Privacy Policy" },
-                   { name: "Terms of Service" },
-                 ].map(item => (
-                   <li key={item.name} className="group cursor-pointer">
-                      <span className="text-sm font-bold text-slate-700 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{item.name}</span>
+                 {["Safety Information", "Consent to Telehealth", "Privacy Policy", "Terms of Service"].map(name => (
+                   <li key={name} className="group cursor-pointer">
+                      <span className="text-sm font-bold text-slate-700 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{name}</span>
                    </li>
                  ))}
                </ul>
             </div>
           </div>
-
           <div className="pt-16 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-12">
              <div className="flex items-center gap-10 opacity-30">
                 <div className="flex items-center gap-2">
@@ -468,8 +461,6 @@ export function PublicLayout() {
                    <span className="text-[8px] font-black uppercase tracking-[0.2em]">HIPAA Secure</span>
                 </div>
              </div>
-             
-             {/* REFINED SIGNATURE - Less massive, more elegant */}
              <div className="text-right">
                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300 mb-1">Biological Excellence</p>
                 <h2 className="text-4xl md:text-6xl font-black tracking-tight text-[#0A2E1F] leading-none select-none">
