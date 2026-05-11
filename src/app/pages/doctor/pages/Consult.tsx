@@ -137,7 +137,7 @@ function PatientPicker() {
       </div>
 
       {/* Patient grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           <div className="col-span-full flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
@@ -157,50 +157,147 @@ function PatientPicker() {
           <button
             key={order.id}
             onClick={() => navigate(`/doctor/consult?orderId=${order.order_number}`)}
-            className="group flex flex-col p-5 rounded-[1.25rem] bg-white border border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all duration-300 text-left relative overflow-hidden h-full"
+            style={{
+              transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
+            className={cn(
+              // Base card
+              "group relative flex flex-col p-6 rounded-[1.5rem] text-left overflow-hidden",
+              "transition-all duration-500",
+              // Resting state
+              "bg-white border-2 border-slate-200 shadow-md",
+              // Hover: zoom + gold outline + deep green fill
+              "hover:scale-[1.045] hover:z-20",
+              "hover:border-[#D4AF37] hover:bg-[#0A2E1F]",
+              "hover:shadow-[0_0_0_4px_rgba(212,175,55,0.35),0_25px_60px_rgba(10,46,31,0.45)]",
+            )}
           >
-            <div className="flex items-start justify-between mb-4 w-full">
-               <div className="flex items-center gap-3">
-                 <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-sm group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors">
-                   {order.patient_name?.charAt(0) || '?'}
-                 </div>
-                 <div>
-                   <p className="text-sm font-bold text-[#0A2E1F]">{order.patient_name || "Unknown Patient"}</p>
-                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{order.order_number}</p>
-                 </div>
-               </div>
-               {order.urgent && (
-                 <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 text-[10px] font-bold uppercase py-0.5">Urgent</Badge>
-               )}
+            {/* ── Gold shimmer sweep on hover ── */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none overflow-hidden rounded-[1.4rem]">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#0A2E1F] via-[#0d3a25] to-[#061a12]" />
+              {/* Animated gold shimmer */}
+              <div className="absolute -inset-full top-0 h-full w-1/2 z-10 block transform -skew-x-12 bg-gradient-to-r from-transparent to-[rgba(212,175,55,0.08)] opacity-0 group-hover:opacity-100 group-hover:animate-[shimmer_2s_ease-in-out_infinite]" />
+              {/* Corner gold accent */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#D4AF37]/10 rounded-bl-[4rem] blur-md" />
+              <div className="absolute bottom-0 left-0 w-20 h-20 bg-emerald-400/5 rounded-tr-[3rem] blur-lg" />
             </div>
 
-            <div className="space-y-2 flex-1">
-               <div className="flex items-center gap-2 text-sm text-slate-600">
-                 <Pill className="h-4 w-4 text-slate-400" />
-                 <span className="font-semibold">{order.medication || 'Pending Consult'}</span>
-               </div>
-               <div className="flex items-center gap-2 text-xs text-slate-500">
-                 <Clock className="h-3.5 w-3.5 text-slate-400" />
-                 Wait time: {Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000)} mins
-               </div>
+            {/* ── Animated gold pulse ring (outer) ── */}
+            <div className="absolute -inset-[3px] rounded-[1.6rem] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+              style={{
+                background: 'linear-gradient(135deg, #D4AF37, #F5D87A, #D4AF37, #B8962E)',
+                zIndex: -1,
+                animation: 'none',
+              }}
+            />
+
+            {/* ── Content layer (above overlays) ── */}
+            <div className="relative z-10 flex flex-col h-full">
+
+              {/* Header row */}
+              <div className="flex items-start justify-between mb-5 w-full">
+                <div className="flex items-center gap-3">
+                  {/* Avatar */}
+                  <div className={cn(
+                    "h-12 w-12 rounded-2xl flex items-center justify-center font-black text-base transition-all duration-500",
+                    "bg-slate-100 text-slate-600 border-2 border-slate-200",
+                    "group-hover:bg-[#D4AF37] group-hover:text-[#0A2E1F] group-hover:border-[#D4AF37] group-hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] group-hover:scale-110",
+                  )}>
+                    {order.patient_name?.charAt(0)?.toUpperCase() || '?'}
+                  </div>
+                  <div>
+                    <p className={cn(
+                      "text-sm font-black transition-colors duration-300",
+                      "text-[#0A2E1F] group-hover:text-white"
+                    )}>
+                      {order.patient_name || "Unknown Patient"}
+                    </p>
+                    <p className={cn(
+                      "text-[10px] font-bold uppercase tracking-widest mt-0.5 transition-colors duration-300",
+                      "text-slate-400 group-hover:text-[#D4AF37]"
+                    )}>
+                      {order.order_number}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Urgent badge or gold star on hover */}
+                <div className="shrink-0">
+                  {order.urgent ? (
+                    <span className="bg-red-500 text-white text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full">
+                      Urgent
+                    </span>
+                  ) : (
+                    <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
+                      <div className="h-8 w-8 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/40 flex items-center justify-center">
+                        <span className="text-[#D4AF37] text-base">✦</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Info rows */}
+              <div className="space-y-3 flex-1">
+                <div className={cn(
+                  "flex items-center gap-2.5 transition-colors duration-300",
+                  "text-slate-600 group-hover:text-white/90"
+                )}>
+                  <div className={cn(
+                    "h-7 w-7 rounded-lg flex items-center justify-center transition-all duration-300",
+                    "bg-slate-100 group-hover:bg-[#D4AF37]/20 group-hover:border group-hover:border-[#D4AF37]/30"
+                  )}>
+                    <Pill className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#D4AF37] transition-colors" />
+                  </div>
+                  <span className="text-sm font-bold">{order.medication || 'Pending Consult'}</span>
+                </div>
+                <div className={cn(
+                  "flex items-center gap-2.5 transition-colors duration-300",
+                  "text-slate-400 group-hover:text-white/60"
+                )}>
+                  <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-slate-50 group-hover:bg-white/5 transition-colors">
+                    <Clock className="h-3.5 w-3.5 text-slate-300 group-hover:text-emerald-400 transition-colors" />
+                  </div>
+                  <span className="text-xs font-semibold">
+                    Waiting: {Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000)} mins
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className={cn(
+                "mt-5 pt-4 flex items-center justify-between w-full transition-all duration-300",
+                "border-t border-slate-100 group-hover:border-[#D4AF37]/20"
+              )}>
+                {/* Status badge */}
+                <span className={cn(
+                  "text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all duration-300",
+                  order.status === 'medical_review'
+                    ? "bg-amber-50 text-amber-700 border-amber-200 group-hover:bg-amber-400/20 group-hover:text-amber-300 group-hover:border-amber-400/30"
+                    : order.status === 'order_submitted'
+                    ? "bg-blue-50 text-blue-700 border-blue-200 group-hover:bg-blue-400/20 group-hover:text-blue-300 group-hover:border-blue-400/30"
+                    : "bg-emerald-50 text-emerald-700 border-emerald-200 group-hover:bg-emerald-400/20 group-hover:text-emerald-300 group-hover:border-emerald-400/30"
+                )}>
+                  {order.status?.replace(/_/g, ' ')}
+                </span>
+
+                {/* "Join Room" CTA */}
+                <div className={cn(
+                  "flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest",
+                  "opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-3 group-hover:translate-x-0",
+                  "text-[#D4AF37]"
+                )}>
+                  Join Room <ChevronRight className="h-3.5 w-3.5" />
+                </div>
+              </div>
             </div>
 
-            <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between w-full">
-               <Badge variant="outline" className={cn(
-                 "text-[10px] font-bold uppercase border",
-                 order.status === 'medical_review' ? "bg-amber-50 text-amber-700 border-amber-200" :
-                 order.status === 'order_submitted' ? "bg-blue-50 text-blue-700 border-blue-200" :
-                 "bg-emerald-50 text-emerald-700 border-emerald-200"
-               )}>
-                 {order.status?.replace('_', ' ')}
-               </Badge>
-               <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
-                  Join Room <ChevronRight className="h-3 w-3" />
-               </div>
-            </div>
+            {/* ── Bottom gold bar accent (slides in on hover) ── */}
+            <div className="absolute bottom-0 left-0 h-[3px] w-0 group-hover:w-full bg-gradient-to-r from-[#D4AF37] via-[#F5D87A] to-[#D4AF37] transition-all duration-700 rounded-b-[1.5rem]" />
           </button>
         ))}
       </div>
+
     </div>
   );
 }
