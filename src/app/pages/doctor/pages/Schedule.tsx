@@ -286,25 +286,26 @@ export function DoctorSchedulePage() {
                                       <Button
                                         onClick={() => handleConfirm(s.id, s.order_number)}
                                         disabled={isUpdating === s.id}
-                                        className="h-9 px-5 rounded-xl bg-[#0A2E1F] hover:bg-[#0d3f2a] text-white font-bold text-xs gap-1.5 shadow-md"
+                                        className="h-9 px-5 rounded-xl bg-[#0A2E1F] hover:bg-[#061a12] text-white font-bold text-[11px] uppercase tracking-wider gap-2 shadow-lg shadow-emerald-900/20 border border-emerald-800/30 transition-all active:scale-95"
                                       >
-                                        {isUpdating === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                                        {isUpdating === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />}
                                         Confirm Session
                                       </Button>
                                     )}
                                     {isConfirmed && (
                                       <Button
                                         onClick={() => navigate(`/doctor/consult?orderId=${s.order_number}`)}
-                                        className="h-9 px-5 rounded-xl bg-[#0A2E1F] hover:bg-[#0d3f2a] text-white font-bold text-xs gap-1.5 shadow-md"
+                                        className="h-9 px-5 rounded-xl bg-[#0A2E1F] hover:bg-[#061a12] text-white font-bold text-[11px] uppercase tracking-wider gap-2 shadow-lg shadow-emerald-900/20 border border-emerald-800/30 transition-all active:scale-95"
                                       >
-                                        <Video className="h-3.5 w-3.5" /> Join Consultation Room
+                                        <Video className="h-3.5 w-3.5 text-emerald-400" /> Join Consultation Room
                                       </Button>
                                     )}
                                     <Button
                                       variant="outline"
                                       onClick={() => setSelectedId(null)}
-                                      className="h-9 px-4 rounded-xl border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-100"
+                                      className="h-9 px-4 rounded-xl border-slate-200 text-slate-500 font-bold text-[11px] uppercase tracking-wider hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all flex items-center gap-2 group/dismiss"
                                     >
+                                      <AlertCircle className="h-3.5 w-3.5 opacity-0 group-hover/dismiss:opacity-100 transition-opacity" />
                                       Dismiss
                                     </Button>
                                   </motion.div>
