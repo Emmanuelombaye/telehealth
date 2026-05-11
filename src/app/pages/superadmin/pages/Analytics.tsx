@@ -4,7 +4,7 @@ import {
   Zap, ShieldCheck, Globe2, CreditCard, ArrowUpRight, Radar,
   PieChart as PieChartIcon, BarChart3, LineChart as LineChartIcon
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Badge, cn } from "../../../components/ui/shared.tsx";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell, PieChart, Pie, LineChart, Line, Legend
