@@ -143,7 +143,7 @@ export function SuperAdminFinancePage() {
       {/* PRINT-ONLY HEADER */}
       <div className="hidden print:block mb-10 border-b-4 border-[#0A2E1F] pb-10">
          <div className="flex items-center justify-between">
-            <img src="/logo-icon.png" alt="Logo" className="h-24 w-auto mix-blend-multiply" />
+            <img src="/PeakHealthLogo.png" alt="Logo" className="h-24 w-auto mix-blend-multiply" />
             <div className="text-right">
                <h1 className="text-4xl font-black text-[#0A2E1F] uppercase tracking-tighter">Financial Audit Report</h1>
                <p className="text-slate-500 font-bold uppercase tracking-widest mt-1">Date: {new Date().toLocaleDateString()}</p>
