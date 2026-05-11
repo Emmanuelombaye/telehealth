@@ -6,6 +6,7 @@ import {
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
+import { useNavigate } from "react-router";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const timeSlots = [
@@ -25,6 +26,7 @@ const defaultSchedule: Record<string, { enabled: boolean; start: string; end: st
 
 export function DoctorAvailabilityPage() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [schedule, setSchedule] = useState(defaultSchedule);
   const [tab, setTab] = useState<"schedule" | "bookings">("schedule");
   const [copied, setCopied] = useState(false);
@@ -295,7 +297,11 @@ export function DoctorAvailabilityPage() {
                       {b.zoom_status?.replace('_', ' ')}
                     </span>
                     {b.zoom_status === 'confirmed' && (
-                      <Button size="sm" className="rounded-xl text-xs h-8 gap-1 bg-blue-600 hover:bg-blue-700">
+                      <Button 
+                        size="sm" 
+                        className="rounded-xl text-xs h-8 gap-1 bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20"
+                        onClick={() => navigate(`/doctor/consult?orderId=${b.order_number}`)}
+                      >
                         <Video className="h-3.5 w-3.5" /> Join
                       </Button>
                     )}
