@@ -10,12 +10,12 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 import { useAuthStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
 
-// ─── Patient Picker (shown when no orderId in URL) ───────────────────────────
 function PatientPicker() {
   const navigate = useNavigate();
   const [queue, setQueue] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     async function fetchQueue() {
@@ -35,7 +35,6 @@ function PatientPicker() {
     }
     fetchQueue();
 
-    // Real-time sync
     const channel = supabase
       .channel('consult-queue-watch')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchQueue())
@@ -44,137 +43,144 @@ function PatientPicker() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const statusConfig: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-    order_submitted:  { label: "Awaiting Review", color: "text-amber-400",  bg: "bg-amber-400/10",  dot: "bg-amber-400" },
-    medical_review: { label: "In Review",       color: "text-[#22c55e]",  bg: "bg-[#22c55e]/10", dot: "bg-[#22c55e]" },
-    rx_sent:          { label: "Rx Dispatched",   color: "text-blue-400",   bg: "bg-blue-400/10",  dot: "bg-blue-400" },
-  };
-
-  const filtered = queue.filter(o =>
-    !search || o.patient_name?.toLowerCase().includes(search.toLowerCase()) ||
-    o.medication?.toLowerCase().includes(search.toLowerCase()) ||
-    o.order_number?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = queue.filter(o => {
+    if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return o.patient_name?.toLowerCase().includes(q) ||
+             o.medication?.toLowerCase().includes(q) ||
+             o.order_number?.toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-[1200px] mx-auto space-y-8 pb-10 animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
-            <span className="text-[10px] font-black text-[#22c55e] uppercase tracking-[0.2em]">Live Queue Active</span>
+          <div className="flex items-center gap-2 mb-1.5">
+             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+             <span className="text-emerald-700 text-[10px] font-bold uppercase tracking-widest">Command Suite Active</span>
           </div>
-          <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-tight">Consultation Hub</h1>
-          <p className="text-[#d4c4a8] text-[10px] font-black uppercase tracking-[0.3em] mt-1 opacity-80">
-            Select a patient to begin — {filtered.length} clinical specimens awaiting review
+          <h1 className="text-2xl font-bold text-[#0A2E1F]">Video Consultation Lobby</h1>
+          <p className="text-slate-500 text-xs font-medium mt-1">
+            Select a patient to initiate a secure telehealth session.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7f9488]" />
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search patient or Rx..."
-              className="w-64 bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-9 pr-4 text-xs font-bold text-white focus:border-[#22c55e]/50 outline-none transition-all"
+              placeholder="Search patient, medication, or ID..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-sm font-semibold text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all placeholder:text-slate-400"
             />
           </div>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-slate-50 border border-slate-200 rounded-xl py-2 px-4 text-sm font-semibold text-slate-700 focus:border-emerald-500 outline-none hover:bg-slate-100 transition-colors"
+          >
+            <option value="all">All Statuses</option>
+            <option value="order_submitted">Awaiting Review</option>
+            <option value="medical_review">In Review</option>
+            <option value="rx_sent">Dispatched</option>
+          </select>
         </div>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: "Awaiting Review", value: queue.filter(o => o.status === 'order_submitted').length, color: "text-amber-400", bg: "bg-amber-400/10" },
-          { label: "In Active Review", value: queue.filter(o => o.status === 'medical_review').length, color: "text-[#22c55e]", bg: "bg-[#22c55e]/10" },
-          { label: "Rx Dispatched", value: queue.filter(o => o.status === 'rx_sent').length, color: "text-blue-400", bg: "bg-blue-400/10" },
+          { label: "Awaiting Review", value: queue.filter(o => o.status === 'order_submitted').length, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
+          { label: "In Active Review", value: queue.filter(o => o.status === 'medical_review').length, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+          { label: "Consult Completed", value: queue.filter(o => o.status === 'rx_sent').length, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
         ].map((stat, i) => (
-          <div key={i} className={`${stat.bg} border border-white/5 rounded-2xl p-4`}>
-            <p className={`text-2xl font-black ${stat.color} italic`}>{stat.value}</p>
-            <p className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mt-0.5">{stat.label}</p>
-          </div>
+          <Card key={i} className={`border ${stat.border} rounded-[1.25rem] shadow-sm hover:shadow-md transition-shadow`}>
+             <CardContent className="p-5 flex items-center justify-between">
+                <div>
+                   <p className="text-sm font-bold text-slate-700">{stat.label}</p>
+                   <p className="text-xs text-slate-500 mt-0.5">Live metrics</p>
+                </div>
+                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center border", stat.bg, stat.border)}>
+                   <span className={`text-xl font-bold ${stat.color}`}>{stat.value}</span>
+                </div>
+             </CardContent>
+          </Card>
         ))}
       </div>
 
-      {/* Patient list */}
-      <div className="space-y-3">
+      {/* Patient grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          <div className="flex items-center justify-center py-24">
-            <Loader2 className="h-8 w-8 animate-spin text-[#22c55e]" />
+          <div className="col-span-full flex flex-col items-center justify-center py-24 gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+            <p className="text-slate-500 text-sm font-bold animate-pulse">Syncing clinical queue...</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
-            <div className="h-16 w-16 rounded-3xl bg-white/5 flex items-center justify-center border border-white/5">
-              <Stethoscope className="h-8 w-8 text-white/20" />
+          <div className="col-span-full flex flex-col items-center justify-center py-24 text-center bg-white border border-slate-200 rounded-[1.5rem] shadow-sm">
+            <div className="h-16 w-16 rounded-2xl bg-emerald-50 flex items-center justify-center mb-4 text-emerald-600">
+              <CheckCircle2 className="h-8 w-8" />
             </div>
-            <p className="text-lg font-black text-white/30 italic uppercase tracking-wider">
-              {search ? "No matching patients" : "Queue is clear"}
-            </p>
-            <p className="text-xs font-bold text-[#7f9488] uppercase tracking-widest">
-              {search ? "Try a different search term" : "No patients awaiting consultation"}
+            <h3 className="text-lg font-bold text-[#0A2E1F]">No Patients Found</h3>
+            <p className="text-sm text-slate-500 mt-1">
+              {search || statusFilter !== 'all' ? "Try adjusting your filters." : "Your consultation queue is empty."}
             </p>
           </div>
-        ) : filtered.map((order, i) => {
-          const cfg = statusConfig[order.status] || statusConfig.order_submitted;
-          return (
-            <button
-              key={order.id}
-              onClick={() => navigate(`/doctor/consult?orderId=${order.order_number}`)}
-              className="w-full group flex items-center gap-5 p-5 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:border-[#22c55e]/30 hover:bg-[#22c55e]/5 transition-all duration-200 text-left relative overflow-hidden"
-            >
-              {/* Priority number */}
-              <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/5 group-hover:border-[#22c55e]/30 flex items-center justify-center font-black text-lg text-[#7f9488] group-hover:text-[#22c55e] transition-all shrink-0">
-                {i + 1}
-              </div>
+        ) : filtered.map((order, i) => (
+          <button
+            key={order.id}
+            onClick={() => navigate(`/doctor/consult?orderId=${order.order_number}`)}
+            className="group flex flex-col p-5 rounded-[1.25rem] bg-white border border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all duration-300 text-left relative overflow-hidden h-full"
+          >
+            <div className="flex items-start justify-between mb-4 w-full">
+               <div className="flex items-center gap-3">
+                 <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-sm group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors">
+                   {order.patient_name?.charAt(0) || '?'}
+                 </div>
+                 <div>
+                   <p className="text-sm font-bold text-[#0A2E1F]">{order.patient_name || "Unknown Patient"}</p>
+                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{order.order_number}</p>
+                 </div>
+               </div>
+               {order.urgent && (
+                 <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 text-[10px] font-bold uppercase py-0.5">Urgent</Badge>
+               )}
+            </div>
 
-              {/* Avatar */}
-              <div className="h-12 w-12 rounded-2xl bg-[#22c55e]/10 border border-[#22c55e]/20 flex items-center justify-center font-black text-[#22c55e] text-lg shrink-0">
-                {order.patient_name?.charAt(0) || '?'}
-              </div>
+            <div className="space-y-2 flex-1">
+               <div className="flex items-center gap-2 text-sm text-slate-600">
+                 <Pill className="h-4 w-4 text-slate-400" />
+                 <span className="font-semibold">{order.medication || 'Pending Consult'}</span>
+               </div>
+               <div className="flex items-center gap-2 text-xs text-slate-500">
+                 <Clock className="h-3.5 w-3.5 text-slate-400" />
+                 Wait time: {Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000)} mins
+               </div>
+            </div>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-1">
-                  <p className="text-sm font-black text-white italic truncate">{order.patient_name || "Unknown Patient"}</p>
-                  {order.urgent && (
-                    <span className="text-[9px] font-black text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full uppercase tracking-wide animate-pulse shrink-0">
-                      URGENT
-                    </span>
-                  )}
-                </div>
-                <p className="text-[10px] font-bold text-[#7f9488] uppercase tracking-widest truncate">
-                  {order.medication} · {order.category}
-                </p>
-                <p className="text-[9px] text-[#7f9488]/60 mt-0.5 font-mono">#{order.order_number}</p>
-              </div>
-
-              {/* Status */}
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${cfg.bg} shrink-0`}>
-                <div className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-                <span className={`text-[9px] font-black uppercase tracking-widest ${cfg.color}`}>{cfg.label}</span>
-              </div>
-
-              {/* Wait time */}
-              <div className="flex items-center gap-1.5 text-[#7f9488] shrink-0 hidden md:flex">
-                <Clock className="h-3 w-3" />
-                <span className="text-[10px] font-bold">
-                  {Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000)}m
-                </span>
-              </div>
-
-              {/* Arrow */}
-              <ChevronRight className="h-5 w-5 text-[#7f9488] group-hover:text-[#22c55e] group-hover:translate-x-0.5 transition-all shrink-0" />
-
-              {/* Hover glow */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#22c55e]/0 to-[#22c55e]/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-            </button>
-          );
-        })}
+            <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between w-full">
+               <Badge variant="outline" className={cn(
+                 "text-[10px] font-bold uppercase border",
+                 order.status === 'medical_review' ? "bg-amber-50 text-amber-700 border-amber-200" :
+                 order.status === 'order_submitted' ? "bg-blue-50 text-blue-700 border-blue-200" :
+                 "bg-emerald-50 text-emerald-700 border-emerald-200"
+               )}>
+                 {order.status?.replace('_', ' ')}
+               </Badge>
+               <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+                  Join Room <ChevronRight className="h-3 w-3" />
+               </div>
+            </div>
+          </button>
+        ))}
       </div>
     </div>
   );
 }
+
 
 // ─── Main Consult Page ────────────────────────────────────────────────────────
 export function DoctorConsultPage() {
@@ -425,132 +431,141 @@ export function DoctorConsultPage() {
 
   // ── Full Consultation UI ──
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col gap-4 overflow-hidden -mt-2">
+    <div className="h-[calc(100vh-140px)] flex flex-col gap-4 overflow-hidden -mt-2 animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-3">
+      <div className="bg-white border border-slate-200 rounded-2xl px-6 py-4 flex items-center justify-between shadow-sm shrink-0">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/doctor/consult')}
-            className="h-8 w-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+            className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 flex items-center justify-center transition-all text-slate-500"
           >
-            <ArrowLeft className="h-4 w-4 text-white" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-xl font-black text-white italic uppercase tracking-tighter leading-tight">{order.patient_name || 'Patient Details'}</h1>
-            <p className="text-[10px] font-black text-[#d4c4a8] uppercase tracking-[0.2em] mt-0.5 opacity-80">
-              Consultation ID: {order.order_number} · {order.category}
-            </p>
+            <h1 className="text-xl font-bold text-[#0A2E1F] leading-tight">{order.patient_name || 'Patient Details'}</h1>
+            <div className="flex items-center gap-2 mt-0.5">
+               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                 ID: {order.order_number}
+               </span>
+               <span className="h-1 w-1 rounded-full bg-slate-300" />
+               <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                 {order.category}
+               </span>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="rounded-full bg-emerald-500/10 text-emerald-400 border-emerald-500/20 gap-1.5 py-1 text-[10px] font-black">
-            <ShieldCheck className="h-3 w-3" /> HIPAA SECURE
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="rounded-xl bg-emerald-50 text-emerald-700 border-emerald-200 gap-1.5 py-1.5 px-3 text-[10px] font-bold uppercase shadow-sm">
+            <ShieldCheck className="h-3.5 w-3.5" /> HIPAA SECURE
           </Badge>
-          <div className="h-8 w-[1px] bg-white/10 mx-2" />
+          <div className="h-8 w-px bg-slate-200 mx-1" />
           {order.zoom_status === 'confirmed' && (
             <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl h-9 text-xs font-bold border-white/10 bg-white/5 text-white hover:bg-white/10"
+              className="rounded-xl h-10 px-4 text-xs font-bold bg-[#0A2E1F] text-white hover:bg-[#153e2d] shadow-md shadow-emerald-900/10"
               onClick={() => window.open(order.zoom_join_url || 'https://zoom.us', '_blank')}
             >
-              <Video className="h-3.5 w-3.5 mr-2" /> Join Zoom Call
+              <Video className="h-4 w-4 mr-2" /> Join Zoom Meeting
             </Button>
           )}
           <Button
             variant="outline"
-            size="sm"
-            className="rounded-xl h-9 text-xs font-bold border-white/10 bg-white/5 text-white hover:bg-white/10"
+            className="rounded-xl h-10 px-4 text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
             onClick={() => navigate(`/doctor/consult`)}
           >
-            <Users className="h-3.5 w-3.5 mr-2" /> All Patients
+            <Users className="h-4 w-4 mr-2" /> View Queue
           </Button>
         </div>
       </div>
 
-      <div className="flex-1 flex gap-4 overflow-hidden">
-        {/* Left Column: Video & Controls */}
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden min-w-0">
-          <div className="flex-1 bg-slate-900 rounded-[32px] relative overflow-hidden group shadow-2xl flex items-center justify-center border border-white/5">
+      <div className="flex-1 flex gap-6 overflow-hidden">
+        {/* Left Column: Video & AI Scribe */}
+        <div className="flex-1 flex flex-col gap-6 overflow-hidden min-w-0">
+          
+          {/* Video Feed */}
+          <div className="flex-1 bg-black rounded-[2rem] relative overflow-hidden group shadow-xl flex items-center justify-center border-4 border-slate-100">
             <div className="text-center">
-              <div className="h-24 w-24 rounded-full bg-slate-800 border-4 border-slate-700 mx-auto flex items-center justify-center mb-4 shadow-xl">
-                <span className="text-3xl font-black text-slate-400">
+              <div className="h-28 w-28 rounded-full bg-slate-800 border-4 border-slate-700 mx-auto flex items-center justify-center mb-5 shadow-2xl">
+                <span className="text-4xl font-black text-slate-400">
                   {order.patient_name?.charAt(0) || '?'}
                 </span>
               </div>
-              <p className="text-white font-bold">{order.patient_name}</p>
-              <p className="text-slate-400 text-sm mt-1">Secure Connection Active</p>
+              <p className="text-white text-lg font-bold">{order.patient_name}</p>
+              <div className="flex items-center justify-center gap-2 mt-2">
+                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                 <p className="text-emerald-400 text-xs font-bold tracking-widest uppercase">Secure Connection Active</p>
+              </div>
             </div>
 
-            <div className="absolute top-6 left-6 space-y-2">
+            <div className="absolute top-6 left-6">
               <div 
                 className={cn(
-                  "bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/10 transition-all",
-                  isSyncingVitals ? "border-emerald-500/50" : ""
+                  "bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-2 border transition-all",
+                  isSyncingVitals ? "border-emerald-500/50 text-emerald-400" : "border-white/10 text-white"
                 )}
                 onMouseEnter={() => setIsSyncingVitals(true)}
                 onMouseLeave={() => setIsSyncingVitals(false)}
               >
-                <Activity className={cn("h-3.5 w-3.5", isSyncingVitals ? "text-emerald-400 animate-pulse" : "text-emerald-400")} />
-                <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                <Activity className={cn("h-4 w-4", isSyncingVitals ? "animate-pulse" : "")} />
+                <span className="text-[10px] font-black uppercase tracking-widest">
                   {isSyncingVitals ? 'Syncing Live Vitals...' : 'Vitals Synced'}
                 </span>
               </div>
             </div>
 
-            {/* Controls - Optimized for full visibility */}
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 px-4 py-3 bg-black/60 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:bottom-12 z-50 whitespace-nowrap min-w-fit">
+            {/* Controls */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-4 px-6 py-4 bg-black/60 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:bottom-10 z-50">
               <button
                 onClick={() => setIsMuted(!isMuted)}
-                className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300",
-                  isMuted ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/10 text-white hover:bg-white/20")}
+                className={cn("h-14 w-14 rounded-2xl flex items-center justify-center transition-all duration-300",
+                  isMuted ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/10 text-white hover:bg-white/20 hover:scale-105")}
               >
-                {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
               </button>
               
               <button
                 onClick={() => setIsVideoOff(!isVideoOff)}
-                className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300",
-                  isVideoOff ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/10 text-white hover:bg-white/20")}
+                className={cn("h-14 w-14 rounded-2xl flex items-center justify-center transition-all duration-300",
+                  isVideoOff ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/10 text-white hover:bg-white/20 hover:scale-105")}
               >
-                {isVideoOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
+                {isVideoOff ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
               </button>
 
               <button 
                 onClick={() => navigate('/doctor/queue')}
-                className="h-12 w-20 bg-red-600 hover:bg-red-700 text-white rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl shadow-red-600/40 group/zap"
+                className="h-14 w-24 bg-red-600 hover:bg-red-700 text-white rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl shadow-red-600/40 hover:scale-105"
               >
-                <Zap className="h-6 w-6 fill-current group-hover:scale-110 transition-transform" />
+                <Zap className="h-7 w-7" />
               </button>
 
               <Link to={`/doctor/messages?userId=${order.user_id}`}>
-                <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all duration-300">
-                  <MessageSquare className="h-5 w-5" />
+                <button className="h-14 w-14 bg-white/10 text-white hover:bg-white/20 hover:scale-105 rounded-2xl flex items-center justify-center transition-all duration-300">
+                  <MessageSquare className="h-6 w-6" />
                 </button>
               </Link>
-
-              <button className="h-12 w-12 bg-white/10 text-white hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all duration-300">
-                <MoreHorizontal className="h-5 w-5" />
-              </button>
             </div>
           </div>
 
           {/* AI Scribe */}
-          <Card className="h-40 border-none bg-emerald-500/5 border border-emerald-500/10 overflow-hidden shrink-0">
-            <CardContent className="p-4 flex flex-col h-full">
-              <div className="flex items-center gap-2 mb-2">
+          <Card className="h-44 border border-emerald-100 bg-emerald-50/50 shadow-sm overflow-hidden shrink-0 rounded-[1.5rem]">
+            <CardContent className="p-5 flex flex-col h-full">
+              <div className="flex items-center gap-2 mb-3 pb-3 border-b border-emerald-100/50">
                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">AI Scribe · Live Transcription</span>
+                <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest flex items-center gap-2">
+                  <Bot className="h-4 w-4" /> AI Scribe Active
+                </span>
               </div>
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-1">
+              <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar space-y-2">
                 {transcript.length === 0 ? (
-                   <p className="text-xs text-slate-400 italic">Listening and securely transcribing clinical notes...</p>
+                   <div className="flex items-center justify-center h-full gap-3 text-emerald-600/60">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <p className="text-sm font-semibold">Listening and securely transcribing...</p>
+                   </div>
                 ) : (
                   transcript.map((line, idx) => (
-                    <p key={idx} className="text-xs text-emerald-400/80 font-medium font-mono animate-in slide-in-from-left-1 duration-300">
-                      <span className="text-emerald-500/40 mr-2">[{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
-                      {line}
-                    </p>
+                    <div key={idx} className="flex gap-3 text-sm animate-in slide-in-from-left-1 duration-300">
+                      <span className="text-emerald-400 font-mono text-xs mt-0.5 shrink-0">[{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}]</span>
+                      <span className="text-emerald-900 font-medium">{line}</span>
+                    </div>
                   ))
                 )}
               </div>
@@ -559,31 +574,32 @@ export function DoctorConsultPage() {
         </div>
 
         {/* Right Column: SOAP Notes & e-Rx */}
-        <div className="w-[380px] flex flex-col gap-4 overflow-hidden shrink-0">
-          <Card className="flex-1 overflow-hidden border-[#1a2620] bg-[#0c120f] shadow-xl flex flex-col">
-            <div className="p-4 border-b border-[#1a2620] flex items-center justify-between bg-white/[0.03] backdrop-blur-sm">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#22c55e]" />
-                <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-[#d4c4a8]">Clinical Documentation Terminal</h3>
+        <div className="w-[420px] flex flex-col gap-6 overflow-hidden shrink-0">
+          
+          <Card className="flex-1 overflow-hidden border border-slate-200 bg-white shadow-sm flex flex-col rounded-[1.5rem]">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2.5">
+                <FileSignature className="h-5 w-5 text-emerald-600" />
+                <h3 className="font-bold text-[#0A2E1F] uppercase tracking-wider text-sm">Clinical Notes</h3>
               </div>
-              <Badge variant="outline" className="bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/30 text-[9px] font-black uppercase tracking-widest">AI ASSISTED</Badge>
+              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold uppercase tracking-widest shadow-sm">AI ASSISTED</Badge>
             </div>
             <CardContent className="p-0 overflow-y-auto flex-1 custom-scrollbar">
-              <div className="p-5 space-y-6">
+              <div className="p-6 space-y-6">
                 {(['subjective', 'objective', 'assessment', 'plan'] as const).map(field => (
                   <div key={field}>
-                    <p className="text-[9px] font-black text-[#7f9488] uppercase tracking-[0.2em] mb-2.5 flex items-center gap-2">
-                      <div className="h-1 w-1 rounded-full bg-[#22c55e]/50" />
-                      {field} Analysis
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      {field}
                     </p>
                     <textarea
                       value={soapNotes[field]}
                       onChange={e => setSoapNotes({ ...soapNotes, [field]: e.target.value })}
                       className={cn(
-                        "w-full text-xs font-medium leading-relaxed bg-black/30 border p-3 rounded-xl resize-none transition-all focus:outline-none",
+                        "w-full text-sm font-medium leading-relaxed border p-4 rounded-xl resize-none transition-all outline-none",
                         field === 'assessment'
-                          ? "border-[#22c55e]/30 text-[#22c55e] focus:border-[#22c55e]/60 h-20"
-                          : "border-white/5 text-[#d4c4a8] focus:border-white/20 h-20"
+                          ? "bg-emerald-50/30 border-emerald-200 text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-24"
+                          : "bg-slate-50 border-slate-200 text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white h-24"
                       )}
                     />
                   </div>
@@ -593,65 +609,67 @@ export function DoctorConsultPage() {
           </Card>
 
           {/* E-Prescribing */}
-          <Card className="border-[#1a2620] bg-gradient-to-br from-[#0c120f] to-[#060807] shadow-2xl overflow-hidden shrink-0 border-t-[#22c55e]/30">
-            <div className="p-4 bg-[#22c55e] text-[#060807] flex items-center gap-2">
-              <Pill className="h-4 w-4" />
-              <h3 className="font-black text-[10px] uppercase tracking-[0.2em]">E-Prescribing Directive</h3>
+          <Card className="border border-emerald-200 bg-white shadow-md overflow-hidden shrink-0 rounded-[1.5rem]">
+            <div className="p-4 bg-emerald-50 border-b border-emerald-100 flex items-center gap-2.5">
+              <Pill className="h-5 w-5 text-emerald-600" />
+              <h3 className="font-bold text-emerald-900 uppercase tracking-wider text-sm">E-Prescribing</h3>
             </div>
-            <CardContent className="p-5 space-y-5">
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <p className="text-[9px] font-black text-[#d4c4a8] uppercase tracking-widest opacity-60">Confirmed Medication</p>
+            <CardContent className="p-6 space-y-5">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Medication</p>
                   <input 
                     value={medication}
                     onChange={(e) => setMedication(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-[#22c55e]/50 outline-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <p className="text-[9px] font-black text-[#d4c4a8] uppercase tracking-widest opacity-60">Dosage / Instructions</p>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Instructions</p>
                   <textarea 
                     value={dosage}
                     onChange={(e) => setDosage(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-[#22c55e]/50 outline-none h-16 resize-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all h-20 resize-none"
                     placeholder="e.g. Inject three units weekly"
                   />
                 </div>
               </div>
-              <div className="space-y-3">
+              
+              <div className="space-y-3 pt-2">
                 <Button
                   onClick={handleFinalize}
                   disabled={isFinalizing || isRequestingVideo || isDisqualifying}
-                  className="w-full rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-black h-11 font-black uppercase text-xs tracking-widest shadow-lg shadow-[#22c55e]/20"
+                  className="w-full rounded-xl bg-[#0A2E1F] hover:bg-[#153e2d] text-white h-12 font-bold uppercase text-xs tracking-widest shadow-lg shadow-emerald-900/20"
                 >
                   {isFinalizing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  Finalize & Send to Pharmacy
+                  Sign & Dispatch to Pharmacy
                 </Button>
 
                 <Button
                   variant="outline"
                   onClick={handleRequestVideoCall}
                   disabled={isFinalizing || isRequestingVideo || isDisqualifying}
-                  className="w-full rounded-2xl border-[#22c55e]/20 text-[#22c55e] h-11 font-black uppercase text-xs tracking-widest hover:bg-[#22c55e]/5 gap-2 transition-all flex items-center justify-center"
+                  className="w-full rounded-xl border-slate-200 text-slate-700 h-12 font-bold uppercase text-xs tracking-widest hover:bg-slate-50 hover:text-[#0A2E1F] transition-all gap-2"
                 >
                   {isRequestingVideo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />}
-                  Request Video Call Visit
+                  Request Video Visit
                 </Button>
 
                 <Button
                   variant="ghost"
                   onClick={handleDisqualify}
                   disabled={isFinalizing || isRequestingVideo || isDisqualifying}
-                  className="w-full text-red-500/40 hover:text-red-500 hover:bg-red-500/5 h-10 rounded-xl font-black uppercase text-[9px] tracking-[0.2em] transition-all"
+                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 h-10 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all"
                 >
-                  {isDisqualifying ? "Disqualifying..." : "Disqualify Specimen & Refund"}
+                  {isDisqualifying ? "Processing..." : "Disqualify & Refund"}
                 </Button>
               </div>
-              <p className="text-center text-[9px] font-black text-[#7f9488] uppercase tracking-widest mt-4">
-                Sent to: {order.pharmacy || "Patient's Preferred Network Pharmacy"}
+              <p className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-4">
+                Routing to: <span className="text-emerald-600">{order.pharmacy || "Network Pharmacy"}</span>
               </p>
             </CardContent>
           </Card>
+
         </div>
       </div>
     </div>
