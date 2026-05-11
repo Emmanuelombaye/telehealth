@@ -483,66 +483,68 @@ export function DoctorConsultPage() {
         <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6">
           
           {/* Video Feed */}
-          <div className="bg-black rounded-[2rem] w-full aspect-video min-h-[400px] relative overflow-hidden group shadow-xl flex items-center justify-center border-4 border-slate-100">
-            <div className="text-center p-6">
-              <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-full bg-slate-800 border-4 border-slate-700 mx-auto flex items-center justify-center mb-6 shadow-2xl relative">
-                <span className="text-4xl sm:text-5xl font-black text-slate-400">
-                  {order.patient_name?.charAt(0) || '?'}
-                </span>
-                <div className="absolute bottom-1 right-1 h-6 w-6 bg-emerald-500 rounded-full border-4 border-slate-800 animate-pulse" />
-              </div>
-              <p className="text-white text-xl sm:text-2xl font-bold tracking-tight">{order.patient_name}</p>
-              <p className="text-emerald-400 text-sm font-bold tracking-widest uppercase mt-2">Secure Video Matrix Active</p>
-            </div>
-
-            <div className="absolute top-6 left-6 max-w-[calc(100%-3rem)]">
+          <div className="bg-[#050907] rounded-[2rem] w-full h-[400px] sm:h-[460px] relative overflow-hidden shadow-2xl flex flex-col items-center justify-center border border-slate-200">
+            {/* Vitals Overlay (Top Right) */}
+            <div className="absolute top-5 right-5 z-20">
               <div 
                 className={cn(
-                  "bg-black/60 backdrop-blur-md px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all",
-                  isSyncingVitals ? "border-emerald-500/50 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "border-white/10 text-white"
+                  "bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border transition-all",
+                  isSyncingVitals ? "border-emerald-500/50 text-emerald-400" : "border-white/10 text-white"
                 )}
                 onMouseEnter={() => setIsSyncingVitals(true)}
                 onMouseLeave={() => setIsSyncingVitals(false)}
               >
-                <Activity className={cn("h-4 w-4 shrink-0", isSyncingVitals ? "animate-pulse" : "")} />
-                <span className="text-xs font-black uppercase tracking-widest truncate">
-                  {isSyncingVitals ? 'Syncing Live Vitals...' : 'Vitals Synced'}
+                <Activity className={cn("h-3 w-3 shrink-0", isSyncingVitals ? "animate-pulse" : "")} />
+                <span className="text-[9px] font-black uppercase tracking-widest truncate">
+                  {isSyncingVitals ? 'Syncing Live Vitals' : 'Vitals Synced'}
                 </span>
               </div>
             </div>
 
-            {/* Premium Video Controls */}
-            <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-300 w-[90%] sm:w-auto max-w-full overflow-x-auto custom-scrollbar">
+            {/* Center Content (Shifted Up) */}
+            <div className="text-center p-6 flex flex-col items-center justify-center z-10 -mt-12">
+              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-slate-800 border-2 border-slate-700 mx-auto flex items-center justify-center mb-4 shadow-xl relative">
+                <span className="text-3xl sm:text-4xl font-black text-slate-400">
+                  {order.patient_name?.charAt(0) || '?'}
+                </span>
+                <div className="absolute bottom-0 right-0 h-4 w-4 bg-emerald-500 rounded-full border-[3px] border-slate-800 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+              </div>
+              <p className="text-white text-lg sm:text-xl font-bold tracking-tight">{order.patient_name}</p>
+              <p className="text-emerald-500/80 text-[10px] font-bold tracking-widest uppercase mt-1">Secure Video Matrix Active</p>
+            </div>
+
+            {/* Premium Video Controls (Sleek & Bottom) */}
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.6)] transition-all z-20 w-[90%] sm:w-auto max-w-full overflow-x-auto custom-scrollbar">
               <button
                 onClick={() => setIsMuted(!isMuted)}
-                className={cn("h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0",
+                className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-300 shrink-0",
                   isMuted ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/20 text-white hover:bg-white/30")}
               >
-                {isMuted ? <MicOff className="h-5 w-5 sm:h-6 sm:w-6" /> : <Mic className="h-5 w-5 sm:h-6 sm:w-6" />}
+                {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               </button>
               
               <button
                 onClick={() => setIsVideoOff(!isVideoOff)}
-                className={cn("h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0",
+                className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-300 shrink-0",
                   isVideoOff ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/20 text-white hover:bg-white/30")}
               >
-                {isVideoOff ? <VideoOff className="h-5 w-5 sm:h-6 sm:w-6" /> : <Video className="h-5 w-5 sm:h-6 sm:w-6" />}
+                {isVideoOff ? <VideoOff className="h-4 w-4" /> : <Video className="h-4 w-4" />}
               </button>
 
-              <div className="h-8 w-px bg-white/20 mx-1 sm:mx-2 shrink-0" />
+              <div className="h-6 w-px bg-white/20 mx-2 shrink-0" />
 
               <button 
                 onClick={() => navigate('/doctor/queue')}
-                className="h-12 sm:h-14 px-6 sm:px-8 bg-red-600 hover:bg-red-700 text-white rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl shadow-red-600/40 font-bold tracking-widest uppercase text-xs sm:text-sm shrink-0 gap-2"
+                className="h-10 px-5 bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center justify-center transition-all shadow-md shadow-red-600/30 font-bold tracking-widest uppercase text-[10px] sm:text-xs shrink-0 gap-2"
               >
-                <Zap className="h-4 w-4 sm:h-5 sm:w-5" /> End Consult
+                <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-current" /> End Consult
               </button>
 
-              <div className="h-8 w-px bg-white/20 mx-1 sm:mx-2 shrink-0" />
+              <div className="h-6 w-px bg-white/20 mx-2 shrink-0" />
 
               <Link to={`/doctor/messages?userId=${order.user_id}`} className="shrink-0">
-                <button className="h-12 w-12 sm:h-14 sm:w-14 bg-white/20 text-white hover:bg-white/30 rounded-2xl flex items-center justify-center transition-all duration-300">
-                  <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
+                <button className="h-10 w-10 bg-white/20 text-white hover:bg-white/30 rounded-xl flex items-center justify-center transition-all">
+                  <MessageSquare className="h-4 w-4" />
                 </button>
               </Link>
             </div>
