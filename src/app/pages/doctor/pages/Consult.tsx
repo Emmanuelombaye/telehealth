@@ -196,6 +196,8 @@ export function DoctorConsultPage() {
     assessment: "",
     plan: ""
   });
+  const [medication, setMedication] = useState("");
+  const [dosage, setDosage] = useState("");
 
   useEffect(() => {
     if (!orderId) return;
@@ -249,6 +251,9 @@ export function DoctorConsultPage() {
           assessment: `Patient requesting evaluation for ${data.medication || 'treatment'}.`,
           plan: `Prescribe ${data.medication || 'medication'} ${data.dosage_instructions ? `(${data.dosage_instructions})` : 'as directed'}.`,
         });
+
+        setMedication(data.medication || "");
+        setDosage(data.dosage_instructions || "");
       } else {
         console.warn("Order not found:", orderId, error);
       }
@@ -301,6 +306,8 @@ export function DoctorConsultPage() {
         .from('orders')
         .update({
           status: 'rx_sent',
+          medication: medication,
+          dosage_instructions: dosage,
           doctor: doctorName,
           doctor_note: soapNotes.plan,
           doctor_id: currentUser?.id,
@@ -592,12 +599,24 @@ export function DoctorConsultPage() {
               <h3 className="font-black text-[10px] uppercase tracking-[0.2em]">E-Prescribing Directive</h3>
             </div>
             <CardContent className="p-5 space-y-5">
-              <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between group hover:border-[#22c55e]/30 transition-all">
-                <div>
-                  <p className="text-sm font-black text-white italic tracking-tight">{order.medication}</p>
-                  <p className="text-[10px] font-bold text-[#d4c4a8] uppercase tracking-widest mt-1 opacity-70">{order.dosage_instructions || "Standard Protocol"}</p>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <p className="text-[9px] font-black text-[#d4c4a8] uppercase tracking-widest opacity-60">Confirmed Medication</p>
+                  <input 
+                    value={medication}
+                    onChange={(e) => setMedication(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-[#22c55e]/50 outline-none"
+                  />
                 </div>
-                <CheckCircle2 className="h-5 w-5 text-[#22c55e] shrink-0" />
+                <div className="space-y-1.5">
+                  <p className="text-[9px] font-black text-[#d4c4a8] uppercase tracking-widest opacity-60">Dosage / Instructions</p>
+                  <textarea 
+                    value={dosage}
+                    onChange={(e) => setDosage(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-[#22c55e]/50 outline-none h-16 resize-none"
+                    placeholder="e.g. Inject three units weekly"
+                  />
+                </div>
               </div>
               <div className="space-y-3">
                 <Button

@@ -9,27 +9,27 @@ import { cn } from "../../../components/ui/utils";
 import { toast } from "sonner";
 
 const statusStyles: Record<OrderStatus, string> = {
-  "order_submitted": "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200",
-  "account_created": "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400 border-violet-200",
-  "id_verified": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200",
-  "intake_completed": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200",
-  "medical_review": "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200",
-  "rx_sent": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200",
-  "shipped": "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200",
-  "delivered": "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-400 border-slate-200",
-  "refill_eligible": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200",
+  "order_submitted": "bg-emerald-50 text-emerald-700 border-emerald-100",
+  "account_created": "bg-slate-50 text-slate-400 border-slate-100",
+  "id_verified": "bg-emerald-100 text-emerald-800 border-emerald-200",
+  "intake_completed": "bg-emerald-100 text-emerald-800 border-emerald-200",
+  "medical_review": "bg-amber-50 text-amber-700 border-amber-100",
+  "rx_sent": "bg-[#0A2E1F] text-white border-[#0A2E1F]/10",
+  "shipped": "bg-emerald-50 text-emerald-700 border-emerald-100",
+  "delivered": "bg-slate-50 text-slate-400 border-slate-100",
+  "refill_eligible": "bg-emerald-100 text-emerald-800 border-emerald-200",
 };
 
 const statusLabels: Record<OrderStatus, string> = {
   "order_submitted": "Submitted",
   "account_created": "Registered",
-  "id_verified": "ID Verified",
-  "intake_completed": "Intake Done",
-  "medical_review": "MD Review",
-  "rx_sent": "Rx Sent",
-  "shipped": "Shipped",
+  "id_verified": "Verified",
+  "intake_completed": "Intake",
+  "medical_review": "Clinical",
+  "rx_sent": "Prescribed",
+  "shipped": "Dispatched",
   "delivered": "Delivered",
-  "refill_eligible": "Refill Opt",
+  "refill_eligible": "Refill",
 };
 
 export function AdminOrdersPage() {
@@ -52,8 +52,6 @@ export function AdminOrdersPage() {
         .order('created_at', { ascending: false });
 
       if (role === 'brand_admin' && brandId) {
-        // If brand admin, filter by their brand. 
-        // Note: For demo purposes, if brandId is 'Brand A', we also show 'Peak Health' orders
         query = query.or(`sub_brand.eq."${brandId}",sub_brand.eq."Peak Health"`);
       }
 
@@ -174,45 +172,45 @@ export function AdminOrdersPage() {
   };
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6 pb-10 relative">
+    <div className="max-w-[1600px] mx-auto space-y-8 pb-10 relative animate-in fade-in duration-1000">
       {/* Manual Entry Modal */}
       {isManualModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-[2rem] w-full max-w-lg p-8 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Package className="h-6 w-6 text-primary" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0A2E1F]/60 backdrop-blur-md p-4">
+          <div className="bg-white border border-slate-50 rounded-[3rem] w-full max-w-lg p-12 shadow-2xl animate-in fade-in zoom-in duration-500">
+            <div className="flex items-center gap-6 mb-10">
+              <div className="h-16 w-16 rounded-3xl bg-emerald-50 flex items-center justify-center border border-emerald-100 shadow-inner">
+                <Package className="h-8 w-8 text-emerald-600" />
               </div>
               <div>
-                <h2 className="text-xl font-black italic uppercase tracking-tighter">Manual Dispatch Entry</h2>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Create offline medication order</p>
+                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#0A2E1F]">Manual Dispatch</h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-1">Clinical Fulfillment Override</p>
               </div>
             </div>
             
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Patient Name</label>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Patient Identity</label>
                 <input 
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-primary/40 transition-all"
-                  placeholder="e.g. John Doe"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-5 text-sm font-bold text-[#0A2E1F] outline-none focus:border-emerald-500/30 transition-all placeholder:text-slate-200"
+                  placeholder="Full Legal Name"
                   value={newOrder.patientName}
                   onChange={e => setNewOrder({...newOrder, patientName: e.target.value})}
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Clinical Product</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Clinical Compound</label>
                 <input 
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-primary/40 transition-all"
-                  placeholder="e.g. Semaglutide 0.25mg"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-5 text-sm font-bold text-[#0A2E1F] outline-none focus:border-emerald-500/30 transition-all placeholder:text-slate-200"
+                  placeholder="e.g. Tirzepatide 2.5mg"
                   value={newOrder.medication}
                   onChange={e => setNewOrder({...newOrder, medication: e.target.value})}
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Amount ($)</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Transaction Value ($)</label>
                 <input 
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-primary/40 transition-all"
-                  placeholder="e.g. 245"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-5 text-sm font-bold text-[#0A2E1F] outline-none focus:border-emerald-500/30 transition-all placeholder:text-slate-200"
+                  placeholder="Value in USD"
                   type="number"
                   value={newOrder.amount}
                   onChange={e => setNewOrder({...newOrder, amount: e.target.value})}
@@ -220,16 +218,16 @@ export function AdminOrdersPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 mt-8">
+            <div className="flex gap-4 mt-12">
               <Button 
-                className="flex-1 rounded-xl h-12 bg-primary hover:bg-primary/90 text-white font-black uppercase italic tracking-widest"
+                className="flex-1 rounded-[1.5rem] h-16 bg-[#0A2E1F] text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-emerald-900/10"
                 onClick={handleCreateManual}
               >
-                Sync to Matrix
+                Sync to Ledger
               </Button>
               <Button 
                 variant="ghost" 
-                className="flex-1 rounded-xl h-12 text-slate-400 font-black uppercase italic tracking-widest hover:bg-slate-50"
+                className="flex-1 rounded-[1.5rem] h-16 text-slate-400 font-black uppercase tracking-widest text-[11px] hover:bg-slate-50"
                 onClick={() => setIsManualModalOpen(false)}
               >
                 Cancel
@@ -240,46 +238,51 @@ export function AdminOrdersPage() {
       )}
 
       <div className="flex items-center justify-between px-2">
-        <div>
-          <h1 className="text-3xl font-black italic uppercase tracking-tighter">Order Dispatch</h1>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">
-             Pharmacy Fulfillment & Global Logistics Matrix
-          </p>
+        <div className="flex items-center gap-6">
+           <div className="h-16 w-16 rounded-2xl bg-[#22c55e]/10 flex items-center justify-center border border-[#22c55e]/20">
+              <Package size={28} className="text-[#22c55e]" />
+           </div>
+           <div>
+              <h1 className="text-4xl font-black italic uppercase tracking-tighter text-[#0A2E1F]">Order Logistics</h1>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">
+                 Global Pharmacy Bridge & Fulfillment Matrix
+              </p>
+           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
            <Button 
             variant="outline" 
-            className="rounded-xl border-border/60 gap-2 h-10 px-4 text-xs font-bold uppercase italic"
+            className="rounded-2xl border-slate-200 gap-3 h-12 px-6 text-[10px] font-black uppercase italic tracking-widest hover:bg-slate-50 transition-all"
             onClick={handleExportCSV}
            >
-             <CloudDownload className="h-4 w-4" /> Export CSV
+             <CloudDownload className="h-4 w-4" /> Export Ledger
            </Button>
            <Button 
-            className="rounded-xl bg-primary hover:bg-primary/90 gap-2 h-10 px-4 text-xs font-bold uppercase italic shadow-lg shadow-primary/20"
+            className="rounded-2xl bg-[#0A2E1F] hover:bg-emerald-950 gap-3 h-12 px-6 text-[10px] font-black uppercase italic tracking-widest shadow-xl shadow-emerald-900/10 text-white"
             onClick={() => setIsManualModalOpen(true)}
            >
-             <Plus className="h-4 w-4" /> Create Manual Entry
+             <Plus className="h-4 w-4" /> Manual Entry
            </Button>
         </div>
       </div>
 
-      <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden bg-white rounded-[2.5rem]">
-        <div className="p-6 border-b border-slate-50 flex items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-xl">
-            <Search className="absolute left-4 top-3 h-4 w-4 text-slate-400" />
+      <Card className="border-none shadow-3xl shadow-slate-200/50 overflow-hidden bg-white rounded-[3rem]">
+        <div className="p-8 border-b border-slate-50 flex items-center justify-between gap-6 bg-slate-50/20">
+          <div className="relative flex-1 max-w-2xl">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
             <input
               type="text"
-              placeholder="SEARCH BY ORDER #, MRN, OR PATIENT..."
-              className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold italic outline-none focus:border-primary/30 transition-all placeholder:text-slate-300"
+              placeholder="FILTER COMMAND CENTER BY ORDER, MRN, OR IDENTITY..."
+              className="w-full pl-16 pr-6 py-4 bg-white border border-slate-100 rounded-3xl text-[11px] font-black italic outline-none focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 transition-all placeholder:text-slate-200 uppercase tracking-widest"
             />
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-slate-50 text-slate-400">
-              <Filter className="h-4 w-4" />
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" className="h-12 w-12 rounded-2xl hover:bg-white text-slate-400 border border-transparent hover:border-slate-100">
+              <Filter className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-slate-50 text-slate-400">
-              <RefreshCw className="h-4 w-4" onClick={fetchOrders} />
+            <Button variant="ghost" className="h-12 w-12 rounded-2xl hover:bg-white text-slate-400 border border-transparent hover:border-slate-100" onClick={fetchOrders}>
+              <RefreshCw className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -332,23 +335,32 @@ export function AdminOrdersPage() {
                       </div>
                     )}
                   </td>
-                  <td className="py-5 px-8 text-right">
-                    <div className="flex flex-col items-end gap-2">
+                  <td className="py-8 px-8 text-right">
+                    <div className="flex flex-col items-end gap-3">
                       {item.status === "rx_sent" && editingOrder !== item.id && (
                         <Button 
-                          size="sm" 
-                          className="h-9 px-4 rounded-xl bg-primary hover:bg-primary/90 text-white text-[10px] font-black uppercase italic gap-2 shadow-lg shadow-primary/10"
+                          className="h-10 px-6 rounded-2xl bg-[#0A2E1F] hover:bg-emerald-950 text-white text-[10px] font-black uppercase italic gap-3 shadow-xl shadow-emerald-900/10 transition-all"
                           onClick={() => setEditingOrder(item.id)}
                         >
-                          <Truck className="h-3.5 w-3.5" /> Manual Ship Override
+                          <Truck className="h-4 w-4" /> Manual Bridge Update
                         </Button>
                       )}
                       
                       {editingOrder === item.id && (
-                        <div className="flex flex-col gap-3 min-w-[280px] bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-lg">
-                          <div className="flex gap-2">
+                        <div className="flex flex-col gap-6 min-w-[360px] bg-white p-8 rounded-[2rem] border border-emerald-100 shadow-2xl animate-in fade-in slide-in-from-right-4 duration-500">
+                          <div className="flex items-center gap-4 mb-2">
+                             <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 shadow-inner">
+                               <RefreshCw className="h-5 w-5 text-emerald-600 animate-spin" />
+                             </div>
+                             <div>
+                                <p className="text-[10px] font-black text-[#0A2E1F] uppercase tracking-[0.2em]">Clinical Logistics</p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Pharmacy Sync Terminal</p>
+                             </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-4">
                              <select 
-                               className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold"
+                               className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-[10px] font-black text-[#0A2E1F] uppercase outline-none focus:border-emerald-500/30 transition-all appearance-none"
                                value={carrier}
                                onChange={(e) => setCarrier(e.target.value)}
                              >
@@ -359,24 +371,24 @@ export function AdminOrdersPage() {
                              </select>
                              <input 
                               type="text" 
-                              placeholder="Tracking #" 
-                              className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium outline-none focus:border-primary"
+                              placeholder="TRACKING ID" 
+                              className="col-span-2 bg-slate-50 border border-slate-100 rounded-xl px-5 py-3 text-xs font-bold text-[#0A2E1F] outline-none focus:border-emerald-500/30 placeholder:text-slate-200 transition-all uppercase tracking-widest"
                               value={trackingNumber}
                               onChange={(e) => setTrackingNumber(e.target.value)}
                             />
                           </div>
                           <textarea
-                            placeholder="Pharmacy Note / Fulfillment Update (e.g. 'Backordered until Monday')"
-                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-primary resize-none h-20"
+                            placeholder="FULFILLMENT NOTES (COMMIT TO CLINICAL LEDGER)"
+                            className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-4 text-xs font-medium text-[#0A2E1F] outline-none focus:border-emerald-500/30 resize-none h-32 placeholder:text-slate-200 transition-all"
                             value={pharmacyNote}
                             onChange={(e) => setPharmacyNote(e.target.value)}
                           />
-                          <div className="flex gap-2">
-                            <Button size="sm" className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase flex-1 rounded-lg" onClick={() => handleMarkShipped(item.id)}>
-                              Update & Disptach
+                          <div className="flex gap-4">
+                            <Button className="h-14 bg-[#0A2E1F] hover:bg-emerald-950 text-white text-[10px] font-black uppercase tracking-widest flex-1 rounded-2xl shadow-xl shadow-emerald-900/10" onClick={() => handleMarkShipped(item.id)}>
+                              Commit Dispatch
                             </Button>
-                            <Button size="sm" variant="ghost" className="h-9 text-[10px] font-black uppercase flex-1 rounded-lg" onClick={() => setEditingOrder(null)}>
-                              Cancel
+                            <Button variant="ghost" className="h-14 text-slate-400 text-[10px] font-black uppercase tracking-widest flex-1 rounded-2xl hover:bg-slate-50" onClick={() => setEditingOrder(null)}>
+                              Abort
                             </Button>
                           </div>
                         </div>

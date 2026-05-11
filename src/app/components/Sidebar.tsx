@@ -87,11 +87,10 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
 };
 
 const roleColors: Record<Role, string> = {
-  patient: "bg-lavender-500",
-  doctor: "bg-sage-500",
-  admin: "bg-peach-700",
-  superadmin: "bg-lavender-700",
-
+  patient: "bg-emerald-600",
+  doctor: "bg-emerald-700",
+  admin: "bg-emerald-800",
+  superadmin: "bg-emerald-950",
 };
 
 const roleLabels: Record<Role, string> = {
@@ -122,18 +121,11 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
 
   const SidebarContent = () => (
     <div className={cn(
-      "flex h-full flex-col overflow-hidden text-sidebar-foreground border-r",
-      isAdminPortal ? "bg-white border-slate-200" : "bg-sidebar border-sidebar-border"
+      "flex h-full flex-col overflow-hidden text-[#0A0D14] border-r border-slate-100 bg-white"
     )}>
-      {/* Logo */}
-      <div className={cn(
-        "flex h-24 items-center justify-between border-b px-4 shrink-0",
-        isAdminPortal ? "bg-white border-slate-200" : "bg-sidebar border-sidebar-border"
-      )}>
+      <div className="flex h-24 items-center justify-between border-b border-slate-100 px-6 shrink-0 bg-white">
         <Link to="/" className="flex items-center justify-center w-full py-4 group transition-all" onClick={onMobileClose}>
-          <img src="/logo-icon.png" alt="Peak Health Logo" className={cn(
-            "h-24 w-auto object-contain mix-blend-multiply contrast-125 brightness-110 transition-transform duration-300 group-hover:scale-105"
-          )} />
+          <img src="/logo-icon.png" alt="Peak Health Logo" className="h-20 w-auto object-contain transition-transform duration-500 group-hover:scale-110" />
         </Link>
         {onMobileClose && (
           <button onClick={onMobileClose} className="md:hidden p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
@@ -152,26 +144,23 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
           return (
             <div key={item.href} className="w-full">
               {showGroup && (
-                <div className={cn(
-                  "px-3 pb-2 pt-4 text-[11px] font-bold uppercase tracking-widest",
-                  isAdminPortal ? "text-slate-400" : "text-muted-foreground"
-                )}>
-                  {item.group}
-                </div>
-              )}
-              {isBottom && (
-                <div className={cn("h-px my-3 mx-2", isAdminPortal ? "bg-slate-100" : "bg-sidebar-border/60")} />
-              )}
+                  <div className="px-4 pb-2 pt-6 text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                    {item.group}
+                  </div>
+                )}
+                {isBottom && (
+                  <div className="h-px my-4 mx-3 bg-slate-50" />
+                )}
               <NavLink
                 to={item.href}
                 end={item.href === `/${role}`}
                 onClick={onMobileClose}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center justify-between rounded-xl px-3 py-2.5 text-[14px] font-medium transition-all duration-200 group relative mb-0.5 animate-slide-in-right",
+                    "flex items-center justify-between rounded-2xl px-4 py-3.5 text-[13px] font-bold transition-all duration-300 group relative mb-1 animate-slide-in-right",
                     isActive
-                      ? isAdminPortal ? "bg-emerald-50 text-emerald-700 font-bold shadow-sm" : "bg-primary/10 text-primary font-semibold"
-                      : isAdminPortal ? "text-slate-500 hover:bg-slate-50 hover:text-slate-900" : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+                      ? "bg-[#0A2E1F] text-white shadow-xl shadow-emerald-900/10"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-[#0A2E1F]"
                   )
                 }
                 style={{ animationDelay: `${index * 0.05}s` }}
@@ -180,10 +169,10 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                   <>
                     <div className="flex items-center gap-3 min-w-0">
                       <item.icon className={cn(
-                        "h-5 w-5 shrink-0 transition-colors", 
+                        "h-5 w-5 shrink-0 transition-all duration-300", 
                         isActive 
-                          ? isAdminPortal ? "text-emerald-600" : "text-primary" 
-                          : isAdminPortal ? "text-slate-400 group-hover:text-emerald-500" : "text-muted-foreground group-hover:text-foreground"
+                          ? "text-white" 
+                          : "text-slate-400 group-hover:text-[#0A2E1F] group-hover:scale-110"
                       )} />
                       <span className="truncate">{item.label}</span>
                     </div>
@@ -193,10 +182,10 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                       
                       if (badgeCount && badgeCount > 0) {
                         return (
-                          <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm",
+                          <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 shadow-sm",
                             isActive 
-                              ? isAdminPortal ? "bg-emerald-600 text-white" : "bg-primary text-white"
-                              : isAdminPortal ? "bg-emerald-100 text-emerald-700" : "bg-primary/10 text-primary"
+                              ? "bg-white/20 text-white"
+                              : "bg-emerald-100 text-[#0A2E1F]"
                           )}>
                             {badgeCount}
                           </span>
@@ -212,19 +201,11 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
         })}
       </nav>
 
-      {/* User footer */}
-      <div className={cn(
-        "p-4 border-t shrink-0 space-y-2",
-        isAdminPortal ? "bg-slate-50/50 border-slate-200" : "bg-sidebar/50 border-sidebar-border"
-      )}>
-        <div className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-2xl border",
-          isAdminPortal ? "bg-white border-slate-200 shadow-sm" : "bg-sidebar-accent/50 border-sidebar-border"
-        )}>
+      <div className="p-6 border-t border-slate-100 bg-white space-y-3">
+        <div className="flex items-center gap-4 px-4 py-4 rounded-3xl border border-slate-100 bg-slate-50/50 shadow-inner">
           <div className={cn(
-            "h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-inner", 
-            isAdminPortal ? "bg-emerald-100 text-emerald-700" : roleColors[role],
-            isAdminPortal ? "" : "text-white"
+            "h-10 w-10 rounded-2xl flex items-center justify-center text-xs font-black shrink-0 shadow-lg text-white", 
+            roleColors[role]
           )}>
             {fullName.charAt(0).toUpperCase()}
           </div>

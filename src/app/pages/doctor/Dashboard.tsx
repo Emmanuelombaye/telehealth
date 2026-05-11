@@ -88,69 +88,65 @@ export function DoctorDashboard() {
   }, [subscribeToOrders]);
 
   const theme = {
-    bg: "bg-[#F8FAFC]",
-    card: "bg-white/80",
+    bg: "bg-white",
+    card: "bg-white",
     cardSolid: "bg-white",
-    border: "border-slate-200/60",
-    textMain: "text-[#0F172A]",
-    textMuted: "text-slate-500",
-    textGreen: "text-emerald-600",
-    textBeige: "text-[#1E293B]",
-    accent: "bg-emerald-600",
+    border: "border-slate-50",
+    textMain: "text-[#0A0D14]",
+    textMuted: "text-slate-400",
+    textGreen: "text-[#0A2E1F]",
+    textBeige: "text-[#0A0D14]",
+    accent: "bg-[#0A2E1F]",
     accentMuted: "bg-emerald-50",
   };
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
+    <div className="space-y-8 max-w-[1600px] mx-auto pb-10 animate-in fade-in duration-1000">
       {/* Top Command Bar */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`${theme.card} ${theme.border} border rounded-[2.5rem] p-6 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-slate-200/50`}
-      >
-        <div className="flex items-center gap-6 w-full md:w-auto">
-          <div className="h-16 w-16 rounded-[1.5rem] bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-200 relative group overflow-hidden">
-             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-             <Stethoscope className="h-8 w-8 text-white relative z-10" />
+      <div className="bg-white border border-slate-50 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-slate-200/40 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full -mr-32 -mt-32"></div>
+        <div className="flex items-center gap-8 w-full md:w-auto relative z-10">
+          <div className="h-20 w-20 rounded-3xl bg-[#0A2E1F] flex items-center justify-center shadow-2xl shadow-emerald-900/20 group">
+             <Stethoscope className="h-10 w-10 text-white transition-transform duration-500 group-hover:scale-110" />
           </div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`text-[10px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full ${theme.accentMuted} ${theme.textGreen} border border-emerald-100`}>
-                Command Center Active
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-xl bg-emerald-50 text-[#0A2E1F] border border-emerald-100">
+                CLINICAL COMMAND CENTER
               </span>
-              <span className={`text-[10px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-slate-100 ${theme.textBeige} border border-slate-200`}>
-                v2.4.0
+              <span className="text-[9px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-xl bg-slate-50 text-slate-400 border border-slate-100">
+                STABLE v2.4.0
               </span>
             </div>
-            <h1 className={`text-3xl font-black ${theme.textMain} tracking-tighter flex items-center gap-3 italic uppercase`}>
+            <h1 className="text-4xl font-black text-[#0A2E1F] tracking-tighter flex items-center gap-4 italic uppercase">
               {doctorName}
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
             </h1>
-            <p className={`${theme.textMuted} text-xs font-bold uppercase tracking-widest mt-1`}>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] mt-2">
               {currentTime.toLocaleTimeString()} • {greeting}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="px-4 py-3 border-r border-slate-100 text-center">
-            <p className={`${theme.textMuted} text-[10px] font-black uppercase tracking-widest mb-1`}>Sync Rate</p>
-            <p className={`${theme.textGreen} text-xl font-black`}>99.9%</p>
+        <div className="flex items-center gap-4 w-full md:w-auto relative z-10">
+          <div className="px-6 py-4 border-r border-slate-50 text-center">
+            <p className="text-slate-300 text-[9px] font-black uppercase tracking-[0.3em] mb-1">Latency</p>
+            <p className="text-[#0A2E1F] text-2xl font-black italic">14ms</p>
           </div>
-          <div className="px-4 py-3 border-r border-slate-100 text-center">
-             <p className={`${theme.textMuted} text-[10px] font-black uppercase tracking-widest mb-1`}>Latency</p>
-             <p className={`${theme.textBeige} text-xl font-black`}>14ms</p>
+          <div className="px-6 py-4 border-r border-slate-50 text-center">
+             <p className="text-slate-300 text-[9px] font-black uppercase tracking-[0.3em] mb-1">Status</p>
+             <p className="text-emerald-600 text-2xl font-black italic tracking-widest uppercase">Live</p>
           </div>
-          <div className="flex-1 md:flex-none">
+          <div className="flex-1 md:flex-none pl-4">
              <Link to="/doctor/consult">
-               <Button className="w-full md:w-auto rounded-[1.25rem] bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase italic tracking-tighter px-8 h-12 group shadow-lg shadow-emerald-200">
-                 <Video className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-                 <span className="whitespace-nowrap">Launch Room</span>
+               <Button className="w-full md:w-auto rounded-3xl bg-[#0A2E1F] h-16 px-10 shadow-2xl shadow-emerald-900/10">
+                 <Video className="mr-3 h-5 w-5" />
+                 Launch Room
                </Button>
              </Link>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Main Grid */}
       <div className="grid lg:grid-cols-12 gap-6">

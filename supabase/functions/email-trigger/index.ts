@@ -64,23 +64,57 @@ serve(async (req) => {
        return new Response("Ignored - No relevant status change", { status: 200 });
     }
 
-    // Call Resend API
-    const res = await fetch("https://api.resend.com/emails", {
+    // Call Resend API for Patient
+    await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${resendApiKey}`
       },
       body: JSON.stringify({
-        from: "Telehealth Team <hello@yourtelehealthbrand.com>",
-        to: [record.patient_email || "patient@example.com"], // Assume patient_email exists, or query auth.users
+        from: "Peak Health <hello@peakhealth.com>",
+        to: [record.patient_email || "patient@example.com"],
         subject: subject,
         html: htmlContent
       })
     });
 
-    if (!res.ok) {
-      throw new Error(`Resend API Error: ${await res.text()}`);
+    // --- NEW: Pharmacy Dispatch Notification ---
+    if (record.status === 'rx_sent' && payload.old_record.status !== 'rx_sent') {
+      const pharmacyEmail = record.pharmacy_email || "dispatch@vialsrx.com";
+      const rxSubject = `PRESCRIPTION DIRECTIVE: ${record.patient_name} - ${record.medication}`;
+      const rxHtml = `
+        <div style="font-family: sans-serif; border: 2px solid #064e3b; padding: 30px; border-radius: 12px;">
+          <h1 style="color: #064e3b; margin-top: 0;">Prescription Order</h1>
+          <p><strong>To:</strong> ${record.pharmacy || "Preferred Pharmacy"}</p>
+          <hr />
+          <p><strong>Patient:</strong> ${record.patient_name}</p>
+          <p><strong>Date of Birth:</strong> ${record.patient_dob || "Not specified"}</p>
+          <p><strong>MRN:</strong> ${record.mrn || "N/A"}</p>
+          <hr />
+          <p style="font-size: 18px;"><strong>Medication:</strong> ${record.medication}</p>
+          <p style="font-size: 16px; background: #f1f5f9; padding: 15px; border-radius: 8px;">
+            <strong>Sig:</strong> ${record.dosage_instructions || "As directed"}
+          </p>
+          <hr />
+          <p><strong>Prescriber:</strong> ${record.doctor || "Attending Physician"}</p>
+          <p style="font-size: 10px; color: #64748b;">This prescription was electronically signed and dispatched via Peak Health Physician Portal.</p>
+        </div>
+      `;
+
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${resendApiKey}`
+        },
+        body: JSON.stringify({
+          from: "Peak Health Clinical <prescriptions@peakhealth.com>",
+          to: [pharmacyEmail],
+          subject: rxSubject,
+          html: rxHtml
+        })
+      });
     }
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
