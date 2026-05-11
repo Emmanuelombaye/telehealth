@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import {
   Globe, TrendingUp, Users, DollarSign, Activity, ShieldCheck,
   Server, Building2, Package, Search, Bell, Command, ChevronRight,
-  Shield, Zap, Lock, Cpu, Globe2, Wallet, ArrowUpRight, Radar,
+  Shield, Zap, Lock, Globe2, ArrowUpRight, Radar,
   Fingerprint, Sparkles, Rocket
 } from "lucide-react";
 import { Card, CardContent, Button, Badge } from "../../components/ui/shared.tsx";

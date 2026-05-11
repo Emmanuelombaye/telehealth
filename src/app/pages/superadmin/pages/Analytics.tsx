@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   DollarSign, Users, Activity, TrendingUp, Globe, Package,
-  Zap, ShieldCheck, Globe2, Wallet, ArrowUpRight, Radar,
+  Zap, ShieldCheck, Globe2, CreditCard, ArrowUpRight, Radar,
   PieChart as PieChartIcon, BarChart3, LineChart as LineChartIcon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, Badge, cn } from "../../../components/ui/shared.tsx";
@@ -88,7 +88,7 @@ export function SuperAdminAnalyticsPage() {
       {/* PRIMARY KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {[
-          { label: "Platform MRR", value: `$${totalMRR.toLocaleString()}`, change: "+24%", icon: Wallet, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { label: "Platform MRR", value: `$${totalMRR.toLocaleString()}`, change: "+24%", icon: CreditCard, color: "text-emerald-600", bg: "bg-emerald-50" },
           { label: "Total Patients", value: uniquePatientsCount.toLocaleString(), change: "+18%", icon: Users, color: "text-[#0A2E1F]", bg: "bg-slate-50" },
           { label: "Total Orders", value: totalOrdersCount.toLocaleString(), change: "+31%", icon: Package, color: "text-emerald-700", bg: "bg-emerald-50/50" },
           { label: "Avg Conversion", value: "38%", change: "+4pts", icon: TrendingUp, color: "text-amber-600", bg: "bg-amber-50" },

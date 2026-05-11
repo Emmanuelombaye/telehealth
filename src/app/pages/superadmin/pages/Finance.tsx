@@ -3,7 +3,7 @@ import {
   DollarSign, TrendingUp, CreditCard, ArrowUpRight,
   CheckCircle2, Clock, Building2, Download, Filter,
   Calendar, PieChart, Activity, ShieldCheck, Zap,
-  Globe2, Wallet, FileText, ChevronRight
+  Globe2, FileText, ChevronRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -116,7 +116,7 @@ export function SuperAdminFinancePage() {
       {/* EXECUTIVE KPI STRIP */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {[
-          { label: "Platform MRR", value: `$${totalPlatformMRR.toLocaleString()}`, icon: Wallet, color: "text-emerald-600", change: "+12.5% Live" },
+          { label: "Platform MRR", value: `$${totalPlatformMRR.toLocaleString()}`, icon: DollarSign, color: "text-emerald-600", change: "+12.5% Live" },
           { label: "Aggregate ARR", value: `$${(totalPlatformARR / 1000000).toFixed(2)}M`, icon: TrendingUp, color: "text-[#0A2E1F]", change: "Annual Estimate" },
           { label: "Global Commission", value: `$${totalCommission.toLocaleString()}`, icon: Zap, color: "text-emerald-500", change: "10% Platform Fee" },
           { label: "Pending Payouts", value: `$${pendingPayouts.toLocaleString()}`, icon: CreditCard, color: "text-amber-600", change: "Institutional Sync" },

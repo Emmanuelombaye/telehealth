@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  Building2, Search, Globe, Users, Activity, DollarSign,
+  Building2, DollarSign, Search, Globe, Users, Activity,
   ChevronRight, ToggleLeft, ToggleRight, Edit2, ExternalLink,
   Stethoscope, Package, CreditCard, BarChart3, ArrowLeft,
   CheckCircle2, Clock, AlertTriangle, Settings, X, Loader2, Rocket,
@@ -262,7 +262,7 @@ export function SuperAdminBrandsPage() {
       {/* Global Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {[
-          { label: "Aggregate MRR", value: `$${(dbBrands.reduce((sum, b) => sum + (b.mrr || 0), 0) / 1000).toFixed(1)}k`, icon: Wallet },
+          { label: "Aggregate MRR", value: `$${(dbBrands.reduce((sum, b) => sum + (b.mrr || 0), 0) / 1000).toFixed(1)}k`, icon: DollarSign },
           { label: "Total Patients", value: dbBrands.reduce((sum, b) => sum + (b.patients || 0), 0).toLocaleString(), icon: Users },
           { label: "Total Doctors", value: dbBrands.reduce((sum, b) => sum + (b.doctors || 0), 0), icon: Stethoscope },
           { label: "Infrastructure Health", value: "99.98%", icon: Activity },
