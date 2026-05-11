@@ -4,7 +4,8 @@ import {
   ArrowLeft, Video, Mic, MicOff, VideoOff, MessageSquare, 
   Pill, Zap, ShieldCheck, Activity, Users, 
   Sparkles, CheckCircle2, MoreHorizontal, Loader2,
-  Stethoscope, Clock, ChevronRight, AlertCircle, Search, Filter
+  Stethoscope, Clock, ChevronRight, AlertCircle, Search, Filter,
+  Bot, FileSignature
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { useAuthStore } from "../../../../lib";
