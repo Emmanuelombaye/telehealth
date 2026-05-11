@@ -31,6 +31,7 @@ import { IdentityPage } from "./pages/patient/pages/Identity";
 import { FamilyAccessPage } from "./pages/patient/pages/FamilyAccess";
 import { NotificationsPage } from "./pages/patient/pages/Notifications";
 import { InsurancePage } from "./pages/patient/pages/Insurance";
+import { PatientConsultPage } from "./pages/patient/pages/Consult";
 
 // Doctor pages
 import { DoctorQueuePage } from "./pages/doctor/pages/Queue";
@@ -155,6 +156,7 @@ export const router = createBrowserRouter([
               { path: "family", Component: FamilyAccessPage },
               { path: "notifications", Component: NotificationsPage },
               { path: "insurance", Component: InsurancePage },
+              { path: "consult", Component: PatientConsultPage },
             ],
           },
           

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   Calendar, Clock, FileText, Activity, MessageSquare, Plus,
   Droplets, Heart, ChevronRight, Video, Pill, Stethoscope,
@@ -10,6 +10,7 @@ import {
   useI18n,
   ORDER_STEPS, getStepIndex, usePatientStore, useAuthStore
 } from "../../../lib";
+import { supabase } from "../../../lib/supabaseClient";
 
 const stepIcon: Record<string, any> = {
   order_submitted: FileText,
@@ -31,12 +32,14 @@ const subBrandTint: Record<string, string> = {
 
 export function PatientDashboard() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
   const doctorAvailability = usePatientStore(state => state.doctorAvailability);
   const firstName = user?.user_metadata?.first_name || 'Patient';
   const availableDoctors = doctorAvailability.filter(d => d.available);
 
   const { orders, fetchOrders, subscribeToOrders } = usePatientStore();
+  const [activeConsult, setActiveConsult] = useState<any>(null);
   
   useEffect(() => {
     if (user?.id) {
@@ -46,11 +49,74 @@ export function PatientDashboard() {
     }
   }, [user?.id, fetchOrders, subscribeToOrders]);
 
+  // Real-time subscription: detect when doctor goes live
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Check immediately on load
+    supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('consultation_live', true)
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) setActiveConsult(data[0]);
+      });
+
+    const channel = supabase
+      .channel('patient_dashboard_consult')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'orders',
+        filter: `user_id=eq.${user.id}`,
+      }, (payload) => {
+        const updated = payload.new as any;
+        if (updated.consultation_live) {
+          setActiveConsult(updated);
+        } else {
+          setActiveConsult(prev => prev?.id === updated.id ? null : prev);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
+
   const awaitingReview = orders.filter(o => o.status === "order_submitted").length;
 
   return (
     <div className="space-y-8 max-w-[1200px] mx-auto animate-in fade-in duration-1000 pb-10">
-      {/* Welcome header */}
+
+      {/* ── LIVE CONSULTATION ALERT BANNER ── */}
+      {activeConsult && (
+        <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-[2rem] p-1 shadow-2xl shadow-emerald-900/30 animate-in slide-in-from-top-4 duration-500">
+          <div className="bg-[#0A2E1F] rounded-[1.75rem] px-8 py-6 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-5">
+              <div className="h-14 w-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center shrink-0 relative">
+                <Video className="h-7 w-7 text-emerald-400" />
+                <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-[#0A2E1F] animate-pulse" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Action Required</p>
+                <p className="text-xl font-black text-white tracking-tight">Your Doctor Is Live Now</p>
+                <p className="text-xs text-emerald-300/70 font-medium mt-0.5">
+                  {activeConsult.doctor || 'Your physician'} is waiting in the secure consultation room
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/patient/consult')}
+              className="bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl px-8 h-13 py-4 font-black uppercase tracking-widest text-sm shadow-xl shadow-emerald-900/30 transition-all hover:scale-105 flex items-center gap-3 whitespace-nowrap"
+            >
+              <Video className="h-5 w-5" /> Join Consultation
+            </button>
+          </div>
+        </div>
+      )}
+
+
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-50">
         <div className="text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start gap-4 mb-2">

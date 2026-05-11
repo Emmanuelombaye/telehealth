@@ -388,6 +388,32 @@ export function DoctorConsultPage() {
   const [transcript, setTranscript] = useState<string[]>([]);
   const [isSyncingVitals, setIsSyncingVitals] = useState(false);
   const [isLiveVideoActive, setIsLiveVideoActive] = useState(false);
+  const [isStartingLive, setIsStartingLive] = useState(false);
+
+  const startLiveConsult = async () => {
+    if (!order) return;
+    setIsStartingLive(true);
+    try {
+      await supabase
+        .from('orders')
+        .update({ consultation_live: true })
+        .eq('id', order.id);
+      setIsLiveVideoActive(true);
+    } catch (err) {
+      console.error("Failed to start live consult:", err);
+    } finally {
+      setIsStartingLive(false);
+    }
+  };
+
+  const endLiveConsult = async () => {
+    if (!order) return;
+    await supabase
+      .from('orders')
+      .update({ consultation_live: false })
+      .eq('id', order.id);
+    navigate('/doctor/queue');
+  };
 
   useEffect(() => {
     if (!order) return;
@@ -519,10 +545,12 @@ export function DoctorConsultPage() {
                 <p className="text-emerald-500/50 text-[10px] font-bold tracking-widest uppercase mt-1 mb-6">Patient Offline / Waiting</p>
                 
                 <Button 
-                  onClick={() => setIsLiveVideoActive(true)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-8 h-12 font-bold tracking-widest uppercase text-xs shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(16,185,129,0.6)]"
+                  onClick={startLiveConsult}
+                  disabled={isStartingLive}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-8 h-12 font-bold tracking-widest uppercase text-xs shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Video className="h-4 w-4 mr-2" /> Connect Live Video
+                  {isStartingLive ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Video className="h-4 w-4 mr-2" />}
+                  {isStartingLive ? 'Connecting Patient...' : 'Connect Live Video'}
                 </Button>
               </div>
             )}
@@ -549,7 +577,7 @@ export function DoctorConsultPage() {
                 <div className="h-6 w-px bg-white/20 mx-2 shrink-0" />
 
                 <button 
-                  onClick={() => navigate('/doctor/queue')}
+                  onClick={endLiveConsult}
                   className="h-10 px-5 bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center justify-center transition-all shadow-md shadow-red-600/30 font-bold tracking-widest uppercase text-[10px] sm:text-xs shrink-0 gap-2"
                 >
                   <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-current" /> End Consult
