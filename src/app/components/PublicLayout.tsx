@@ -149,21 +149,21 @@ export function PublicLayout() {
           "transition-all duration-500 bg-white/95 backdrop-blur-md border-b border-slate-100", 
           scrolled ? "py-3 shadow-md" : "py-5 shadow-sm"
         )}>
-          <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-6 flex items-center justify-between gap-4">
             {/* Left: Logo */}
-            <div className="flex-1">
-              <Link to="/" className="flex items-center gap-3 group w-fit">
+            <div className="flex-shrink-0">
+              <Link to="/" className="flex items-center gap-2 group w-fit">
                 <img 
                   src="/PeakHealthLogo.png" 
                   alt="Peak Health" 
                   className={cn(
                     "w-auto transition-all duration-700 group-hover:scale-105 mix-blend-multiply contrast-125",
-                    scrolled ? "h-12 md:h-16" : "h-16 md:h-24"
+                    scrolled ? "h-8 md:h-12" : "h-10 md:h-16"
                   )} 
                 />
                 <span className={cn(
                   "font-serif italic tracking-tighter text-[#0A2E1F] transition-all duration-700 whitespace-nowrap",
-                  scrolled ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl"
+                  scrolled ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
                 )}>
                   Peak Health
                 </span>
@@ -171,7 +171,7 @@ export function PublicLayout() {
             </div>
 
             {/* Middle: Links */}
-            <nav className="hidden md:flex items-center justify-center gap-8 lg:gap-12 flex-1">
+            <nav className="hidden lg:flex items-center justify-center gap-8 lg:gap-12 flex-1">
               <div className="relative" onMouseEnter={() => setShowTreatments(true)} onMouseLeave={() => setShowTreatments(false)}>
                 <Link to="/explore-treatments" className="flex items-center gap-1.5 text-[15px] font-medium text-slate-700 hover:text-[#0A2E1F] transition-all py-2">
                   Treatments <ChevronDown className="h-4 w-4 opacity-50" />
@@ -278,16 +278,16 @@ export function PublicLayout() {
             </nav>
 
             {/* Right: Actions */}
-            <div className="flex items-center justify-end gap-6 lg:gap-10 flex-1">
-              <Link to="/patient/login" className="hidden sm:block text-[15px] font-medium text-slate-700 hover:text-[#0A2E1F] transition-all">
+            <div className="flex items-center justify-end gap-3 md:gap-6 flex-shrink-0">
+              <Link to="/patient/login" className="hidden md:block text-[14px] font-medium text-slate-700 hover:text-[#0A2E1F] transition-all">
                 Log In
               </Link>
-              <Link to="/patient/shop">
-                <Button className="rounded-full bg-[#1A1F2C] text-white hover:bg-[#2A303C] px-6 lg:px-8 py-2.5 lg:py-3 h-auto text-[14px] lg:text-[15px] font-bold transition-all border-none shadow-none">
+              <Link to="/patient/shop" className="flex-shrink-0">
+                <Button className="rounded-full bg-[#1A1F2C] text-white hover:bg-[#2A303C] px-4 md:px-6 py-2 h-9 md:h-11 text-[12px] md:text-[14px] font-bold transition-all border-none shadow-none whitespace-nowrap">
                   Explore Treatments
                 </Button>
               </Link>
-              <button className="lg:hidden text-slate-800" onClick={() => setMobileMenu(!mobileMenu)}>
+              <button className="lg:hidden text-slate-800 p-1" onClick={() => setMobileMenu(!mobileMenu)}>
                 {mobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </div>
