@@ -168,7 +168,7 @@ export function PublicLayout() {
           "transition-all duration-500 bg-white/95 backdrop-blur-md border-b border-slate-100 relative z-[101]", 
           scrolled ? "py-3 shadow-md" : "py-5 shadow-sm"
         )}>
-          <div className="max-w-7xl mx-auto px-6 flex items-center justify-between gap-4">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between gap-2 md:gap-4">
             {/* Left: Logo */}
             <div className="flex-shrink-0">
               <Link to="/" className="flex items-center gap-2 group w-fit">
@@ -181,7 +181,7 @@ export function PublicLayout() {
                   )} 
                 />
                 <span className={cn(
-                  "font-serif italic tracking-tighter text-[#0A2E1F] transition-all duration-700 whitespace-nowrap",
+                  "font-serif italic tracking-tighter text-[#0A2E1F] transition-all duration-700 whitespace-nowrap hidden sm:block",
                   scrolled ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
                 )}>
                   Peak Health
@@ -285,8 +285,8 @@ export function PublicLayout() {
                 Log In
               </Link>
               <Link to="/patient/shop" className="flex-shrink-0">
-                <Button className="rounded-full bg-[#1A1F2C] text-white hover:bg-[#2A303C] px-4 md:px-6 py-2 h-9 md:h-11 text-[12px] md:text-[14px] font-bold transition-all border-none shadow-none whitespace-nowrap">
-                  Explore Treatments
+                <Button className="rounded-full bg-[#1A1F2C] text-white hover:bg-[#2A303C] px-3 md:px-6 py-2 h-9 md:h-11 text-[11px] md:text-[14px] font-bold transition-all border-none shadow-none whitespace-nowrap">
+                  <span className="hidden xs:inline">Explore </span>Treatments
                 </Button>
               </Link>
               <button 
