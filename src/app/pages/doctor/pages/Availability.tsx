@@ -35,17 +35,22 @@ export function DoctorAvailabilityPage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [saved, setSaved] = useState(false);
 
-  const bookingLink = `https://peakhealth.com/book/${user?.user_metadata?.first_name?.toLowerCase()}-${user?.user_metadata?.last_name?.toLowerCase()}`;
+  const firstName = user?.user_metadata?.first_name || "Doctor";
+  const lastName = user?.user_metadata?.last_name || "Provider";
+  const bookingLink = `https://peakhealth.com/book/${firstName.toLowerCase()}-${lastName.toLowerCase()}`;
 
   // Load saved schedule from Supabase
   useEffect(() => {
-    if (!user) return;
     async function loadSchedule() {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       try {
         const { data, error } = await supabase
           .from('doctor_schedules')
           .select('*')
-          .eq('doctor_id', user!.id)
+          .eq('doctor_id', user.id)
           .single();
 
         if (data) {
@@ -54,7 +59,7 @@ export function DoctorAvailabilityPage() {
           setBufferMins(data.buffer_mins?.toString() || "10");
         }
       } catch (err) {
-        // Table may not exist yet — use defaults
+        console.warn("Schedule load error:", err);
       } finally {
         setLoading(false);
       }
