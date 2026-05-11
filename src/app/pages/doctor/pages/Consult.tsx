@@ -1,15 +1,38 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router";
 import { 
   ArrowLeft, Video, Mic, MicOff, VideoOff, MessageSquare, 
   Pill, Zap, ShieldCheck, Activity, Users, 
   Sparkles, CheckCircle2, MoreHorizontal, Loader2,
   Stethoscope, Clock, ChevronRight, AlertCircle, Search, Filter,
-  Bot, FileSignature
+  Bot, FileSignature, X, CheckCircle, XCircle, Info
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { useAuthStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
+
+// ── Lightweight Toast System ──────────────────────────────────────────────────
+type ToastType = 'success' | 'error' | 'info';
+function ToastBar({ toasts }: { toasts: Array<{ id: number; type: ToastType; message: string }> }) {
+  if (!toasts.length) return null;
+  return (
+    <div className="fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
+      {toasts.map(t => (
+        <div key={t.id} className={cn(
+          "flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border text-sm font-bold tracking-wide animate-in slide-in-from-right-4 duration-400 min-w-[280px]",
+          t.type === 'success' && "bg-[#0A2E1F] text-white border-emerald-500/30",
+          t.type === 'error'   && "bg-red-900 text-white border-red-500/30",
+          t.type === 'info'    && "bg-slate-900 text-white border-white/10",
+        )}>
+          {t.type === 'success' && <CheckCircle className="h-5 w-5 text-emerald-400 shrink-0" />}
+          {t.type === 'error'   && <XCircle className="h-5 w-5 text-red-400 shrink-0" />}
+          {t.type === 'info'    && <Info className="h-5 w-5 text-blue-400 shrink-0" />}
+          <span>{t.message}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function PatientPicker() {
   const navigate = useNavigate();
@@ -190,12 +213,20 @@ export function DoctorConsultPage() {
   const navigate = useNavigate();
 
   const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(!!orderId); // only load if orderId present
+  const [loading, setLoading] = useState(!!orderId);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isRequestingVideo, setIsRequestingVideo] = useState(false);
   const [isDisqualifying, setIsDisqualifying] = useState(false);
+
+  // Toast system
+  const [toasts, setToasts] = useState<Array<{ id: number; type: ToastType; message: string }>>([]);
+  const showToast = useCallback((type: ToastType, message: string) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, type, message }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  }, []);
 
   const [soapNotes, setSoapNotes] = useState({
     subjective: "",
@@ -293,18 +324,19 @@ export function DoctorConsultPage() {
       }
 
       // 2. Prescription
-      await supabase.from('prescriptions').insert([{
+      const { error: rxError } = await supabase.from('prescriptions').insert([{
         patient_id: order.user_id,
-        medication: order.medication,
-        dosage: order.dosage_instructions || "As directed",
+        medication: medication,
+        dosage: dosage || "As directed",
         frequency: soapNotes.plan,
         status: 'active',
         refills_remaining: 3,
         doctor_id: currentUser?.id,
         pharmacy_name: order.pharmacy || "VIALSRX EXPRESS"
       }]);
+      if (rxError) throw new Error(`Prescription error: ${rxError.message}`);
 
-      // 3. Update order status → rx_sent
+      // 3. Update order → rx_sent
       const newTimeline = order.timeline
         ? [...order.timeline, { status: 'rx_sent', date: new Date().toLocaleString() }]
         : [{ status: 'rx_sent', date: new Date().toLocaleString() }];
@@ -320,16 +352,16 @@ export function DoctorConsultPage() {
           doctor_id: currentUser?.id,
           last_approved_at: new Date().toISOString(),
           timeline: newTimeline,
+          consultation_live: false,
         })
         .eq('id', order.id);
+      if (orderError) throw new Error(`Order update error: ${orderError.message}`);
 
-      if (!orderError) {
-        navigate('/doctor/queue');
-      } else {
-        console.error("Order update error:", orderError);
-      }
-    } catch (err) {
+      showToast('success', `✓ Prescription dispatched to pharmacy for ${order.patient_name}`);
+      setTimeout(() => navigate('/doctor/queue'), 1500);
+    } catch (err: any) {
       console.error("Finalize error:", err);
+      showToast('error', `Failed: ${err.message || 'Unknown error'}`);
     } finally {
       setIsFinalizing(false);
     }
@@ -343,17 +375,18 @@ export function DoctorConsultPage() {
         .from('orders')
         .update({ 
           zoom_status: 'requested', 
-          zoom_doctor_message: soapNotes.plan || "Please book a time on my calendar for a brief consultation." 
+          zoom_doctor_message: soapNotes.plan || "Please book a time on my calendar for a brief consultation."
         })
         .eq('id', order.id);
       
       if (!error) {
-        navigate('/doctor/queue');
+        showToast('info', `📅 Video visit requested — patient has been notified`);
+        setTimeout(() => navigate('/doctor/queue'), 1500);
       } else {
-        console.error("Video request error:", error);
+        showToast('error', `Failed to request video visit: ${error.message}`);
       }
-    } catch (err) {
-      console.error("Video request error:", err);
+    } catch (err: any) {
+      showToast('error', `Error: ${err.message}`);
     } finally {
       setIsRequestingVideo(false);
     }
@@ -361,25 +394,26 @@ export function DoctorConsultPage() {
 
   const handleDisqualify = async () => {
     if (!order || isDisqualifying) return;
-    if (!confirm("Are you sure you want to disqualify this patient and initiate a refund?")) return;
-    
+    if (!confirm(`Disqualify ${order.patient_name} and initiate a refund? This cannot be undone.`)) return;
     setIsDisqualifying(true);
     try {
       const { error } = await supabase
         .from('orders')
         .update({ 
-          status: 'cancelled', 
-          doctor_note: soapNotes.plan || "Patient did not qualify based on medical history." 
+          status: 'cancelled',
+          consultation_live: false,
+          doctor_note: soapNotes.plan || "Patient did not qualify based on medical history."
         })
         .eq('id', order.id);
       
       if (!error) {
-        navigate('/doctor/queue');
+        showToast('error', `Patient disqualified. Refund initiated for ${order.patient_name}.`);
+        setTimeout(() => navigate('/doctor/queue'), 1800);
       } else {
-        console.error("Disqualify error:", error);
+        showToast('error', `Disqualify failed: ${error.message}`);
       }
-    } catch (err) {
-      console.error("Disqualify error:", err);
+    } catch (err: any) {
+      showToast('error', `Error: ${err.message}`);
     } finally {
       setIsDisqualifying(false);
     }
@@ -394,13 +428,15 @@ export function DoctorConsultPage() {
     if (!order) return;
     setIsStartingLive(true);
     try {
-      await supabase
+      const { error } = await supabase
         .from('orders')
         .update({ consultation_live: true })
         .eq('id', order.id);
+      if (error) throw new Error(error.message);
       setIsLiveVideoActive(true);
-    } catch (err) {
-      console.error("Failed to start live consult:", err);
+      showToast('success', `🎥 Live session started — patient is being notified`);
+    } catch (err: any) {
+      showToast('error', `Could not start session: ${err.message}`);
     } finally {
       setIsStartingLive(false);
     }
@@ -412,7 +448,8 @@ export function DoctorConsultPage() {
       .from('orders')
       .update({ consultation_live: false })
       .eq('id', order.id);
-    navigate('/doctor/queue');
+    showToast('info', 'Consultation ended.');
+    setTimeout(() => navigate('/doctor/queue'), 800);
   };
 
   useEffect(() => {
@@ -459,6 +496,7 @@ export function DoctorConsultPage() {
   // ── Full Consultation UI ──
   return (
     <div className="min-h-[calc(100vh-140px)] flex flex-col gap-6 animate-in fade-in duration-700 pb-10">
+      <ToastBar toasts={toasts} />
       {/* Header */}
       <div className="bg-white border border-slate-200 rounded-2xl px-6 py-5 flex flex-wrap items-center justify-between shadow-sm shrink-0 gap-4">
         <div className="flex items-center gap-4 min-w-0">
