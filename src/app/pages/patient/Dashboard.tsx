@@ -112,6 +112,32 @@ export function PatientDashboard() {
                     </div>
                   )}
 
+                  {/* ── VIDEO CALL REQUESTED ALERT ── */}
+                  {order.zoom_status === 'requested' && (
+                    <div className="mt-3 bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                          <Video className="h-5 w-5 text-amber-600 animate-pulse" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-amber-800 uppercase tracking-tight">Action Required</p>
+                          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Video Consultation Requested</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-amber-900 font-medium leading-relaxed mb-3 italic">
+                        "{order.zoom_doctor_message || 'Your doctor would like to speak with you regarding your intake form before finalizing your prescription.'}"
+                      </p>
+                      <Button 
+                        asChild
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl h-10 font-bold text-xs gap-2"
+                      >
+                        <a href={`https://peakhealth.com/book/${order.doctor?.toLowerCase().replace('dr. ', '').replace(/ /g, '-')}`} target="_blank" rel="noopener noreferrer">
+                          Schedule Consultation <Calendar className="h-3.5 w-3.5" />
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+
                   <div className="mt-3 p-3 bg-muted/30 rounded-2xl border border-border/40">
                      <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Current Progress</p>
                      <p className="text-xs font-medium text-foreground leading-relaxed">{ORDER_STEPS[currentIdx]?.desc || "Processing your request..."}</p>

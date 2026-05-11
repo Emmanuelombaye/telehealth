@@ -27,12 +27,24 @@ serve(async (req) => {
     
     // Example logic based on the updated record
     if (record.zoom_status === 'requested' && payload.old_record.zoom_status !== 'requested') {
-      subject = `Your Doctor Requested a Video Consultation`;
+      const doctorName = record.doctor || 'your assigned physician';
+      const doctorSlug = doctorName.toLowerCase().replace('dr. ', '').replace(/ /g, '-');
+      const bookingLink = `https://peakhealth.com/book/${doctorSlug}`;
+      
+      subject = `Action Required: Video Consultation Requested by ${doctorName}`;
       htmlContent = `
-        <h2>Hi ${record.patient_name || 'Patient'},</h2>
-        <p>After reviewing your medical intake form, your doctor has requested a brief video consultation to discuss your case before finalizing the prescription.</p>
-        <p><strong><a href="https://calendly.com/your-doctor-calendar">Click here to book a time on the doctor's calendar</a></strong></p>
-        <p>Message from your doctor: <i>${record.zoom_doctor_message || 'I need to speak with you regarding your intake form.'}</i></p>
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 12px;">
+          <h2 style="color: #064e3b;">Hi ${record.patient_name || 'Patient'},</h2>
+          <p>After reviewing your medical intake form, <strong>${doctorName}</strong> has requested a brief video consultation to discuss your case before finalizing your treatment plan.</p>
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${bookingLink}" style="background-color: #22c55e; color: black; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block;">Schedule Your Consultation</a>
+          </div>
+          <p style="color: #475569; font-size: 14px;"><strong>Message from ${doctorName}:</strong></p>
+          <blockquote style="border-left: 4px solid #22c55e; padding-left: 15px; font-style: italic; color: #1e293b;">
+            "${record.zoom_doctor_message || 'I would like to speak with you regarding some details in your intake form.'}"
+          </blockquote>
+          <p style="margin-top: 30px; font-size: 12px; color: #94a3b8;">This is a secure communication from Peak Health Telehealth System.</p>
+        </div>
       `;
     } else if (record.status === 'rx_sent' && payload.old_record.status !== 'rx_sent') {
        subject = `Your Prescription has been Sent!`;

@@ -187,6 +187,8 @@ export function DoctorConsultPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [isRequestingVideo, setIsRequestingVideo] = useState(false);
+  const [isDisqualifying, setIsDisqualifying] = useState(false);
 
   const [soapNotes, setSoapNotes] = useState({
     subjective: "",
@@ -319,7 +321,58 @@ export function DoctorConsultPage() {
     }
   };
 
+  const handleRequestVideoCall = async () => {
+    if (!order || isRequestingVideo) return;
+    setIsRequestingVideo(true);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          zoom_status: 'requested', 
+          zoom_doctor_message: soapNotes.plan || "Please book a time on my calendar for a brief consultation." 
+        })
+        .eq('id', order.id);
+      
+      if (!error) {
+        navigate('/doctor/queue');
+      } else {
+        console.error("Video request error:", error);
+      }
+    } catch (err) {
+      console.error("Video request error:", err);
+    } finally {
+      setIsRequestingVideo(false);
+    }
+  };
+
+  const handleDisqualify = async () => {
+    if (!order || isDisqualifying) return;
+    if (!confirm("Are you sure you want to disqualify this patient and initiate a refund?")) return;
+    
+    setIsDisqualifying(true);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'cancelled', 
+          doctor_note: soapNotes.plan || "Patient did not qualify based on medical history." 
+        })
+        .eq('id', order.id);
+      
+      if (!error) {
+        navigate('/doctor/queue');
+      } else {
+        console.error("Disqualify error:", error);
+      }
+    } catch (err) {
+      console.error("Disqualify error:", err);
+    } finally {
+      setIsDisqualifying(false);
+    }
+  };
+
   const [transcript, setTranscript] = useState<string[]>([]);
+
   const [isSyncingVitals, setIsSyncingVitals] = useState(false);
 
   useEffect(() => {
@@ -543,15 +596,36 @@ export function DoctorConsultPage() {
                 </div>
                 <CheckCircle2 className="h-5 w-5 text-[#22c55e] shrink-0" />
               </div>
-              <Button
-                onClick={handleFinalize}
-                disabled={isFinalizing}
-                className="w-full rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-black h-11 font-black uppercase text-xs tracking-widest shadow-lg shadow-[#22c55e]/20"
-              >
-                {isFinalizing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Finalize & Send to Pharmacy
-              </Button>
-              <p className="text-center text-[9px] font-black text-[#7f9488] uppercase tracking-widest">
+              <div className="space-y-3">
+                <Button
+                  onClick={handleFinalize}
+                  disabled={isFinalizing || isRequestingVideo || isDisqualifying}
+                  className="w-full rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-black h-11 font-black uppercase text-xs tracking-widest shadow-lg shadow-[#22c55e]/20"
+                >
+                  {isFinalizing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Finalize & Send to Pharmacy
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={handleRequestVideoCall}
+                  disabled={isFinalizing || isRequestingVideo || isDisqualifying}
+                  className="w-full rounded-2xl border-[#22c55e]/20 text-[#22c55e] h-11 font-black uppercase text-xs tracking-widest hover:bg-[#22c55e]/5 gap-2 transition-all flex items-center justify-center"
+                >
+                  {isRequestingVideo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />}
+                  Request Video Call Visit
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  onClick={handleDisqualify}
+                  disabled={isFinalizing || isRequestingVideo || isDisqualifying}
+                  className="w-full text-red-500/40 hover:text-red-500 hover:bg-red-500/5 h-10 rounded-xl font-black uppercase text-[9px] tracking-[0.2em] transition-all"
+                >
+                  {isDisqualifying ? "Disqualifying..." : "Disqualify Specimen & Refund"}
+                </Button>
+              </div>
+              <p className="text-center text-[9px] font-black text-[#7f9488] uppercase tracking-widest mt-4">
                 Sent to: {order.pharmacy || "Patient's Preferred Network Pharmacy"}
               </p>
             </CardContent>
