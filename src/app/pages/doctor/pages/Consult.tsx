@@ -65,9 +65,9 @@ function PatientPicker() {
             <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
             <span className="text-[10px] font-black text-[#22c55e] uppercase tracking-[0.2em]">Live Queue Active</span>
           </div>
-          <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter">Consultation Hub</h1>
-          <p className="text-[#7f9488] text-xs font-bold uppercase tracking-widest mt-1">
-            Select a patient to begin — {filtered.length} awaiting review
+          <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-tight">Consultation Hub</h1>
+          <p className="text-[#d4c4a8] text-[10px] font-black uppercase tracking-[0.3em] mt-1 opacity-80">
+            Select a patient to begin — {filtered.length} clinical specimens awaiting review
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -429,9 +429,9 @@ export function DoctorConsultPage() {
             <ArrowLeft className="h-4 w-4 text-white" />
           </button>
           <div>
-            <h1 className="text-lg font-black text-white">{order.patient_name || 'Patient Details'}</h1>
-            <p className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest">
-              Consultation #{order.order_number} · {order.category}
+            <h1 className="text-xl font-black text-white italic uppercase tracking-tighter leading-tight">{order.patient_name || 'Patient Details'}</h1>
+            <p className="text-[10px] font-black text-[#d4c4a8] uppercase tracking-[0.2em] mt-0.5 opacity-80">
+              Consultation ID: {order.order_number} · {order.category}
             </p>
           </div>
         </div>
@@ -463,8 +463,8 @@ export function DoctorConsultPage() {
 
       <div className="flex-1 flex gap-4 overflow-hidden">
         {/* Left Column: Video & Controls */}
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-          <div className="flex-1 bg-slate-900 rounded-[32px] relative overflow-hidden group shadow-2xl flex items-center justify-center">
+        <div className="flex-1 flex flex-col gap-4 overflow-hidden min-w-0">
+          <div className="flex-1 bg-slate-900 rounded-[32px] relative overflow-hidden group shadow-2xl flex items-center justify-center border border-white/5">
             <div className="text-center">
               <div className="h-24 w-24 rounded-full bg-slate-800 border-4 border-slate-700 mx-auto flex items-center justify-center mb-4 shadow-xl">
                 <span className="text-3xl font-black text-slate-400">
@@ -554,18 +554,21 @@ export function DoctorConsultPage() {
         {/* Right Column: SOAP Notes & e-Rx */}
         <div className="w-[380px] flex flex-col gap-4 overflow-hidden shrink-0">
           <Card className="flex-1 overflow-hidden border-[#1a2620] bg-[#0c120f] shadow-xl flex flex-col">
-            <div className="p-4 border-b border-[#1a2620] flex items-center justify-between bg-white/[0.02]">
+            <div className="p-4 border-b border-[#1a2620] flex items-center justify-between bg-white/[0.03] backdrop-blur-sm">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-[#22c55e]" />
-                <h3 className="font-black text-xs uppercase tracking-widest text-white">Clinical Documentation</h3>
+                <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-[#d4c4a8]">Clinical Documentation Terminal</h3>
               </div>
-              <Badge variant="outline" className="bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/20 text-[9px] font-black uppercase">AI ASSISTED</Badge>
+              <Badge variant="outline" className="bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/30 text-[9px] font-black uppercase tracking-widest">AI ASSISTED</Badge>
             </div>
             <CardContent className="p-0 overflow-y-auto flex-1 custom-scrollbar">
-              <div className="p-4 space-y-5">
+              <div className="p-5 space-y-6">
                 {(['subjective', 'objective', 'assessment', 'plan'] as const).map(field => (
                   <div key={field}>
-                    <p className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest mb-2">{field}</p>
+                    <p className="text-[9px] font-black text-[#7f9488] uppercase tracking-[0.2em] mb-2.5 flex items-center gap-2">
+                      <div className="h-1 w-1 rounded-full bg-[#22c55e]/50" />
+                      {field} Analysis
+                    </p>
                     <textarea
                       value={soapNotes[field]}
                       onChange={e => setSoapNotes({ ...soapNotes, [field]: e.target.value })}
@@ -583,16 +586,16 @@ export function DoctorConsultPage() {
           </Card>
 
           {/* E-Prescribing */}
-          <Card className="border-[#1a2620] bg-[#0c120f] shadow-xl overflow-hidden shrink-0">
-            <div className="p-4 bg-[#22c55e] text-black flex items-center gap-2">
+          <Card className="border-[#1a2620] bg-gradient-to-br from-[#0c120f] to-[#060807] shadow-2xl overflow-hidden shrink-0 border-t-[#22c55e]/30">
+            <div className="p-4 bg-[#22c55e] text-[#060807] flex items-center gap-2">
               <Pill className="h-4 w-4" />
-              <h3 className="font-black text-xs uppercase tracking-widest">E-Prescribing</h3>
+              <h3 className="font-black text-[10px] uppercase tracking-[0.2em]">E-Prescribing Directive</h3>
             </div>
-            <CardContent className="p-4 space-y-4">
-              <div className="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
+            <CardContent className="p-5 space-y-5">
+              <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between group hover:border-[#22c55e]/30 transition-all">
                 <div>
-                  <p className="text-sm font-black text-white">{order.medication}</p>
-                  <p className="text-[10px] font-bold text-[#7f9488] uppercase mt-0.5">{order.dosage_instructions || "As directed"}</p>
+                  <p className="text-sm font-black text-white italic tracking-tight">{order.medication}</p>
+                  <p className="text-[10px] font-bold text-[#d4c4a8] uppercase tracking-widest mt-1 opacity-70">{order.dosage_instructions || "Standard Protocol"}</p>
                 </div>
                 <CheckCircle2 className="h-5 w-5 text-[#22c55e] shrink-0" />
               </div>

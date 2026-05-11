@@ -575,25 +575,28 @@ export function DoctorQueuePage() {
 
                             <Button 
                               variant="outline"
-                              className="w-full border-[#22c55e]/20 text-[#22c55e] h-14 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-[#22c55e]/5 gap-3 transition-all flex items-center justify-center"
+                              className="w-full border-[#22c55e]/30 text-[#22c55e] h-14 rounded-2xl font-black uppercase italic text-xs tracking-[0.1em] hover:bg-[#22c55e]/10 gap-3 transition-all flex items-center justify-center shadow-lg shadow-black/20"
                               onClick={async (e) => {
                                 const btn = e.currentTarget;
                                 const originalContent = btn.innerHTML;
-                                btn.innerText = "CALENDAR INVITE SENT ✓";
+                                btn.innerHTML = '<span class="animate-pulse">SYNCHRONIZING CALENDAR...</span>';
                                 btn.disabled = true;
                                 
                                 await supabase.from('orders').update({ 
                                   zoom_status: 'requested', 
-                                  zoom_doctor_message: rxNote || "Please book a time on my calendar." 
+                                  zoom_doctor_message: rxNote || "Please book a time on my calendar for a brief consultation." 
                                 }).eq('order_number', selected.id);
                                 
                                 await fetchOrders();
                                 
                                 setTimeout(() => {
-                                  btn.innerHTML = originalContent;
-                                  btn.disabled = false;
-                                  setSelectedId(null);
-                                }, 2000);
+                                  btn.innerHTML = "CALENDAR INVITE DISPATCHED ✓";
+                                  setTimeout(() => {
+                                    btn.innerHTML = originalContent;
+                                    btn.disabled = false;
+                                    setSelectedId(null);
+                                  }, 1500);
+                                }, 1000);
                               }}
                             >
                               <Video className="h-4 w-4" /> Request Video Call Visit
