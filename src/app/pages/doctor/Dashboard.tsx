@@ -53,29 +53,29 @@ export function DoctorDashboard() {
           <div className="h-14 w-14 rounded-xl bg-[#0A2E1F] flex items-center justify-center shadow-md">
              <Stethoscope className="h-7 w-7 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-[#0A2E1F]">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-bold text-[#0A2E1F] truncate">
               {greeting}, {doctorName}
             </h1>
-            <div className="flex items-center gap-3 mt-1.5">
-              <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
+            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100 whitespace-nowrap">
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Active Session
               </span>
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 whitespace-nowrap">
                 {currentTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Button variant="outline" className="h-10 px-4 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold gap-2">
-            <Search className="h-4 w-4" /> Find Patient
+        <div className="flex items-center gap-3 w-full md:w-auto shrink-0 flex-wrap sm:flex-nowrap">
+          <Button variant="outline" className="h-10 px-4 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold gap-2 whitespace-nowrap flex-1 sm:flex-none">
+            <Search className="h-4 w-4 shrink-0" /> Find Patient
           </Button>
-          <Link to="/doctor/consult">
-            <Button className="h-10 px-5 rounded-xl bg-[#0A2E1F] hover:bg-[#153e2d] text-white font-semibold gap-2 shadow-md">
-              <Video className="h-4 w-4" /> Join Consult Suite
+          <Link to="/doctor/consult" className="flex-1 sm:flex-none">
+            <Button className="w-full sm:w-auto h-10 px-5 rounded-xl bg-[#0A2E1F] hover:bg-[#153e2d] text-white font-semibold gap-2 shadow-md whitespace-nowrap">
+              <Video className="h-4 w-4 shrink-0" /> Join Consult Suite
             </Button>
           </Link>
         </div>
