@@ -432,37 +432,37 @@ export function DoctorConsultPage() {
 
   // ── Full Consultation UI ──
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col gap-4 overflow-hidden -mt-2 animate-in fade-in duration-700">
+    <div className="min-h-[calc(100vh-140px)] flex flex-col gap-6 animate-in fade-in duration-700 pb-10">
       {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-2xl px-6 py-4 flex items-center justify-between shadow-sm shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="bg-white border border-slate-200 rounded-2xl px-6 py-5 flex flex-wrap items-center justify-between shadow-sm shrink-0 gap-4">
+        <div className="flex items-center gap-4 min-w-0">
           <button
             onClick={() => navigate('/doctor/consult')}
-            className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 flex items-center justify-center transition-all text-slate-500"
+            className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 flex items-center justify-center transition-all text-slate-500 shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div>
-            <h1 className="text-xl font-bold text-[#0A2E1F] leading-tight">{order.patient_name || 'Patient Details'}</h1>
-            <div className="flex items-center gap-2 mt-0.5">
-               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#0A2E1F] leading-tight truncate">{order.patient_name || 'Patient Details'}</h1>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+               <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
                  ID: {order.order_number}
                </span>
                <span className="h-1 w-1 rounded-full bg-slate-300" />
-               <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+               <span className="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase tracking-widest whitespace-nowrap">
                  {order.category}
                </span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Badge variant="outline" className="rounded-xl bg-emerald-50 text-emerald-700 border-emerald-200 gap-1.5 py-1.5 px-3 text-[10px] font-bold uppercase shadow-sm">
-            <ShieldCheck className="h-3.5 w-3.5" /> HIPAA SECURE
+        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          <Badge variant="outline" className="hidden sm:flex rounded-xl bg-emerald-50 text-emerald-700 border-emerald-200 gap-1.5 py-1.5 px-3 text-xs font-bold uppercase shadow-sm">
+            <ShieldCheck className="h-4 w-4" /> HIPAA SECURE
           </Badge>
-          <div className="h-8 w-px bg-slate-200 mx-1" />
+          <div className="hidden sm:block h-8 w-px bg-slate-200 mx-2" />
           {order.zoom_status === 'confirmed' && (
             <Button
-              className="rounded-xl h-10 px-4 text-xs font-bold bg-[#0A2E1F] text-white hover:bg-[#153e2d] shadow-md shadow-emerald-900/10"
+              className="rounded-xl h-11 px-5 text-sm font-bold bg-[#0A2E1F] text-white hover:bg-[#153e2d] shadow-md shadow-emerald-900/10"
               onClick={() => window.open(order.zoom_join_url || 'https://zoom.us', '_blank')}
             >
               <Video className="h-4 w-4 mr-2" /> Join Zoom Meeting
@@ -470,7 +470,7 @@ export function DoctorConsultPage() {
           )}
           <Button
             variant="outline"
-            className="rounded-xl h-10 px-4 text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
+            className="rounded-xl h-11 px-5 text-sm font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
             onClick={() => navigate(`/doctor/consult`)}
           >
             <Users className="h-4 w-4 mr-2" /> View Queue
@@ -478,94 +478,99 @@ export function DoctorConsultPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex gap-6 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Video & AI Scribe */}
-        <div className="flex-1 flex flex-col gap-6 overflow-hidden min-w-0">
+        <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6">
           
           {/* Video Feed */}
-          <div className="flex-1 bg-black rounded-[2rem] relative overflow-hidden group shadow-xl flex items-center justify-center border-4 border-slate-100">
-            <div className="text-center">
-              <div className="h-28 w-28 rounded-full bg-slate-800 border-4 border-slate-700 mx-auto flex items-center justify-center mb-5 shadow-2xl">
-                <span className="text-4xl font-black text-slate-400">
+          <div className="bg-black rounded-[2rem] w-full aspect-video min-h-[400px] relative overflow-hidden group shadow-xl flex items-center justify-center border-4 border-slate-100">
+            <div className="text-center p-6">
+              <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-full bg-slate-800 border-4 border-slate-700 mx-auto flex items-center justify-center mb-6 shadow-2xl relative">
+                <span className="text-4xl sm:text-5xl font-black text-slate-400">
                   {order.patient_name?.charAt(0) || '?'}
                 </span>
+                <div className="absolute bottom-1 right-1 h-6 w-6 bg-emerald-500 rounded-full border-4 border-slate-800 animate-pulse" />
               </div>
-              <p className="text-white text-lg font-bold">{order.patient_name}</p>
-              <div className="flex items-center justify-center gap-2 mt-2">
-                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                 <p className="text-emerald-400 text-xs font-bold tracking-widest uppercase">Secure Connection Active</p>
-              </div>
+              <p className="text-white text-xl sm:text-2xl font-bold tracking-tight">{order.patient_name}</p>
+              <p className="text-emerald-400 text-sm font-bold tracking-widest uppercase mt-2">Secure Video Matrix Active</p>
             </div>
 
-            <div className="absolute top-6 left-6">
+            <div className="absolute top-6 left-6 max-w-[calc(100%-3rem)]">
               <div 
                 className={cn(
-                  "bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-2 border transition-all",
-                  isSyncingVitals ? "border-emerald-500/50 text-emerald-400" : "border-white/10 text-white"
+                  "bg-black/60 backdrop-blur-md px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all",
+                  isSyncingVitals ? "border-emerald-500/50 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "border-white/10 text-white"
                 )}
                 onMouseEnter={() => setIsSyncingVitals(true)}
                 onMouseLeave={() => setIsSyncingVitals(false)}
               >
-                <Activity className={cn("h-4 w-4", isSyncingVitals ? "animate-pulse" : "")} />
-                <span className="text-[10px] font-black uppercase tracking-widest">
+                <Activity className={cn("h-4 w-4 shrink-0", isSyncingVitals ? "animate-pulse" : "")} />
+                <span className="text-xs font-black uppercase tracking-widest truncate">
                   {isSyncingVitals ? 'Syncing Live Vitals...' : 'Vitals Synced'}
                 </span>
               </div>
             </div>
 
-            {/* Controls */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-4 px-6 py-4 bg-black/60 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:bottom-10 z-50">
+            {/* Premium Video Controls */}
+            <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-300 w-[90%] sm:w-auto max-w-full overflow-x-auto custom-scrollbar">
               <button
                 onClick={() => setIsMuted(!isMuted)}
-                className={cn("h-14 w-14 rounded-2xl flex items-center justify-center transition-all duration-300",
-                  isMuted ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/10 text-white hover:bg-white/20 hover:scale-105")}
+                className={cn("h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0",
+                  isMuted ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/20 text-white hover:bg-white/30")}
               >
-                {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+                {isMuted ? <MicOff className="h-5 w-5 sm:h-6 sm:w-6" /> : <Mic className="h-5 w-5 sm:h-6 sm:w-6" />}
               </button>
               
               <button
                 onClick={() => setIsVideoOff(!isVideoOff)}
-                className={cn("h-14 w-14 rounded-2xl flex items-center justify-center transition-all duration-300",
-                  isVideoOff ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/10 text-white hover:bg-white/20 hover:scale-105")}
+                className={cn("h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0",
+                  isVideoOff ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/20 text-white hover:bg-white/30")}
               >
-                {isVideoOff ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
+                {isVideoOff ? <VideoOff className="h-5 w-5 sm:h-6 sm:w-6" /> : <Video className="h-5 w-5 sm:h-6 sm:w-6" />}
               </button>
+
+              <div className="h-8 w-px bg-white/20 mx-1 sm:mx-2 shrink-0" />
 
               <button 
                 onClick={() => navigate('/doctor/queue')}
-                className="h-14 w-24 bg-red-600 hover:bg-red-700 text-white rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl shadow-red-600/40 hover:scale-105"
+                className="h-12 sm:h-14 px-6 sm:px-8 bg-red-600 hover:bg-red-700 text-white rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl shadow-red-600/40 font-bold tracking-widest uppercase text-xs sm:text-sm shrink-0 gap-2"
               >
-                <Zap className="h-7 w-7" />
+                <Zap className="h-4 w-4 sm:h-5 sm:w-5" /> End Consult
               </button>
 
-              <Link to={`/doctor/messages?userId=${order.user_id}`}>
-                <button className="h-14 w-14 bg-white/10 text-white hover:bg-white/20 hover:scale-105 rounded-2xl flex items-center justify-center transition-all duration-300">
-                  <MessageSquare className="h-6 w-6" />
+              <div className="h-8 w-px bg-white/20 mx-1 sm:mx-2 shrink-0" />
+
+              <Link to={`/doctor/messages?userId=${order.user_id}`} className="shrink-0">
+                <button className="h-12 w-12 sm:h-14 sm:w-14 bg-white/20 text-white hover:bg-white/30 rounded-2xl flex items-center justify-center transition-all duration-300">
+                  <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
               </Link>
             </div>
           </div>
 
           {/* AI Scribe */}
-          <Card className="h-44 border border-emerald-100 bg-emerald-50/50 shadow-sm overflow-hidden shrink-0 rounded-[1.5rem]">
-            <CardContent className="p-5 flex flex-col h-full">
-              <div className="flex items-center gap-2 mb-3 pb-3 border-b border-emerald-100/50">
-                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest flex items-center gap-2">
-                  <Bot className="h-4 w-4" /> AI Scribe Active
+          <Card className="border border-emerald-100 bg-gradient-to-br from-emerald-50/80 to-white shadow-sm overflow-hidden rounded-[1.5rem]">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-emerald-100/50">
+                <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                <span className="text-sm font-bold text-emerald-900 uppercase tracking-widest flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-emerald-600" /> Executive AI Scribe
                 </span>
+                <Badge variant="outline" className="ml-auto bg-emerald-100/50 text-emerald-700 border-emerald-200 text-[10px] font-bold">LIVE SYNC</Badge>
               </div>
-              <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar space-y-2">
+              <div className="h-48 overflow-y-auto pr-4 custom-scrollbar space-y-3">
                 {transcript.length === 0 ? (
-                   <div className="flex items-center justify-center h-full gap-3 text-emerald-600/60">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <p className="text-sm font-semibold">Listening and securely transcribing...</p>
+                   <div className="flex flex-col items-center justify-center h-full gap-3 text-emerald-600/60">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      <p className="text-sm font-semibold tracking-wider">Listening and securely transcribing...</p>
                    </div>
                 ) : (
                   transcript.map((line, idx) => (
-                    <div key={idx} className="flex gap-3 text-sm animate-in slide-in-from-left-1 duration-300">
-                      <span className="text-emerald-400 font-mono text-xs mt-0.5 shrink-0">[{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}]</span>
-                      <span className="text-emerald-900 font-medium">{line}</span>
+                    <div key={idx} className="flex gap-4 text-sm animate-in slide-in-from-left-2 duration-500 bg-white/50 p-3 rounded-xl border border-emerald-50">
+                      <span className="text-emerald-500/70 font-mono text-xs mt-0.5 shrink-0">
+                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className="text-[#0A2E1F] font-semibold leading-relaxed">{line}</span>
                     </div>
                   ))
                 )}
@@ -575,74 +580,83 @@ export function DoctorConsultPage() {
         </div>
 
         {/* Right Column: SOAP Notes & e-Rx */}
-        <div className="w-[420px] flex flex-col gap-6 overflow-hidden shrink-0">
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6">
           
-          <Card className="flex-1 overflow-hidden border border-slate-200 bg-white shadow-sm flex flex-col rounded-[1.5rem]">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-2.5">
-                <FileSignature className="h-5 w-5 text-emerald-600" />
-                <h3 className="font-bold text-[#0A2E1F] uppercase tracking-wider text-sm">Clinical Notes</h3>
+          <Card className="border border-slate-200 bg-white shadow-md flex flex-col rounded-[1.5rem] overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                  <FileSignature className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#0A2E1F] uppercase tracking-wider text-sm">Clinical Notes</h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">SOAP Format</p>
+                </div>
               </div>
               <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold uppercase tracking-widest shadow-sm">AI ASSISTED</Badge>
             </div>
-            <CardContent className="p-0 overflow-y-auto flex-1 custom-scrollbar">
-              <div className="p-6 space-y-6">
-                {(['subjective', 'objective', 'assessment', 'plan'] as const).map(field => (
-                  <div key={field}>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      {field}
-                    </p>
-                    <textarea
-                      value={soapNotes[field]}
-                      onChange={e => setSoapNotes({ ...soapNotes, [field]: e.target.value })}
-                      className={cn(
-                        "w-full text-sm font-medium leading-relaxed border p-4 rounded-xl resize-none transition-all outline-none",
-                        field === 'assessment'
-                          ? "bg-emerald-50/30 border-emerald-200 text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-24"
-                          : "bg-slate-50 border-slate-200 text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white h-24"
-                      )}
-                    />
-                  </div>
-                ))}
-              </div>
+            <CardContent className="p-6 space-y-6">
+              {(['subjective', 'objective', 'assessment', 'plan'] as const).map(field => (
+                <div key={field}>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    {field}
+                  </p>
+                  <textarea
+                    value={soapNotes[field]}
+                    onChange={e => setSoapNotes({ ...soapNotes, [field]: e.target.value })}
+                    className={cn(
+                      "w-full text-sm font-medium leading-relaxed border p-4 rounded-xl resize-none transition-all outline-none",
+                      field === 'assessment'
+                        ? "bg-emerald-50/30 border-emerald-200 text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-28"
+                        : "bg-slate-50 border-slate-200 text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white h-24"
+                    )}
+                  />
+                </div>
+              ))}
             </CardContent>
           </Card>
 
           {/* E-Prescribing */}
-          <Card className="border border-emerald-200 bg-white shadow-md overflow-hidden shrink-0 rounded-[1.5rem]">
-            <div className="p-4 bg-emerald-50 border-b border-emerald-100 flex items-center gap-2.5">
-              <Pill className="h-5 w-5 text-emerald-600" />
-              <h3 className="font-bold text-emerald-900 uppercase tracking-wider text-sm">E-Prescribing</h3>
+          <Card className="border-2 border-emerald-500/20 bg-white shadow-xl overflow-hidden rounded-[1.5rem] relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600" />
+            <div className="p-6 border-b border-emerald-50 flex items-center gap-3 bg-emerald-50/30">
+              <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <Pill className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-[#0A2E1F] uppercase tracking-wider text-sm">E-Prescribing</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Secure Dispatch</p>
+              </div>
             </div>
-            <CardContent className="p-6 space-y-5">
-              <div className="space-y-4">
+            <CardContent className="p-6 space-y-6">
+              <div className="space-y-5">
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Medication</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Medication</p>
                   <input 
                     value={medication}
                     onChange={(e) => setMedication(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
                   />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Instructions</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Instructions</p>
                   <textarea 
                     value={dosage}
                     onChange={(e) => setDosage(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all h-20 resize-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all h-24 resize-none"
                     placeholder="e.g. Inject three units weekly"
                   />
                 </div>
               </div>
               
-              <div className="space-y-3 pt-2">
+              <div className="space-y-3 pt-4 border-t border-slate-100">
                 <Button
                   onClick={handleFinalize}
                   disabled={isFinalizing || isRequestingVideo || isDisqualifying}
-                  className="w-full rounded-xl bg-[#0A2E1F] hover:bg-[#153e2d] text-white h-12 font-bold uppercase text-xs tracking-widest shadow-lg shadow-emerald-900/20"
+                  className="w-full rounded-xl bg-[#0A2E1F] hover:bg-[#153e2d] text-white h-14 font-bold uppercase text-xs sm:text-sm tracking-widest shadow-lg shadow-emerald-900/20 transition-all hover:-translate-y-0.5"
                 >
-                  {isFinalizing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  {isFinalizing && <Loader2 className="h-5 w-5 animate-spin mr-2" />}
                   Sign & Dispatch to Pharmacy
                 </Button>
 
@@ -660,12 +674,12 @@ export function DoctorConsultPage() {
                   variant="ghost"
                   onClick={handleDisqualify}
                   disabled={isFinalizing || isRequestingVideo || isDisqualifying}
-                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 h-10 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all"
+                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 h-10 rounded-xl font-bold uppercase text-xs tracking-widest transition-all mt-2"
                 >
-                  {isDisqualifying ? "Processing..." : "Disqualify & Refund"}
+                  {isDisqualifying ? "Processing..." : "Disqualify Patient & Refund"}
                 </Button>
               </div>
-              <p className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-4">
+              <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mt-6 bg-slate-50 py-2 rounded-lg">
                 Routing to: <span className="text-emerald-600">{order.pharmacy || "Network Pharmacy"}</span>
               </p>
             </CardContent>
