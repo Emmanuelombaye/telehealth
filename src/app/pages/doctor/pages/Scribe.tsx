@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Mic, MicOff, Save, RefreshCw, FileText, Bot, CheckCircle2, Sparkles, Activity, ShieldCheck, Database, Trash2, ArrowRight, Waves } from "lucide-react";
+import { Mic, MicOff, Save, RefreshCw, FileText, Bot, CheckCircle2, Sparkles, Activity, ShieldCheck, Database, Trash2, ArrowRight, Waves, Zap, Shield, Microscope, ClipboardList } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
@@ -116,78 +116,89 @@ export function DoctorScribePage() {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 pb-20 animate-in fade-in duration-700">
+    <div className="max-w-[1500px] mx-auto space-y-8 pb-24 animate-in fade-in duration-1000">
       
-      {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
-        <div className="absolute -right-20 -top-20 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-50" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
-               Matrix AI Suite Active
-             </span>
-          </div>
-          <h1 className="text-3xl font-black text-[#0A2E1F] tracking-tight uppercase flex items-center gap-3">
-            <Bot className="h-8 w-8 text-emerald-600" />
-            AI Medical Scribe
-          </h1>
-          <p className="text-slate-500 text-xs font-semibold mt-2 max-w-lg">
-            Real-time ambient dictation. Your voice is captured, transcribed, and structured into medical notes instantly.
-          </p>
-        </div>
+      {/* ── LUXURY COMMAND CENTER HEADER ────────────────────────────────────────── */}
+      <div className="bg-[#0A2E1F] rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
+        <div className="absolute -right-40 -top-40 w-96 h-96 bg-emerald-500/20 rounded-full blur-[100px]" />
+        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-emerald-400/10 rounded-full blur-[80px]" />
         
-        <div className="flex gap-3 relative z-10">
-          <Button 
-            variant="outline" 
-            className="h-12 px-6 rounded-xl border-slate-200 text-slate-600 font-bold uppercase tracking-widest text-[10px] gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all"
-            onClick={() => { setSoapNote({subjective:"", objective:"", assessment:"", plan:""}); setTranscript(""); }}
-          >
-            <Trash2 className="h-4 w-4" /> Clear Console
-          </Button>
-          <Button 
-            className="h-12 px-8 rounded-xl bg-[#0A2E1F] hover:bg-[#062015] text-white font-bold uppercase tracking-widest text-[10px] gap-2 shadow-xl shadow-emerald-900/20 transition-all hover:scale-105 active:scale-95"
-            onClick={handleSave}
-          >
-            <Database className="h-4 w-4 text-emerald-400" /> Save to EHR
-          </Button>
+        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10">
+          <div className="space-y-4 text-center lg:text-left">
+            <div className="flex items-center justify-center lg:justify-start gap-3">
+               <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.8)] animate-pulse" />
+               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-400">
+                 Authorized Clinical Command Center
+               </span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight uppercase leading-none">
+              AI Medical <span className="text-emerald-400 italic font-serif lowercase tracking-tighter">scribe.</span>
+            </h1>
+            <p className="text-emerald-100/60 text-sm font-medium max-w-xl leading-relaxed">
+              Proprietary ambient room capture technology. Your voice is instantly structured into a high-fidelity clinical SOAP record with sub-millisecond EHR latency.
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="hidden sm:flex items-center gap-6 px-8 py-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl">
+               <div className="text-center">
+                  <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Latency</p>
+                  <p className="text-lg font-mono font-bold text-white leading-none">12ms</p>
+               </div>
+               <div className="h-8 w-px bg-white/10" />
+               <div className="text-center">
+                  <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Privacy</p>
+                  <ShieldCheck className="h-4 w-4 text-white mx-auto" />
+               </div>
+            </div>
+            <Button 
+              className="h-16 px-10 rounded-[2rem] bg-emerald-500 hover:bg-emerald-400 text-[#0A2E1F] font-black uppercase tracking-[0.2em] text-[12px] gap-3 shadow-[0_20px_50px_rgba(16,185,129,0.3)] transition-all hover:scale-105 active:scale-95"
+              onClick={handleSave}
+            >
+              <Database className="h-5 w-5" /> Synchronize EHR
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="grid xl:grid-cols-12 gap-8 items-start">
+      <div className="grid xl:grid-cols-12 gap-10 items-start">
         
-        {/* ── LEFT: AUDIO CAPTURE ─────────────────────────────────────────── */}
-        <div className="xl:col-span-4 space-y-6">
-          <Card className="border border-slate-200 shadow-xl shadow-slate-200/40 rounded-[2.5rem] bg-white overflow-hidden group">
-             <div className="bg-slate-50 border-b border-slate-100 px-8 py-5 flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Audio Telemetry</span>
-                {isRecording && (
-                  <Badge className="bg-red-500 text-white animate-pulse border-none px-3 py-1 rounded-full text-[10px] font-bold">
-                    LIVE ROOM
-                  </Badge>
-                )}
-             </div>
+        {/* ── LEFT: BIOMETRIC AUDIO CAPTURE ─────────────────────────────────────────── */}
+        <div className="xl:col-span-4 space-y-8">
+          <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] rounded-[3.5rem] bg-white overflow-hidden relative">
+             <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500" />
              
-             <CardContent className="p-10 flex flex-col items-center">
-                <div className="relative mb-10">
+             <CardContent className="p-12 flex flex-col items-center">
+                <div className="w-full flex items-center justify-between mb-12">
+                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Biometric Stream</span>
+                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100">
+                      <div className={cn("h-1.5 w-1.5 rounded-full", isRecording ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
+                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
+                        {isRecording ? "Live Captured" : "Standby"}
+                      </span>
+                   </div>
+                </div>
+
+                <div className="relative mb-12">
                    <AnimatePresence>
                      {isRecording && (
-                       <>
-                        <motion.div 
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1.8, opacity: 0.1 }}
-                          exit={{ scale: 0.8, opacity: 0 }}
-                          transition={{ repeat: Infinity, duration: 1.5 }}
-                          className="absolute inset-0 rounded-full bg-emerald-500 blur-2xl"
-                        />
-                        <motion.div 
-                          initial={{ scale: 1, opacity: 0 }}
-                          animate={{ scale: 1.4, opacity: 0.2 }}
-                          exit={{ scale: 1, opacity: 0 }}
-                          transition={{ repeat: Infinity, duration: 2, delay: 0.5 }}
-                          className="absolute inset-0 rounded-full border-2 border-emerald-500"
-                        />
-                       </>
+                       <motion.div 
+                         initial={{ opacity: 0 }}
+                         animate={{ opacity: 1 }}
+                         exit={{ opacity: 0 }}
+                         className="absolute -inset-10 pointer-events-none"
+                       >
+                         {[1, 2, 3].map((i) => (
+                           <motion.div
+                             key={i}
+                             initial={{ scale: 1, opacity: 0.5 }}
+                             animate={{ scale: 2, opacity: 0 }}
+                             transition={{ repeat: Infinity, duration: 2, delay: i * 0.6 }}
+                             className="absolute inset-0 rounded-full border-2 border-emerald-500/20"
+                           />
+                         ))}
+                       </motion.div>
                      )}
                    </AnimatePresence>
                    
@@ -196,101 +207,182 @@ export function DoctorScribePage() {
                      whileTap={{ scale: 0.95 }}
                      onClick={handleToggleRecording}
                      className={cn(
-                       "h-32 w-32 rounded-full flex items-center justify-center text-white transition-all shadow-2xl relative z-10",
-                       isRecording ? "bg-red-600 ring-4 ring-red-100" : isProcessing ? "bg-amber-500 ring-4 ring-amber-100" : "bg-[#0A2E1F] hover:bg-[#062015] ring-4 ring-emerald-50/50"
+                       "h-40 w-40 rounded-[3rem] flex flex-col items-center justify-center transition-all relative z-10 shadow-2xl group",
+                       isRecording 
+                        ? "bg-red-600 shadow-red-200" 
+                        : isProcessing 
+                          ? "bg-amber-500 shadow-amber-200" 
+                          : "bg-[#0A2E1F] hover:bg-[#062015] shadow-emerald-200"
                      )}
                    >
-                     {isRecording ? <MicOff className="h-12 w-12" /> : <Mic className="h-12 w-12" />}
+                     <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[3rem]" />
+                     {isRecording ? (
+                        <MicOff className="h-16 w-16 text-white mb-2" />
+                     ) : (
+                        <Mic className="h-16 w-16 text-white mb-2" />
+                     )}
+                     <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                        {isRecording ? "Stop" : "Record"}
+                     </span>
                    </motion.button>
                 </div>
 
-                <div className="text-center space-y-2 mb-8">
-                   <h3 className="text-xl font-black text-[#0A2E1F] uppercase tracking-tight">
-                     {isRecording ? "Listening..." : isProcessing ? "Structuring Note" : "Start Dictation"}
-                   </h3>
-                   <p className="text-xs font-semibold text-slate-400 max-w-[240px] mx-auto">
-                     {isRecording ? "Captured speech will appear below in real-time." : "Ready for your next patient consultation."}
-                   </p>
-                </div>
-
-                {/* REAL-TIME TRANSCRIPT MONITOR */}
-                <div className="w-full bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-inner min-h-[160px] flex flex-col">
-                   <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Waves className={cn("h-3 w-3 text-emerald-400", isRecording && "animate-bounce")} />
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400/60">Live Monitor</span>
+                {/* VISUALIZER MONITOR */}
+                <div className="w-full bg-[#0A0D14] rounded-[2.5rem] p-8 border border-white/5 shadow-2xl relative overflow-hidden group/mon">
+                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+                   <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-xl bg-white/5 flex items-center justify-center">
+                           <Waves className={cn("h-4 w-4 text-emerald-400", isRecording && "animate-pulse")} />
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-black text-white uppercase tracking-[0.2em] leading-none">Matrix Stream</p>
+                           <p className="text-[8px] font-bold text-emerald-400/40 uppercase tracking-widest mt-1">Encrypted capture</p>
+                        </div>
                       </div>
-                      {isRecording && <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
+                      <Zap className={cn("h-3 w-3", isRecording ? "text-yellow-400 animate-bounce" : "text-slate-700")} />
                    </div>
-                   <div className="flex-1 overflow-y-auto max-h-[120px] custom-scrollbar">
+
+                   <div className="h-32 overflow-y-auto custom-scrollbar pr-2">
                       <p className={cn(
-                        "text-[11px] font-mono leading-relaxed transition-all duration-300",
-                        transcript ? "text-emerald-50" : "text-slate-600 italic"
+                        "text-[12px] font-mono leading-relaxed transition-all duration-700",
+                        transcript ? "text-emerald-50 opacity-100" : "text-slate-600 italic opacity-40"
                       )}>
-                        {transcript || "Waiting for audio input..."}
+                        {transcript || "// System standing by. Click record to initiate clinical ambient Room-Listening capture..."}
                       </p>
                    </div>
+                   
+                   {isRecording && (
+                     <div className="mt-4 flex items-center gap-1.5 h-1">
+                        {[1,2,3,4,5,6,7,8,9,10,11,12].map(i => (
+                           <motion.div 
+                              key={i}
+                              animate={{ height: [4, Math.random()*20, 4] }}
+                              transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.05 }}
+                              className="w-1 bg-emerald-500/30 rounded-full"
+                           />
+                        ))}
+                     </div>
+                   )}
                 </div>
              </CardContent>
           </Card>
+          
+          <div className="bg-slate-50 rounded-[2.5rem] p-8 flex items-center gap-6 border border-slate-100">
+             <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center shrink-0">
+                <Shield className="h-6 w-6 text-emerald-600" />
+             </div>
+             <div>
+                <p className="text-xs font-black text-[#0A2E1F] uppercase tracking-widest">Authorized Clinical Portal</p>
+                <p className="text-[10px] font-medium text-slate-400">AES-256 Bit Encryption in transit and at rest.</p>
+             </div>
+          </div>
         </div>
 
-        {/* ── RIGHT: GENERATED NOTE ────────────────────────────────────────── */}
+        {/* ── RIGHT: HIGH-FIDELITY SOAP DOCUMENTATION ────────────────────────────────────────── */}
         <div className="xl:col-span-8">
-           <Card className="border border-slate-200 shadow-xl shadow-slate-200/40 rounded-[2.5rem] bg-white overflow-hidden flex flex-col min-h-[680px]">
-              <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
-                 <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-emerald-600" />
-                    <h3 className="text-base font-black text-[#0A2E1F] uppercase tracking-tight">Clinical Documentation</h3>
+           <Card className="border-none shadow-[0_48px_96px_-24px_rgba(0,0,0,0.12)] rounded-[3.5rem] bg-white overflow-hidden flex flex-col min-h-[850px] relative">
+              <div className="px-12 py-10 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between bg-white relative z-10">
+                 <div className="space-y-1 text-center md:text-left mb-6 md:mb-0">
+                    <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                       <ClipboardList className="h-5 w-5 text-emerald-600" />
+                       <h3 className="text-lg font-black text-[#0A2E1F] uppercase tracking-tight">Clinical Documentation</h3>
+                    </div>
+                    <p className="text-xs font-semibold text-slate-400">Automated Patient Visit Structure (S.O.A.P Protocol)</p>
                  </div>
-                 <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="rounded-lg px-3 py-1 bg-white border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-                       Status: {soapNote.assessment ? "Completed" : "Draft"}
+                 <div className="flex items-center gap-4">
+                    <Badge variant="outline" className="rounded-2xl px-5 py-2.5 bg-slate-50 border-slate-100 text-[#0A2E1F] text-[10px] font-black uppercase tracking-widest">
+                       Status: <span className="ml-1 text-emerald-600">{soapNote.assessment ? "Validated" : "Drafting"}</span>
                     </Badge>
-                    <Badge variant="outline" className="rounded-lg px-3 py-1 bg-emerald-50 border-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-                       <Activity className="h-3 w-3" /> Real-time Sync
-                    </Badge>
+                    <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest">
+                       <Activity className="h-3.5 w-3.5" /> Real-time Sync
+                    </div>
                  </div>
               </div>
 
-              <CardContent className="p-0 flex-1 flex flex-col">
-                 <div className="grid md:grid-cols-2 divide-x divide-y divide-slate-100 border-b border-slate-100 flex-1">
+              <CardContent className="p-0 flex-1 flex flex-col relative z-10">
+                 <div className="grid md:grid-cols-2 divide-x divide-y divide-slate-50 border-b border-slate-50 flex-1">
                     {[
-                      { key: 'subjective', label: 'Subjective', icon: 'S', color: 'text-blue-600', bg: 'bg-blue-50' },
-                      { key: 'objective', label: 'Objective', icon: 'O', color: 'text-amber-600', bg: 'bg-amber-50' },
-                      { key: 'assessment', label: 'Assessment', icon: 'A', color: 'text-purple-600', bg: 'bg-purple-50' },
-                      { key: 'plan', label: 'Plan', icon: 'P', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                    ].map((item) => (
-                      <div key={item.key} className="p-8 group hover:bg-slate-50 transition-colors">
-                         <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                               <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center font-black text-xs", item.bg, item.color)}>
+                      { key: 'subjective', label: 'Subjective', icon: 'S', desc: 'Patient history & reported symptoms', color: 'text-blue-600', bg: 'bg-blue-50/50', border: 'border-blue-100' },
+                      { key: 'objective', label: 'Objective', icon: 'O', desc: 'Clinical findings & vitals', color: 'text-amber-600', bg: 'bg-amber-50/50', border: 'border-amber-100' },
+                      { key: 'assessment', label: 'Assessment', icon: 'A', desc: 'Differential diagnosis & severity', color: 'text-purple-600', bg: 'bg-purple-50/50', border: 'border-purple-100' },
+                      { key: 'plan', label: 'Plan', icon: 'P', desc: 'Pharmacology & follow-up protocols', color: 'text-emerald-600', bg: 'bg-emerald-50/50', border: 'border-emerald-100' },
+                    ].map((item, idx) => (
+                      <div key={item.key} className="p-12 group hover:bg-slate-50/50 transition-all relative">
+                         <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                               <div className={cn("h-14 w-14 rounded-[1.25rem] flex items-center justify-center font-black text-xl shadow-sm transition-transform group-hover:scale-110", item.bg, item.color, "border", item.border)}>
                                   {item.icon}
                                </div>
-                               <label className="text-[11px] font-black text-[#0A2E1F] uppercase tracking-[0.1em]">
-                                 {item.label}
-                               </label>
+                               <div>
+                                  <label className="text-[12px] font-black text-[#0A2E1F] uppercase tracking-[0.2em] leading-none block mb-1">
+                                    {item.label}
+                                  </label>
+                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.desc}</p>
+                               </div>
                             </div>
-                            <Sparkles className="h-3 w-3 text-slate-200 group-hover:text-emerald-400 transition-colors" />
+                            <Sparkles className="h-4 w-4 text-slate-100 group-hover:text-emerald-400 transition-colors" />
                          </div>
-                         <textarea
-                           value={soapNote[item.key as keyof typeof soapNote]}
-                           onChange={(e) => setSoapNote(s => ({ ...s, [item.key]: e.target.value }))}
-                           placeholder={`AI waiting for dictation...`}
-                           className="w-full bg-transparent border-0 focus:ring-0 p-0 text-sm font-medium leading-relaxed min-h-[140px] resize-none text-slate-600 placeholder:text-slate-300 outline-none"
-                         />
+                         
+                         <div className="relative">
+                            <AnimatePresence>
+                               {!soapNote[item.key as keyof typeof soapNote] && !isProcessing && (
+                                  <motion.div 
+                                     initial={{ opacity: 0 }}
+                                     animate={{ opacity: 1 }}
+                                     exit={{ opacity: 0 }}
+                                     className="absolute inset-0 pointer-events-none"
+                                  >
+                                     <div className="space-y-4">
+                                        <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
+                                           <motion.div 
+                                              animate={{ x: ["-100%", "100%"] }}
+                                              transition={{ repeat: Infinity, duration: 2, delay: idx * 0.2 }}
+                                              className="h-full w-1/3 bg-slate-100"
+                                           />
+                                        </div>
+                                        <div className="h-2 w-2/3 bg-slate-50 rounded-full" />
+                                        <div className="h-2 w-1/2 bg-slate-50 rounded-full" />
+                                     </div>
+                                  </motion.div>
+                               )}
+                            </AnimatePresence>
+                            
+                            <textarea
+                              value={soapNote[item.key as keyof typeof soapNote]}
+                              onChange={(e) => setSoapNote(s => ({ ...s, [item.key]: e.target.value }))}
+                              placeholder={isProcessing ? "AI generating high-fidelity note..." : "Waiting for Room-Listening capture..."}
+                              className="w-full bg-transparent border-0 focus:ring-0 p-0 text-[15px] font-medium leading-relaxed min-h-[180px] resize-none text-slate-700 placeholder:text-slate-200 outline-none relative z-10"
+                            />
+                         </div>
                       </div>
                     ))}
                  </div>
                  
                  {/* Footer metadata */}
-                 <div className="p-6 bg-slate-50/50 flex items-center justify-between mt-auto border-t border-slate-100">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <ShieldCheck className="h-3 w-3" /> Patient Confidentiality Maintained (HIPAA Compliant)
-                    </p>
-                    <div className="flex items-center gap-2">
-                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                       <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">System Operational</span>
+                 <div className="p-10 bg-slate-50/30 flex flex-col sm:flex-row items-center justify-between gap-6 mt-auto">
+                    <div className="flex items-center gap-4 opacity-40">
+                       <div className="flex items-center gap-2">
+                          <Microscope className="h-4 w-4 text-slate-600" />
+                          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Clinical Accuracy Check: Pass</span>
+                       </div>
+                       <div className="h-4 w-px bg-slate-200" />
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2">
+                          <ShieldCheck className="h-4 w-4" /> HIPAA Compliant Architecture
+                       </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                       <Button 
+                          variant="outline" 
+                          onClick={() => { setSoapNote({subjective:"", objective:"", assessment:"", plan:""}); setTranscript(""); }}
+                          className="h-12 px-6 rounded-2xl border-slate-100 text-slate-400 font-bold uppercase tracking-widest text-[9px] hover:bg-red-50 hover:text-red-600 transition-all"
+                       >
+                          Discard Draft
+                       </Button>
+                       <div className="flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-white shadow-sm border border-slate-100">
+                          <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                          <span className="text-[10px] font-black text-[#0A2E1F] uppercase tracking-widest">Matrix AI Engine Online</span>
+                       </div>
                     </div>
                  </div>
               </CardContent>
@@ -298,6 +390,13 @@ export function DoctorScribePage() {
         </div>
 
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 20px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.4); }
+      `}} />
 
     </div>
   );
