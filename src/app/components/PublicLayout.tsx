@@ -264,9 +264,11 @@ export function PublicLayout() {
                                   <p className="text-emerald-300 text-[10px] font-medium">Customized Longevity Consultation</p>
                                </div>
                             </div>
-                            <Button className="h-9 px-6 rounded-full bg-white text-emerald-900 font-black text-[10px] uppercase tracking-widest hover:bg-emerald-50 transition-colors">
-                               Book Now
-                            </Button>
+                            <Link to="/patient/shop">
+                              <Button className="h-9 px-6 rounded-full bg-white text-emerald-900 font-black text-[10px] uppercase tracking-widest hover:bg-emerald-50 transition-colors">
+                                Book Now
+                              </Button>
+                            </Link>
                          </div>
                       </div>
                     </motion.div>
