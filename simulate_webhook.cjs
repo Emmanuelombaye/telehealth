@@ -1,70 +1,49 @@
-const { createClient } = require('@supabase/supabase-js');
+// simulate_webhook.cjs
+// Use this to simulate a pharmacy dispatching an order (Step 11 in Backend Flow)
+// Usage: node simulate_webhook.cjs <ORDER_NUMBER>
 
-const SUPABASE_URL = 'https://kvopgyhcjcniaocjozje.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_wr1AUarSttsAd7_m3VAH1A_z0jhs2XZ';
+const { createClient } = require('@supabase/supabase-client');
 
-async function testWebhookSim() {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
 
-  console.log('--- 1. Signing in as Admin ---');
-  const { error: authErr } = await supabase.auth.signInWithPassword({
-    email: 'admin@peakbodyco.com',
-    password: 'password123'
-  });
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-  if (authErr) {
-    console.error('Login failed:', authErr.message);
-    return;
-  }
-  console.log('Logged in as Admin');
+async function simulateDispatch(orderNumber) {
+  console.log(`🚀 Simulating Pharmacy Dispatch for Order: ${orderNumber}...`);
 
-  console.log('\n--- 2. Creating Test Order ---');
-  const orderNum = 'PEAK-TEST-' + Math.floor(Math.random() * 1000);
-  const { data: order, error: orderErr } = await supabase
-    .from('orders')
-    .insert([{
-      order_number: orderNum,
-      patient_name: 'Webhook Test User',
-      medication: 'Semaglutide 0.5mg',
-      status: 'rx_sent',
-      sub_brand: 'Peak Health',
-      amount: '199',
-      ordered_date: new Date().toISOString(),
-      patient_id: (await supabase.auth.getUser()).data.user.id
-    }])
-    .select()
-    .single();
+  const trackingNum = `1Z${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+  const trackingUrl = `https://www.ups.com/track?tracknum=${trackingNum}`;
 
-  if (orderErr) {
-    console.error('Error creating order:', orderErr.message);
-    return;
-  }
-  console.log('Created order:', order.order_number, 'ID:', order.id);
-
-  console.log('\n--- 3. Simulating Pharmacy Webhook Update ---');
-  const { data: updated, error: updateErr } = await supabase
+  const { data, error } = await supabase
     .from('orders')
     .update({
       status: 'shipped',
-      tracking_number: '9400111899223821623119',
-      carrier: 'USPS',
-      tracking_url: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=9400111899223821623119',
-      estimated_delivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      pharmacy_name: 'Truepill',
-      pharmacy_event: 'shipped',
-      updated_at: new Date().toISOString()
+      tracking_number: trackingNum,
+      tracking_url: trackingUrl,
+      carrier: 'UPS Express',
+      estimated_delivery: 'In 2-3 Business Days',
+      pharmacy_note: 'Package has been picked up by the carrier and is in transit.'
     })
-    .eq('order_number', orderNum)
-    .select()
-    .single();
+    .eq('order_number', orderNumber)
+    .select();
 
-  if (updateErr) {
-    console.error('Error updating order:', updateErr.message);
+  if (error) {
+    console.error('❌ Error simulating dispatch:', error.message);
     return;
   }
-  console.log('✅ Webhook Simulation Success!');
-  console.log('New Status:', updated.status);
-  console.log('Tracking:', updated.tracking_number);
+
+  if (data && data.length > 0) {
+    console.log(`✅ Success! Order ${orderNumber} is now SHIPPED.`);
+    console.log(`📦 Tracking Number: ${trackingNum}`);
+  } else {
+    console.log(`⚠️ Order ${orderNumber} not found.`);
+  }
 }
 
-testWebhookSim();
+const args = process.argv.slice(2);
+if (args.length === 0) {
+  console.log('Usage: node simulate_webhook.cjs <ORDER_NUMBER>');
+} else {
+  simulateDispatch(args[0]);
+}
