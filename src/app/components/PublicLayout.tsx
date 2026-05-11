@@ -92,19 +92,28 @@ export function PublicLayout() {
   });
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => {
+      // Small debounce/threshold for stability
+      if (window.scrollY > 20 && !scrolled) setScrolled(true);
+      if (window.scrollY <= 20 && scrolled) setScrolled(false);
+    };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [scrolled]);
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
     if (mobileMenu) {
       document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
     } else {
       document.body.style.overflow = "unset";
+      document.body.style.touchAction = "auto";
     }
-    return () => { document.body.style.overflow = "unset"; };
+    return () => { 
+      document.body.style.overflow = "unset"; 
+      document.body.style.touchAction = "auto";
+    };
   }, [mobileMenu]);
 
   const scrollToTop = () => {
@@ -116,13 +125,13 @@ export function PublicLayout() {
       
       {/* GLOBAL SCROLL PROGRESS */}
       <motion.div 
-        className="fixed top-0 left-0 right-0 h-[2px] bg-emerald-600 z-[100] origin-left"
+        className="fixed top-0 left-0 right-0 h-[2px] bg-emerald-600 z-[201] origin-left"
         style={{ scaleX }}
       />
 
       {/* BACK TO TOP BUTTON */}
       <AnimatePresence>
-        {scrolled && (
+        {scrolled && !mobileMenu && (
           <motion.button
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -162,7 +171,7 @@ export function PublicLayout() {
           <div className="max-w-7xl mx-auto px-6 flex items-center justify-between gap-4">
             {/* Left: Logo */}
             <div className="flex-shrink-0">
-              <Link to="/" className="flex items-center gap-2 group w-fit" onClick={() => setMobileMenu(false)}>
+              <Link to="/" className="flex items-center gap-2 group w-fit">
                 <img 
                   src="/PeakHealthLogo.png" 
                   alt="Peak Health" 
@@ -281,105 +290,108 @@ export function PublicLayout() {
                 </Button>
               </Link>
               <button 
-                className="lg:hidden text-slate-800 p-2 hover:bg-slate-50 rounded-xl transition-colors active:scale-90" 
-                onClick={() => setMobileMenu(!mobileMenu)}
-                aria-label="Toggle Menu"
+                className="lg:hidden text-slate-800 p-2 hover:bg-slate-50 rounded-xl transition-all" 
+                onClick={() => setMobileMenu(true)}
+                aria-label="Open Menu"
               >
-                {mobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                <Menu className="h-6 w-6" />
               </button>
             </div>
           </div>
         </header>
+      </div>
 
-        {/* RE-ENGINEERED MOBILE MENU OVERLAY */}
-        <AnimatePresence>
-          {mobileMenu && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="lg:hidden fixed inset-0 top-[header-height] bg-white z-[99] flex flex-col"
-              style={{ top: scrolled ? "57px" : "105px" }} // Adjusted based on scrolled header height
-            >
-              <motion.div
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -20, opacity: 0 }}
-                transition={{ delay: 0.1 }}
-                className="flex-1 overflow-y-auto px-6 py-8 pb-32 space-y-10"
+      {/* PERMANENT FULL-SCREEN MOBILE OVERLAY */}
+      <AnimatePresence>
+        {mobileMenu && (
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="lg:hidden fixed inset-0 bg-white z-[999] flex flex-col"
+          >
+            {/* Overlay Header */}
+            <div className="px-6 py-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              <div className="flex items-center gap-2">
+                <img src="/PeakHealthLogo.png" alt="Logo" className="h-10 w-auto mix-blend-multiply contrast-125" />
+                <span className="font-serif italic tracking-tighter text-[#0A2E1F] text-2xl">Peak Health</span>
+              </div>
+              <button 
+                onClick={() => setMobileMenu(false)}
+                className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-800 active:scale-90 transition-transform"
               >
-                {/* Treatments Section */}
-                <div className="space-y-6">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Clinical Protocols</h4>
-                  <div className="space-y-4">
-                    {treatments.map((t) => (
-                      <Link 
-                        key={t.name} 
-                        to={t.href} 
-                        className="flex items-center gap-4 p-4 rounded-[2rem] bg-slate-50 hover:bg-emerald-50 transition-all group"
-                        onClick={() => setMobileMenu(false)}
-                      >
-                        <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm", t.bg)}>
-                          <t.icon className={cn("h-6 w-6", t.color)} />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-black text-sm text-[#0A2E1F] uppercase tracking-wide">{t.name}</p>
-                          <p className="text-[11px] text-slate-500 font-medium">{t.desc}</p>
-                        </div>
-                        <ChevronRight className="h-5 w-5 text-slate-200 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+                <X className="h-6 w-6" />
+              </button>
+            </div>
 
-                {/* Bio Section */}
-                <div className="space-y-6">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Bio-Optimization</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    {bioOptimizers.map((b) => (
-                      <Link 
-                        key={b.name} 
-                        to={b.href} 
-                        className="flex flex-col gap-4 p-6 rounded-[2rem] border border-slate-100 hover:bg-slate-50 transition-all group"
-                        onClick={() => setMobileMenu(false)}
-                      >
-                        <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center", b.bg)}>
-                           <b.icon className={cn("h-5 w-5", b.color)} />
-                        </div>
-                        <span className="font-black text-[12px] text-[#0A2E1F] uppercase tracking-tight leading-tight">{b.name}</span>
-                        <div className="pt-2 flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                          View Protocol <ArrowRight className="h-2.5 w-2.5" />
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-8 pb-32 space-y-10">
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Clinical Protocols</h4>
+                <div className="space-y-4">
+                  {treatments.map((t) => (
+                    <Link 
+                      key={t.name} 
+                      to={t.href} 
+                      className="flex items-center gap-4 p-5 rounded-[2rem] bg-slate-50 active:bg-emerald-50 transition-colors group"
+                      onClick={() => setMobileMenu(false)}
+                    >
+                      <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm", t.bg)}>
+                        <t.icon className={cn("h-6 w-6", t.color)} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-black text-sm text-[#0A2E1F] uppercase tracking-wide">{t.name}</p>
+                        <p className="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">{t.desc}</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-slate-200" />
+                    </Link>
+                  ))}
                 </div>
+              </div>
 
-                {/* Secondary Links */}
-                <div className="pt-10 border-t border-slate-100 space-y-6">
-                  <Link to="/how-it-works" className="flex items-center justify-between group" onClick={() => setMobileMenu(false)}>
-                    <span className="text-lg font-black text-[#0A2E1F] uppercase tracking-tighter group-hover:text-emerald-600 transition-colors">How It Works</span>
-                    <ArrowRight className="h-5 w-5 text-slate-300 group-hover:text-emerald-600 transition-all" />
-                  </Link>
-                  <Link to="/patient/login" className="flex items-center justify-between group" onClick={() => setMobileMenu(false)}>
-                    <span className="text-lg font-black text-[#0A2E1F] uppercase tracking-tighter group-hover:text-emerald-600 transition-colors">Patient Login</span>
-                    <ArrowRight className="h-5 w-5 text-slate-300 group-hover:text-emerald-600 transition-all" />
-                  </Link>
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Bio-Optimization</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {bioOptimizers.map((b) => (
+                    <Link 
+                      key={b.name} 
+                      to={b.href} 
+                      className="flex flex-col gap-4 p-6 rounded-[2.5rem] border border-slate-100 active:bg-slate-50 transition-all group"
+                      onClick={() => setMobileMenu(false)}
+                    >
+                      <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center", b.bg)}>
+                         <b.icon className={cn("h-5 w-5", b.color)} />
+                      </div>
+                      <span className="font-black text-[12px] text-[#0A2E1F] uppercase tracking-tight leading-tight">{b.name}</span>
+                    </Link>
+                  ))}
                 </div>
-              </motion.div>
+              </div>
 
-              {/* Bottom Sticky Action */}
-              <div className="absolute bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-slate-100">
-                <Link to="/patient/shop" onClick={() => setMobileMenu(false)}>
-                  <Button className="w-full h-14 rounded-3xl bg-[#0A2E1F] text-white font-black uppercase tracking-[0.2em] text-[13px] shadow-2xl shadow-emerald-900/20 active:scale-95 transition-transform">
-                    Begin Assessment
-                  </Button>
+              <div className="pt-10 border-t border-slate-100 space-y-8">
+                <Link to="/how-it-works" className="flex items-center justify-between" onClick={() => setMobileMenu(false)}>
+                  <span className="text-xl font-black text-[#0A2E1F] uppercase tracking-tighter">How It Works</span>
+                  <ArrowRight className="h-6 w-6 text-slate-300" />
+                </Link>
+                <Link to="/patient/login" className="flex items-center justify-between" onClick={() => setMobileMenu(false)}>
+                  <span className="text-xl font-black text-[#0A2E1F] uppercase tracking-tighter">Patient Login</span>
+                  <ArrowRight className="h-6 w-6 text-slate-300" />
                 </Link>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            </div>
+
+            {/* Fixed Footer Action */}
+            <div className="p-6 bg-white border-t border-slate-100 sticky bottom-0">
+               <Link to="/patient/shop" onClick={() => setMobileMenu(false)}>
+                  <Button className="w-full h-16 rounded-[2rem] bg-[#0A2E1F] text-white font-black uppercase tracking-[0.2em] text-[14px] shadow-2xl shadow-emerald-900/30">
+                    Get Started Now
+                  </Button>
+               </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Content */}
       <main>
