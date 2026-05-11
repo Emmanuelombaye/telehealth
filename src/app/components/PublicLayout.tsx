@@ -293,6 +293,70 @@ export function PublicLayout() {
             </div>
           </div>
         </header>
+
+        {/* MOBILE MENU DRAWER */}
+        <AnimatePresence>
+          {mobileMenu && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden bg-white border-b border-slate-100 overflow-hidden"
+            >
+              <div className="px-6 py-8 space-y-8">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-50 pb-2">Primary Protocols</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {treatments.map((t) => (
+                      <Link 
+                        key={t.name} 
+                        to={t.href} 
+                        className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 hover:bg-emerald-50 transition-colors"
+                        onClick={() => setMobileMenu(false)}
+                      >
+                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", t.bg)}>
+                          <t.icon className={cn("h-5 w-5", t.color)} />
+                        </div>
+                        <span className="font-bold text-sm text-[#0A0D14] uppercase tracking-wide">{t.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-50 pb-2">Bio-Optimization</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {bioOptimizers.map((b) => (
+                      <Link 
+                        key={b.name} 
+                        to={b.href} 
+                        className="flex flex-col gap-2 p-4 rounded-2xl bg-slate-50 hover:bg-emerald-50 transition-colors"
+                        onClick={() => setMobileMenu(false)}
+                      >
+                        <b.icon className={cn("h-5 w-5", b.color)} />
+                        <span className="font-bold text-[11px] text-[#0A0D14] uppercase tracking-tight">{b.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <Link to="/how-it-works" className="block text-sm font-bold text-slate-700 uppercase tracking-widest" onClick={() => setMobileMenu(false)}>
+                    How It Works
+                  </Link>
+                  <Link to="/patient/login" className="block text-sm font-bold text-slate-700 uppercase tracking-widest" onClick={() => setMobileMenu(false)}>
+                    Log In
+                  </Link>
+                  <Link to="/patient/shop" onClick={() => setMobileMenu(false)}>
+                    <Button className="w-full h-12 rounded-2xl bg-[#0A2E1F] text-white font-bold uppercase tracking-widest text-xs mt-4">
+                      Get Started
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Main Content */}
