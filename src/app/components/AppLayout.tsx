@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { cn } from "./ui/utils";
 import { supabase } from "../../lib/supabaseClient";
 import { PageErrorBoundary } from "./PageErrorBoundary";
+import { LogoutConfirmation } from "./LogoutConfirmation";
 
 export function AppLayout() {
   const { fetchOrders, fetchDoctorAvailability } = usePatientStore();
@@ -44,6 +45,7 @@ export function AppLayout() {
   const { user, role: authRole, signOut } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const onScroll = (e: React.UIEvent<HTMLElement>) => {
     setScrolled(e.currentTarget.scrollTop > 20);
@@ -123,7 +125,7 @@ export function AppLayout() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={handleLogout}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="h-11 w-11 rounded-2xl transition-colors bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600"
               >
                 <LogOut className="h-5 w-5" />
@@ -149,6 +151,11 @@ export function AppLayout() {
           </div>
         )}
       </div>
+      <LogoutConfirmation 
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogout}
+      />
     </div>
   );
 }

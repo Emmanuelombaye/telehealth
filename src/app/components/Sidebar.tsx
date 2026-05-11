@@ -13,6 +13,7 @@ import { useI18n } from "../../lib/i18n.tsx";
 import { brand } from "../../lib/patient-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { usePatientStore } from "../../lib/patient-store";
+import { LogoutConfirmation } from "./LogoutConfirmation";
 
 type Role = "patient" | "doctor" | "admin" | "superadmin";
 
@@ -113,6 +114,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
 
   const isAdminPortal = role === "admin" || role === "superadmin" || role === "doctor" || (authRole as string) === "brand_admin";
   const { orders } = usePatientStore();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
   // Real-time badge calculations
   const pendingCount = orders.filter(o => o.status === "order_submitted" || o.status === "medical_review").length;
@@ -234,15 +236,21 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
           <div className={cn("h-2 w-2 rounded-full animate-pulse shrink-0", isAdminPortal ? "bg-emerald-500" : "bg-emerald-500")} />
         </div>
         <button 
-          onClick={async () => {
-            await useAuthStore.getState().signOut();
-            window.location.href = "/";
-          }}
+          onClick={() => setShowLogoutConfirm(true)}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors group text-left"
         >
           <LogOut className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           <span>{t("logout")}</span>
         </button>
+
+        <LogoutConfirmation 
+          isOpen={showLogoutConfirm}
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={async () => {
+            await useAuthStore.getState().signOut();
+            window.location.href = "/";
+          }}
+        />
       </div>
     </div>
   );
