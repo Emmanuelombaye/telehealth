@@ -386,8 +386,8 @@ export function DoctorConsultPage() {
   };
 
   const [transcript, setTranscript] = useState<string[]>([]);
-
   const [isSyncingVitals, setIsSyncingVitals] = useState(false);
+  const [isLiveVideoActive, setIsLiveVideoActive] = useState(false);
 
   useEffect(() => {
     if (!order) return;
@@ -501,53 +501,69 @@ export function DoctorConsultPage() {
               </div>
             </div>
 
-            {/* Center Content (Shifted Up) */}
-            <div className="text-center p-6 flex flex-col items-center justify-center z-10 -mt-12">
-              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-slate-800 border-2 border-slate-700 mx-auto flex items-center justify-center mb-4 shadow-xl relative">
-                <span className="text-3xl sm:text-4xl font-black text-slate-400">
-                  {order.patient_name?.charAt(0) || '?'}
-                </span>
-                <div className="absolute bottom-0 right-0 h-4 w-4 bg-emerald-500 rounded-full border-[3px] border-slate-800 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+            {isLiveVideoActive ? (
+              <iframe 
+                src={`https://meet.jit.si/peak-health-consult-${order.id}`} 
+                allow="camera; microphone; fullscreen; display-capture" 
+                className="w-full h-full border-0 rounded-[2rem]" 
+              />
+            ) : (
+              <div className="text-center p-6 flex flex-col items-center justify-center z-10 -mt-12">
+                <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-slate-800 border-2 border-slate-700 mx-auto flex items-center justify-center mb-4 shadow-xl relative">
+                  <span className="text-3xl sm:text-4xl font-black text-slate-400">
+                    {order.patient_name?.charAt(0) || '?'}
+                  </span>
+                  <div className="absolute bottom-0 right-0 h-4 w-4 bg-emerald-500/30 rounded-full border-[3px] border-slate-800" />
+                </div>
+                <p className="text-white text-lg sm:text-xl font-bold tracking-tight">{order.patient_name}</p>
+                <p className="text-emerald-500/50 text-[10px] font-bold tracking-widest uppercase mt-1 mb-6">Patient Offline / Waiting</p>
+                
+                <Button 
+                  onClick={() => setIsLiveVideoActive(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-8 h-12 font-bold tracking-widest uppercase text-xs shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(16,185,129,0.6)]"
+                >
+                  <Video className="h-4 w-4 mr-2" /> Connect Live Video
+                </Button>
               </div>
-              <p className="text-white text-lg sm:text-xl font-bold tracking-tight">{order.patient_name}</p>
-              <p className="text-emerald-500/80 text-[10px] font-bold tracking-widest uppercase mt-1">Secure Video Matrix Active</p>
-            </div>
+            )}
 
             {/* Premium Video Controls (Sleek & Bottom) */}
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.6)] transition-all z-20 w-[90%] sm:w-auto max-w-full overflow-x-auto custom-scrollbar">
-              <button
-                onClick={() => setIsMuted(!isMuted)}
-                className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-300 shrink-0",
-                  isMuted ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/20 text-white hover:bg-white/30")}
-              >
-                {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </button>
-              
-              <button
-                onClick={() => setIsVideoOff(!isVideoOff)}
-                className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-300 shrink-0",
-                  isVideoOff ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/20 text-white hover:bg-white/30")}
-              >
-                {isVideoOff ? <VideoOff className="h-4 w-4" /> : <Video className="h-4 w-4" />}
-              </button>
-
-              <div className="h-6 w-px bg-white/20 mx-2 shrink-0" />
-
-              <button 
-                onClick={() => navigate('/doctor/queue')}
-                className="h-10 px-5 bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center justify-center transition-all shadow-md shadow-red-600/30 font-bold tracking-widest uppercase text-[10px] sm:text-xs shrink-0 gap-2"
-              >
-                <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-current" /> End Consult
-              </button>
-
-              <div className="h-6 w-px bg-white/20 mx-2 shrink-0" />
-
-              <Link to={`/doctor/messages?userId=${order.user_id}`} className="shrink-0">
-                <button className="h-10 w-10 bg-white/20 text-white hover:bg-white/30 rounded-xl flex items-center justify-center transition-all">
-                  <MessageSquare className="h-4 w-4" />
+            {!isLiveVideoActive && (
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.6)] transition-all z-20 w-[90%] sm:w-auto max-w-full overflow-x-auto custom-scrollbar">
+                <button
+                  onClick={() => setIsMuted(!isMuted)}
+                  className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-300 shrink-0",
+                    isMuted ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/20 text-white hover:bg-white/30")}
+                >
+                  {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </button>
-              </Link>
-            </div>
+                
+                <button
+                  onClick={() => setIsVideoOff(!isVideoOff)}
+                  className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-300 shrink-0",
+                    isVideoOff ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-white/20 text-white hover:bg-white/30")}
+                >
+                  {isVideoOff ? <VideoOff className="h-4 w-4" /> : <Video className="h-4 w-4" />}
+                </button>
+
+                <div className="h-6 w-px bg-white/20 mx-2 shrink-0" />
+
+                <button 
+                  onClick={() => navigate('/doctor/queue')}
+                  className="h-10 px-5 bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center justify-center transition-all shadow-md shadow-red-600/30 font-bold tracking-widest uppercase text-[10px] sm:text-xs shrink-0 gap-2"
+                >
+                  <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-current" /> End Consult
+                </button>
+
+                <div className="h-6 w-px bg-white/20 mx-2 shrink-0" />
+
+                <Link to={`/doctor/messages?userId=${order.user_id}`} className="shrink-0">
+                  <button className="h-10 w-10 bg-white/20 text-white hover:bg-white/30 rounded-xl flex items-center justify-center transition-all">
+                    <MessageSquare className="h-4 w-4" />
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* AI Scribe */}
