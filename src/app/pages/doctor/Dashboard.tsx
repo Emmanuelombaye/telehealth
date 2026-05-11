@@ -48,13 +48,13 @@ export function DoctorDashboard() {
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10 animate-in fade-in duration-700">
       
       {/* 1. PROFESSIONAL HEADER */}
-      <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
-        <div className="flex items-center gap-5">
-          <div className="h-14 w-14 rounded-xl bg-[#0A2E1F] flex items-center justify-center shadow-md">
+      <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 flex flex-col xl:flex-row xl:items-center justify-between gap-6 shadow-sm">
+        <div className="flex items-center gap-5 min-w-0 w-full xl:w-auto flex-1">
+          <div className="h-14 w-14 rounded-xl bg-[#0A2E1F] flex items-center justify-center shadow-md shrink-0">
              <Stethoscope className="h-7 w-7 text-white" />
           </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold text-[#0A2E1F] truncate">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#0A2E1F] truncate">
               {greeting}, {doctorName}
             </h1>
             <div className="flex items-center gap-3 mt-1.5 flex-wrap">
@@ -62,14 +62,14 @@ export function DoctorDashboard() {
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Active Session
               </span>
-              <span className="text-xs font-medium text-slate-500 whitespace-nowrap">
+              <span className="text-xs font-medium text-slate-500 whitespace-nowrap hidden sm:inline-block">
                 {currentTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto shrink-0 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-3 w-full xl:w-auto shrink-0 flex-wrap sm:flex-nowrap">
           <Button variant="outline" className="h-10 px-4 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold gap-2 whitespace-nowrap flex-1 sm:flex-none">
             <Search className="h-4 w-4 shrink-0" /> Find Patient
           </Button>
