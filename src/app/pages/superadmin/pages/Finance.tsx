@@ -59,7 +59,46 @@ export function SuperAdminFinancePage() {
   const pendingPayouts = brandFinancials.reduce((sum, b) => sum + (b.status === 'pending' ? b.payout : 0), 0);
 
   const handleExport = () => {
-    window.print();
+    // Build CSV content from live financial data
+    const rows: string[] = [];
+    const date = new Date().toLocaleDateString();
+
+    rows.push(`Peak Health — Financial Audit Report`);
+    rows.push(`Generated: ${date}`);
+    rows.push(``);
+
+    // KPI Summary
+    rows.push(`PLATFORM KPI SUMMARY`);
+    rows.push(`Platform MRR,$${totalPlatformMRR.toLocaleString()}`);
+    rows.push(`Aggregate ARR,$${(totalPlatformARR / 1_000_000).toFixed(2)}M`);
+    rows.push(`Global Commission (10%),$${totalCommission.toLocaleString()}`);
+    rows.push(``);
+
+    // Brand Financials
+    rows.push(`BRAND LEDGER`);
+    rows.push(`Brand,MRR,ARR,Commission (10%),Net Payout,Plan,Status`);
+    brandFinancials.forEach(b => {
+      rows.push(`${b.brand},$${b.mrr.toLocaleString()},$${b.arr.toLocaleString()},$${b.commission.toLocaleString()},$${b.payout.toLocaleString()},${b.plan},${b.status}`);
+    });
+    rows.push(``);
+
+    // Recent Transactions
+    rows.push(`RECENT TRANSACTIONS`);
+    rows.push(`Order ID,Brand,Type,Amount,Date,Status`);
+    transactions.forEach(t => {
+      rows.push(`${t.id},${t.brand},${t.type},${t.amount},${t.date},${t.status}`);
+    });
+
+    const csvContent = rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `peak-health-financial-report-${date.replace(/\//g, '-')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
