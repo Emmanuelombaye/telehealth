@@ -67,19 +67,41 @@ export function DoctorScribePage() {
       recognitionRef.current?.stop();
       setIsRecording(false);
       setIsProcessing(true);
-      toast.success("Consultation captured. AI generating clinical summary...");
+      toast.success("Consultation captured. AI structuring note...");
       
-      // Simulate AI Summarization using the REAL transcript
-      setTimeout(() => {
-        setIsProcessing(false);
-        setSoapNote({
-          subjective: transcript || "Patient reports general symptoms as discussed.",
-          objective: "Vitals stable. Physical exam findings consistent with reported history.",
-          assessment: "Clinical assessment based on patient consultation.",
-          plan: "1. Follow up as scheduled.\n2. Monitor symptoms.\n3. Patient educated on treatment plan."
+      try {
+        // CALL REAL AI EDGE FUNCTION
+        const { data, error } = await supabase.functions.invoke('ai-medical-scribe', {
+          body: { transcript: transcript }
         });
-        toast.success("AI SOAP Note Generated Successfully.");
-      }, 2000);
+
+        if (error) throw error;
+
+        setSoapNote({
+          subjective: data.subjective || transcript,
+          objective: data.objective || "",
+          assessment: data.assessment || "",
+          plan: data.plan || ""
+        });
+        
+        if (data.is_fallback) {
+          toast.info("Clinical Heuristic Engine processed your consultation.");
+        } else {
+          toast.success("GPT-4o successfully structured your clinical note.");
+        }
+      } catch (e) {
+        console.error("AI Sync Error:", e);
+        toast.error("AI Structuring failed. Reverting to baseline simulation.");
+        // Fallback to manual simulation if edge function fails
+        setSoapNote({
+          subjective: transcript || "Patient reports general symptoms.",
+          objective: "Vitals stable.",
+          assessment: "Clinical consultation.",
+          plan: "Follow up as needed."
+        });
+      } finally {
+        setIsProcessing(false);
+      }
     } else {
       setTranscript("");
       setSoapNote({subjective:"", objective:"", assessment:"", plan:""});
