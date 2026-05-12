@@ -3,7 +3,7 @@ import { Search, Filter, Video, MessageSquare, FileText, ChevronRight, Activity,
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 export function DoctorPatientsPage() {
   const [patients, setPatients] = useState<any[]>([]);
