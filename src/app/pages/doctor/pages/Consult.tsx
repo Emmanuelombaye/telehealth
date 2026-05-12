@@ -281,14 +281,41 @@ function PatientPicker() {
                   {order.status?.replace(/_/g, ' ')}
                 </span>
 
-                {/* "Join Room" CTA */}
-                <div className={cn(
-                  "flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest",
-                  "opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-3 group-hover:translate-x-0",
-                  "text-[#D4AF37]"
-                )}>
-                  Join Room <ChevronRight className="h-3.5 w-3.5" />
-                </div>
+                {/* "Join Room" CTA with Magnetic Haptics */}
+                <motion.div 
+                  initial={{ opacity: 0, x: 20 }}
+                  whileHover={{ 
+                    x: 0, 
+                    scale: 1.1,
+                    textShadow: "0 0 15px rgba(212, 175, 55, 0.6)"
+                  }}
+                  animate={{ 
+                    opacity: 1, 
+                    x: 0,
+                    transition: { duration: 0.5 }
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 font-black text-[12px] uppercase tracking-[0.15em] transition-all duration-300",
+                    "text-[#D4AF37] group-hover:drop-shadow-[0_0_10px_rgba(212,175,55,0.4)]"
+                  )}
+                >
+                  <span className="relative">
+                    Join Room
+                    <motion.span 
+                      animate={{ opacity: [0.4, 1, 0.4], scale: [0.98, 1.02, 0.98] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute inset-0 blur-sm text-[#D4AF37] select-none"
+                    >
+                      Join Room
+                    </motion.span>
+                  </span>
+                  <motion.div
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <ChevronRight className="h-4 w-4 stroke-[3]" />
+                  </motion.div>
+                </motion.div>
               </div>
             </div>
 
