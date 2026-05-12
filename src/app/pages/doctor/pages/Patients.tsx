@@ -234,27 +234,15 @@ export function DoctorPatientsPage() {
                      </div>
                   </div>
 
-                  {/* COMPACT ACTION BAR */}
-                  <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+                  {/* ACTION HUB (COMPACT) */}
+                  <div className="pt-4 border-t border-slate-100">
                      <Button 
                        onClick={() => navigate(`/doctor/consult?orderId=${selectedPatient?.order_number}`)}
-                       className="flex-1 h-12 rounded-xl bg-[#0A2E1F] hover:bg-emerald-900 text-white font-black text-[10px] tracking-widest uppercase gap-3"
+                       className="w-full h-12 rounded-xl bg-[#0A2E1F] hover:bg-emerald-900 text-white font-black text-[10px] tracking-widest uppercase gap-3"
                      >
                         <Video className="h-4 w-4" /> Engage Consult
                      </Button>
-                     <Button 
-                       variant="outline" 
-                       onClick={() => setSelectedIntakeId(null)}
-                       className="px-6 h-12 rounded-xl border-slate-100 text-slate-400 font-black text-[10px] tracking-widest uppercase hover:bg-slate-50"
-                     >
-                        Return
-                     </Button>
                   </div>
-                </div>
-
-                {/* THERMAL STRIP (MICRO) */}
-                <div className="h-3 bg-slate-50/50 flex items-center justify-center opacity-30">
-                   <div className="w-1/4 h-[1px] bg-slate-200 border-dashed border-b" />
                 </div>
               </div>
             </motion.div>
