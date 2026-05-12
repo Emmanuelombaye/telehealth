@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, Video, MessageSquare, FileText, ChevronRight, Activity, Clock, ShieldCheck, User, X, CheckCircle2, MoreHorizontal, ArrowLeft, FileSignature, Pill, ActivitySquare, AlertCircle, Receipt, Fingerprint } from "lucide-react";
+import { Search, Filter, Video, MessageSquare, FileText, ChevronRight, Activity, Clock, ShieldCheck, User, X, CheckCircle2, MoreHorizontal, ArrowLeft, FileSignature, Pill, ActivitySquare, AlertCircle, Receipt, Fingerprint, ClipboardList } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,7 +41,8 @@ export function DoctorPatientsPage() {
               risk: order.urgent ? "high" : "low",
               medication: order.medication,
               order_number: order.order_number,
-              intake_notes: order.intake_notes || "Initial screening in progress. No complications reported. Patient confirmed protocol understanding.",
+              intake_notes: order.intake_notes || "Patient has reviewed the protocol and confirmed eligibility. No contraindications reported.",
+              intake_answers: order.intake_answers || {},
               history: data.filter(o => o.patient_name === order.patient_name)
             });
           }
@@ -161,99 +162,125 @@ export function DoctorPatientsPage() {
         )}
       </div>
 
-      {/* CLINICAL RECEIPT SLIP OVERLAY */}
+      {/* THE UNIVERSAL CLINICAL RECEIPT OVERLAY */}
       <AnimatePresence>
         {selectedIntakeId && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-10">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedIntakeId(null)}
-              className="absolute inset-0 bg-[#0A2E1F]/90 backdrop-blur-md"
+              className="absolute inset-0 bg-[#0A2E1F]/95 backdrop-blur-lg"
             />
             
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 50 }}
+              initial={{ scale: 0.95, opacity: 0, y: 100 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 50 }}
-              className="w-full max-w-[420px] relative z-10"
+              exit={{ scale: 0.95, opacity: 0, y: 100 }}
+              className="w-full max-w-[480px] max-h-[90vh] overflow-y-auto relative z-10 no-scrollbar"
             >
-              <div className="bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col relative border-t-[8px] border-[#0A2E1F]">
-                {/* SERRATED EDGE TOP */}
-                <div className="absolute -top-1 left-0 right-0 h-1 bg-[radial-gradient(circle,transparent_2px,white_2px)] bg-[length:10px_10px] bg-repeat-x z-20 opacity-50" />
-                
-                <div className="p-8 space-y-8">
-                  {/* SLIP HEADER */}
-                  <div className="text-center space-y-4 pb-6 border-b border-dashed border-slate-200">
-                     <div className="flex justify-center">
-                        <div className="h-16 w-16 rounded-[2rem] bg-emerald-500 flex items-center justify-center font-black text-[#0A2E1F] text-2xl rotate-12 shadow-xl">
+              <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative border-t-[12px] border-[#0A2E1F]">
+                {/* RECEIPT HEADER */}
+                <div className="p-10 space-y-10">
+                  <div className="text-center space-y-4 border-b border-dashed border-slate-200 pb-8">
+                     <div className="flex justify-center mb-2">
+                        <div className="h-20 w-20 rounded-[2.5rem] bg-emerald-500 flex items-center justify-center font-black text-[#0A2E1F] text-3xl shadow-xl">
                            {selectedPatient?.avatar}
                         </div>
                      </div>
-                     <div>
-                        <h2 className="text-2xl font-black text-[#0A2E1F] uppercase tracking-tighter">{selectedPatient?.name}</h2>
-                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mt-1">Ref ID: PH-{selectedPatient?.order_number}</p>
-                     </div>
+                     <h2 className="text-3xl font-black text-[#0A2E1F] uppercase tracking-tighter leading-none">{selectedPatient?.name}</h2>
+                     <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">PATIENT AUTH ID: PH-{selectedPatient?.order_number}</p>
                   </div>
 
-                  {/* VITAL STREAM */}
-                  <div className="space-y-6">
-                     <div className="flex justify-between items-end">
-                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Clinical Bio</p>
+                  {/* VITAL CORE */}
+                  <div className="grid grid-cols-2 gap-8 border-b border-dashed border-slate-200 pb-10">
+                     <div className="space-y-1">
+                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Biological Bio</p>
                         <p className="text-sm font-black text-[#0A2E1F]">{selectedPatient?.age}Y <span className="mx-2 opacity-10">|</span> {selectedPatient?.risk.toUpperCase()} RISK</p>
                      </div>
-                     <div className="flex justify-between items-end">
-                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Protocol</p>
-                        <p className="text-sm font-black text-emerald-600 uppercase tracking-tighter">{selectedPatient?.medication}</p>
-                     </div>
-                     <div className="flex justify-between items-end">
-                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Last Entry</p>
-                        <p className="text-sm font-black text-slate-600">{selectedPatient?.lastVisit}</p>
+                     <div className="space-y-1 text-right">
+                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Registry Entry</p>
+                        <p className="text-sm font-black text-[#0A2E1F]">{selectedPatient?.lastVisit}</p>
                      </div>
                   </div>
 
-                  {/* INTAKE DATA (THE VERTICAL SLIP) */}
-                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4">
-                     <div>
-                        <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">Chief Complaint</p>
-                        <p className="text-xs font-black text-[#0A2E1F]">{selectedPatient?.condition}</p>
+                  {/* THE FULL INTAKE SPECTRUM (ALL INFORMATION) */}
+                  <div className="space-y-10">
+                     {/* PRIMARY REQUEST */}
+                     <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-emerald-600">
+                           <Pill className="h-4 w-4" />
+                           <p className="text-[10px] font-black uppercase tracking-[0.2em]">Authorized Protocol</p>
+                        </div>
+                        <div className="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100">
+                           <p className="text-lg font-black text-[#0A2E1F] uppercase tracking-tight">{selectedPatient?.medication}</p>
+                           <p className="text-[11px] font-bold text-emerald-700 mt-1 uppercase tracking-wide">{selectedPatient?.condition}</p>
+                        </div>
                      </div>
-                     <div className="pt-4 border-t border-slate-200/50">
-                        <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-2">Patient Intake Narrative</p>
-                        <p className="text-[11px] leading-relaxed text-slate-500 italic font-medium">
-                           "{selectedPatient?.intake_notes}"
-                        </p>
+
+                     {/* FULL QUESTIONNAIRE STREAM */}
+                     <div className="space-y-6">
+                        <div className="flex items-center gap-2 text-slate-400">
+                           <ClipboardList className="h-4 w-4" />
+                           <p className="text-[10px] font-black uppercase tracking-[0.2em]">Patient Narrative & Data</p>
+                        </div>
+                        
+                        <div className="space-y-4">
+                           {/* Narrative first as it's Paramount */}
+                           <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 italic">
+                              <p className="text-[11px] leading-relaxed text-[#0A2E1F] font-medium">
+                                 "{selectedPatient?.intake_notes}"
+                              </p>
+                           </div>
+
+                           {/* Dynamic Answers from the JSONB */}
+                           <div className="grid grid-cols-1 gap-4">
+                              {Object.entries(selectedPatient?.intake_answers || {}).map(([key, val]: [string, any], idx) => (
+                                 <div key={idx} className="flex flex-col gap-1 border-b border-slate-50 pb-3 last:border-0">
+                                    <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">{key.replace(/_/g, ' ')}</p>
+                                    <p className="text-[11px] font-black text-[#0A2E1F] leading-tight">
+                                       {Array.isArray(val) ? val.join(", ") : String(val)}
+                                    </p>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* SECURITY & AUTH */}
+                     <div className="pt-6 border-t border-dashed border-slate-200 space-y-4">
+                        <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-emerald-600/60">
+                           <span className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3" /> Identity Matrix Confirmed</span>
+                           <span className="flex items-center gap-2"><Fingerprint className="h-3 w-3" /> Digital Stamp</span>
+                        </div>
+                        <div className="p-4 bg-[#0A2E1F]/5 rounded-xl text-center border border-[#0A2E1F]/10">
+                           <p className="text-[8px] font-black text-[#0A2E1F] uppercase tracking-[0.3em]">Authorized for Provider Engagement</p>
+                        </div>
                      </div>
                   </div>
 
-                  {/* VERIFICATION MARK */}
-                  <div className="pt-4 flex items-center justify-center gap-2 text-emerald-600/40 opacity-50">
-                     <Fingerprint className="h-4 w-4" />
-                     <span className="text-[9px] font-black uppercase tracking-[0.3em]">Authorized Clinical Record</span>
-                  </div>
-
-                  {/* COMMAND SUITE */}
-                  <div className="space-y-3 pt-4 border-t border-slate-100">
+                  {/* ACTION HUB */}
+                  <div className="space-y-3 pt-6">
                      <Button 
                        onClick={() => navigate(`/doctor/consult?orderId=${selectedPatient?.order_number}`)}
-                       className="w-full h-14 rounded-2xl bg-[#0A2E1F] hover:bg-emerald-900 text-white font-black text-[10px] tracking-[0.2em] uppercase shadow-xl shadow-emerald-900/10 gap-3"
+                       className="w-full h-16 rounded-2xl bg-[#0A2E1F] hover:bg-emerald-900 text-white font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl shadow-emerald-900/20 gap-4"
                      >
-                        <Video className="h-4 w-4" /> Engage Video consult
+                        <Video className="h-5 w-5" /> Engage Clinical Session
                      </Button>
                      <Button 
                        variant="outline" 
                        onClick={() => setSelectedIntakeId(null)}
-                       className="w-full h-14 rounded-2xl border-slate-100 text-[#0A2E1F] font-black text-[10px] tracking-[0.2em] uppercase hover:bg-slate-50"
+                       className="w-full h-16 rounded-2xl border-slate-100 text-slate-400 font-black text-[11px] tracking-[0.3em] uppercase hover:bg-slate-50 hover:text-[#0A2E1F]"
                      >
-                        Return to Registry
+                        Close Registry Entry
                      </Button>
                   </div>
                 </div>
 
-                {/* SERRATED EDGE BOTTOM */}
-                <div className="h-4 bg-slate-50/50 flex items-center justify-center">
-                   <div className="w-1/2 h-[1px] bg-slate-200 border-dashed border-b" />
+                {/* THERMAL BOTTOM STRIP */}
+                <div className="h-6 bg-slate-50 flex items-center justify-center opacity-40">
+                   <div className="w-1/3 h-[1px] bg-slate-200 border-dashed border-b" />
                 </div>
               </div>
             </motion.div>
