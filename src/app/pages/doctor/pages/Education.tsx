@@ -203,7 +203,6 @@ export function DoctorEducationPage() {
                 />
              </div>
 
-             {/* WRAPPING CATEGORY GRID (NO CLIPPING) */}
              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 mr-2 shrink-0 border border-slate-100">
                    <Filter className="h-4 w-4" />
@@ -234,52 +233,54 @@ export function DoctorEducationPage() {
                      key={item.id}
                      initial={{ opacity: 0, y: 20 }}
                      animate={{ opacity: 1, y: 0 }}
+                     whileHover={{ y: -8, scale: 1.01, transition: { duration: 0.2 } }}
+                     whileTap={{ scale: 0.98 }}
                      className={cn(
-                        "group p-8 bg-white border-2 rounded-[3rem] transition-all cursor-pointer relative overflow-hidden",
+                        "group p-6 bg-white border-2 rounded-[2.5rem] transition-all cursor-pointer relative overflow-hidden",
                         selectedContent?.id === item.id 
-                          ? "border-emerald-500 shadow-2xl shadow-emerald-900/10" 
-                          : "border-slate-50 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50"
+                          ? "border-emerald-500 shadow-2xl shadow-emerald-900/10 bg-gradient-to-br from-white to-emerald-50/30" 
+                          : "border-slate-50 hover:border-slate-200 hover:shadow-2xl hover:shadow-slate-200/50"
                      )}
                      onClick={() => setSelectedContent(item)}
                    >
                      {selectedContent?.id === item.id && (
-                       <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-[60px] -mr-16 -mt-16 pointer-events-none" />
+                       <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-[60px] -mr-16 -mt-16 pointer-events-none" />
                      )}
                      
-                     <div className="flex flex-col md:flex-row gap-8 items-center justify-between relative z-10">
-                       <div className="flex gap-8 items-center flex-1 w-full">
+                     <div className="flex flex-col md:flex-row gap-6 items-center justify-between relative z-10">
+                       <div className="flex gap-6 items-center flex-1 w-full">
                          <div className={cn(
-                           "h-20 w-20 rounded-[2rem] flex items-center justify-center transition-all duration-500 group-hover:rotate-6",
-                           selectedContent?.id === item.id ? "bg-[#0A2E1F] text-emerald-400 shadow-xl" : "bg-slate-50 text-slate-300"
+                           "h-16 w-16 rounded-[1.5rem] flex items-center justify-center transition-all duration-500 group-hover:rotate-[12deg] group-hover:scale-110 shadow-sm",
+                           selectedContent?.id === item.id ? "bg-[#0A2E1F] text-emerald-400" : "bg-slate-50 text-slate-300"
                          )}>
-                           <item.icon className="h-9 w-9" />
+                           <item.icon className="h-7 w-7" />
                          </div>
-                         <div className="space-y-2 flex-1">
+                         <div className="space-y-1 flex-1">
                            <div className="flex flex-wrap items-center gap-3">
-                              <p className="font-black text-lg text-[#0A2E1F] uppercase tracking-tight group-hover:text-emerald-700 transition-colors">{item.title}</p>
-                              <Badge variant="outline" className="rounded-lg text-[9px] font-black uppercase tracking-widest border-slate-100 text-slate-300 bg-white">
+                              <p className="font-black text-md text-[#0A2E1F] uppercase tracking-tight group-hover:text-emerald-700 transition-colors">{item.title}</p>
+                              <Badge variant="outline" className="rounded-lg text-[8px] h-5 font-black uppercase tracking-widest border-slate-100 text-slate-300 bg-white">
                                  {item.readTime}
                               </Badge>
                            </div>
-                           <p className="text-[13px] text-slate-400 font-bold leading-relaxed max-w-xl group-hover:text-slate-500 transition-colors">{item.description}</p>
+                           <p className="text-[12px] text-slate-400 font-bold leading-snug max-w-lg group-hover:text-slate-500 transition-colors">{item.description}</p>
                          </div>
                        </div>
                        
-                       <div className="flex items-center gap-4 shrink-0 w-full md:w-auto">
+                       <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
                           <Button 
                             variant="outline" 
                             onClick={(e) => { e.stopPropagation(); setSelectedContent(item); setShowPreview(true); }}
-                            className="flex-1 md:flex-none h-14 px-8 rounded-2xl border-slate-100 text-[#0A2E1F] font-black uppercase tracking-widest text-[10px] gap-2 hover:bg-[#0A2E1F] hover:text-white transition-all shadow-sm active:scale-95"
+                            className="flex-1 md:flex-none h-12 px-6 rounded-xl border-slate-100 text-[#0A2E1F] font-black uppercase tracking-widest text-[9px] gap-2 hover:bg-[#0A2E1F] hover:text-white transition-all shadow-sm active:scale-95"
                           >
-                             <Eye className="h-5 w-5" /> Preview
+                             <Eye className="h-4 w-4" /> Preview
                           </Button>
                           <button 
                             className={cn(
-                              "h-14 w-14 rounded-2xl flex items-center justify-center transition-all active:scale-90",
-                              selectedContent?.id === item.id ? "bg-emerald-500 text-white shadow-lg" : "bg-slate-100 text-slate-300 hover:bg-slate-200"
+                              "h-12 w-12 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-sm",
+                              selectedContent?.id === item.id ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300 hover:bg-slate-200"
                             )}
                           >
-                             {selectedContent?.id === item.id ? <CheckCircle2 className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
+                             {selectedContent?.id === item.id ? <CheckCircle2 className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
                           </button>
                        </div>
                      </div>
