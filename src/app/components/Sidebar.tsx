@@ -184,37 +184,6 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
         })}
       </nav>
 
-      <div className="p-6 border-t border-slate-100 bg-white space-y-4">
-        <motion.div 
-          whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-4 px-4 py-4 rounded-3xl border border-slate-100 bg-slate-50/50 shadow-inner cursor-pointer"
-        >
-          <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center text-xs font-black shrink-0 shadow-lg text-white", roleColors[role])}>
-            {fullName.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className={cn("text-xs font-bold truncate", isAdminPortal ? "text-slate-900" : "")}>{fullName}</p>
-            <p className="text-[10px] text-slate-500 capitalize font-medium">{displayRole} · Online</p>
-          </div>
-          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-        </motion.div>
-        <button 
-          onClick={() => setShowLogoutConfirm(true)}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors group text-left"
-        >
-          <LogOut className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-          <span>{t("logout")}</span>
-        </button>
-      </div>
-
-      <LogoutConfirmation 
-        isOpen={showLogoutConfirm}
-        onClose={() => setShowLogoutConfirm(false)}
-        onConfirm={async () => {
-          await useAuthStore.getState().signOut();
-          window.location.href = "/";
-        }}
-      />
     </div>
   );
 
