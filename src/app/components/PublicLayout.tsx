@@ -171,21 +171,15 @@ export function PublicLayout() {
           <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between gap-2 md:gap-4">
             {/* Left: Logo */}
             <div className="flex-shrink-0">
-              <Link to="/" className="flex items-center gap-2 group w-fit">
+              <Link to="/" className="flex items-center group w-fit">
                 <img 
                   src="/PeakHealthLogo.png" 
                   alt="Peak Health" 
                   className={cn(
-                    "w-auto transition-all duration-700 group-hover:scale-105 mix-blend-multiply contrast-125",
-                    scrolled ? "h-9 md:h-12" : "h-11 md:h-16"
+                    "w-auto transition-all duration-700 group-hover:scale-105",
+                    scrolled ? "h-16 md:h-20" : "h-20 md:h-28"
                   )} 
                 />
-                <span className={cn(
-                  "font-serif italic tracking-tighter text-[#0A2E1F] transition-all duration-700 whitespace-nowrap",
-                  scrolled ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
-                )}>
-                  Peak Health
-                </span>
               </Link>
             </div>
 
@@ -313,9 +307,8 @@ export function PublicLayout() {
           >
             {/* Overlay Header */}
             <div className="px-6 py-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-              <div className="flex items-center gap-2">
-                <img src="/PeakHealthLogo.png" alt="Logo" className="h-10 w-auto mix-blend-multiply contrast-125" />
-                <span className="font-serif italic tracking-tighter text-[#0A2E1F] text-2xl">Peak Health</span>
+              <div className="flex items-center">
+                <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-20 w-auto" />
               </div>
               <button 
                 onClick={() => setMobileMenu(false)}
@@ -407,9 +400,8 @@ export function PublicLayout() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 mb-24">
             <div className="lg:col-span-2 space-y-10">
               <div className="space-y-6">
-                <Link to="/" className="flex items-center gap-4 group">
-                  <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-20 md:h-28 w-auto mix-blend-multiply contrast-125 transition-transform group-hover:scale-105" />
-                  <span className="font-serif italic tracking-tighter text-[#0A2E1F] text-4xl">Peak Health</span>
+                <Link to="/" className="flex items-center group">
+                  <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-36 md:h-44 w-auto transition-transform group-hover:scale-105" />
                 </Link>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 leading-relaxed max-w-xs">
                   © {new Date().getFullYear()} Peak Health Technology Group, Inc. <br/> All clinical rights reserved.
