@@ -62,7 +62,7 @@ export function DoctorScribePage() {
     };
   }, []);
 
-  const handleToggleRecording = () => {
+  const handleToggleRecording = async () => {
     if (isRecording) {
       recognitionRef.current?.stop();
       setIsRecording(false);
