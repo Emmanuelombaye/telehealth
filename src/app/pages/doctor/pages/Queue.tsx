@@ -268,14 +268,14 @@ export function DoctorQueuePage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                        <MotionButton 
-                         whileHover={{ scale: 1.1, backgroundColor: "#D4AF37", color: "#ffffff", borderColor: "#D4AF37" }}
+                         whileHover={{ scale: 1.1, backgroundColor: "#D4AF37", color: "#0A2E1F", borderColor: "#D4AF37" }}
                          whileTap={{ scale: 0.9 }}
                          variant="outline"
                          className={cn(
                            "h-8 rounded-lg text-[10px] font-black uppercase tracking-widest px-4 transition-all shadow-sm",
                            selectedId === order.id 
                              ? "bg-emerald-600 text-white border-emerald-600" 
-                             : "bg-white border-slate-200 text-slate-700 group-hover:text-white group-hover:border-emerald-400"
+                             : "bg-white border-slate-200 text-slate-700 group-hover:shadow-lg group-hover:shadow-emerald-500/10"
                          )}
                          onClick={(e) => {
                            e.stopPropagation();
