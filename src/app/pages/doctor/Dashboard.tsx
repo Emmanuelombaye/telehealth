@@ -255,8 +255,8 @@ export function DoctorDashboard() {
             </div>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100">
-                {videoConsults.length > 0 ? (
-                  videoConsults.slice(0,4).map((v, i) => (
+                {videoConsultsToday.length > 0 ? (
+                  videoConsultsToday.slice(0,4).map((v, i) => (
                     <div key={i} className="p-4 flex gap-4 hover:bg-slate-50 transition-colors">
                       <div className="text-center w-16 shrink-0">
                         <p className="text-xs font-bold text-slate-900">{v.consultation_time?.split(' ')[0] || "10:00"}</p>
