@@ -137,14 +137,14 @@ export function DoctorPatientsPage() {
                   <Button 
                     variant="outline" 
                     onClick={() => navigate(`/doctor/consult?orderId=${p.order_number}`)}
-                    className="h-8 w-8 p-0 rounded-lg border-slate-50 text-slate-400 hover:bg-[#0A2E1F] hover:text-white"
+                    className="h-8 w-8 p-0 rounded-lg border-slate-50 text-slate-400 group-hover:bg-[#D4AF37] group-hover:text-white group-hover:border-[#D4AF37] transition-all duration-300 shadow-sm"
                   >
                      <Video className="h-3.5 w-3.5" />
                   </Button>
                   <Button 
                     variant="outline" 
                     onClick={() => setSelectedIntakeId(p.id)}
-                    className="h-8 w-8 p-0 rounded-lg border-emerald-100 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white"
+                    className="h-8 w-8 p-0 rounded-lg border-emerald-100 bg-emerald-50 text-emerald-600 group-hover:bg-[#D4AF37] group-hover:text-white group-hover:border-[#D4AF37] transition-all duration-300 shadow-sm"
                   >
                      <Receipt className="h-3.5 w-3.5" />
                   </Button>
