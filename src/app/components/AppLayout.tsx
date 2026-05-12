@@ -13,31 +13,32 @@ import { PageErrorBoundary } from "./PageErrorBoundary";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 
 export function AppLayout() {
-  const { fetchOrders, fetchDoctorAvailability } = usePatientStore();
+  const { 
+    fetchOrders, 
+    fetchDoctorAvailability, 
+    fetchUnreadMessages, 
+    subscribeToOrders, 
+    unreadMessagesCount 
+  } = usePatientStore();
   
   useEffect(() => {
     fetchOrders();
     fetchDoctorAvailability();
+    fetchUnreadMessages();
     
-    // Real-time synchronization
-    const channel = supabase
-      .channel('global-order-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
-        console.log('[Realtime] Order Change Detected:', payload);
-        fetchOrders();
-      })
-      .subscribe();
+    // Global real-time telemetry subscription
+    const unsubscribe = subscribeToOrders();
 
-    // Secondary polling to ensure consistency
     const interval = setInterval(() => {
       fetchOrders();
+      fetchUnreadMessages();
     }, 60000);
     
     return () => {
       clearInterval(interval);
-      supabase.removeChannel(channel);
+      unsubscribe();
     };
-  }, [fetchOrders, fetchDoctorAvailability]);
+  }, [fetchOrders, fetchDoctorAvailability, fetchUnreadMessages, subscribeToOrders]);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -113,7 +114,11 @@ export function AppLayout() {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl group hover:bg-slate-50">
               <Bell className="h-5 w-5 transition-colors text-slate-400 group-hover:text-[#0a2e1f]" />
-              <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-[#ef4444] border-2 border-white animate-pulse" />
+              {unreadMessagesCount > 0 && (
+                <span className="absolute top-2 right-2 h-4 min-w-[1rem] px-1 rounded-full bg-[#ef4444] border-2 border-white text-[8px] font-black text-white flex items-center justify-center animate-pulse">
+                  {unreadMessagesCount}
+                </span>
+              )}
             </Button>
             
             <div className="h-8 w-[1px] mx-1 hidden sm:block bg-slate-200" />
