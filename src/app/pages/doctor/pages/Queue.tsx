@@ -36,6 +36,7 @@ const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg:
 
 export function DoctorQueuePage() {
   const navigate = useNavigate();
+  const MotionButton = motion(Button);
   const { orders, updateOrderStatus, updateOrderRx, fetchOrders, subscribeToOrders } = usePatientStore();
   const [availability, setAvailability] = useState<AvailabilityStatus>("available");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -432,7 +433,9 @@ export function DoctorQueuePage() {
 
               {/* Sidebar Action Footer */}
               <div className="p-6 bg-white border-t border-slate-200 space-y-3 sticky bottom-0 z-10">
-                <Button
+                <MotionButton
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   disabled={isDispatching}
                   onClick={async () => {
                     setIsDispatching(true);
@@ -465,17 +468,19 @@ export function DoctorQueuePage() {
                       setIsDispatching(false);
                     }
                   }}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all border-none"
                 >
                   {isDispatching ? (
                     <><Activity className="h-4 w-4 animate-spin" /> Dispatching Rx...</>
                   ) : (
                     <><CheckCircle2 className="h-5 w-5" /> Approve & Dispatch Rx</>
                   )}
-                </Button>
+                </MotionButton>
                 
                 <div className="grid grid-cols-2 gap-3">
-                  <Button 
+                  <MotionButton 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     variant="outline"
                     className="w-full border-slate-200 text-slate-700 h-11 rounded-xl font-semibold text-xs hover:bg-slate-50 transition-all gap-2"
                     onClick={async (e) => {
@@ -487,7 +492,7 @@ export function DoctorQueuePage() {
                       await supabase.from('orders').update({ 
                         zoom_status: 'requested', 
                         zoom_doctor_message: rxNote || "Please book a time for a video consult." 
-                      }).eq('order_number', selected.id);
+                       }).eq('order_number', selected.id);
                       
                       await fetchOrders();
                       
@@ -502,9 +507,11 @@ export function DoctorQueuePage() {
                     }}
                   >
                     <Video className="h-4 w-4" /> Require Consult
-                  </Button>
+                  </MotionButton>
 
-                  <Button 
+                  <MotionButton 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     variant="outline"
                     className="w-full border-red-100 text-red-600 bg-red-50 hover:bg-red-100 hover:border-red-200 h-11 rounded-xl font-semibold text-xs transition-all gap-2"
                     onClick={async (e) => {
@@ -518,7 +525,7 @@ export function DoctorQueuePage() {
                     }}
                   >
                     <AlertCircle className="h-4 w-4" /> Reject/Refund
-                  </Button>
+                  </MotionButton>
                 </div>
               </div>
             </motion.div>
