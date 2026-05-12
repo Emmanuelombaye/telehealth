@@ -129,6 +129,31 @@ CREATE POLICY "Enable read access for all users" ON public.clinical_protocols FO
 DROP POLICY IF EXISTS "Enable insert for all users" ON public.clinical_protocols;
 CREATE POLICY "Enable insert for all users" ON public.clinical_protocols FOR INSERT WITH CHECK (true);
 
+-- 9. Create the Messages Table
+CREATE TABLE IF NOT EXISTS public.messages (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    sender_id UUID,
+    receiver_id UUID,
+    content TEXT,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable read access for all users" ON public.messages;
+CREATE POLICY "Enable read access for all users" ON public.messages FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Enable insert for all users" ON public.messages;
+CREATE POLICY "Enable insert for all users" ON public.messages FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Enable update for all users" ON public.messages;
+CREATE POLICY "Enable update for all users" ON public.messages FOR UPDATE USING (true);
+
+-- Insert some mock unread messages
+INSERT INTO public.messages (content, is_read) VALUES 
+('Patient Alice: I have a question about my Semaglutide dosage.', false),
+('System: New ID verification request from Robert Wilson.', false),
+('Patient Clara: Can we reschedule our 2:30 PM consult?', false)
+ON CONFLICT DO NOTHING;
+
 -- ==============================================================================
 -- DONE! Your backend database is now live and re-runnable.
 -- ==============================================================================

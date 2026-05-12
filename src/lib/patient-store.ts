@@ -139,6 +139,8 @@ interface AppState {
   doctorAvailability: DoctorAvailability[];
   intakeFormData: Record<string, any>;
   fetchOrders: () => Promise<void>;
+  fetchUnreadMessages: () => Promise<void>;
+  unreadMessagesCount: number;
   fetchDoctorAvailability: () => Promise<void>;
   addOrder: (order: Order) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus, tracking?: string, carrier?: string, trackingUrl?: string, estimatedDelivery?: string) => Promise<void>;
@@ -155,6 +157,7 @@ export const usePatientStore = create<AppState>()(
   devtools(
     (set, get) => ({
       orders: [], // Start fresh
+      unreadMessagesCount: 0,
       doctorAvailability: [],
       intakeFormData: {},
 
@@ -162,20 +165,40 @@ export const usePatientStore = create<AppState>()(
         const { user, role } = useAuthStore.getState();
         
         const channel = supabase
-          .channel('global-orders-sync')
+          .channel('global-sync')
           .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
             table: 'orders'
           }, (payload) => {
-            // Real-time update for the specific order if possible, or just re-fetch
             get().fetchOrders();
+          })
+          .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'messages'
+          }, (payload) => {
+            get().fetchUnreadMessages();
           })
           .subscribe();
 
         return () => {
           supabase.removeChannel(channel);
         };
+      },
+
+      fetchUnreadMessages: async () => {
+        try {
+          const { data, count, error } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_read', false);
+          
+          if (error) throw error;
+          set({ unreadMessagesCount: count || 0 });
+        } catch (error) {
+          console.error('Error fetching messages:', error);
+        }
       },
 
       fetchDoctorAvailability: async () => {

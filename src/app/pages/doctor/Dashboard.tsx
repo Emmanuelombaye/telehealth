@@ -22,27 +22,35 @@ export function DoctorDashboard() {
     ? `Dr. ${user.user_metadata.first_name} ${user.user_metadata.last_name}`
     : "Dr. Clinical Provider";
 
-  const { orders, fetchOrders, subscribeToOrders } = usePatientStore();
+  const { orders, fetchOrders, subscribeToOrders, unreadMessagesCount, fetchUnreadMessages } = usePatientStore();
 
   // Metrics
+  const todayStr = new Date().toDateString();
+  
   const pendingConsults = orders.filter(o => {
     const isActive = o.status === "order_submitted" || o.status === "medical_review" || o.status === "rx_sent";
     const needsRefill = o.nextRefillAt && new Date(o.nextRefillAt) <= new Date();
     return isActive || needsRefill;
   });
   
-  const videoConsults = orders.filter(o => o.zoom_status === "confirmed" || o.zoom_status === "requested");
+  const videoConsultsToday = orders.filter(o => 
+    (o.zoom_status === "confirmed" || o.zoom_status === "requested") &&
+    new Date(o.created_at || o.orderedDate).toDateString() === todayStr
+  );
+  
   const pendingReviews = orders.filter(o => o.status === "medical_review" || o.status === "order_submitted");
-  const patientsToday = pendingConsults.length;
+  const patientsToday = orders.filter(o => new Date(o.created_at || o.orderedDate).toDateString() === todayStr).length;
 
   useEffect(() => {
+    fetchOrders();
+    fetchUnreadMessages();
     const unsubscribe = subscribeToOrders();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => {
       unsubscribe();
       clearInterval(timer);
     };
-  }, [subscribeToOrders]);
+  }, [fetchOrders, fetchUnreadMessages, subscribeToOrders]);
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10 animate-in fade-in duration-700">
@@ -86,8 +94,8 @@ export function DoctorDashboard() {
         {[
           { label: "Patients Today", value: patientsToday, sub: "In active queue", icon: Users, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
           { label: "Pending Reviews", value: pendingReviews.length, sub: "Requires attention", icon: FileSignature, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
-          { label: "Video Consults", value: videoConsults.length, sub: "Scheduled today", icon: Video, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
-          { label: "Unread Messages", value: "3", sub: "Patient inquiries", icon: MessageSquare, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" }
+          { label: "Video Consults", value: videoConsultsToday.length, sub: "Scheduled today", icon: Video, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
+          { label: "Unread Messages", value: unreadMessagesCount, sub: "Patient inquiries", icon: MessageSquare, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" }
         ].map((stat, i) => (
           <Card key={i} className="border border-slate-200 rounded-[1.25rem] shadow-sm hover:shadow-md transition-all">
             <CardContent className="p-5">
