@@ -15,6 +15,7 @@ import { brand } from "../../lib/patient-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { usePatientStore } from "../../lib/patient-store";
 import { LogoutConfirmation } from "./LogoutConfirmation";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Role = "patient" | "doctor" | "admin" | "superadmin";
 
@@ -83,7 +84,6 @@ const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?:
     { icon: ShieldCheck, label: "Security", href: "/superadmin/security" },
     { icon: Settings, label: "Platform Settings", href: "/superadmin/settings" },
   ],
-
 };
 
 const roleColors: Record<Role, string> = {
@@ -93,36 +93,25 @@ const roleColors: Record<Role, string> = {
   superadmin: "bg-emerald-950",
 };
 
-const roleLabels: Record<Role, string> = {
-  patient: "Patient Portal",
-  doctor: "Doctor Portal",
-  admin: "System Administration",
-  superadmin: "Super Admin",
-
-};
-
 export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const { t } = useI18n();
   const menu = menuConfig[role];
   const { user, role: authRole } = useAuthStore();
+  const { orders } = usePatientStore();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const pendingCount = orders.filter(o => o.status === "order_submitted" || o.status === "medical_review").length;
 
   const fullName = user?.user_metadata?.first_name 
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`
     : user?.email || "Guest User";
 
   const displayRole = authRole?.replace('_', ' ') || role;
-
   const isAdminPortal = role === "admin" || role === "superadmin" || role === "doctor" || (authRole as string) === "brand_admin";
-  const { orders } = usePatientStore();
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  
-  // Real-time badge calculations
-  const pendingCount = orders.filter(o => o.status === "order_submitted" || o.status === "medical_review").length;
+
+  const MotionNavLink = motion(NavLink);
 
   const SidebarContent = () => (
-    <div className={cn(
-      "flex h-full flex-col overflow-hidden text-[#0A0D14] border-r border-slate-100 bg-white"
-    )}>
+    <div className={cn("flex h-full flex-col overflow-hidden text-[#0A0D14] border-r border-slate-100 bg-white")}>
       <div className="flex h-24 items-center justify-between border-b border-slate-100 px-6 shrink-0 bg-white">
         <Link to="/" className="flex items-center justify-center w-full py-4 group transition-all" onClick={onMobileClose}>
           <img src="/PeakHealthLogo.png" alt="Peak Health Logo" className="h-24 md:h-32 w-auto object-contain transition-transform duration-500 group-hover:scale-105" />
@@ -134,8 +123,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
         )}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
+      <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1 custom-scrollbar">
         {menu.map((item, index) => {
           const prevItem = index > 0 ? menu[index - 1] : null;
           const showGroup = item.group && item.group !== "BOTTOM" && (!prevItem || prevItem.group !== item.group);
@@ -144,48 +132,48 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
           return (
             <div key={item.href} className="w-full">
               {showGroup && (
-                  <div className="px-4 pb-2 pt-6 text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
-                    {item.group}
-                  </div>
-                )}
-                {isBottom && (
-                  <div className="h-px my-4 mx-3 bg-slate-50" />
-                )}
-              <NavLink
+                <div className="px-4 pb-2 pt-6 text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                  {item.group}
+                </div>
+              )}
+              {isBottom && <div className="h-px my-4 mx-3 bg-slate-50" />}
+              
+              <MotionNavLink
                 to={item.href}
                 end={item.href === `/${role}`}
                 onClick={onMobileClose}
+                whileHover={{ x: 4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center justify-between rounded-2xl px-4 py-3.5 text-[13px] font-bold transition-all duration-300 group relative mb-1 animate-slide-in-right",
-                    isActive
-                      ? "bg-[#0A2E1F] text-white shadow-xl shadow-emerald-900/10"
-                      : "text-slate-500 hover:bg-slate-50 hover:text-[#0A2E1F]"
+                    "flex items-center justify-between rounded-2xl px-4 py-3.5 text-[13px] font-bold transition-all duration-300 group relative mb-1",
+                    isActive ? "text-white" : "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80"
                   )
                 }
-                style={{ animationDelay: `${index * 0.05}s` }}
               >
                 {({ isActive }) => (
                   <>
-                    <div className="flex items-center gap-3 min-w-0">
+                    {isActive && (
+                      <motion.div 
+                        layoutId="active-pill"
+                        className="absolute inset-0 bg-[#0A2E1F] rounded-2xl shadow-lg shadow-emerald-900/20 z-0"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <div className="flex items-center gap-3 min-w-0 relative z-10">
                       <item.icon className={cn(
                         "h-5 w-5 shrink-0 transition-all duration-300", 
-                        isActive 
-                          ? "text-white" 
-                          : "text-slate-400 group-hover:text-[#0A2E1F] group-hover:scale-110"
+                        isActive ? "text-emerald-400" : "text-slate-400 group-hover:text-[#0A2E1F] group-hover:scale-110"
                       )} />
                       <span className="truncate">{item.label}</span>
                     </div>
                     {(() => {
                       let badgeCount = item.badge;
                       if (item.label === "Patient Queue") badgeCount = pendingCount;
-                      
                       if (badgeCount && badgeCount > 0) {
                         return (
-                          <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 shadow-sm",
-                            isActive 
-                              ? "bg-white/20 text-white"
-                              : "bg-emerald-100 text-[#0A2E1F]"
+                          <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 shadow-sm relative z-10",
+                            isActive ? "bg-white/20 text-white" : "bg-emerald-100 text-[#0A2E1F]"
                           )}>
                             {badgeCount}
                           </span>
@@ -195,28 +183,26 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                     })()}
                   </>
                 )}
-              </NavLink>
+              </MotionNavLink>
             </div>
           );
         })}
       </nav>
 
-      <div className="p-6 border-t border-slate-100 bg-white space-y-3">
-        <div className="flex items-center gap-4 px-4 py-4 rounded-3xl border border-slate-100 bg-slate-50/50 shadow-inner">
-          <div className={cn(
-            "h-10 w-10 rounded-2xl flex items-center justify-center text-xs font-black shrink-0 shadow-lg text-white", 
-            roleColors[role]
-          )}>
+      <div className="p-6 border-t border-slate-100 bg-white space-y-4">
+        <motion.div 
+          whileHover={{ scale: 1.02 }}
+          className="flex items-center gap-4 px-4 py-4 rounded-3xl border border-slate-100 bg-slate-50/50 shadow-inner cursor-pointer"
+        >
+          <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center text-xs font-black shrink-0 shadow-lg text-white", roleColors[role])}>
             {fullName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className={cn("text-xs font-bold truncate", isAdminPortal ? "text-slate-900" : "")}>
-              {fullName}
-            </p>
+            <p className={cn("text-xs font-bold truncate", isAdminPortal ? "text-slate-900" : "")}>{fullName}</p>
             <p className="text-[10px] text-slate-500 capitalize font-medium">{displayRole} · Online</p>
           </div>
-          <div className={cn("h-2 w-2 rounded-full animate-pulse shrink-0", isAdminPortal ? "bg-emerald-500" : "bg-emerald-500")} />
-        </div>
+          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+        </motion.div>
         <button 
           onClick={() => setShowLogoutConfirm(true)}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors group text-left"
@@ -224,37 +210,37 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
           <LogOut className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           <span>{t("logout")}</span>
         </button>
-
-        <LogoutConfirmation 
-          isOpen={showLogoutConfirm}
-          onClose={() => setShowLogoutConfirm(false)}
-          onConfirm={async () => {
-            await useAuthStore.getState().signOut();
-            window.location.href = "/";
-          }}
-        />
       </div>
+
+      <LogoutConfirmation 
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={async () => {
+          await useAuthStore.getState().signOut();
+          window.location.href = "/";
+        }}
+      />
     </div>
   );
 
   return (
     <>
-      {/* Desktop Persistent Sidebar */}
       <div className="hidden md:flex h-full w-60 shrink-0 flex-col">
         <SidebarContent />
       </div>
-
-      {/* Mobile Modal Sidebar (Only when mobileOpen is true) */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[100] flex md:hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={onMobileClose} />
-          <div className="relative w-72 bg-sidebar text-sidebar-foreground h-full shadow-2xl z-10 animate-in slide-in-from-left duration-300">
+          <motion.div 
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            className="relative w-72 bg-white h-full shadow-2xl z-10"
+          >
             <SidebarContent />
-          </div>
+          </motion.div>
         </div>
       )}
-
-      {/* Shared Content Export (For Sheet/Drawer use) */}
       <div className="md:hidden contents">
         {!mobileOpen && <SidebarContent />}
       </div>
