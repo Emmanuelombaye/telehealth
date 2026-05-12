@@ -212,19 +212,24 @@ export function DoctorQueuePage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    whileHover={{ x: 4, backgroundColor: "rgba(240, 253, 244, 0.5)" }}
-                    whileTap={{ scale: 0.995 }}
+                    whileHover={{ 
+                      scale: 1.02, 
+                      backgroundColor: "#0A2E1F", 
+                      zIndex: 20,
+                      boxShadow: "0 10px 30px rgba(10, 46, 31, 0.2), 0 0 0 2px #D4AF37"
+                    }}
+                    whileTap={{ scale: 0.99 }}
                     key={order.id}
                     onClick={() => setSelectedId(order.id)}
                     className={cn(
                       "group cursor-pointer transition-all border-l-4 border-transparent relative",
-                      selectedId === order.id ? "bg-emerald-50/50 border-emerald-500 shadow-sm" : "hover:border-emerald-200"
+                      selectedId === order.id ? "bg-emerald-50/50 border-emerald-500 shadow-sm" : "hover:border-emerald-500"
                     )}
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className={cn(
-                          "h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm",
+                          "h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm transition-all group-hover:bg-emerald-500 group-hover:text-white",
                           selectedId === order.id 
                             ? "bg-emerald-600 text-white" 
                             : "bg-slate-100 text-slate-600"
@@ -232,22 +237,22 @@ export function DoctorQueuePage() {
                           {order.patientName?.charAt(0) || "U"}
                         </div>
                         <div>
-                          <p className="font-bold text-[#0A2E1F]">
+                          <p className="font-bold text-[#0A2E1F] group-hover:text-white transition-colors">
                             {order.patientName}
                           </p>
-                          <p className="text-[10px] font-medium text-slate-500 mt-0.5">MRN: {order.mrn || 'PENDING'}</p>
+                          <p className="text-[10px] font-medium text-slate-500 mt-0.5 group-hover:text-emerald-200/60 transition-colors">MRN: {order.mrn || 'PENDING'}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <p className="font-semibold text-slate-800">{order.medication}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{order.category || "General Wellness"}</p>
+                        <p className="font-semibold text-slate-800 group-hover:text-emerald-50 transition-colors">{order.medication}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 group-hover:text-emerald-200/40 transition-colors">{order.category || "General Wellness"}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Clock className="h-4 w-4 text-slate-400" />
+                      <div className="flex items-center gap-2 text-slate-600 group-hover:text-emerald-100 transition-colors">
+                        <Clock className="h-4 w-4 text-slate-400 group-hover:text-emerald-300" />
                         <span className="font-medium text-xs">{new Date(order.orderedDate || (order as any).ordered_date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                       </div>
                     </td>
@@ -263,14 +268,14 @@ export function DoctorQueuePage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                        <MotionButton 
-                         whileHover={{ scale: 1.1, backgroundColor: "#059669", color: "#ffffff" }}
+                         whileHover={{ scale: 1.1, backgroundColor: "#D4AF37", color: "#ffffff", borderColor: "#D4AF37" }}
                          whileTap={{ scale: 0.9 }}
                          variant="outline"
                          className={cn(
                            "h-8 rounded-lg text-[10px] font-black uppercase tracking-widest px-4 transition-all shadow-sm",
                            selectedId === order.id 
                              ? "bg-emerald-600 text-white border-emerald-600" 
-                             : "bg-white border-slate-100 text-slate-500 hover:border-emerald-500"
+                             : "bg-white border-slate-200 text-slate-700 group-hover:text-white group-hover:border-emerald-400"
                          )}
                          onClick={(e) => {
                            e.stopPropagation();
