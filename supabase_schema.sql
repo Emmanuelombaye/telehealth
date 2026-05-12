@@ -135,9 +135,16 @@ CREATE TABLE IF NOT EXISTS public.messages (
     sender_id UUID,
     receiver_id UUID,
     content TEXT,
-    is_read BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Ensure is_read column exists (Safety check for existing tables)
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='messages' AND column_name='is_read') THEN
+        ALTER TABLE public.messages ADD COLUMN is_read BOOLEAN DEFAULT false;
+    END IF;
+END $$;
 
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Enable read access for all users" ON public.messages;
