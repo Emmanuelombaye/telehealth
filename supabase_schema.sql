@@ -67,7 +67,7 @@ INSERT INTO public.orders (
     'doctor_reviewing', 'May 06, 2026', 'VialsRX', '$35', 'Dr. Marcus Thorne', 
     false, true, 'Returning patient. Refill request.', 5, '09:30 AM', 'S43385633',
     '[{"status": "order_submitted", "date": "May 06, 8:30 AM"}, {"status": "doctor_reviewing", "date": "May 06, 10:15 AM"}]'::jsonb
-);
+) ON CONFLICT (order_number) DO NOTHING;
 
 -- 4. Insert Initial Mock Data into Doctor Availability Table
 INSERT INTO public.doctor_availability (id, name, specialty, avatar, available, wait_time, next_slot)
@@ -75,7 +75,8 @@ VALUES
 (1, 'Dr. Sarah Johnson', 'General Practice', 'SJ', true, '< 5 min', 'Available now'),
 (2, 'Dr. Michael Chen', 'Cardiology', 'MC', true, '< 15 min', 'Today 11:00 AM'),
 (3, 'Dr. Amira Hassan', 'Dermatology', 'AH', false, 'Async only', 'Tomorrow 9:00 AM'),
-(4, 'Dr. Carlos Rivera', 'Endocrinology', 'CR', true, '< 30 min', 'Today 2:30 PM');
+(4, 'Dr. Carlos Rivera', 'Endocrinology', 'CR', true, '< 30 min', 'Today 2:30 PM')
+ON CONFLICT (id) DO NOTHING;
 
 -- 5. Turn on Row Level Security (RLS)
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
