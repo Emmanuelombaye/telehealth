@@ -163,9 +163,10 @@ export const usePatientStore = create<AppState>()(
 
       subscribeToOrders: () => {
         const { user, role } = useAuthStore.getState();
+        const channelId = `global-sync-${Math.random().toString(36).slice(2, 9)}`;
         
         const channel = supabase
-          .channel('global-sync')
+          .channel(channelId)
           .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 

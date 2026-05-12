@@ -13,13 +13,11 @@ import { PageErrorBoundary } from "./PageErrorBoundary";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 
 export function AppLayout() {
-  const { 
-    fetchOrders, 
-    fetchDoctorAvailability, 
-    fetchUnreadMessages, 
-    subscribeToOrders, 
-    unreadMessagesCount 
-  } = usePatientStore();
+  const fetchOrders = usePatientStore(state => state.fetchOrders);
+  const fetchDoctorAvailability = usePatientStore(state => state.fetchDoctorAvailability);
+  const fetchUnreadMessages = usePatientStore(state => state.fetchUnreadMessages);
+  const subscribeToOrders = usePatientStore(state => state.subscribeToOrders);
+  const unreadMessagesCount = usePatientStore(state => state.unreadMessagesCount);
   
   useEffect(() => {
     fetchOrders();
