@@ -25,7 +25,7 @@ interface SidebarProps {
   onMobileClose?: () => void;
 }
 
-const menuConfig: Record<Role, { icon: any; label: string; href: string; badge?: number; group?: string }[]> = {
+const menuConfig: Record<Role, any[]> = {
   patient: [
     { icon: Home, label: "Overview", href: "/patient" },
     { icon: Package, label: "Shop Treatments", href: "/patient/shop" },
@@ -142,30 +142,25 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                 to={item.href}
                 end={item.href === `/${role}`}
                 onClick={onMobileClose}
-                whileHover={{ x: 4, scale: 1.02 }}
+                whileHover={{ x: 4 }}
                 whileTap={{ scale: 0.98 }}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center justify-between rounded-2xl px-4 py-3.5 text-[13px] font-bold transition-all duration-300 group relative mb-1",
-                    isActive ? "text-white" : "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80"
+                    "flex items-center justify-between rounded-2xl px-4 py-3.5 text-[13px] font-black transition-all duration-300 group relative mb-1 overflow-hidden",
+                    isActive 
+                      ? "bg-[#0A2E1F] text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)] border-l-4 border-[#D4AF37]" 
+                      : "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80 border-l-4 border-transparent"
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
-                    {isActive && (
-                      <motion.div 
-                        layoutId="active-pill"
-                        className="absolute inset-0 bg-[#0A2E1F] rounded-2xl shadow-lg shadow-emerald-900/20 z-0"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      />
-                    )}
                     <div className="flex items-center gap-3 min-w-0 relative z-10">
                       <item.icon className={cn(
                         "h-5 w-5 shrink-0 transition-all duration-300", 
-                        isActive ? "text-emerald-400" : "text-slate-400 group-hover:text-[#0A2E1F] group-hover:scale-110"
+                        isActive ? "text-[#D4AF37] scale-110" : "text-slate-400 group-hover:text-[#0A2E1F] group-hover:scale-110"
                       )} />
-                      <span className="truncate">{item.label}</span>
+                      <span className="truncate uppercase tracking-tight">{item.label}</span>
                     </div>
                     {(() => {
                       let badgeCount = item.badge;
@@ -173,7 +168,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                       if (badgeCount && badgeCount > 0) {
                         return (
                           <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 shadow-sm relative z-10",
-                            isActive ? "bg-white/20 text-white" : "bg-emerald-100 text-[#0A2E1F]"
+                            isActive ? "bg-[#D4AF37] text-[#0A2E1F]" : "bg-emerald-100 text-[#0A2E1F]"
                           )}>
                             {badgeCount}
                           </span>
