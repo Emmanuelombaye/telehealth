@@ -154,6 +154,10 @@ CREATE POLICY "Enable insert for all users" ON public.messages FOR INSERT WITH C
 DROP POLICY IF EXISTS "Enable update for all users" ON public.messages;
 CREATE POLICY "Enable update for all users" ON public.messages FOR UPDATE USING (true);
 
+-- Ensure columns are nullable for mock data (Safety check for strict existing tables)
+ALTER TABLE public.messages ALTER COLUMN sender_id DROP NOT NULL;
+ALTER TABLE public.messages ALTER COLUMN receiver_id DROP NOT NULL;
+
 -- Insert some mock unread messages
 INSERT INTO public.messages (content, is_read) VALUES 
 ('Patient Alice: I have a question about my Semaglutide dosage.', false),
