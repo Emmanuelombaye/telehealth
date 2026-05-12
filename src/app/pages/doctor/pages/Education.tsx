@@ -80,6 +80,7 @@ export function DoctorEducationPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [sending, setSending] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [newProtocol, setNewProtocol] = useState({ title: "", category: "Cardiology", type: "Article", description: "" });
 
   // Filtered Library Logic
   const filteredLibrary = useMemo(() => {
@@ -113,13 +114,30 @@ export function DoctorEducationPage() {
     }
   };
 
-  const handleCreateResource = () => {
+  const handleCreateResource = async () => {
+    if (!newProtocol.title) {
+      toast.error("Please provide a protocol title.");
+      return;
+    }
     setCreating(true);
-    setTimeout(() => {
-      setCreating(false);
+    
+    try {
+      const { error } = await supabase.from('clinical_protocols').insert({
+        ...newProtocol,
+        created_by: user?.id
+      });
+
+      if (error) throw error;
+
+      toast.success(`"${newProtocol.title}" has been indexed and published to the clinic library.`);
       setShowCreateModal(false);
-      toast.success("New Clinical Protocol has been indexed and published to the library.");
-    }, 1500);
+      setNewProtocol({ title: "", category: "Cardiology", type: "Article", description: "" });
+    } catch (e) {
+      console.error(e);
+      toast.error("Indexing failed. Database connection error.");
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -406,19 +424,33 @@ export function DoctorEducationPage() {
                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2">Protocol Title</label>
                      <div className="relative">
                         <Type className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-200" />
-                        <input type="text" placeholder="e.g. Post-Op Wound Care Instructions" className="w-full pl-16 pr-8 py-5 bg-slate-50 rounded-2xl text-sm font-bold border-none focus:ring-4 focus:ring-emerald-500/5 outline-none" />
+                        <input 
+                          type="text" 
+                          value={newProtocol.title}
+                          onChange={(e) => setNewProtocol({ ...newProtocol, title: e.target.value })}
+                          placeholder="e.g. Post-Op Wound Care Instructions" 
+                          className="w-full pl-16 pr-8 py-5 bg-slate-50 rounded-2xl text-sm font-bold border-none focus:ring-4 focus:ring-emerald-500/5 outline-none" 
+                        />
                      </div>
                   </div>
                   <div className="grid grid-cols-2 gap-6">
                      <div className="space-y-4">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2">Category</label>
-                        <select className="w-full bg-slate-50 px-6 py-5 rounded-2xl text-sm font-bold border-none outline-none">
+                        <select 
+                          value={newProtocol.category}
+                          onChange={(e) => setNewProtocol({ ...newProtocol, category: e.target.value })}
+                          className="w-full bg-slate-50 px-6 py-5 rounded-2xl text-sm font-bold border-none outline-none"
+                        >
                            {categories.filter(c => c !== "All").map(c => <option key={c}>{c}</option>)}
                         </select>
                      </div>
                      <div className="space-y-4">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2">Format</label>
-                        <select className="w-full bg-slate-50 px-6 py-5 rounded-2xl text-sm font-bold border-none outline-none">
+                        <select 
+                          value={newProtocol.type}
+                          onChange={(e) => setNewProtocol({ ...newProtocol, type: e.target.value })}
+                          className="w-full bg-slate-50 px-6 py-5 rounded-2xl text-sm font-bold border-none outline-none"
+                        >
                            <option>Article</option>
                            <option>Video</option>
                            <option>Care Plan</option>
@@ -427,7 +459,12 @@ export function DoctorEducationPage() {
                   </div>
                   <div className="space-y-4">
                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2">Description</label>
-                     <textarea placeholder="Provide clinical context for the doctor..." className="w-full bg-slate-50 px-8 py-6 rounded-3xl text-sm font-bold border-none h-32 resize-none outline-none focus:ring-4 focus:ring-emerald-500/5" />
+                     <textarea 
+                        value={newProtocol.description}
+                        onChange={(e) => setNewProtocol({ ...newProtocol, description: e.target.value })}
+                        placeholder="Provide clinical context for the doctor..." 
+                        className="w-full bg-slate-50 px-8 py-6 rounded-3xl text-sm font-bold border-none h-32 resize-none outline-none focus:ring-4 focus:ring-emerald-500/5" 
+                     />
                   </div>
                </div>
 

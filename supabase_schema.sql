@@ -104,6 +104,21 @@ ALTER TABLE public.shared_resources ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable read access for all users" ON public.shared_resources FOR SELECT USING (true);
 CREATE POLICY "Enable insert for all users" ON public.shared_resources FOR INSERT WITH CHECK (true);
 
+-- 8. Create the Clinical Protocols Table (For Custom Library Content)
+CREATE TABLE IF NOT EXISTS public.clinical_protocols (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    category TEXT,
+    type TEXT,
+    description TEXT,
+    created_by UUID,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.clinical_protocols ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for all users" ON public.clinical_protocols FOR SELECT USING (true);
+CREATE POLICY "Enable insert for all users" ON public.clinical_protocols FOR INSERT WITH CHECK (true);
+
 -- ==============================================================================
 -- DONE! Your backend database is now live.
 -- ==============================================================================
