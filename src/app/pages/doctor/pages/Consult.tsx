@@ -10,6 +10,8 @@ import {
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { useAuthStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
+import { motion, AnimatePresence } from "framer-motion";
+
 
 // ── Lightweight Toast System ──────────────────────────────────────────────────
 type ToastType = 'success' | 'error' | 'info';
