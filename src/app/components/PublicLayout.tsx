@@ -177,11 +177,11 @@ export function PublicLayout() {
                   alt="Peak Health" 
                   className={cn(
                     "w-auto transition-all duration-700 group-hover:scale-105 mix-blend-multiply contrast-125",
-                    scrolled ? "h-8 md:h-12" : "h-10 md:h-16"
+                    scrolled ? "h-9 md:h-12" : "h-11 md:h-16"
                   )} 
                 />
                 <span className={cn(
-                  "font-serif italic tracking-tighter text-[#0A2E1F] transition-all duration-700 whitespace-nowrap hidden sm:block",
+                  "font-serif italic tracking-tighter text-[#0A2E1F] transition-all duration-700 whitespace-nowrap",
                   scrolled ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
                 )}>
                   Peak Health
@@ -284,7 +284,7 @@ export function PublicLayout() {
               <Link to="/patient/login" className="hidden md:block text-[14px] font-medium text-slate-700 hover:text-[#0A2E1F] transition-all">
                 Log In
               </Link>
-              <Link to="/patient/shop" className="flex-shrink-0">
+              <Link to="/patient/shop" className="hidden md:block flex-shrink-0">
                 <Button className="rounded-full bg-[#1A1F2C] text-white hover:bg-[#2A303C] px-3 md:px-6 py-2 h-9 md:h-11 text-[11px] md:text-[14px] font-bold transition-all border-none shadow-none whitespace-nowrap">
                   <span className="hidden xs:inline">Explore </span>Treatments
                 </Button>
