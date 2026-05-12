@@ -15,6 +15,7 @@ import { LogoutConfirmation } from "./LogoutConfirmation";
 export function AppLayout() {
   const fetchOrders = usePatientStore(state => state.fetchOrders);
   const fetchPrescriptions = usePatientStore(state => state.fetchPrescriptions);
+  const fetchVisitForms = usePatientStore(state => state.fetchVisitForms);
   const fetchDoctorAvailability = usePatientStore(state => state.fetchDoctorAvailability);
   const fetchUnreadMessages = usePatientStore(state => state.fetchUnreadMessages);
   const subscribeToOrders = usePatientStore(state => state.subscribeToOrders);
@@ -23,6 +24,7 @@ export function AppLayout() {
   useEffect(() => {
     fetchOrders();
     fetchPrescriptions();
+    fetchVisitForms();
     fetchDoctorAvailability();
     fetchUnreadMessages();
     
@@ -32,6 +34,7 @@ export function AppLayout() {
     const interval = setInterval(() => {
       fetchOrders();
       fetchPrescriptions();
+      fetchVisitForms();
       fetchUnreadMessages();
     }, 60000);
     
@@ -39,7 +42,7 @@ export function AppLayout() {
       clearInterval(interval);
       unsubscribe();
     };
-  }, [fetchOrders, fetchPrescriptions, fetchDoctorAvailability, fetchUnreadMessages, subscribeToOrders]);
+  }, [fetchOrders, fetchPrescriptions, fetchVisitForms, fetchDoctorAvailability, fetchUnreadMessages, subscribeToOrders]);
 
   const location = useLocation();
   const navigate = useNavigate();

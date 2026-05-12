@@ -136,8 +136,10 @@ export const brand = {
 
 interface AppState {
   prescriptions: any[];
+  visitForms: any[];
   fetchOrders: () => Promise<void>;
   fetchPrescriptions: () => Promise<void>;
+  fetchVisitForms: () => Promise<void>;
   fetchUnreadMessages: () => Promise<void>;
   unreadMessagesCount: number;
   fetchDoctorAvailability: () => Promise<void>;
@@ -157,6 +159,7 @@ export const usePatientStore = create<AppState>()(
     (set, get) => ({
       orders: [],
       prescriptions: [],
+      visitForms: [],
       unreadMessagesCount: 0,
       doctorAvailability: [],
       intakeFormData: {},
@@ -187,6 +190,13 @@ export const usePatientStore = create<AppState>()(
             table: 'prescriptions'
           }, (payload) => {
             get().fetchPrescriptions();
+          })
+          .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'visit_forms'
+          }, (payload) => {
+            get().fetchVisitForms();
           })
           .subscribe();
 
@@ -222,6 +232,22 @@ export const usePatientStore = create<AppState>()(
           set({ prescriptions: data || [] });
         } catch (error) {
           console.error('Error fetching prescriptions:', error);
+        }
+      },
+
+      fetchVisitForms: async () => {
+        try {
+          const { user } = useAuthStore.getState();
+          if (!user) return;
+          const { data, error } = await supabase
+            .from('visit_forms')
+            .select('*')
+            .eq('patient_id', user.id)
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          set({ visitForms: data || [] });
+        } catch (error) {
+          console.error('Error fetching visit forms:', error);
         }
       },
 
