@@ -148,46 +148,80 @@ export function DoctorDashboard() {
                     {pendingConsults.slice(0, 7).map((order, i) => (
                       <motion.tr 
                         key={order.id} 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="hover:bg-slate-50/80 transition-colors group"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        whileHover={{ 
+                          backgroundColor: "rgba(16, 185, 129, 0.04)",
+                          transition: { duration: 0.2 }
+                        }}
+                        className="relative transition-colors group cursor-pointer border-l-2 border-transparent hover:border-emerald-500 overflow-hidden"
+                        onClick={() => navigate(`/doctor/consult?orderId=${order.order_number}`)}
                       >
-                        <td className="py-3 px-5">
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs">
-                              {order.patientName?.charAt(0) || "U"}
+                        {/* THE SCANNING BEAMS */}
+                        <motion.div 
+                          className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-0 group-hover:opacity-100 z-20 pointer-events-none"
+                          initial={{ x: "-100%" }}
+                          whileHover={{ x: "100%" }}
+                          transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                        />
+                        <motion.div 
+                          className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-0 group-hover:opacity-100 z-20 pointer-events-none"
+                          initial={{ x: "100%" }}
+                          whileHover={{ x: "-100%" }}
+                          transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                        />
+
+                        <td className="py-4 px-5 relative z-10">
+                          <div className="flex items-center gap-4">
+                            <div className="relative">
+                              <div className={cn(
+                                "h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-black text-xs transition-all duration-500 group-hover:bg-[#0A2E1F] group-hover:text-emerald-400 group-hover:rotate-[12deg]",
+                                order.urgent && "ring-2 ring-red-500 ring-offset-2"
+                              )}>
+                                {order.patientName?.charAt(0) || "U"}
+                              </div>
+                              <motion.div 
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ repeat: Infinity, duration: 2 }}
+                                className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white" 
+                              />
                             </div>
                             <div>
-                              <p className="font-semibold text-slate-900">{order.patientName}</p>
-                              <p className="text-[10px] text-slate-500 uppercase">{order.order_number}</p>
+                              <p className="font-black text-sm text-[#0A2E1F] tracking-tight">{order.patientName}</p>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{order.order_number}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 px-5">
-                          <p className="font-medium text-slate-700">{order.medication}</p>
-                          <p className="text-xs text-slate-500">{order.category}</p>
+                        <td className="py-4 px-5 relative z-10">
+                          <p className="font-black text-xs text-slate-700">{order.medication}</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{order.category}</p>
                         </td>
-                        <td className="py-3 px-5">
+                        <td className="py-4 px-5 relative z-10">
                           <Badge variant="outline" className={cn(
-                            "text-[10px] font-semibold uppercase tracking-wider border",
-                            order.status === 'medical_review' ? "bg-amber-50 text-amber-700 border-amber-200" :
-                            order.status === 'order_submitted' ? "bg-blue-50 text-blue-700 border-blue-200" :
-                            "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            "text-[9px] font-black uppercase tracking-[0.15em] border-none px-3 py-1 rounded-lg",
+                            order.status === 'medical_review' ? "bg-amber-100 text-amber-700" :
+                            order.status === 'order_submitted' ? "bg-blue-100 text-blue-700" :
+                            "bg-emerald-100 text-emerald-700"
                           )}>
                             {order.status?.replace('_', ' ')}
                           </Badge>
                         </td>
-                        <td className="py-3 px-5 text-xs font-medium text-slate-600">
-                          {new Date(order.orderedDate || order.ordered_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <td className="py-4 px-5 relative z-10">
+                           <div className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase tracking-tighter">
+                             <Clock className="h-3 w-3 text-emerald-500" />
+                             {new Date(order.orderedDate || order.ordered_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                           </div>
                         </td>
-                        <td className="py-3 px-5 text-right">
-                          <Button 
-                            size="sm" 
-                            className="h-8 px-3 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors"
-                            onClick={() => navigate(`/doctor/consult?orderId=${order.order_number}`)}
-                          >
-                            Review
-                          </Button>
+                        <td className="py-4 px-5 text-right relative z-10">
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button 
+                              size="sm" 
+                              className="h-10 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#0A2E1F] text-white hover:bg-emerald-900 shadow-sm group-hover:shadow-emerald-900/20 transition-all border-none"
+                            >
+                              Review
+                            </Button>
+                          </motion.div>
                         </td>
                       </motion.tr>
                     ))}
