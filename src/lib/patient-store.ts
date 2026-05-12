@@ -222,7 +222,10 @@ export const usePatientStore = create<AppState>()(
             .select('*', { count: 'exact', head: true })
             .eq('is_read', false);
           
-          if (error) throw error;
+          if (error) {
+            if (error.code === 'PGRST303') console.warn("Session Expired: Please re-login to refresh clinical data.");
+            throw error;
+          }
           set({ unreadMessagesCount: count || 0 });
         } catch (error) {
           console.error('Error fetching messages:', error);
@@ -238,7 +241,10 @@ export const usePatientStore = create<AppState>()(
             .select('*')
             .eq('patient_id', user.id)
             .order('created_at', { ascending: false });
-          if (error) throw error;
+          if (error) {
+            if (error.code === 'PGRST303') console.warn("Session Expired: Please re-login to view prescriptions.");
+            throw error;
+          }
           set({ prescriptions: data || [] });
         } catch (error) {
           console.error('Error fetching prescriptions:', error);
@@ -254,7 +260,10 @@ export const usePatientStore = create<AppState>()(
             .select('*')
             .eq('patient_id', user.id)
             .order('created_at', { ascending: false });
-          if (error) throw error;
+          if (error) {
+            if (error.code === 'PGRST303') console.warn("Session Expired: Please re-login to view visit forms.");
+            throw error;
+          }
           set({ visitForms: data || [] });
         } catch (error) {
           console.error('Error fetching visit forms:', error);
@@ -270,7 +279,10 @@ export const usePatientStore = create<AppState>()(
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
-          if (error) throw error;
+          if (error) {
+            if (error.code === 'PGRST303') console.warn("Session Expired: Please re-login to view notifications.");
+            throw error;
+          }
           set({ notifications: data || [] });
         } catch (error) {
           console.error('Error fetching notifications:', error);
@@ -311,6 +323,7 @@ export const usePatientStore = create<AppState>()(
 
           const { data, error } = await query;
           if (error) {
+            if (error.code === 'PGRST303') console.warn("Session Expired: Please re-login to sync orders.");
             if (error.code === '42P17') {
               console.error("[CRITICAL] Infinite recursion detected in Supabase RLS policies. Please run the fix script in supabase_fix_recursion_v2.sql");
               return;
