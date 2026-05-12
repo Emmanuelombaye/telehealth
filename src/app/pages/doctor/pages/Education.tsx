@@ -114,6 +114,19 @@ export function DoctorEducationPage() {
     }
   };
 
+  const handleCopyLink = () => {
+    const link = `https://peak-health.io/protocol/${selectedContent?.id || 'public'}`;
+    navigator.clipboard.writeText(link);
+    toast.success("Protocol Link copied to clipboard. Ready for secure sharing.");
+  };
+
+  const handleDownloadPDF = () => {
+    toast.info("Generating Clinical PDF Record...");
+    setTimeout(() => {
+      window.print();
+    }, 1000);
+  };
+
   const handleCreateResource = async () => {
     if (!newProtocol.title) {
       toast.error("Please provide a protocol title.");
@@ -577,10 +590,17 @@ export function DoctorEducationPage() {
                            <div className="space-y-4">
                               <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.4em]">External Actions</p>
                               <div className="grid grid-cols-1 gap-4">
-                                 <Button className="w-full h-14 rounded-2xl bg-[#0A2E1F] text-white font-black uppercase text-[10px] tracking-widest gap-3 shadow-lg active:scale-95 transition-all">
+                                 <Button 
+                                   onClick={handleCopyLink}
+                                   className="w-full h-14 rounded-2xl bg-[#0A2E1F] text-white font-black uppercase text-[10px] tracking-widest gap-3 shadow-lg active:scale-95 transition-all"
+                                 >
                                     <Share2 className="h-4 w-4 text-emerald-400" /> Public Access Link
                                  </Button>
-                                 <Button variant="outline" className="w-full h-14 rounded-2xl border-slate-200 text-slate-600 font-black uppercase text-[10px] tracking-widest gap-3 hover:bg-slate-50 transition-all active:scale-95">
+                                 <Button 
+                                   variant="outline" 
+                                   onClick={handleDownloadPDF}
+                                   className="w-full h-14 rounded-2xl border-slate-200 text-slate-600 font-black uppercase text-[10px] tracking-widest gap-3 hover:bg-slate-50 transition-all active:scale-95"
+                                 >
                                     <ArrowUpRight className="h-4 w-4" /> Download PDF Record
                                  </Button>
                               </div>
