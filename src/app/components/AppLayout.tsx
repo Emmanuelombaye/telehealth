@@ -16,6 +16,7 @@ export function AppLayout() {
   const fetchOrders = usePatientStore(state => state.fetchOrders);
   const fetchPrescriptions = usePatientStore(state => state.fetchPrescriptions);
   const fetchVisitForms = usePatientStore(state => state.fetchVisitForms);
+  const fetchNotifications = usePatientStore(state => state.fetchNotifications);
   const fetchDoctorAvailability = usePatientStore(state => state.fetchDoctorAvailability);
   const fetchUnreadMessages = usePatientStore(state => state.fetchUnreadMessages);
   const subscribeToOrders = usePatientStore(state => state.subscribeToOrders);
@@ -25,6 +26,7 @@ export function AppLayout() {
     fetchOrders();
     fetchPrescriptions();
     fetchVisitForms();
+    fetchNotifications();
     fetchDoctorAvailability();
     fetchUnreadMessages();
     
@@ -35,6 +37,7 @@ export function AppLayout() {
       fetchOrders();
       fetchPrescriptions();
       fetchVisitForms();
+      fetchNotifications();
       fetchUnreadMessages();
     }, 60000);
     
@@ -42,7 +45,7 @@ export function AppLayout() {
       clearInterval(interval);
       unsubscribe();
     };
-  }, [fetchOrders, fetchPrescriptions, fetchVisitForms, fetchDoctorAvailability, fetchUnreadMessages, subscribeToOrders]);
+  }, [fetchOrders, fetchPrescriptions, fetchVisitForms, fetchNotifications, fetchDoctorAvailability, fetchUnreadMessages, subscribeToOrders]);
 
   const location = useLocation();
   const navigate = useNavigate();
