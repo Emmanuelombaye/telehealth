@@ -384,24 +384,24 @@ export function DoctorEducationPage() {
               initial={{ opacity: 0, y: 100, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 100, scale: 0.9 }}
-              className="bg-white w-full max-w-2xl rounded-[4rem] shadow-2xl relative z-10 flex flex-col overflow-hidden"
+              className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] relative z-10 flex flex-col overflow-hidden max-h-[min(90vh,800px)] border border-white/20"
             >
-               <div className="p-12 border-b border-slate-50 flex items-center justify-between">
+               <div className="p-10 border-b border-slate-50 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-20">
                   <div className="flex items-center gap-4">
-                     <div className="h-14 w-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm">
-                        <Plus className="h-8 w-8" />
+                     <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm">
+                        <Plus className="h-6 w-6" />
                      </div>
                      <div>
-                        <h3 className="text-2xl font-black text-[#0A2E1F] uppercase tracking-tighter">Create Protocol</h3>
-                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Add verified medical material to library</p>
+                        <h3 className="text-xl font-black text-[#0A2E1F] uppercase tracking-tighter">Create Protocol</h3>
+                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-0.5">Clinical Indexing Terminal</p>
                      </div>
                   </div>
-                  <button onClick={() => setShowCreateModal(false)} className="h-14 w-14 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors">
-                     <X className="h-6 w-6" />
+                  <button onClick={() => setShowCreateModal(false)} className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all">
+                     <X className="h-5 w-5" />
                   </button>
                </div>
 
-               <div className="p-12 space-y-8">
+               <div className="p-10 space-y-8 overflow-y-auto flex-1 custom-scrollbar">
                   <div className="space-y-4">
                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2">Protocol Title</label>
                      <div className="relative">
@@ -431,12 +431,12 @@ export function DoctorEducationPage() {
                   </div>
                </div>
 
-               <div className="px-12 py-10 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-6">
-                  <Button variant="ghost" onClick={() => setShowCreateModal(false)} className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Cancel</Button>
+               <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-6 sticky bottom-0 z-20">
+                  <Button variant="ghost" onClick={() => setShowCreateModal(false)} className="text-slate-400 font-black uppercase text-[10px] tracking-widest hover:text-slate-600 transition-colors">Cancel</Button>
                   <Button 
                     onClick={handleCreateResource}
                     disabled={creating}
-                    className="h-16 px-12 rounded-[2rem] bg-[#0A2E1F] text-white font-black uppercase tracking-widest text-[11px] gap-3 shadow-xl shadow-emerald-900/20"
+                    className="h-14 px-10 rounded-2xl bg-[#0A2E1F] text-white font-black uppercase tracking-widest text-[10px] gap-3 shadow-xl shadow-emerald-900/20 active:scale-95 transition-all"
                   >
                     {creating ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Database className="h-5 w-5" />}
                     {creating ? "Indexing..." : "Index Protocol"}
