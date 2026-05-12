@@ -10,7 +10,6 @@ export function DoctorPatientsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showIntake, setShowIntake] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -70,258 +69,284 @@ export function DoctorPatientsPage() {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 pb-20 animate-in fade-in duration-700 px-4">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="max-w-[1600px] mx-auto space-y-8 pb-32 animate-in fade-in duration-700 px-6">
+      {/* 1. EXECUTIVE HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black text-[#0A2E1F] tracking-tighter uppercase leading-tight">
-            Patient <span className="text-emerald-500 italic font-serif lowercase">management.</span>
+          <h1 className="text-4xl md:text-5xl font-black text-[#0A2E1F] tracking-tighter uppercase leading-tight">
+            Patient <span className="text-emerald-500 italic font-serif lowercase">directory.</span>
           </h1>
-          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Authorized clinical directory & records</p>
+          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2">Authorized clinical matrix & management</p>
         </div>
-        <Badge className="h-10 px-6 rounded-2xl font-black text-[#0A2E1F] border-none bg-slate-50 shadow-sm">
-          {patients.length} TOTAL PATIENTS
-        </Badge>
+        <div className="flex items-center gap-4">
+           <Badge className="h-12 px-8 rounded-2xl font-black text-[#0A2E1F] border-none bg-white shadow-xl shadow-slate-200/50">
+             {patients.length} TOTAL RECORDS
+           </Badge>
+        </div>
       </div>
 
-      {/* SEARCH & FILTER */}
-      <div className="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-50">
+      {/* 2. PRECISION SEARCH TOOLS */}
+      <div className="flex flex-col lg:flex-row gap-4 bg-white/80 backdrop-blur-md p-5 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white/50 sticky top-4 z-40">
         <div className="relative flex-1 group">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-all" />
+          <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-all" />
           <input 
-            className="w-full pl-16 pr-6 py-4 bg-slate-50 rounded-2xl text-sm font-bold border-none outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/5 transition-all" 
-            placeholder="Search by name, condition, or medication..." 
+            className="w-full pl-16 pr-8 py-5 bg-slate-50/50 rounded-[1.75rem] text-sm font-black text-[#0A2E1F] border-none outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/5 transition-all placeholder:text-slate-300" 
+            placeholder="FILTER BY NAME, CLINICAL CONDITION, OR PROTOCOL..." 
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-        <Button variant="outline" className="rounded-2xl gap-3 px-8 h-14 border-slate-100 text-[#0A2E1F] font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all active:scale-95">
-          <Filter className="h-4 w-4" /> Filter
-        </Button>
+        <div className="flex gap-3">
+           <Button variant="outline" className="rounded-[1.75rem] gap-3 px-8 h-16 border-slate-100 bg-white text-[#0A2E1F] font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
+             <Filter className="h-4 w-4" /> Advanced Filters
+           </Button>
+        </div>
       </div>
 
-      {/* PATIENT LISTING */}
-      <div className="grid grid-cols-1 gap-6">
+      {/* 3. CLINICAL MATRIX GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {loading ? (
-          <div className="py-32 text-center text-slate-400">
-            <Activity className="h-12 w-12 animate-pulse mx-auto mb-4 text-emerald-500" />
-            <p className="font-black uppercase text-[10px] tracking-widest">Accessing secure directory...</p>
+          <div className="col-span-full py-40 text-center text-slate-400">
+            <Activity className="h-16 w-16 animate-pulse mx-auto mb-6 text-emerald-500" />
+            <p className="font-black uppercase text-xs tracking-[0.3em]">Accessing high-fidelity clinical archives...</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-32 text-center text-slate-300 border-2 border-dashed border-slate-100 rounded-[3rem] space-y-4">
-            <User className="h-12 w-12 mx-auto opacity-20" />
-            <p className="font-black uppercase text-[10px] tracking-widest">No matching clinical records found.</p>
+          <div className="col-span-full py-40 text-center text-slate-300 border-4 border-dashed border-slate-50 rounded-[4rem] space-y-6">
+            <User className="h-16 w-16 mx-auto opacity-10" />
+            <p className="font-black uppercase text-xs tracking-[0.3em]">No matching clinical dossiers found.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
-            {filtered.map(p => (
+          <>
+            {filtered.map((p, i) => (
               <motion.div
                 key={p.id}
-                layoutId={`card-${p.id}`}
-                className={cn(
-                  "group relative transition-all duration-500",
-                  selectedId === p.id ? "z-50" : "hover:z-10"
-                )}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                whileHover={{ y: -10, transition: { duration: 0.3 } }}
+                className="group relative h-full"
               >
-                <Card className={cn(
-                  "rounded-[2.5rem] border-2 transition-all duration-500 overflow-hidden bg-white shadow-xl shadow-slate-200/20",
-                  selectedId === p.id ? "border-emerald-500 shadow-emerald-900/10" : "border-transparent hover:border-emerald-500/20"
-                )}>
-                  {/* SURGICAL SCANNER BEAMS */}
+                <Card 
+                  className="rounded-[2.5rem] border-2 border-transparent transition-all duration-500 overflow-hidden bg-white shadow-xl shadow-slate-200/20 hover:border-emerald-500/30 hover:shadow-2xl hover:shadow-emerald-900/10 cursor-pointer h-full flex flex-col"
+                  onClick={() => setSelectedId(p.id)}
+                >
+                  {/* SURGICAL SCANNER BEAM */}
                   <motion.div 
-                    className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-0 group-hover:opacity-100 z-20 pointer-events-none"
+                    className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-0 group-hover:opacity-100 z-20 pointer-events-none"
                     initial={{ x: "-100%" }}
                     whileHover={{ x: "100%" }}
                     transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
                   />
 
-                  <CardContent className={cn("p-8 transition-all duration-500", selectedId === p.id ? "bg-slate-50/30" : "")}>
-                    <div className="flex flex-col md:flex-row items-start gap-8 relative z-10">
-                      <div 
-                        onClick={() => setSelectedId(selectedId === p.id ? null : p.id)}
-                        className={cn(
-                          "h-20 w-20 rounded-[2rem] bg-slate-50 flex items-center justify-center font-black text-[#0A2E1F] text-lg shrink-0 transition-all duration-500 shadow-sm cursor-pointer",
-                          selectedId === p.id ? "bg-[#0A2E1F] text-emerald-400 scale-110 rotate-12" : "group-hover:bg-[#0A2E1F] group-hover:text-emerald-400"
-                        )}
-                      >
-                        {p.avatar}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0 space-y-4 w-full">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                          <div onClick={() => setSelectedId(selectedId === p.id ? null : p.id)} className="cursor-pointer">
-                            <p className="font-black text-2xl text-[#0A2E1F] uppercase tracking-tighter group-hover:text-emerald-700 transition-colors">{p.name}</p>
-                            <div className="flex items-center gap-3 mt-1">
-                               <Badge className={cn("rounded-lg text-[9px] h-6 font-black uppercase tracking-widest border-none px-3 relative overflow-hidden", riskColors[p.risk as keyof typeof riskColors])}>
-                                 {p.risk === 'high' && <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ repeat: Infinity, duration: 1.5 }} className="absolute inset-0 bg-red-500/10" />}
-                                 {p.risk} RISK ASSESSMENT
-                               </Badge>
-                               <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                                 <Clock className="h-3 w-3" /> Last session: {p.lastVisit}
-                               </span>
-                            </div>
+                  <CardContent className="p-0 flex-1 flex flex-col">
+                    {/* Header: Identity */}
+                    <div className="bg-[#0A2E1F] p-8 text-white relative overflow-hidden shrink-0">
+                       <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-15 transition-all duration-700 group-hover:scale-125 group-hover:rotate-12">
+                          <Activity className="h-24 w-24" />
+                       </div>
+                       <div className="flex flex-col items-center text-center relative z-10 gap-4">
+                          <div className="h-20 w-20 rounded-[1.75rem] bg-white/10 flex items-center justify-center font-black text-emerald-400 text-2xl shadow-2xl transition-all duration-500 group-hover:bg-emerald-500 group-hover:text-[#0A2E1F] group-hover:rotate-[15deg]">
+                             {p.avatar}
                           </div>
-                          
-                          <div className="flex items-center gap-3">
-                             {/* VIDEO CONSULT BUTTON */}
-                             <Button 
-                                variant="outline" 
-                                onClick={() => navigate(`/doctor/consult?orderId=${p.order_number}`)}
-                                className="h-12 w-12 p-0 rounded-xl border-slate-100 bg-white text-[#0A2E1F] hover:bg-[#0A2E1F] hover:text-white transition-all shadow-sm active:scale-95 group/btn"
-                             >
-                                <Video className="h-5 w-5 group-hover/btn:scale-110 transition-transform" />
-                             </Button>
-
-                             {/* MESSAGE BUTTON */}
-                             <Button 
-                                variant="outline" 
-                                onClick={() => navigate(`/doctor/messages?patientId=${p.id}`)}
-                                className="h-12 w-12 p-0 rounded-xl border-slate-100 bg-white text-slate-400 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all shadow-sm active:scale-95 group/btn"
-                             >
-                                <MessageSquare className="h-5 w-5 group-hover/btn:scale-110 transition-transform" />
-                             </Button>
-
-                             {/* INTAKE QUESTIONNAIRE BUTTON */}
-                             <Button 
-                                variant="outline" 
-                                onClick={() => {
-                                  setSelectedId(p.id);
-                                  setShowIntake(showIntake === p.id ? null : p.id);
-                                }}
-                                className={cn(
-                                  "h-12 w-12 p-0 rounded-xl border-slate-100 bg-white transition-all shadow-sm active:scale-95 group/btn",
-                                  showIntake === p.id ? "bg-emerald-600 text-white border-emerald-600" : "text-slate-400 hover:bg-slate-50"
-                                )}
-                             >
-                                <FileText className="h-5 w-5 group-hover/btn:rotate-12 transition-transform" />
-                             </Button>
+                          <div className="min-w-0">
+                             <p className="font-black text-xl uppercase tracking-tighter group-hover:text-emerald-400 transition-colors leading-tight mb-2">{p.name}</p>
+                             <div className="flex flex-col items-center gap-2">
+                                <Badge className={cn("rounded-lg text-[9px] h-6 font-black uppercase tracking-widest border-none px-3 relative overflow-hidden", riskColors[p.risk as keyof typeof riskColors])}>
+                                   {p.risk === 'high' && <motion.div animate={{ opacity: [1, 0, 4, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="absolute inset-0 bg-red-500/20" />}
+                                   {p.risk} RISK ASSESSMENT
+                                </Badge>
+                             </div>
                           </div>
-                        </div>
+                       </div>
+                    </div>
 
-                        <AnimatePresence>
-                          {selectedId === p.id && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="pt-8 border-t border-slate-100 space-y-8"
-                            >
-                              {/* INTAKE QUESTIONNAIRE SECTION */}
-                              {showIntake === p.id && (
-                                <motion.div 
-                                  initial={{ opacity: 0, y: 10 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  className="bg-[#0A2E1F] rounded-[2rem] p-8 text-white space-y-6 relative overflow-hidden"
-                                >
-                                  <div className="absolute top-0 right-0 p-8 opacity-10">
-                                     <FileText className="h-32 w-32" />
-                                  </div>
-                                  <div className="flex items-center justify-between relative z-10">
-                                     <h4 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3 text-emerald-400">
-                                        <ShieldCheck className="h-6 w-6" /> Patient Intake Questionnaire
-                                     </h4>
-                                     <Button 
-                                       variant="ghost" 
-                                       size="sm" 
-                                       onClick={() => setShowIntake(null)}
-                                       className="text-white hover:bg-white/10 rounded-full h-8 w-8 p-0"
-                                     >
-                                        <X className="h-4 w-4" />
-                                     </Button>
-                                  </div>
-                                  <div className="grid md:grid-cols-2 gap-8 relative z-10">
-                                     <div className="space-y-4">
-                                        <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                                           <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Chief Complaint</p>
-                                           <p className="text-sm font-bold">{p.condition}</p>
-                                        </div>
-                                        <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                                           <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Medication Request</p>
-                                           <p className="text-sm font-bold">{p.medication}</p>
-                                        </div>
-                                     </div>
-                                     <div className="space-y-4">
-                                        <div className="bg-white/5 p-4 rounded-2xl border border-white/10 h-full">
-                                           <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Clinical Notes (Intake)</p>
-                                           <p className="text-sm leading-relaxed text-slate-300">{p.intake_notes}</p>
-                                        </div>
-                                     </div>
-                                  </div>
-                                  <div className="flex items-center gap-2 pt-4 text-emerald-400/60 font-black text-[10px] uppercase tracking-widest">
-                                     <CheckCircle2 className="h-3 w-3" /> Data verified via secure intake portal
-                                  </div>
-                                </motion.div>
-                              )}
+                    {/* Body: Clinical Summary */}
+                    <div className="p-8 flex-1 flex flex-col justify-between space-y-6">
+                       <div className="space-y-4">
+                          <div className="space-y-1">
+                             <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Primary Condition</p>
+                             <p className="font-black text-sm text-[#0A2E1F] leading-tight">{p.condition}</p>
+                          </div>
+                          <div className="space-y-1">
+                             <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Prescribed Protocol</p>
+                             <p className="font-black text-sm text-emerald-700 leading-tight">{p.medication}</p>
+                          </div>
+                       </div>
 
-                              <div className="grid md:grid-cols-3 gap-6">
-                                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-2">
-                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Clinical Bio</p>
-                                   <p className="font-black text-slate-900">{p.condition}</p>
-                                </div>
-                                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-2">
-                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Prescribed Protocol</p>
-                                   <p className="font-black text-slate-900">{p.medication}</p>
-                                </div>
-                                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-2">
-                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biological Age</p>
-                                   <p className="font-black text-slate-900">{p.age} Years</p>
-                                </div>
-                              </div>
-
-                              <div className="space-y-4">
-                                 <h3 className="text-sm font-black text-[#0A2E1F] uppercase tracking-widest flex items-center gap-2">
-                                    <Activity className="h-4 w-4 text-emerald-500" /> Authorized Treatment History
-                                 </h3>
-                                 <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
-                                    <table className="w-full text-xs">
-                                       <thead className="bg-slate-50 text-slate-400 font-black uppercase tracking-widest">
-                                          <tr>
-                                             <th className="px-6 py-3 text-left">Date</th>
-                                             <th className="px-6 py-3 text-left">Treatment Record</th>
-                                             <th className="px-6 py-3 text-left">Clinical Status</th>
-                                          </tr>
-                                       </thead>
-                                       <tbody className="divide-y divide-slate-50">
-                                          {p.history?.slice(0,3).map((h: any, i: number) => (
-                                             <tr key={i} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4 font-bold text-slate-600">{new Date(h.created_at).toLocaleDateString()}</td>
-                                                <td className="px-6 py-4 font-black text-[#0A2E1F]">{h.medication}</td>
-                                                <td className="px-6 py-4">
-                                                   <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-none text-emerald-600 bg-emerald-50 px-3">
-                                                      {h.status?.replace('_', ' ')}
-                                                   </Badge>
-                                                </td>
-                                             </tr>
-                                          ))}
-                                       </tbody>
-                                    </table>
-                                 </div>
-                              </div>
-
-                              <div className="flex justify-end gap-3 pt-4">
-                                 <Button variant="outline" className="rounded-xl font-black text-[10px] tracking-widest uppercase h-12 px-8 border-slate-100 hover:bg-slate-50">
-                                    Full Medical History
-                                 </Button>
-                                 <Button className="rounded-xl font-black text-[10px] tracking-widest uppercase h-12 px-8 bg-[#0A2E1F] hover:bg-emerald-900 text-white shadow-lg shadow-[#0A2E1F]/20">
-                                    Add Clinical Note
-                                 </Button>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                        
-                        {!selectedId && (
-                           <p className="text-[13px] text-slate-400 font-bold leading-relaxed truncate group-hover:text-slate-500 transition-colors pt-2 border-t border-slate-50">
-                             Clinical indexing complete. Select to engage with patient dossier.
-                           </p>
-                        )}
-                      </div>
+                       <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-slate-400">
+                             <Clock className="h-3 w-3" />
+                             <span className="text-[10px] font-black uppercase tracking-widest">{p.lastVisit}</span>
+                          </div>
+                          <div className="flex gap-2">
+                             <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-all">
+                                <Video className="h-4 w-4" />
+                             </div>
+                             <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-all">
+                                <MessageSquare className="h-4 w-4" />
+                             </div>
+                          </div>
+                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
-          </div>
+
+            {/* CINEMATIC DOSSIER OVERLAY */}
+            <AnimatePresence>
+              {selectedId && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 overflow-hidden">
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setSelectedId(null)}
+                    className="absolute inset-0 bg-[#0A2E1F]/90 backdrop-blur-xl"
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                    className="w-full max-w-5xl max-h-[90vh] overflow-y-auto relative z-10 scrollbar-hide"
+                  >
+                    <Card className="rounded-[4rem] border-none shadow-2xl bg-white overflow-hidden">
+                      {/* DOSSIER HEADER */}
+                      <div className="bg-[#0A2E1F] p-10 md:p-16 text-white relative">
+                         <div className="absolute top-0 right-0 p-16 opacity-5">
+                            <ShieldCheck className="h-64 w-64" />
+                         </div>
+                         <Button 
+                           variant="ghost" 
+                           onClick={() => setSelectedId(null)}
+                           className="absolute top-10 right-10 text-white hover:bg-white/10 rounded-full h-14 w-14 p-0 z-50 transition-all active:scale-90"
+                         >
+                            <X className="h-8 w-8" />
+                         </Button>
+                         
+                         <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
+                            <div className="h-32 w-32 rounded-[3rem] bg-emerald-500 flex items-center justify-center font-black text-[#0A2E1F] text-4xl rotate-12 shadow-2xl shadow-emerald-500/20">
+                               {patients.find(p => p.id === selectedId)?.avatar}
+                            </div>
+                            <div className="text-center md:text-left space-y-4">
+                               <h2 className="text-5xl md:text-6xl font-black uppercase tracking-tighter leading-none">
+                                 {patients.find(p => p.id === selectedId)?.name}
+                               </h2>
+                               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+                                  <Badge className={cn("rounded-xl text-[11px] h-10 font-black uppercase tracking-[0.2em] border-none px-6", riskColors[patients.find(p => p.id === selectedId)?.risk as keyof typeof riskColors])}>
+                                     {patients.find(p => p.id === selectedId)?.risk} CLINICAL RISK STATUS
+                                  </Badge>
+                                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500/50" />
+                                  <span className="text-sm font-black text-emerald-400/80 uppercase tracking-widest flex items-center gap-3">
+                                     <Clock className="h-5 w-5" /> LAST SESSION: {patients.find(p => p.id === selectedId)?.lastVisit}
+                                  </span>
+                               </div>
+                            </div>
+                         </div>
+                      </div>
+
+                      {/* DOSSIER CLINICAL CONTENT */}
+                      <CardContent className="p-10 md:p-16 space-y-16 bg-slate-50/30">
+                        {/* 1. CLINICAL DATA TILES */}
+                        <div className="grid md:grid-cols-3 gap-8">
+                           {[
+                              { label: "PRIMARY CONDITION", value: patients.find(p => p.id === selectedId)?.condition, icon: Activity },
+                              { label: "ACTIVE PROTOCOL", value: patients.find(p => p.id === selectedId)?.medication, icon: Pill },
+                              { label: "BIOLOGICAL AGE", value: `${patients.find(p => p.id === selectedId)?.age} YEARS`, icon: User }
+                           ].map((tile, i) => (
+                             <div key={i} className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/50 space-y-4 group/tile hover:border-emerald-500/20 transition-all">
+                                <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover/tile:bg-[#0A2E1F] group-hover/tile:text-emerald-400 transition-all">
+                                   <tile.icon className="h-6 w-6" />
+                                </div>
+                                <div>
+                                   <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-1">{tile.label}</p>
+                                   <p className="font-black text-2xl text-[#0A2E1F] tracking-tight">{tile.value}</p>
+                                </div>
+                             </div>
+                           ))}
+                        </div>
+
+                        {/* 2. INTAKE QUESTIONNAIRE PREVIEW */}
+                        <div className="bg-[#0A2E1F] rounded-[3.5rem] p-12 text-white relative overflow-hidden shadow-2xl shadow-emerald-900/20">
+                           <div className="absolute top-0 right-0 p-12 opacity-5">
+                              <FileText className="h-48 w-48" />
+                           </div>
+                           <h4 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-4 text-emerald-400 mb-8">
+                              <ShieldCheck className="h-8 w-8" /> Authorized Intake Questionnaire
+                           </h4>
+                           <div className="grid md:grid-cols-2 gap-10 relative z-10">
+                              <div className="space-y-6">
+                                 <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 mb-2">CLINICAL COMPLAINT</p>
+                                    <p className="text-lg font-bold">{patients.find(p => p.id === selectedId)?.condition}</p>
+                                 </div>
+                                 <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 mb-2">PROTOCOL REQUEST</p>
+                                    <p className="text-lg font-bold">{patients.find(p => p.id === selectedId)?.medication}</p>
+                                 </div>
+                              </div>
+                              <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10">
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 mb-2">SYSTEM INTAKE NOTES</p>
+                                 <p className="text-md leading-relaxed text-slate-300 font-medium">{patients.find(p => p.id === selectedId)?.intake_notes}</p>
+                              </div>
+                           </div>
+                        </div>
+
+                        {/* 3. TREATMENT TIMELINE */}
+                        <div className="space-y-8">
+                           <h3 className="text-2xl font-black text-[#0A2E1F] uppercase tracking-tighter flex items-center gap-4">
+                              <Activity className="h-8 w-8 text-emerald-500" /> Authorized Treatment History
+                           </h3>
+                           <div className="bg-white rounded-[3.5rem] border border-slate-100 overflow-hidden shadow-2xl shadow-slate-200/40">
+                              <table className="w-full">
+                                 <thead className="bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[11px]">
+                                    <tr>
+                                       <th className="px-10 py-6 text-left">Date</th>
+                                       <th className="px-10 py-6 text-left">Clinical Protocol</th>
+                                       <th className="px-10 py-6 text-left">Status</th>
+                                    </tr>
+                                 </thead>
+                                 <tbody className="divide-y divide-slate-50 text-base">
+                                    {patients.find(p => p.id === selectedId)?.history?.slice(0,5).map((h: any, i: number) => (
+                                       <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                          <td className="px-10 py-8 font-bold text-slate-500">{new Date(h.created_at).toLocaleDateString()}</td>
+                                          <td className="px-10 py-8 font-black text-[#0A2E1F] text-lg">{h.medication}</td>
+                                          <td className="px-10 py-8">
+                                             <Badge className="text-[10px] font-black uppercase tracking-widest border-none text-emerald-700 bg-emerald-100 px-6 py-2.5 rounded-xl shadow-sm">
+                                                {h.status?.replace('_', ' ')}
+                                             </Badge>
+                                          </td>
+                                       </tr>
+                                    ))}
+                                 </tbody>
+                              </table>
+                           </div>
+                        </div>
+
+                        {/* 4. COMMAND ACTIONS */}
+                        <div className="flex flex-col sm:flex-row justify-end gap-6 pt-12">
+                           <Button 
+                             onClick={() => navigate(`/doctor/consult?orderId=${patients.find(p => p.id === selectedId)?.order_number}`)}
+                             className="rounded-3xl font-black text-sm tracking-[0.2em] uppercase h-20 px-12 bg-[#0A2E1F] hover:bg-emerald-900 text-white shadow-2xl shadow-[#0A2E1F]/30 gap-4 group/btn"
+                           >
+                              <Video className="h-6 w-6 group-hover/btn:scale-110 transition-transform" /> Engage Video Session
+                           </Button>
+                           <Button 
+                             variant="outline" 
+                             onClick={() => navigate(`/doctor/messages?patientId=${selectedId}`)}
+                             className="rounded-3xl font-black text-sm tracking-[0.2em] uppercase h-20 px-12 border-slate-200 hover:bg-slate-50 text-[#0A2E1F] gap-4"
+                           >
+                              <MessageSquare className="h-6 w-6" /> Open Secure Terminal
+                           </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+          </>
         )}
       </div>
     </div>
