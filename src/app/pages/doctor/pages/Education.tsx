@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { BookOpen, Search, Send, Video, FileText, CheckCircle2, ChevronRight, X, Eye, Bookmark, Share2, Sparkles, Filter, Database, Users, ArrowUpRight } from "lucide-react";
+import { BookOpen, Search, Send, Video, FileText, CheckCircle2, ChevronRight, X, Eye, Bookmark, Share2, Sparkles, Filter, Database, Users, ArrowUpRight, Plus, RefreshCw, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
