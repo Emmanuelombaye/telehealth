@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS public.doctor_availability (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. Insert Initial Mock Data into Orders Table (So the app has data immediately)
+-- 3. Insert Initial Mock Data into Orders Table (ON CONFLICT SAFE)
 INSERT INTO public.orders (
     order_number, patient_name, patient_avatar, patient_age, patient_country, sub_brand, 
     medication, dosage_instructions, category, status, ordered_date, pharmacy, amount, 
@@ -69,7 +69,7 @@ INSERT INTO public.orders (
     '[{"status": "order_submitted", "date": "May 06, 8:30 AM"}, {"status": "doctor_reviewing", "date": "May 06, 10:15 AM"}]'::jsonb
 ) ON CONFLICT (order_number) DO NOTHING;
 
--- 4. Insert Initial Mock Data into Doctor Availability Table
+-- 4. Insert Initial Mock Data into Doctor Availability Table (ON CONFLICT SAFE)
 INSERT INTO public.doctor_availability (id, name, specialty, avatar, available, wait_time, next_slot)
 VALUES 
 (1, 'Dr. Sarah Johnson', 'General Practice', 'SJ', true, '< 5 min', 'Available now'),
@@ -82,12 +82,17 @@ ON CONFLICT (id) DO NOTHING;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.doctor_availability ENABLE ROW LEVEL SECURITY;
 
--- 6. Create RLS Policies (For MVP, we allow public read/write to test it instantly without forcing you to build complex login forms first)
+-- 6. Create RLS Policies (IDEMPOTENT)
+DROP POLICY IF EXISTS "Enable read access for all users" ON public.orders;
 CREATE POLICY "Enable read access for all users" ON public.orders FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Enable insert for all users" ON public.orders;
 CREATE POLICY "Enable insert for all users" ON public.orders FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Enable update for all users" ON public.orders;
 CREATE POLICY "Enable update for all users" ON public.orders FOR UPDATE USING (true);
 
+DROP POLICY IF EXISTS "Enable read access for all users" ON public.doctor_availability;
 CREATE POLICY "Enable read access for all users" ON public.doctor_availability FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Enable update for all users" ON public.doctor_availability;
 CREATE POLICY "Enable update for all users" ON public.doctor_availability FOR UPDATE USING (true);
 
 -- 7. Create the Shared Resources Table (For Patient Education Tracking)
@@ -102,7 +107,9 @@ CREATE TABLE IF NOT EXISTS public.shared_resources (
 );
 
 ALTER TABLE public.shared_resources ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable read access for all users" ON public.shared_resources;
 CREATE POLICY "Enable read access for all users" ON public.shared_resources FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Enable insert for all users" ON public.shared_resources;
 CREATE POLICY "Enable insert for all users" ON public.shared_resources FOR INSERT WITH CHECK (true);
 
 -- 8. Create the Clinical Protocols Table (For Custom Library Content)
@@ -117,9 +124,11 @@ CREATE TABLE IF NOT EXISTS public.clinical_protocols (
 );
 
 ALTER TABLE public.clinical_protocols ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable read access for all users" ON public.clinical_protocols;
 CREATE POLICY "Enable read access for all users" ON public.clinical_protocols FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Enable insert for all users" ON public.clinical_protocols;
 CREATE POLICY "Enable insert for all users" ON public.clinical_protocols FOR INSERT WITH CHECK (true);
 
 -- ==============================================================================
--- DONE! Your backend database is now live.
+-- DONE! Your backend database is now live and re-runnable.
 -- ==============================================================================
