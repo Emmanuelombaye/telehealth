@@ -76,6 +76,7 @@ export function DoctorEducationPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedContent, setSelectedContent] = useState<any>(educationLibrary[0]);
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [sending, setSending] = useState(false);
@@ -232,57 +233,76 @@ export function DoctorEducationPage() {
                    <motion.div
                      key={item.id}
                      initial={{ opacity: 0, y: 20 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     whileHover={{ y: -8, scale: 1.01, transition: { duration: 0.2 } }}
-                     whileTap={{ scale: 0.98 }}
+                     animate={{ 
+                       opacity: 1, 
+                       y: 0,
+                       borderColor: hoveredId === item.id ? "#D4AF37" : selectedContent?.id === item.id ? "#10b981" : "#f1f5f9",
+                       boxShadow: hoveredId === item.id ? "0 20px 40px rgba(10, 46, 31, 0.15)" : "none"
+                     }}
+                     onHoverStart={() => setHoveredId(item.id)}
+                     onHoverEnd={() => setHoveredId(null)}
+                     whileTap={{ scale: 0.99 }}
                      className={cn(
-                        "group p-6 bg-white border-2 rounded-[2.5rem] transition-all cursor-pointer relative overflow-hidden",
-                        selectedContent?.id === item.id 
-                          ? "border-emerald-500 shadow-2xl shadow-emerald-900/10 bg-gradient-to-br from-white to-emerald-50/30" 
-                          : "border-slate-50 hover:border-slate-200 hover:shadow-2xl hover:shadow-slate-200/50"
+                        "group p-5 bg-white border-2 rounded-[2.5rem] transition-all cursor-pointer relative overflow-hidden",
+                        selectedContent?.id === item.id && "bg-gradient-to-br from-white to-emerald-50/20"
                      )}
                      onClick={() => setSelectedContent(item)}
                    >
-                     {selectedContent?.id === item.id && (
-                       <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-[60px] -mr-16 -mt-16 pointer-events-none" />
-                     )}
-                     
-                     <div className="flex flex-col md:flex-row gap-6 items-center justify-between relative z-10">
-                       <div className="flex gap-6 items-center flex-1 w-full">
-                         <div className={cn(
-                           "h-16 w-16 rounded-[1.5rem] flex items-center justify-center transition-all duration-500 group-hover:rotate-[12deg] group-hover:scale-110 shadow-sm",
-                           selectedContent?.id === item.id ? "bg-[#0A2E1F] text-emerald-400" : "bg-slate-50 text-slate-300"
-                         )}>
-                           <item.icon className="h-7 w-7" />
-                         </div>
-                         <div className="space-y-1 flex-1">
-                           <div className="flex flex-wrap items-center gap-3">
-                              <p className="font-black text-md text-[#0A2E1F] uppercase tracking-tight group-hover:text-emerald-700 transition-colors">{item.title}</p>
-                              <Badge variant="outline" className="rounded-lg text-[8px] h-5 font-black uppercase tracking-widest border-slate-100 text-slate-300 bg-white">
-                                 {item.readTime}
+                     <div className="flex items-center gap-5 relative z-10">
+                        <div className={cn(
+                          "h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-500 shrink-0",
+                          hoveredId === item.id ? "bg-[#0A2E1F] text-emerald-400 rotate-[12deg] scale-110" : "bg-slate-50 text-slate-300"
+                        )}>
+                          <item.icon className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                           <div className="flex items-center justify-between">
+                              <p className="font-black text-sm text-[#0A2E1F] uppercase tracking-tight truncate pr-4">{item.title}</p>
+                              <Badge className="bg-slate-50 text-slate-400 border-none px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest shrink-0">
+                                 {item.category}
                               </Badge>
                            </div>
-                           <p className="text-[12px] text-slate-400 font-bold leading-snug max-w-lg group-hover:text-slate-500 transition-colors">{item.description}</p>
-                         </div>
-                       </div>
-                       
-                       <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
-                          <Button 
-                            variant="outline" 
-                            onClick={(e) => { e.stopPropagation(); setSelectedContent(item); setShowPreview(true); }}
-                            className="flex-1 md:flex-none h-12 px-6 rounded-xl border-slate-100 text-[#0A2E1F] font-black uppercase tracking-widest text-[9px] gap-2 hover:bg-[#0A2E1F] hover:text-white transition-all shadow-sm active:scale-95"
-                          >
-                             <Eye className="h-4 w-4" /> Preview
-                          </Button>
-                          <button 
-                            className={cn(
-                              "h-12 w-12 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-sm",
-                              selectedContent?.id === item.id ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300 hover:bg-slate-200"
-                            )}
-                          >
-                             {selectedContent?.id === item.id ? <CheckCircle2 className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-                          </button>
-                       </div>
+                           
+                           <AnimatePresence>
+                             {hoveredId === item.id && (
+                               <motion.div
+                                 initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                                 animate={{ height: "auto", opacity: 1, marginTop: 16 }}
+                                 exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                                 className="overflow-hidden space-y-5"
+                               >
+                                 <p className="text-[12px] text-slate-500 font-bold leading-relaxed border-l-2 border-emerald-500/20 pl-4">
+                                   {item.description}
+                                 </p>
+                                 <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                                    <div className="flex items-center gap-3">
+                                       <Badge variant="outline" className="rounded-lg text-[8px] h-6 font-black uppercase tracking-widest border-slate-100 text-emerald-600 bg-emerald-50">
+                                          {item.readTime}
+                                       </Badge>
+                                       <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">v4.0 Matrix Indexed</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                       <Button 
+                                         variant="outline" 
+                                         onClick={(e) => { e.stopPropagation(); setSelectedContent(item); setShowPreview(true); }}
+                                         className="h-10 px-6 rounded-xl border-slate-100 text-[#0A2E1F] font-black uppercase tracking-widest text-[9px] gap-2 hover:bg-[#0A2E1F] hover:text-white transition-all shadow-sm active:scale-95"
+                                       >
+                                          <Eye className="h-4 w-4" /> Preview
+                                       </Button>
+                                       <button 
+                                         className={cn(
+                                           "h-10 w-10 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-sm",
+                                           selectedContent?.id === item.id ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300 hover:bg-slate-200"
+                                         )}
+                                       >
+                                          {selectedContent?.id === item.id ? <CheckCircle2 className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+                                       </button>
+                                    </div>
+                                 </div>
+                               </motion.div>
+                             )}
+                           </AnimatePresence>
+                        </div>
                      </div>
                    </motion.div>
                  ))
