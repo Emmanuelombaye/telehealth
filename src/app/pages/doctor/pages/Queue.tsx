@@ -212,11 +212,13 @@ export function DoctorQueuePage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
+                    whileHover={{ x: 4, backgroundColor: "rgba(240, 253, 244, 0.5)" }}
+                    whileTap={{ scale: 0.995 }}
                     key={order.id}
                     onClick={() => setSelectedId(order.id)}
                     className={cn(
-                      "group cursor-pointer transition-colors",
-                      selectedId === order.id ? "bg-emerald-50/50" : "hover:bg-slate-50"
+                      "group cursor-pointer transition-all border-l-4 border-transparent relative",
+                      selectedId === order.id ? "bg-emerald-50/50 border-emerald-500 shadow-sm" : "hover:border-emerald-200"
                     )}
                   >
                     <td className="px-6 py-4">
@@ -260,21 +262,23 @@ export function DoctorQueuePage() {
                        </Badge>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button 
-                        variant="outline"
-                        className={cn(
-                          "h-8 rounded-lg text-xs font-semibold px-4 transition-all",
-                          selectedId === order.id 
-                            ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700" 
-                            : "bg-white border-slate-200 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedId(order.id);
-                        }}
-                      >
-                        Review
-                      </Button>
+                       <MotionButton 
+                         whileHover={{ scale: 1.1, backgroundColor: "#059669", color: "#ffffff" }}
+                         whileTap={{ scale: 0.9 }}
+                         variant="outline"
+                         className={cn(
+                           "h-8 rounded-lg text-[10px] font-black uppercase tracking-widest px-4 transition-all shadow-sm",
+                           selectedId === order.id 
+                             ? "bg-emerald-600 text-white border-emerald-600" 
+                             : "bg-white border-slate-100 text-slate-500 hover:border-emerald-500"
+                         )}
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           setSelectedId(order.id);
+                         }}
+                       >
+                         Review
+                       </MotionButton>
                     </td>
                   </motion.tr>
                 ))}
