@@ -5,7 +5,7 @@ import { Activity, Bell, Search, User, Menu, ChevronLeft, LogOut } from "lucide-
 import { Button } from "./ui/shared.tsx";
 import { useAuthStore } from "../../lib/auth-store";
 import { usePatientStore } from "../../lib/patient-store";
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "./ui/sheet";
 import { useState, useEffect } from "react";
 import { cn } from "./ui/utils";
 import { supabase } from "../../lib/supabaseClient";
@@ -94,6 +94,10 @@ export function AppLayout() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-72 border-r-0 shadow-2xl bg-white border-slate-100">
+                <div className="sr-only">
+                  <SheetTitle>Navigation Menu</SheetTitle>
+                  <SheetDescription>Access all clinical and administrative portals</SheetDescription>
+                </div>
                 <Sidebar role={sidebarRole} onMobileClose={() => setIsMobileMenuOpen(false)} />
               </SheetContent>
             </Sheet>
