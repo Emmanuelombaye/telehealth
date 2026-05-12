@@ -3,6 +3,8 @@ import { BookOpen, Search, Send, Video, FileText, CheckCircle2, ChevronRight, X,
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib";
 
 const educationLibrary = [
   { 
@@ -70,6 +72,7 @@ const educationLibrary = [
 const categories = ["All", "Cardiology", "Diet & Nutrition", "Physical Therapy", "Mental Health", "Neurology", "Endocrinology"];
 
 export function DoctorEducationPage() {
+  const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedContent, setSelectedContent] = useState<any>(educationLibrary[0]);
@@ -85,12 +88,29 @@ export function DoctorEducationPage() {
     });
   }, [searchQuery, selectedCategory]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
+    if (!selectedContent) return;
     setSending(true);
-    setTimeout(() => {
+    
+    try {
+      const { error } = await supabase.from('shared_resources').insert({
+        title: selectedContent.title,
+        type: selectedContent.type,
+        category: selectedContent.category,
+        doctor_id: user?.id,
+        // Mock patient ID for now (Alice Thompson)
+        patient_id: 'd3111862-1000-4000-a000-000000000000' 
+      });
+
+      if (error) throw error;
+      
+      toast.success(`"${selectedContent.title}" has been successfully shared and recorded in EHR.`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Deployment failed. System could not reach clinical database.");
+    } finally {
       setSending(false);
-      toast.success(`"${selectedContent.title}" has been successfully shared with Alice Thompson.`);
-    }, 1500);
+    }
   };
 
   return (

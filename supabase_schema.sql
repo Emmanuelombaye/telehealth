@@ -89,6 +89,21 @@ CREATE POLICY "Enable update for all users" ON public.orders FOR UPDATE USING (t
 CREATE POLICY "Enable read access for all users" ON public.doctor_availability FOR SELECT USING (true);
 CREATE POLICY "Enable update for all users" ON public.doctor_availability FOR UPDATE USING (true);
 
+-- 7. Create the Shared Resources Table (For Patient Education Tracking)
+CREATE TABLE IF NOT EXISTS public.shared_resources (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    patient_id UUID,
+    doctor_id UUID,
+    title TEXT NOT NULL,
+    type TEXT,
+    category TEXT,
+    shared_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.shared_resources ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for all users" ON public.shared_resources FOR SELECT USING (true);
+CREATE POLICY "Enable insert for all users" ON public.shared_resources FOR INSERT WITH CHECK (true);
+
 -- ==============================================================================
 -- DONE! Your backend database is now live.
 -- ==============================================================================
