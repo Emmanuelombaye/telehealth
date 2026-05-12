@@ -206,10 +206,8 @@ export function PatientDashboard() {
                       <p className="text-base text-amber-800 font-medium leading-relaxed mb-8 italic opacity-90">
                         "{order.zoom_doctor_message || 'Your doctor would like to speak with you regarding your intake form before finalizing your prescription.'}"
                       </p>
-                      <Button asChild className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-[1.5rem] h-16 font-black uppercase tracking-[0.2em] gap-3 shadow-xl shadow-amber-600/10">
-                        <a href={`https://peakhealth.com/book/${order.doctor?.toLowerCase().replace('dr. ', '').replace(/ /g, '-')}`} target="_blank" rel="noopener noreferrer">
-                          Secure Calendar Booking <Calendar className="h-5 w-5" />
-                        </a>
+                      <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-[1.5rem] h-16 font-black uppercase tracking-[0.2em] gap-3 shadow-xl shadow-amber-600/10" onClick={() => window.open(`https://peakhealth.com/book/${order.doctor?.toLowerCase().replace('dr. ', '').replace(/ /g, '-')}`, '_blank')}>
+                        Secure Calendar Booking <Calendar className="h-5 w-5" />
                       </Button>
                     </div>
                   )}

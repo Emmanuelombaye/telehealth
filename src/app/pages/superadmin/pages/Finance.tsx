@@ -48,7 +48,7 @@ export function SuperAdminFinancePage() {
     id: o.order_number || (o.id ? String(o.id).slice(0, 8) : "N/A"),
     brand: o.subBrand || o.sub_brand || "Peak Health",
     type: o.category || "Subscription",
-    amount: typeof o.amount === 'number' ? `$${o.amount.toLocaleString()}` : o.amount || "$0.00",
+    amount: typeof o.amount === 'number' ? `$${(o.amount as any).toLocaleString()}` : o.amount || "$0.00",
     date: new Date(o.created_at).toLocaleDateString(),
     status: o.status === 'order_submitted' || o.status === 'medical_review' ? 'pending' : 'completed'
   }));

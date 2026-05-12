@@ -423,6 +423,21 @@ export const usePatientStore = create<AppState>()(
         }
       },
 
+      setIntakeFormData: (data) => set({ intakeFormData: data }),
+
+      updateDoctorAvailability: async (doctorId, available) => {
+        try {
+          const { error } = await supabase
+            .from('doctor_availability')
+            .update({ available })
+            .eq('id', doctorId);
+          if (error) throw error;
+          await get().fetchDoctorAvailability();
+        } catch (error) {
+          console.error('Error updating doctor availability:', error);
+        }
+      },
+
       resetStore: () => set({ orders: [], intakeFormData: {} }),
     })
   )

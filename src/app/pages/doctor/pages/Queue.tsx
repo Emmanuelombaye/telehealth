@@ -383,8 +383,8 @@ export function DoctorQueuePage() {
                     <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap relative z-10">{aiSummary}</p>
                   )}
                   <div className="mt-4 pt-4 border-t border-indigo-100/50 relative z-10">
-                     <Button 
-                        variant="link" 
+                      <Button 
+                        variant="ghost" 
                         onClick={() => setShowIntakeModal(true)}
                         className="text-indigo-600 p-0 h-auto font-semibold text-sm hover:text-indigo-800"
                      >

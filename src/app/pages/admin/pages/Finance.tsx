@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Download, CreditCard, ExternalLink, RefreshCw, Columns, TrendingUp, ShieldCheck, Activity, ArrowUpRight } from "lucide-react";
+import { Download, CreditCard, ExternalLink, RefreshCw, Columns, TrendingUp, ShieldCheck, Activity, ArrowUpRight, Truck, Stethoscope } from "lucide-react";
 import { Card, Button, Badge } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib/auth-store";
