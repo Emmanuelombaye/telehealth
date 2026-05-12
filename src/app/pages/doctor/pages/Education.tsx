@@ -462,24 +462,24 @@ export function DoctorEducationPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-5xl rounded-[5rem] overflow-hidden shadow-2xl relative z-10 flex flex-col max-h-[90vh]"
+              className="bg-white w-full max-w-5xl rounded-[4rem] shadow-[0_64px_128px_-32px_rgba(0,0,0,0.5)] relative z-10 flex flex-col overflow-hidden max-h-[min(90vh,850px)] border border-white/20"
             >
-               <div className="px-16 py-12 border-b border-slate-50 flex items-center justify-between">
+               <div className="px-12 py-10 border-b border-slate-50 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-20">
                   <div className="flex items-center gap-6">
-                     <div className="h-16 w-16 rounded-[1.5rem] bg-[#0A2E1F] text-white flex items-center justify-center shadow-xl">
-                        <selectedContent.icon className="h-8 w-8 text-emerald-400" />
+                     <div className="h-14 w-14 rounded-[1.25rem] bg-[#0A2E1F] text-white flex items-center justify-center shadow-xl">
+                        <selectedContent.icon className="h-7 w-7 text-emerald-400" />
                      </div>
                      <div>
-                        <p className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-1">Live Clinical Preview</p>
-                        <h3 className="text-3xl font-black text-[#0A2E1F] uppercase tracking-tighter leading-none">{selectedContent.title}</h3>
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-0.5">Clinical Protocol Preview</p>
+                        <h3 className="text-2xl font-black text-[#0A2E1F] uppercase tracking-tighter leading-none">{selectedContent.title}</h3>
                      </div>
                   </div>
-                  <button onClick={() => setShowPreview(false)} className="h-16 w-16 rounded-full bg-slate-50 flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all">
-                     <X className="h-8 w-8" />
+                  <button onClick={() => setShowPreview(false)} className="h-14 w-14 rounded-full bg-slate-50 flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all active:scale-90">
+                     <X className="h-7 w-7" />
                   </button>
                </div>
 
-               <div className="flex-1 overflow-y-auto p-16 space-y-12 custom-scrollbar bg-white">
+               <div className="flex-1 overflow-y-auto p-12 space-y-12 custom-scrollbar bg-white">
                   <div className="grid lg:grid-cols-3 gap-12">
                      <div className="lg:col-span-2 space-y-8">
                         <div className="aspect-video rounded-[3rem] bg-[#0A0D14] flex items-center justify-center relative group overflow-hidden border-8 border-slate-50">
@@ -565,11 +565,11 @@ export function DoctorEducationPage() {
                   </div>
                </div>
 
-               <div className="px-16 py-10 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-6">
-                  <Button variant="ghost" onClick={() => setShowPreview(false)} className="text-slate-400 font-black uppercase text-[10px] tracking-widest px-8">Dismiss</Button>
+               <div className="px-12 py-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-6 sticky bottom-0 z-20">
+                  <Button variant="ghost" onClick={() => setShowPreview(false)} className="text-slate-400 font-black uppercase text-[10px] tracking-widest px-8 hover:text-slate-600 transition-colors">Dismiss</Button>
                   <Button 
                     onClick={() => { setShowPreview(false); handleSend(); }}
-                    className="h-16 px-14 rounded-[2rem] bg-emerald-500 text-[#0A2E1F] font-black uppercase tracking-[0.3em] text-[11px] gap-4 shadow-[0_20px_50px_rgba(16,185,129,0.3)] transition-all hover:scale-105 active:scale-95"
+                    className="h-16 px-14 rounded-2xl bg-emerald-500 text-[#0A2E1F] font-black uppercase tracking-[0.3em] text-[11px] gap-4 shadow-[0_20px_50px_rgba(16,185,129,0.3)] transition-all hover:scale-105 active:scale-95"
                   >
                     <Send className="h-5 w-5" /> Deploy Resource
                   </Button>
