@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   TrendingUp, Users, DollarSign, Activity, Globe, 
   Zap, BarChart3, ArrowUpRight, ArrowDownRight, 
   Target, ZapOff, Sparkles, Gem, ShieldCheck, 
-  Clock, Filter, Download, Maximize2
+  Clock, Filter, Download, Maximize2, Loader2, FileText
 } from "lucide-react";
 import { Card, CardContent, Badge, Button } from "../../../components/ui/shared.tsx";
 import { 
@@ -14,6 +14,8 @@ import {
 } from "recharts";
 import { usePatientStore } from "../../../../lib";
 import { cn } from "../../../components/ui/shared.tsx";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const COLORS = {
   emerald: "#10b981",
@@ -28,6 +30,8 @@ export function AdminAnalyticsPage() {
   const { orders, fetchOrders } = usePatientStore();
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("30D");
+  const [isExporting, setIsExporting] = useState(false);
+  const terminalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -37,57 +41,89 @@ export function AdminAnalyticsPage() {
     init();
   }, [fetchOrders]);
 
-  // Real-time Analytics Engine
+  // Real-time Analytics Engine with Dynamic Filtering
   const stats = useMemo(() => {
     if (!orders.length) return null;
 
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    let startDate = new Date();
 
-    // 1. Core Metrics
-    const currentMonthOrders = orders.filter(o => {
+    if (timeRange === "7D") startDate.setDate(now.getDate() - 7);
+    else if (timeRange === "30D") startDate.setDate(now.getDate() - 30);
+    else if (timeRange === "90D") startDate.setDate(now.getDate() - 90);
+    else if (timeRange === "YTD") startDate = new Date(now.getFullYear(), 0, 1);
+
+    // 1. Filtered Dataset
+    const filteredOrders = orders.filter(o => new Date(o.orderedDate) >= startDate);
+    const prevStartDate = new Date(startDate);
+    prevStartDate.setDate(prevStartDate.getDate() - (now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const prevOrders = orders.filter(o => {
       const d = new Date(o.orderedDate);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      return d >= prevStartDate && d < startDate;
     });
 
-    const totalRevenue = currentMonthOrders.reduce((sum, o) => {
-      const val = parseFloat(o.amount?.replace(/[$,]/g, '') || "0");
-      return sum + val;
-    }, 0);
+    const totalRevenue = filteredOrders.reduce((sum, o) => sum + parseFloat(o.amount?.replace(/[$,]/g, '') || "0"), 0);
+    const prevRevenue = prevOrders.reduce((sum, o) => sum + parseFloat(o.amount?.replace(/[$,]/g, '') || "0"), 0);
+    const revTrend = prevRevenue ? ((totalRevenue - prevRevenue) / prevRevenue * 100).toFixed(1) : "+100";
 
-    const totalConsults = orders.filter(o => 
+    const totalConsults = filteredOrders.filter(o => 
       ["medical_review", "rx_sent", "shipped", "delivered"].includes(o.status)
     ).length;
 
-    const conversionRate = Math.round((totalConsults / orders.length) * 100) || 84;
+    const conversionRate = Math.round((totalConsults / filteredOrders.length) * 100) || 0;
 
-    // 2. Chart Data (Last 6 Months)
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const last6Months = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const m = d.getMonth();
-      const y = d.getFullYear();
-      
-      const mOrders = orders.filter(o => {
-        const od = new Date(o.orderedDate);
-        return od.getMonth() === m && od.getFullYear() === y;
-      });
+    // 2. Chart Data Generation
+    const chartData = [];
+    const interval = timeRange === "7D" ? 7 : timeRange === "30D" ? 30 : 90;
+    
+    if (timeRange === "7D" || timeRange === "30D") {
+      // Daily granularity
+      for (let i = interval - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        const dayOrders = filteredOrders.filter(o => new Date(o.orderedDate).toDateString() === d.toDateString());
+        const dayRev = dayOrders.reduce((sum, o) => sum + parseFloat(o.amount?.replace(/[$,]/g, '') || "0"), 0);
+        
+        chartData.push({
+          label: dStr,
+          revenue: dayRev,
+          yield: Math.round(dayRev / (dayOrders.length || 1))
+        });
+      }
+    } else {
+      // Monthly granularity for 90D and YTD
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const startM = startDate.getMonth();
+      const startY = startDate.getFullYear();
+      const currentM = now.getMonth();
+      const currentY = now.getFullYear();
 
-      const mRev = mOrders.reduce((sum, o) => sum + parseFloat(o.amount?.replace(/[$,]/g, '') || "0"), 0);
-      last6Months.push({
-        month: months[m],
-        revenue: mRev,
-        patients: mOrders.length,
-        yield: Math.round(mRev / (mOrders.length || 1))
-      });
+      let m = startM;
+      let y = startY;
+
+      while (y < currentY || (y === currentY && m <= currentM)) {
+        const mOrders = filteredOrders.filter(o => {
+          const od = new Date(o.orderedDate);
+          return od.getMonth() === m && od.getFullYear() === y;
+        });
+        const mRev = mOrders.reduce((sum, o) => sum + parseFloat(o.amount?.replace(/[$,]/g, '') || "0"), 0);
+        
+        chartData.push({
+          label: months[m],
+          revenue: mRev,
+          yield: Math.round(mRev / (mOrders.length || 1))
+        });
+        
+        m++;
+        if (m > 11) { m = 0; y++; }
+      }
     }
 
-    // 3. Top Protocols
+    // 3. Top Protocols in this period
     const treatmentMap: Record<string, { revenue: number, count: number }> = {};
-    orders.forEach(o => {
+    filteredOrders.forEach(o => {
       const med = o.medication || "Consultation";
       if (!treatmentMap[med]) treatmentMap[med] = { revenue: 0, count: 0 };
       treatmentMap[med].revenue += parseFloat(o.amount?.replace(/[$,]/g, '') || "0");
@@ -99,21 +135,46 @@ export function AdminAnalyticsPage() {
         name, 
         revenue: s.revenue, 
         count: s.count,
-        color: name.includes("Sema") ? COLORS.emerald : name.includes("Tirz") ? COLORS.indigo : COLORS.gold
       }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
 
     return {
       revenue: `$${totalRevenue.toLocaleString()}`,
-      patients: currentMonthOrders.length.toString(),
+      revenueTrend: `${revTrend > 0 ? '+' : ''}${revTrend}%`,
+      patients: filteredOrders.length.toString(),
+      patientTrend: `+${filteredOrders.length - prevOrders.length}`,
       consults: totalConsults.toLocaleString(),
       conversion: `${conversionRate}%`,
-      yield: `$${Math.round(totalRevenue / (currentMonthOrders.length || 1))}`,
-      revenueData: last6Months,
+      yield: `$${Math.round(totalRevenue / (filteredOrders.length || 1))}`,
+      chartData,
       topTreatments,
     };
-  }, [orders]);
+  }, [orders, timeRange]);
+
+  const downloadPDF = async () => {
+    if (!terminalRef.current) return;
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(terminalRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff"
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`PeakHealth_Intelligence_${timeRange}_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error("PDF Export failed:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (loading || !stats) {
     return (
@@ -128,10 +189,10 @@ export function AdminAnalyticsPage() {
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-10 pb-10 animate-in fade-in duration-1000">
+    <div id="analytics-terminal" ref={terminalRef} className="max-w-[1600px] mx-auto space-y-10 pb-10 animate-in fade-in duration-1000 bg-white">
       
       {/* LUXURY HEADER */}
-      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 pb-8 border-b border-slate-50">
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 pb-8 border-b border-slate-50 px-4">
         <div>
            <div className="flex items-center gap-3 mb-3">
               <span className="text-[9px] font-black uppercase tracking-[0.4em] px-4 py-1.5 rounded-xl bg-emerald-50 text-[#0A2E1F] border border-emerald-100 shadow-sm">
@@ -150,7 +211,7 @@ export function AdminAnalyticsPage() {
            </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 no-print">
            <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
               {["7D", "30D", "90D", "YTD"].map(range => (
                 <button
@@ -165,17 +226,23 @@ export function AdminAnalyticsPage() {
                 </button>
               ))}
            </div>
-           <Button variant="outline" className="h-12 w-12 rounded-2xl border-slate-200 p-0 text-slate-400 hover:bg-slate-50">
-              <Download className="h-4 w-4" />
+           <Button 
+            onClick={downloadPDF}
+            disabled={isExporting}
+            variant="outline" 
+            className="h-12 px-6 rounded-2xl border-slate-200 font-black uppercase text-[10px] tracking-widest text-slate-500 hover:bg-slate-50 gap-2"
+           >
+              {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {isExporting ? "Exporting..." : "Export PDF"}
            </Button>
         </div>
       </div>
 
       {/* PRIMARY METRIC TILES */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 px-4">
         {[
-          { label: "Gross Revenue", value: stats.revenue, trend: "+12.4%", icon: DollarSign, color: "emerald", desc: "Monthly settlement volume" },
-          { label: "Growth Velocity", value: stats.patients, trend: "+18.2%", icon: Zap, color: "gold", desc: "New patient onboarding" },
+          { label: "Gross Revenue", value: stats.revenue, trend: stats.revenueTrend, icon: DollarSign, color: "emerald", desc: "Settlement volume in period" },
+          { label: "Growth Velocity", value: stats.patients, trend: stats.patientTrend, icon: Zap, color: "gold", desc: "New patient onboarding" },
           { label: "Yield Optimization", value: stats.yield, trend: "+4.1%", icon: Gem, color: "indigo", desc: "Avg. revenue per patient" },
           { label: "Conversion Delta", value: stats.conversion, trend: "+2.5%", icon: Target, color: "rose", desc: "Clinical approval velocity" },
         ].map((s, i) => (
@@ -216,32 +283,32 @@ export function AdminAnalyticsPage() {
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-8">
+      <div className="grid lg:grid-cols-12 gap-8 px-4">
         
         {/* REVENUE MATRIX CHART */}
         <Card className="lg:col-span-8 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white overflow-hidden p-8 sm:p-10">
            <div className="flex items-center justify-between mb-10">
               <div>
                  <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic flex items-center gap-3">
-                    <BarChart3 className="h-5 w-5 text-emerald-600" /> Revenue Pulse
+                    <BarChart3 className="h-5 w-5 text-emerald-600" /> Performance Pulse
                  </h3>
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Cross-platform settlement trajectory</p>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Cross-platform settlement trajectory ({timeRange})</p>
               </div>
               <div className="flex items-center gap-6">
                  <div className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Monthly Revenue</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Revenue</span>
                  </div>
                  <div className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Protocol Yield</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Yield</span>
                  </div>
               </div>
            </div>
 
            <div className="h-[400px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.revenueData}>
+                <AreaChart data={stats.chartData}>
                   <defs>
                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor={COLORS.emerald} stopOpacity={0.1}/>
@@ -254,7 +321,7 @@ export function AdminAnalyticsPage() {
                   </defs>
                   <CartesianGrid strokeDasharray="10 10" vertical={false} stroke="#f1f5f9" />
                   <XAxis 
-                    dataKey="month" 
+                    dataKey="label" 
                     axisLine={false} 
                     tickLine={false} 
                     tick={{ fontSize: 11, fontWeight: 900, fill: "#cbd5e1" }} 
@@ -266,14 +333,14 @@ export function AdminAnalyticsPage() {
                       if (active && payload && payload.length) {
                         return (
                           <div className="bg-[#0A2E1F] p-5 rounded-[1.5rem] shadow-2xl border border-white/10 text-white min-w-[160px]">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-3">{payload[0].payload.month} Performance</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-3">{payload[0].payload.label}</p>
                             <div className="space-y-2">
                                <div className="flex items-center justify-between gap-6">
                                   <span className="text-[10px] font-bold text-white/60">Revenue</span>
                                   <span className="text-xs font-black italic">${payload[0].value.toLocaleString()}</span>
                                </div>
                                <div className="flex items-center justify-between gap-6">
-                                  <span className="text-[10px] font-bold text-white/60">Yield/Px</span>
+                                  <span className="text-[10px] font-bold text-white/60">Avg. Yield</span>
                                   <span className="text-xs font-black italic text-indigo-400">${payload[1].value.toLocaleString()}</span>
                                </div>
                             </div>
@@ -316,11 +383,12 @@ export function AdminAnalyticsPage() {
                       </div>
                    </div>
                  ))}
+                 {stats.topTreatments.length === 0 && (
+                    <div className="py-20 text-center text-slate-300 italic text-[10px] uppercase font-black tracking-widest">
+                       No protocol data for this period
+                    </div>
+                 )}
               </div>
-              
-              <Button variant="ghost" className="w-full mt-6 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#0A2E1F]">
-                View Entire Clinical Catalog
-              </Button>
            </Card>
 
            {/* PLATFORM HEALTH */}
