@@ -42,18 +42,31 @@ export function PharmacyDashboard() {
     };
   }, []);
 
-  const handleShip = async (id: string) => {
+  const handleShip = async (id: string, trackingInfo: { number: string; carrier: string }) => {
     try {
       const { error } = await supabase
         .from('orders')
         .update({ 
           status: 'shipped',
-          tracking_number: `TRK${Math.random().toString().slice(2, 10)}`,
-          shipped_date: new Date().toLocaleDateString()
+          tracking_number: trackingInfo.number,
+          shipping_carrier: trackingInfo.carrier,
+          shipped_date: new Date().toISOString(),
+          timeline: supabase.rpc('append_to_timeline', { 
+            order_id: id, 
+            status_entry: { status: 'shipped', date: new Date().toLocaleString(), note: `Package dispatched via ${trackingInfo.carrier}` } 
+          })
         })
         .eq('id', id);
+      
       if (error) throw error;
-      // Realtime subscription will handle the UI update
+      
+      // Simulate Webhook Pulse to the external CRM
+      console.log(`[Webhook Simulation] Outgoing payload to Pharmacy CRM:`, {
+        event: 'order.shipped',
+        order_id: id,
+        tracking: trackingInfo.number
+      });
+
     } catch (err) {
       console.error("Shipping update failed:", err);
     }
@@ -129,7 +142,7 @@ export function PharmacyDashboard() {
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8 pb-10">
         {/* Main Rx Queue */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between mb-2">
@@ -139,10 +152,10 @@ export function PharmacyDashboard() {
             <div className="flex bg-slate-100 p-1 rounded-xl">
               {["all", "urgent", "flagged"].map(t => (
                 <button 
-                  key={t} 
-                  onClick={() => setActiveTab(t)}
-                  className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                  activeTab === t ? "bg-white text-[#0A0D14] shadow-sm" : "text-slate-400")}
+                   key={t} 
+                   onClick={() => setActiveTab(t)}
+                   className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                   activeTab === t ? "bg-white text-[#0A0D14] shadow-sm" : "text-slate-400")}
                 >
                   {t}
                 </button>
@@ -179,12 +192,16 @@ export function PharmacyDashboard() {
                         {rx.status}
                       </span>
                     </div>
-                    {rx.status.includes('doctor approved') || rx.status.includes('rx sent') ? (
+                    {rx.status.includes('rx sent') ? (
                       <Button 
-                        onClick={(e) => { e.stopPropagation(); handleShip(rx.rawId); }}
+                        onClick={(e) => { 
+                          e.stopPropagation();
+                          const num = prompt("Enter Tracking Number:", `PHX-${Math.random().toString().slice(2,8)}`);
+                          if (num) handleShip(rx.rawId, { number: num, carrier: "FedEx Express" });
+                        }}
                         className="rounded-xl h-10 px-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[10px] tracking-widest"
                       >
-                        SHIP
+                        SHIP NOW
                       </Button>
                     ) : (
                       <Button variant="outline" size="icon" className="rounded-xl h-10 w-10" onClick={() => window.location.href='/pharmacy/orders'}>
@@ -203,12 +220,37 @@ export function PharmacyDashboard() {
 
         {/* Sidebar: Shipping & Inventory */}
         <div className="space-y-8">
+          {/* STEP 7: WEBHOOK SIMULATOR */}
+          <Card className="border-2 border-dashed border-blue-200 bg-blue-50/30 rounded-[1.5rem] overflow-hidden">
+             <div className="p-4 bg-blue-600 text-white flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                   <Activity className="h-4 w-4 animate-pulse" />
+                   <span className="text-[10px] font-black uppercase tracking-widest">Step 7: Webhook Pulse</span>
+                </div>
+                <Badge className="bg-white/20 text-white border-none text-[8px]">DEVELOPER MODE</Badge>
+             </div>
+             <CardContent className="p-5 space-y-4">
+                <p className="text-[11px] text-blue-900 leading-relaxed font-medium">
+                  This simulates an incoming <strong>Webhook Ping</strong> from your external pharmacy partner (VialsRX).
+                </p>
+                <div className="bg-[#0A0D14] p-3 rounded-xl font-mono text-[10px] text-emerald-400">
+                  {`{ "order_id": "PH-4421", "event": "DISPATCHED" }`}
+                </div>
+                <Button 
+                   className="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-900/20"
+                   onClick={() => alert("Simulating incoming Pharmacy Webhook...")}
+                >
+                  Fire Test Webhook
+                </Button>
+             </CardContent>
+          </Card>
+
           {/* Shipping Queue */}
           <div className="space-y-4">
              <h2 className="text-xl font-black text-[#0A0D14] flex items-center gap-2">
               <Truck className="h-5 w-5 text-emerald-600" /> Shipping Hub
             </h2>
-            <Card className="border-none shadow-xl shadow-slate-200/40 bg-emerald-500 text-white">
+            <Card className="border-none shadow-xl shadow-slate-200/40 bg-emerald-500 text-white rounded-[1.5rem]">
               <CardContent className="p-6">
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Daily Logistics</p>
                 <p className="text-2xl font-black mb-4">Pickup Hub</p>
@@ -228,37 +270,6 @@ export function PharmacyDashboard() {
                 <Button onClick={() => window.location.href='/pharmacy/orders'} className="w-full mt-4 bg-white text-emerald-600 hover:bg-white/90 rounded-xl font-black uppercase text-[10px] tracking-widest h-10">
                   Manage Logistics
                 </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Inventory Snapshot */}
-          <div className="space-y-4">
-             <h2 className="text-xl font-black text-[#0A0D14] flex items-center gap-2">
-              <Box className="h-5 w-5 text-amber-600" /> Inventory
-            </h2>
-            <Card className="border-slate-100 shadow-lg">
-              <CardContent className="p-4 space-y-4">
-                {[
-                  { name: "Semaglutide 0.25mg", stock: 12, total: 100, status: "Low Stock" },
-                  { name: "Sildenafil 50mg", stock: 88, total: 100, status: "Healthy" },
-                ].map((item, i) => (
-                  <div key={i}>
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="text-sm font-black text-[#0A0D14]">{item.name}</p>
-                      <span className={cn("text-[9px] font-black uppercase px-2 py-0.5 rounded-full",
-                        item.stock < 20 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600")}>
-                        {item.status}
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                        className={cn("h-full rounded-full transition-all duration-1000", item.stock < 20 ? "bg-red-500" : "bg-emerald-500")}
-                        style={{ width: `${(item.stock / item.total) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
               </CardContent>
             </Card>
           </div>
