@@ -13,15 +13,6 @@ import { supabase } from "../../../../lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
-type AvailabilityStatus = "available" | "busy" | "break" | "offline";
-
-const availabilityConfig: Record<AvailabilityStatus, { label: string; color: string; dot: string; bg: string }> = {
-  available: { label: "Available", color: "text-emerald-700", dot: "bg-emerald-500", bg: "bg-emerald-50 border-emerald-200" },
-  busy: { label: "In Consult", color: "text-amber-700", dot: "bg-amber-500", bg: "bg-amber-50 border-amber-200" },
-  break: { label: "On Break", color: "text-violet-700", dot: "bg-violet-500", bg: "bg-violet-50 border-violet-200" },
-  offline: { label: "Offline", color: "text-slate-600", dot: "bg-slate-400", bg: "bg-slate-50 border-slate-200" },
-};
-
 const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg: string; border: string }> = {
   order_submitted: { label: "Order Submitted", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" },
   account_created: { label: "Account Created", color: "text-violet-700", bg: "bg-violet-50", border: "border-violet-200" },
@@ -38,7 +29,6 @@ export function DoctorQueuePage() {
   const navigate = useNavigate();
   const MotionButton = motion(Button);
   const { orders, updateOrderStatus, updateOrderRx, fetchOrders, subscribeToOrders } = usePatientStore();
-  const [availability, setAvailability] = useState<AvailabilityStatus>("available");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rxNote, setRxNote] = useState("");
   const [dosage, setDosage] = useState("");
@@ -132,22 +122,19 @@ export function DoctorQueuePage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-[1rem] border border-slate-200">
-           {Object.entries(availabilityConfig).map(([key, cfg]) => (
-             <button
-               key={key}
-               onClick={() => setAvailability(key as AvailabilityStatus)}
-               className={cn(
-                 "px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2",
-                 availability === key 
-                   ? `${cfg.bg} ${cfg.color} border shadow-sm` 
-                   : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-               )}
-             >
-               <div className={cn("h-2 w-2 rounded-full", cfg.dot)} />
-               {cfg.label}
-             </button>
-           ))}
+        <div className="flex items-center gap-3">
+           <Badge variant="outline" className="rounded-xl bg-emerald-50 text-emerald-700 border-emerald-200 gap-1.5 py-2 px-4 text-xs font-bold uppercase shadow-sm">
+             <ShieldCheck className="h-4 w-4" /> HIPAA SECURE
+           </Badge>
+           <Button 
+             variant="outline"
+             onClick={handleRefresh}
+             disabled={isRefreshing}
+             className="rounded-xl border-slate-200 bg-white h-11 px-4 text-slate-500 hover:bg-slate-50 transition-all active:scale-95"
+           >
+             <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
+             {isRefreshing ? 'Syncing...' : 'Refresh Queue'}
+           </Button>
         </div>
       </div>
 
