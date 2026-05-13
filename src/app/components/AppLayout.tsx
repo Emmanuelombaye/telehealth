@@ -93,11 +93,12 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col overflow-hidden relative">
         {/* Header - Glassmorphic Design */}
         <header className={cn(
-          "sticky top-0 z-50 flex w-full h-24 items-center justify-between border-b px-8 shadow-sm backdrop-blur-xl transition-all duration-300",
+          "sticky top-0 z-50 flex w-full h-24 items-center border-b px-8 shadow-sm backdrop-blur-xl transition-all duration-300",
           "border-slate-50 bg-white/90 text-[#0A0D14]",
           scrolled && "shadow-xl shadow-emerald-900/5"
         )}>
-          <div className="flex items-center gap-3">
+          {/* Left Section: Mobile Toggle & Breadcrumb Space */}
+          <div className="flex items-center gap-3 flex-1">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden h-10 w-10 rounded-xl hover:bg-slate-50 transition-all">
@@ -112,20 +113,27 @@ export function AppLayout() {
                 <Sidebar role={sidebarRole} onMobileClose={() => setIsMobileMenuOpen(false)} />
               </SheetContent>
             </Sheet>
-
-            <div className="flex items-center gap-6">
-              <div className="h-8 w-[1px] hidden sm:block bg-slate-100" />
-              <Link to={`/${sidebarRole}`} className="flex items-center hover:opacity-80 transition-opacity">
-                <img 
-                  src="/PeakHealthLogo.png" 
-                  alt="Peak Health" 
-                  className="h-10 sm:h-12 w-auto object-contain"
-                />
-              </Link>
+            
+            <div className="hidden sm:flex items-center gap-2 text-slate-300">
+               <Home className="h-4 w-4" />
+               <ChevronLeft className="h-3 w-3 rotate-180" />
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Portal</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Center Section: THE LOGO (Enlarged & Centered) */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
+            <Link to={`/${sidebarRole}`} className="flex items-center hover:opacity-80 transition-all duration-500 hover:scale-105">
+              <img 
+                src="/PeakHealthLogo.png" 
+                alt="Peak Health" 
+                className="h-16 sm:h-20 w-auto object-contain drop-shadow-sm"
+              />
+            </Link>
+          </div>
+
+          {/* Right Section: Actions & Profile */}
+          <div className="flex items-center gap-2 flex-1 justify-end">
             <Button 
               variant="ghost" 
               size="icon" 
