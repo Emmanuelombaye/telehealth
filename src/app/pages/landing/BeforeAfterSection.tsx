@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { Star } from "lucide-react";
 
 const results = [
-  { img:"/generatedImages/image2.png", name:"Sarah M.", age:"38", lost:"52 lbs", months:"5 Months", tag:"Semaglutide" },
+  { img:"/generatedImages/image1-2.png", name:"Sarah M.", age:"38", lost:"52 lbs", months:"5 Months", tag:"Semaglutide" },
   { img:"/generatedImages/image3.png", name:"James R.", age:"45", lost:"41 lbs", months:"4 Months", tag:"Tirzepatide" },
 ];
 

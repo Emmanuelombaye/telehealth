@@ -47,17 +47,33 @@ export function TreatmentsSection() {
         {/* Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
           {cards.map((c,i) => (
-            <div key={i} className="bg-white rounded-[24px] p-6 md:p-8 border border-[#e8edf3] shadow-sm relative overflow-hidden flex flex-col">
-              {c.badge && <span className="absolute top-5 right-5 bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-widest">{c.badge}</span>}
-              <div className="mb-4">
-                <span className={`${c.tagBg} ${c.tagColor} text-[11px] font-extrabold px-3 py-1 rounded-full`}>{c.tag}</span>
+            <div key={i} className="bg-white rounded-[32px] p-6 md:p-8 border border-[#e8edf3] shadow-sm relative overflow-hidden flex flex-col group hover:shadow-xl transition-all duration-500">
+              {c.badge && <span className="absolute top-6 right-6 bg-amber-100 text-amber-800 text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-widest z-10">{c.badge}</span>}
+              
+              {/* Product Image Placeholder (Vials) */}
+              <div className="relative h-48 mb-6 rounded-2xl bg-[#f8fafc] overflow-hidden flex items-center justify-center">
+                <img 
+                  src="/generatedImages/image1-1.png" 
+                  alt={c.name} 
+                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent"></div>
               </div>
-              <h3 className="text-2xl font-black text-[#0a0d14] mb-2">{c.name}</h3>
+
+              <div className="mb-4">
+                <span className={`${c.tagBg} ${c.tagColor} text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider`}>{c.tag}</span>
+              </div>
+              
+              <h3 className="text-2xl md:text-3xl font-black text-[#0a0d14] mb-2">{c.name}</h3>
               <p className="text-slate-500 text-sm leading-relaxed mb-6 flex-grow">{c.desc}</p>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-auto border-t border-slate-100 pt-5">
-                <span className="font-black text-lg text-[#0d2137]">{c.price}</span>
-                <Link to="/quiz/select-treatment" className="text-center bg-[#0d2137] text-white py-2.5 px-5 rounded-full font-bold text-sm hover:bg-slate-800 transition-colors">
-                  Start Intake →
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-auto border-t border-slate-100 pt-6">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Starting at</span>
+                  <span className="font-black text-xl text-[#0d2137]">{c.price}</span>
+                </div>
+                <Link to="/quiz/select-treatment" className="text-center bg-[#0d2137] text-white py-3 px-6 rounded-full font-bold text-sm hover:bg-slate-900 transition-all shadow-lg shadow-blue-900/10">
+                  Select Protocol →
                 </Link>
               </div>
             </div>

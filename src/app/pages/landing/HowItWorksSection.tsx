@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { ArrowRight } from "lucide-react";
 
 const steps = [
   { n:"01", title:"Check Eligibility", desc:"Complete a short medical questionnaire designed by our clinical team. Takes under 3 minutes.", icon:"🩺" },
@@ -8,26 +9,45 @@ const steps = [
 
 export function HowItWorksSection() {
   return (
-    <section className="py-20 px-6 bg-white">
+    <section className="py-24 px-6 bg-white overflow-hidden">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <span className="text-[11px] font-extrabold tracking-[0.2em] uppercase text-orange-500 block mb-2">How It Works</span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-[#0a0d14] tracking-tight m-0">Simple. Fast. Clinical.</h2>
+        <div className="text-center mb-16">
+          <span className="text-[11px] font-extrabold tracking-[0.3em] uppercase text-orange-500 block mb-2">The Process</span>
+          <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-[#0a0d14] tracking-tight m-0 leading-[1.1]">Simple. Fast. <span className="font-serif italic font-medium text-emerald-600">Clinical.</span></h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {steps.map((s,i) => (
-            <div key={i} className="bg-[#f7f9fc] rounded-[28px] p-8 md:p-10 relative overflow-hidden border border-[#e8edf3]">
-              <span className="absolute top-4 right-6 text-5xl md:text-6xl font-black text-slate-200 italic leading-none">{s.n}</span>
-              <div className="text-4xl mb-5">{s.icon}</div>
-              <h3 className="text-xl font-black text-[#0a0d14] mb-2.5">{s.title}</h3>
-              <p className="text-slate-500 text-sm md:text-[15px] leading-relaxed m-0">{s.desc}</p>
+
+        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+          {/* Mockup Column */}
+          <div className="w-full lg:w-1/2 relative">
+            <div className="absolute inset-0 bg-emerald-100 rounded-full blur-[100px] opacity-30 -z-10"></div>
+            <img 
+              src="/generatedImages/image1-4.png" 
+              alt="Peak Health App Mockup" 
+              className="w-full max-w-[500px] mx-auto drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[40px]" 
+            />
+          </div>
+
+          {/* Steps Column */}
+          <div className="w-full lg:w-1/2 space-y-6">
+            {steps.map((s,i) => (
+              <div key={i} className="bg-[#f7f9fc] rounded-[32px] p-8 relative overflow-hidden border border-[#e8edf3] flex gap-6 items-start group hover:bg-white hover:shadow-xl hover:border-emerald-100 transition-all duration-500">
+                <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition-transform">{s.icon}</div>
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-xs font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded">{s.n}</span>
+                    <h3 className="text-xl font-black text-[#0a0d14]">{s.title}</h3>
+                  </div>
+                  <p className="text-slate-500 text-sm md:text-[15px] leading-relaxed m-0">{s.desc}</p>
+                </div>
+              </div>
+            ))}
+            
+            <div className="pt-6">
+              <Link to="/quiz/select-treatment" className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-[#0d2137] text-white py-4 px-10 rounded-full font-bold text-base hover:bg-slate-900 transition-all shadow-xl shadow-blue-900/10">
+                Get Started Today <ArrowRight size={20} />
+              </Link>
             </div>
-          ))}
-        </div>
-        <div className="text-center mt-10">
-          <Link to="/quiz/select-treatment" className="inline-block bg-[#0d2137] text-white py-3.5 px-8 rounded-full font-bold text-sm hover:bg-slate-800 transition-colors">
-            Get Started Today →
-          </Link>
+          </div>
         </div>
       </div>
     </section>

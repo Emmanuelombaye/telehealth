@@ -1,5 +1,5 @@
 const doctors = [
-  { img:"/generatedImages/image4.png", name:"Dr. Michael Wasef, MD", title:"Internal Medicine Physician", bio:"Board-certified in internal medicine with expertise in metabolic health, obesity medicine, and telemedicine protocols." },
+  { img:"/generatedImages/image1-3.png", name:"Dr. Michael Wasef, MD", title:"Internal Medicine Physician", bio:"Board-certified in internal medicine with expertise in metabolic health, obesity medicine, and telemedicine protocols." },
   { img:"/generatedImages/image5.png", name:"Dr. Andrew Sakla, DO", title:"Internal Medicine Physician", bio:"Specialist in preventative care, hormonal optimization, and advanced clinical intake auditing across 50 states." },
 ];
 
