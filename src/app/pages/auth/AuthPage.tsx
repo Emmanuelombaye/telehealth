@@ -158,11 +158,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
           }
         }
       } else if (mode === 'signup') {
-        const portalRole = 
-          portal === 'doctor' ? 'doctor' : 
-          portal === 'admin' ? 'brand_admin' : 
-          portal === 'superadmin' ? 'super_admin' : 
-          'patient';
+        if (portal !== 'patient') {
+          setError("Registration is only available for patients.");
+          return;
+        }
+        const portalRole = 'patient';
 
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
@@ -242,7 +242,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
               </div>
             )}
 
-            {mode === 'signup' && (
+            {mode === 'signup' && portal === 'patient' && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397]">First Name</label>
@@ -316,7 +316,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
               </div>
             )}
 
-            {mode === 'signup' && (
+            {mode === 'signup' && portal === 'patient' && (
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397]">Confirm Password</label>
                 <div className="relative">
