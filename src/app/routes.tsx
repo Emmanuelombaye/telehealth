@@ -87,6 +87,9 @@ import { AuthPage } from "./pages/auth/AuthPage";
 import { ResetPasswordPage } from "./pages/auth/ResetPassword";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
+// Affiliate pages
+import { AffiliateDashboard } from "./pages/affiliate/AffiliateDashboard";
+
 
 export const router = createBrowserRouter([
   {
@@ -128,6 +131,7 @@ export const router = createBrowserRouter([
       { path: "doctor/login", element: <AuthPage portal="doctor" /> },
       { path: "admin/login", element: <AuthPage portal="admin" /> },
       { path: "superadmin/login", element: <AuthPage portal="superadmin" /> },
+      { path: "affiliate/login", element: <AuthPage portal="affiliate" /> },
       { path: "reset-password", Component: ResetPasswordPage },
       // { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
 
@@ -242,8 +246,20 @@ export const router = createBrowserRouter([
               { path: "audit", Component: PharmacyInventoryPage },
               { path: "settings", Component: PharmacySettingsPage },
             ],
-          },
           */
+
+          // Affiliate Portal
+          {
+            path: "affiliate",
+            element: <ProtectedRoute allowedRoles={['affiliate', 'super_admin']} />,
+            children: [
+              { index: true, Component: AffiliateDashboard },
+              { path: "referrals", Component: AffiliateDashboard },
+              { path: "payouts", Component: AffiliateDashboard },
+              { path: "assets", Component: AffiliateDashboard },
+              { path: "settings", Component: AffiliateDashboard },
+            ],
+          },
         ],
       },
 
