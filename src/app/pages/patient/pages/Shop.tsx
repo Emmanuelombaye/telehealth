@@ -254,6 +254,9 @@ export function PatientShopPage() {
       const freshOrderRef = "RX-" + Date.now().toString(36).toUpperCase() +
                             "-" + Math.random().toString(36).slice(2, 5).toUpperCase();
 
+      // ── Capture Referral Code ────────────────────────────────────────────────
+      const referralCode = localStorage.getItem('peak_health_referral_code');
+
       // ── Insert order into Supabase ────────────────────────────────────────────
       const { error: insertError } = await supabase.from('orders').insert([{
         order_number:      freshOrderRef,
@@ -277,10 +280,16 @@ export function PatientShopPage() {
         zoom_status:       zoomWanted && consultationTime ? 'requested' : 'not_requested',
         zoom_doctor_message:   null,
         zoom_rescheduled_time: null,
+        referral_code:     referralCode,
         timeline: [{ status: "order_submitted", date: new Date().toLocaleDateString() }]
       }]);
 
       if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
+
+      // ── Success: Clear referral code ─────────────────────────────────────────
+      if (referralCode) {
+        localStorage.removeItem('peak_health_referral_code');
+      }
 
       // ── Refresh patient store so new order appears immediately ────────────────
       await usePatientStore.getState().fetchOrders();

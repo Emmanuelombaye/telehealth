@@ -17,6 +17,16 @@ export default function App() {
   }, [initializeAuth]);
 
   useEffect(() => {
+    // ELITE REFERRAL TRACKING: Capture ref code from URL
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref');
+    if (refCode) {
+      console.log('Peak Health: Affiliate Referral Captured ->', refCode);
+      localStorage.setItem('peak_health_referral_code', refCode);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!isLoading) {
       fetchOrders();
       fetchDoctorAvailability();
