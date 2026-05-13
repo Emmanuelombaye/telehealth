@@ -3,6 +3,32 @@
   "installCommand": "npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "admin\\.(?<domain>.+)" }],
+      "destination": "/admin",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "superadmin\\.(?<domain>.+)" }],
+      "destination": "/superadmin",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "doctor\\.(?<domain>.+)" }],
+      "destination": "/doctor",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "patient\\.(?<domain>.+)" }],
+      "destination": "/patient",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
