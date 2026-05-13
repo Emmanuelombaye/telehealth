@@ -286,9 +286,18 @@ export function PatientShopPage() {
 
       if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
 
-      // ── Success: Clear referral code ─────────────────────────────────────────
+      // ── Success: Clear referral code & Notify Referly ───────────────────────
       if (referralCode) {
         localStorage.removeItem('peak_health_referral_code');
+      }
+
+      // REFERLY CONVERSION SYNC
+      if (window.referly) {
+        window.referly('convert', {
+          amount: selected.priceUSD,
+          email: resolvedEmail,
+          order_id: freshOrderRef
+        });
       }
 
       // ── Refresh patient store so new order appears immediately ────────────────
