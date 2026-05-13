@@ -21,6 +21,9 @@ export function AppLayout() {
   const fetchUnreadMessages = usePatientStore(state => state.fetchUnreadMessages);
   const subscribeToOrders = usePatientStore(state => state.subscribeToOrders);
   const unreadMessagesCount = usePatientStore(state => state.unreadMessagesCount);
+  const notifications = usePatientStore(state => state.notifications);
+  const unreadNotificationsCount = notifications.filter(n => n.unread).length;
+  const totalNotifications = unreadMessagesCount + unreadNotificationsCount;
   
   useEffect(() => {
     fetchOrders();
@@ -121,9 +124,9 @@ export function AppLayout() {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl group hover:bg-slate-50">
               <Bell className="h-5 w-5 transition-colors text-slate-400 group-hover:text-[#0a2e1f]" />
-              {unreadMessagesCount > 0 && (
+              {totalNotifications > 0 && (
                 <span className="absolute top-2 right-2 h-4 min-w-[1rem] px-1 rounded-full bg-[#ef4444] border-2 border-white text-[8px] font-black text-white flex items-center justify-center animate-pulse">
-                  {unreadMessagesCount}
+                  {totalNotifications}
                 </span>
               )}
             </Button>

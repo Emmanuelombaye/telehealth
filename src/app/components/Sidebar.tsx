@@ -97,9 +97,10 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const { t } = useI18n();
   const menu = menuConfig[role];
   const { user, role: authRole } = useAuthStore();
-  const { orders } = usePatientStore();
+  const { orders, notifications } = usePatientStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const pendingCount = orders.filter(o => o.status === "order_submitted" || o.status === "medical_review").length;
+  const unreadNotificationsCount = notifications.filter(n => n.unread).length;
 
   const fullName = user?.user_metadata?.first_name 
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`
@@ -165,6 +166,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                     {(() => {
                       let badgeCount = item.badge;
                       if (item.label === "Patient Queue") badgeCount = pendingCount;
+                      if (item.label === "Notifications") badgeCount = unreadNotificationsCount;
                       if (badgeCount && badgeCount > 0) {
                         return (
                           <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 shadow-sm relative z-10",
