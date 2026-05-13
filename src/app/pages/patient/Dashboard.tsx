@@ -89,32 +89,59 @@ export function PatientDashboard() {
   return (
     <div className="space-y-8 max-w-[1200px] mx-auto animate-in fade-in duration-1000 pb-10">
 
-      {/* ── LIVE CONSULTATION ALERT BANNER ── */}
-      {activeConsult && (
-        <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-[2rem] p-1 shadow-2xl shadow-emerald-900/30 animate-in slide-in-from-top-4 duration-500">
-          <div className="bg-[#0A2E1F] rounded-[1.75rem] px-8 py-6 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-5">
-              <div className="h-14 w-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center shrink-0 relative">
-                <Video className="h-7 w-7 text-emerald-400" />
-                <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-[#0A2E1F] animate-pulse" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Action Required</p>
-                <p className="text-xl font-black text-white tracking-tight">Your Doctor Is Live Now</p>
-                <p className="text-xs text-emerald-300/70 font-medium mt-0.5">
-                  {activeConsult.doctor || 'Your physician'} is waiting in the secure consultation room
-                </p>
+      {/* ── HIGH-FIDELITY LIVE CONSULTATION ALERT ── */}
+      <AnimatePresence>
+        {activeConsult && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.95 }}
+            className="relative z-50 px-4"
+          >
+            <div className="bg-[#0A2E1F] rounded-[2.5rem] p-1 shadow-[0_20px_60px_rgba(16,185,129,0.3)] border border-emerald-500/20 overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/10 via-transparent to-emerald-600/10 animate-pulse" />
+              <div className="relative bg-[#0A2E1F] rounded-[2.25rem] px-8 py-7 flex flex-wrap items-center justify-between gap-6">
+                
+                <div className="flex items-center gap-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-emerald-500 rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity animate-pulse" />
+                    <div className="h-16 w-16 rounded-2xl bg-emerald-500 flex items-center justify-center shrink-0 relative z-10 shadow-lg shadow-emerald-500/20">
+                      <Video className="h-8 w-8 text-white" />
+                      <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full border-[3px] border-[#0A2E1F] flex items-center justify-center">
+                         <div className="h-1.5 w-1.5 bg-white rounded-full animate-ping" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                       <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em]">Live Connection Established</span>
+                       <div className="h-1 w-1 rounded-full bg-emerald-500/30" />
+                       <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Secure Link Ready</span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
+                      Doctor <span className="text-emerald-400">{activeConsult.doctor?.split(' ')[1] || 'Assigned'}</span> is Waiting
+                    </h2>
+                    <p className="text-sm font-medium text-emerald-100/50 mt-2 flex items-center gap-2">
+                       <ShieldCheck className="h-4 w-4 text-emerald-500" /> End-to-end encrypted clinical session
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => navigate('/patient/consult')}
+                    className="bg-emerald-500 hover:bg-emerald-400 text-white rounded-[1.25rem] px-10 h-16 font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95 flex items-center gap-3 group/btn"
+                  >
+                    Join Secure Consult <ChevronRight className="h-5 w-5 group-hover/btn:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+
               </div>
             </div>
-            <button
-              onClick={() => navigate('/patient/consult')}
-              className="bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl px-8 h-13 py-4 font-black uppercase tracking-widest text-sm shadow-xl shadow-emerald-900/30 transition-all hover:scale-105 flex items-center gap-3 whitespace-nowrap"
-            >
-              <Video className="h-5 w-5" /> Join Consultation
-            </button>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
 
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-50">
