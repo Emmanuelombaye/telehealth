@@ -3,11 +3,11 @@ import { Star } from "lucide-react";
 import { motion } from "framer-motion";
 
 const results = [
-  { img:"/generatedImages/image1-2.png", name:"Sarah M.", age:"38", lost:"52 lbs", months:"5 Months", tag:"Semaglutide" },
-  { img:"/generatedImages/image3.png", name:"James R.", age:"45", lost:"41 lbs", months:"4 Months", tag:"Tirzepatide" },
-  { img:"/generatedImages/image1-8.png", name:"Emily T.", age:"42", lost:"38 lbs", months:"6 Months", tag:"Semaglutide" },
-  { img:"/generatedImages/image1-10.png", name:"Chris B.", age:"38", lost:"Built Muscle", months:"3 Months", tag:"Sermorelin" },
-  { img:"/generatedImages/image1-6.png", name:"David L.", age:"55", lost:"Regained Focus", months:"2 Months", tag:"NAD+" },
+  { img:"/generatedImages/image1-2.png", name:"Sarah M.", age:"38", lost:"52 lbs", months:"5 Months", tag:"Semaglutide", link:"/quiz/weight-loss/reviews" },
+  { img:"/generatedImages/image3.png", name:"James R.", age:"45", lost:"41 lbs", months:"4 Months", tag:"Tirzepatide", link:"/quiz/weight-loss/reviews" },
+  { img:"/generatedImages/image1-8.png", name:"Emily T.", age:"42", lost:"38 lbs", months:"6 Months", tag:"Semaglutide", link:"/quiz/weight-loss/reviews" },
+  { img:"/generatedImages/image1-10.png", name:"Chris B.", age:"38", lost:"Built Muscle", months:"3 Months", tag:"Sermorelin", link:"/quiz/muscle/reviews" },
+  { img:"/generatedImages/image1-6.png", name:"David L.", age:"55", lost:"Regained Focus", months:"2 Months", tag:"NAD+", link:"/quiz/longevity/reviews" },
 ];
 
 const marqueeResults = [...results, ...results, ...results]; // Triple for ultra-smooth infinite loop
@@ -40,7 +40,7 @@ export function BeforeAfterSection() {
           transition={{ ease: "linear", duration: 35, repeat: Infinity }}
         >
           {marqueeResults.map((r,i) => (
-            <div key={i} className="w-[300px] shrink-0 bg-white rounded-[32px] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-100 transition-transform duration-300 hover:scale-[1.02] cursor-grab active:cursor-grabbing">
+            <Link key={i} to={r.link} className="block w-[300px] shrink-0 bg-white rounded-[32px] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-100 transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]">
               <div className="relative">
                 <img src={r.img} alt={`${r.name} transformation`} className="w-full h-[280px] object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent pointer-events-none" />
@@ -64,7 +64,7 @@ export function BeforeAfterSection() {
                   <span className="text-[9px] font-black tracking-widest uppercase bg-blue-50/50 text-blue-600 px-2 py-1 rounded-md border border-blue-100/50">{r.tag}</span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </motion.div>
       </div>
