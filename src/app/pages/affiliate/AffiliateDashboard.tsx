@@ -8,7 +8,7 @@ import {
   Lock, ArrowRight, Settings, Info, FileText, MessageSquare,
   Image as ImageIcon, Receipt
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, cn } from "../../components/ui/shared.tsx";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, BarChart, Bar 
