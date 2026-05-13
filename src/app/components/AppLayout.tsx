@@ -115,14 +115,23 @@ export function AppLayout() {
 
             <div className="flex items-center gap-6">
               <div className="h-8 w-[1px] hidden sm:block bg-slate-100" />
-              <span className="text-[9px] font-black tracking-[0.3em] uppercase px-4 py-2 rounded-xl border border-emerald-100 text-[#0A2E1F] bg-emerald-50">
-                {displayRole} COMMAND CENTER
-              </span>
+              <Link to={`/${sidebarRole}`} className="flex items-center hover:opacity-80 transition-opacity">
+                <img 
+                  src="/PeakHealthLogo.png" 
+                  alt="Peak Health" 
+                  className="h-10 sm:h-12 w-auto object-contain"
+                />
+              </Link>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl group hover:bg-slate-50">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate("/patient/notifications")}
+              className="relative h-10 w-10 rounded-xl group hover:bg-slate-50"
+            >
               <Bell className="h-5 w-5 transition-colors text-slate-400 group-hover:text-[#0a2e1f]" />
               {totalNotifications > 0 && (
                 <span className="absolute top-2 right-2 h-4 min-w-[1rem] px-1 rounded-full bg-[#ef4444] border-2 border-white text-[8px] font-black text-white flex items-center justify-center animate-pulse">

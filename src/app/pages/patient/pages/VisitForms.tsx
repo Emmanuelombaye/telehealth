@@ -142,7 +142,7 @@ export function VisitFormsPage() {
             </div>
             <div>
                <p className="text-[10px] font-black text-[#0A2E1F] uppercase tracking-widest">Digital Sign-off Required</p>
-               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Validated against your MRN record</p>
+               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Validated against your clinical record</p>
             </div>
          </div>
          <div className="flex items-center gap-6">

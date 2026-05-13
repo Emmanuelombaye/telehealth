@@ -123,15 +123,9 @@ export function PatientDashboard() {
             <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-[#0A2E1F]">
               Welcome, <span className="font-serif italic font-normal text-emerald-600">{firstName}</span>
             </h1>
-            {orders[0]?.mrn && (
-              <Badge variant="secondary" className="px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-700 font-black border-none text-[10px]">
-                MRN: {orders[0].mrn}
-              </Badge>
-            )}
+
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">
-            Clinical Logistics & Fulfillment Dashboard
-          </p>
+
         </div>
         <Link to="/patient/appointments">
           <Button className="rounded-[2rem] h-16 px-10 shadow-2xl shadow-emerald-900/10 gap-3 group bg-[#0A2E1F]">

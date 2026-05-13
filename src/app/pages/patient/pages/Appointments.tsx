@@ -49,7 +49,20 @@ export function AppointmentsPage() {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('id, order_number, medication, consultation_time, zoom_status, zoom_doctor_message, zoom_rescheduled_time, status, ordered_date, zoom_join_url')
+        .select(`
+          id, 
+          order_number, 
+          medication, 
+          consultation_time, 
+          zoom_status, 
+          zoom_doctor_message, 
+          zoom_rescheduled_time, 
+          status, 
+          ordered_date, 
+          zoom_join_url,
+          doctor_id,
+          consultation_live
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -147,12 +160,26 @@ export function AppointmentsPage() {
                         )}
                       </div>
                       {status === 'confirmed' && (
-                        <Button 
-                          onClick={() => window.open(order.zoom_join_url || `https://meet.jit.si/telehealth-${order.id}`, '_blank')}
-                          className="ml-auto h-8 px-3 text-xs rounded-xl bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
-                        >
-                          <Video className="h-3 w-3" /> Join Video
-                        </Button>
+                        <div className="ml-auto flex items-center gap-2">
+                          {order.consultation_live && (
+                            <span className="flex h-2 w-2 relative">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                          )}
+                          <Button 
+                            onClick={() => window.open(order.zoom_join_url || `https://zoom.us`, '_blank')}
+                            className={cn(
+                              "h-10 px-4 text-xs rounded-xl font-bold uppercase tracking-widest shadow-lg transition-all",
+                              order.consultation_live 
+                                ? "bg-emerald-600 hover:bg-emerald-700 text-white animate-pulse" 
+                                : "bg-blue-600 hover:bg-blue-700 text-white"
+                            )}
+                          >
+                            <Video className="h-4 w-4 mr-2" />
+                            {order.consultation_live ? "Doctor is Waiting — Launch Zoom" : "Launch Zoom Meeting"}
+                          </Button>
+                        </div>
                       )}
                     </div>
                   )}
@@ -176,7 +203,24 @@ export function AppointmentsPage() {
                         Please book a time on the doctor's calendar.
                       </p>
                       <Button 
-                        onClick={() => window.open('https://calendly.com/your-doctor-calendar', '_blank')}
+                        onClick={async () => {
+                          // Try to fetch the doctor's specific calendly link if available
+                          let bookingUrl = 'https://calendly.com/peakhealth-medical/consultation'; // Default fallback
+                          
+                          if (order.doctor_id) {
+                            const { data: profile } = await supabase
+                              .from('profiles')
+                              .select('calendly_url')
+                              .eq('id', order.doctor_id)
+                              .single();
+                            
+                            if (profile?.calendly_url) {
+                              bookingUrl = profile.calendly_url;
+                            }
+                          }
+                          
+                          window.open(bookingUrl, '_blank');
+                        }}
                         className="h-8 px-3 text-xs rounded-xl bg-amber-500 hover:bg-amber-600 text-white gap-1.5"
                       >
                         <Calendar className="h-3 w-3" /> Book Time

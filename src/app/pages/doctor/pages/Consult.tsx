@@ -363,6 +363,9 @@ export function DoctorConsultPage() {
   const [medication, setMedication] = useState("");
   const [dosage, setDosage] = useState("");
 
+  const [zoomLink, setZoomLink] = useState("");
+  const [isConfirmingZoom, setIsConfirmingZoom] = useState(false);
+
   useEffect(() => {
     if (!orderId) return;
     setLoading(true);
@@ -385,6 +388,7 @@ export function DoctorConsultPage() {
 
       if (!error && data) {
         setOrder(data);
+        setZoomLink(data.zoom_join_url || "");
         
         // --- FETCH INTAKE DATA ---
         const { data: intakeData } = await supabase
@@ -518,30 +522,33 @@ export function DoctorConsultPage() {
     }
   };
 
-  const handleDisqualify = async () => {
-    if (!order || isDisqualifying) return;
-    if (!confirm(`Disqualify ${order.patient_name} and initiate a refund? This cannot be undone.`)) return;
-    setIsDisqualifying(true);
+  const handleConfirmZoom = async () => {
+    if (!order || isConfirmingZoom) return;
+    if (!zoomLink) {
+      showToast('error', 'Please provide a Zoom meeting link.');
+      return;
+    }
+    setIsConfirmingZoom(true);
     try {
       const { error } = await supabase
         .from('orders')
         .update({ 
-          status: 'cancelled',
-          consultation_live: false,
-          doctor_note: soapNotes.plan || "Patient did not qualify based on medical history."
+          zoom_status: 'confirmed', 
+          zoom_join_url: zoomLink,
+          // If no time is set yet, we could set a default or use the requested time
         })
         .eq('id', order.id);
       
       if (!error) {
-        showToast('error', `Patient disqualified. Refund initiated for ${order.patient_name}.`);
-        setTimeout(() => navigate('/doctor/queue'), 1800);
+        showToast('success', `✓ Zoom Meeting Confirmed for ${order.patient_name}`);
+        setOrder(prev => ({ ...prev, zoom_status: 'confirmed', zoom_join_url: zoomLink }));
       } else {
-        showToast('error', `Disqualify failed: ${error.message}`);
+        showToast('error', `Failed to confirm: ${error.message}`);
       }
     } catch (err: any) {
       showToast('error', `Error: ${err.message}`);
     } finally {
-      setIsDisqualifying(false);
+      setIsConfirmingZoom(false);
     }
   };
 
@@ -757,6 +764,61 @@ export function DoctorConsultPage() {
               </div>
             )}
           </div>
+
+          {/* Zoom & Appointment Management */}
+          <Card className="border-2 border-emerald-100 bg-white shadow-lg rounded-[1.5rem] overflow-hidden">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black text-[#0A2E1F] uppercase tracking-widest flex items-center gap-2">
+                  <Video className="h-4 w-4 text-emerald-600" /> Zoom Logistics
+                </h3>
+                <Badge className={cn(
+                  "rounded-full px-3 py-1 text-[10px] font-bold uppercase",
+                  order.zoom_status === 'confirmed' ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                )}>
+                  {order.zoom_status?.replace('_', ' ')}
+                </Badge>
+              </div>
+
+              <div className="space-y-3">
+                <div className="relative">
+                  <Video className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input 
+                    type="text"
+                    placeholder="Paste Real Zoom Link Here..."
+                    value={zoomLink}
+                    onChange={(e) => setZoomLink(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm font-semibold text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    className="flex-1 bg-[#0A2E1F] text-white rounded-xl h-11 font-bold text-xs uppercase tracking-widest shadow-md hover:bg-[#153e2d] transition-all disabled:opacity-50"
+                    onClick={handleConfirmZoom}
+                    disabled={isConfirmingZoom}
+                  >
+                    {isConfirmingZoom ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                    Confirm & Send Zoom
+                  </Button>
+                  
+                  {order.zoom_status === 'confirmed' && (
+                    <Button 
+                      variant="outline"
+                      className="rounded-xl h-11 px-4 border-slate-200 text-slate-600 hover:bg-slate-50"
+                      onClick={() => window.open(zoomLink, '_blank')}
+                    >
+                      <Zap className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-[10px] text-slate-400 font-medium leading-relaxed italic">
+                * Confirming will instantly notify the patient and provide them with the "Launch Zoom" button in their portal.
+              </p>
+            </CardContent>
+          </Card>
 
           {/* AI Scribe */}
           <Card className="border border-emerald-100 bg-gradient-to-br from-emerald-50/80 to-white shadow-sm overflow-hidden rounded-[1.5rem]">
