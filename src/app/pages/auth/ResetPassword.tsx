@@ -50,10 +50,10 @@ export function ResetPasswordPage() {
         <ArrowLeft className="h-4 w-4" /> Back to Home
       </a>
 
-      <div className="w-full max-w-[420px] space-y-6 pt-8">
-        <div className="flex flex-col items-center text-center space-y-8 mb-8">
+      <div className="w-full max-w-[420px] space-y-6 pt-4">
+        <div className="flex flex-col items-center text-center mb-6">
           <img src="/originallogo.png" alt="Peak Health" className="w-[260px] h-auto object-contain" />
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 -mt-3">
             <h1 className="text-[32px] text-[#0A3622] font-medium tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>
               Set new password
             </h1>
