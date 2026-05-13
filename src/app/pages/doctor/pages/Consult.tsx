@@ -530,13 +530,13 @@ export function DoctorConsultPage() {
     setIsDisqualifying(true);
     try {
       const newTimeline = order.timeline
-        ? [...order.timeline, { status: 'disqualified', date: new Date().toLocaleString(), reason: soapNotes.plan || "Clinical disqualification" }]
-        : [{ status: 'disqualified', date: new Date().toLocaleString() }];
+        ? [...order.timeline, { status: 'cancelled', date: new Date().toLocaleString(), reason: soapNotes.plan || "Clinical disqualification" }]
+        : [{ status: 'cancelled', date: new Date().toLocaleString() }];
 
       const { error } = await supabase
         .from('orders')
         .update({ 
-          status: 'disqualified',
+          status: 'cancelled',
           doctor_note: soapNotes.plan,
           timeline: newTimeline
         })
