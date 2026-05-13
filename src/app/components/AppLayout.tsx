@@ -81,95 +81,93 @@ export function AppLayout() {
   const displayRole = authRole?.replace('_', ' ').toUpperCase() || sidebarRole.toUpperCase();
 
   return (
-    <div className={cn(
-      "flex h-screen w-full overflow-hidden font-sans antialiased bg-white text-[#0A0D14]"
-    )}>
+    <div className="flex flex-col h-screen w-full overflow-hidden font-sans antialiased bg-white text-[#0A0D14]">
+      {/* FULL WIDTH HEADER (End-to-End) */}
+      <header className={cn(
+        "sticky top-0 z-50 flex w-full h-40 items-center border-b px-8 shadow-sm backdrop-blur-xl transition-all duration-300 shrink-0",
+        "border-slate-50 bg-white/95 text-[#0A0D14]",
+        scrolled && "h-24 shadow-xl shadow-emerald-900/5"
+      )}>
+        {/* Left Section: THE MASSIVE LOGO (Filling the left space) */}
+        <div className="flex items-center gap-8 flex-1 relative z-10">
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden h-12 w-12 rounded-xl hover:bg-slate-50 transition-all">
+                <Menu className="h-8 w-8 text-[#0a2e1f]" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-80 border-r-0 shadow-2xl bg-white border-slate-100">
+              <div className="sr-only">
+                <SheetTitle>Navigation Menu</SheetTitle>
+                <SheetDescription>Access all clinical and administrative portals</SheetDescription>
+              </div>
+              <Sidebar role={sidebarRole} onMobileClose={() => setIsMobileMenuOpen(false)} />
+            </SheetContent>
+          </Sheet>
+          
+          <Link to={`/${sidebarRole}`} className="flex items-center hover:opacity-80 transition-all duration-500 hover:scale-110 ml-0">
+            <img 
+              src="/PeakHealthLogo.png" 
+              alt="Peak Health" 
+              className={cn(
+                "h-32 sm:h-36 w-auto object-contain drop-shadow-md transition-all duration-500",
+                scrolled && "h-16 sm:h-20"
+              )}
+            />
+          </Link>
 
-      {/* Desktop Sidebar (Left) */}
-      <div className="hidden md:block h-full">
-        <Sidebar role={sidebarRole} />
-      </div>
-
-      <div className="flex flex-1 flex-col overflow-hidden relative">
-        {/* Header - Glassmorphic Design */}
-        <header className={cn(
-          "sticky top-0 z-50 flex w-full h-40 items-center border-b px-8 shadow-sm backdrop-blur-xl transition-all duration-300",
-          "border-slate-50 bg-white/95 text-[#0A0D14]",
-          scrolled && "h-24 shadow-xl shadow-emerald-900/5"
-        )}>
-          {/* Left Section: THE MASSIVE LOGO (Filling the left space) */}
-          <div className="flex items-center gap-8 flex-1 relative z-10">
-            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden h-12 w-12 rounded-xl hover:bg-slate-50 transition-all">
-                  <Menu className="h-8 w-8 text-[#0a2e1f]" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-80 border-r-0 shadow-2xl bg-white border-slate-100">
-                <div className="sr-only">
-                  <SheetTitle>Navigation Menu</SheetTitle>
-                  <SheetDescription>Access all clinical and administrative portals</SheetDescription>
-                </div>
-                <Sidebar role={sidebarRole} onMobileClose={() => setIsMobileMenuOpen(false)} />
-              </SheetContent>
-            </Sheet>
-            
-            <Link to={`/${sidebarRole}`} className="flex items-center hover:opacity-80 transition-all duration-500 hover:scale-110">
-              <img 
-                src="/PeakHealthLogo.png" 
-                alt="Peak Health" 
-                className={cn(
-                  "h-32 sm:h-36 w-auto object-contain drop-shadow-md transition-all duration-500",
-                  scrolled && "h-16 sm:h-20"
-                )}
-              />
-            </Link>
-
-            <div className="hidden xl:flex items-center gap-2 text-slate-300 ml-4">
-               <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
-                 <Home className="h-5 w-5 text-emerald-700" />
-               </div>
-               <ChevronLeft className="h-4 w-4 rotate-180 text-slate-200" />
-               <span className="text-[12px] font-black uppercase tracking-[0.3em] text-slate-400">Clinical Intelligence</span>
-            </div>
+          <div className="hidden xl:flex items-center gap-2 text-slate-300 ml-4">
+             <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
+               <Home className="h-5 w-5 text-emerald-700" />
+             </div>
+             <ChevronLeft className="h-4 w-4 rotate-180 text-slate-200" />
+             <span className="text-[12px] font-black uppercase tracking-[0.3em] text-slate-400">Clinical Intelligence</span>
           </div>
+        </div>
 
-          {/* Right Section: Actions & Profile */}
-          <div className="flex items-center gap-4 relative z-10">
+        {/* Right Section: Actions & Profile */}
+        <div className="flex items-center gap-4 relative z-10">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate(`/${sidebarRole}/notifications`)}
+            className="relative h-12 w-12 rounded-2xl group hover:bg-slate-50 border border-transparent hover:border-slate-100"
+          >
+            <Bell className="h-6 w-6 transition-colors text-slate-400 group-hover:text-[#0a2e1f]" />
+            {totalNotifications > 0 && (
+              <span className="absolute top-2.5 right-2.5 h-5 min-w-[1.25rem] px-1 rounded-full bg-[#ef4444] border-2 border-white text-[9px] font-black text-white flex items-center justify-center shadow-sm">
+                {totalNotifications}
+              </span>
+            )}
+          </Button>
+          
+          <div className="h-10 w-[1px] mx-2 hidden sm:block bg-slate-100" />
+
+          <div className="flex items-center gap-4 pl-2">
+            <div className="hidden sm:flex flex-col text-right">
+              <span className="text-[15px] font-black tracking-tight text-[#0A0D14]">{fullName}</span>
+              <span className="text-[10px] uppercase font-black tracking-[0.25em] text-emerald-600/70">
+                {sidebarRole === 'doctor' ? 'Clinical Provider' : sidebarRole === 'admin' ? 'Operator' : sidebarRole === 'superadmin' ? 'Authority' : 'Identity Verified'}
+              </span>
+            </div>
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => navigate(`/${sidebarRole}/notifications`)}
-              className="relative h-12 w-12 rounded-2xl group hover:bg-slate-50 border border-transparent hover:border-slate-100"
+              onClick={() => setShowLogoutConfirm(true)}
+              className="h-14 w-14 rounded-[1.25rem] transition-all bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 border border-transparent hover:border-red-100 shadow-sm active:scale-95"
             >
-              <Bell className="h-6 w-6 transition-colors text-slate-400 group-hover:text-[#0a2e1f]" />
-              {totalNotifications > 0 && (
-                <span className="absolute top-2.5 right-2.5 h-5 min-w-[1.25rem] px-1 rounded-full bg-[#ef4444] border-2 border-white text-[9px] font-black text-white flex items-center justify-center shadow-sm">
-                  {totalNotifications}
-                </span>
-              )}
+              <LogOut className="h-6 w-6" />
             </Button>
-            
-            <div className="h-10 w-[1px] mx-2 hidden sm:block bg-slate-100" />
-
-            <div className="flex items-center gap-4 pl-2">
-              <div className="hidden sm:flex flex-col text-right">
-                <span className="text-[15px] font-black tracking-tight text-[#0A0D14]">{fullName}</span>
-                <span className="text-[10px] uppercase font-black tracking-[0.25em] text-emerald-600/70">
-                  {sidebarRole === 'doctor' ? 'Clinical Provider' : sidebarRole === 'admin' ? 'Operator' : sidebarRole === 'superadmin' ? 'Authority' : 'Identity Verified'}
-                </span>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowLogoutConfirm(true)}
-                className="h-14 w-14 rounded-[1.25rem] transition-all bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 border border-transparent hover:border-red-100 shadow-sm active:scale-95"
-              >
-                <LogOut className="h-6 w-6" />
-              </Button>
-            </div>
           </div>
-        </header>
+        </div>
+      </header>
+
+      {/* MAIN CONTENT AREA (Sidebar + Content) */}
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Desktop Sidebar (Left) */}
+        <div className="hidden md:block h-full shrink-0 border-r border-slate-100">
+          <Sidebar role={sidebarRole} />
+        </div>
 
         <main 
           onScroll={onScroll}
@@ -188,6 +186,7 @@ export function AppLayout() {
           </div>
         )}
       </div>
+
       <LogoutConfirmation 
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
