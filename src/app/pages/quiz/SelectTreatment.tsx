@@ -53,16 +53,20 @@ export function SelectTreatmentPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] font-sans text-slate-900 pt-10 pb-24">
-      {/* Trust Banner */}
-      <div className="max-w-3xl mx-auto px-6 mb-8">
-        <div className="flex items-center justify-center gap-3 bg-white py-3 px-6 rounded-2xl border border-slate-100 shadow-sm">
+      {/* Header and Trust Banner */}
+      <div className="max-w-3xl mx-auto px-6 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm w-fit">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Home
+        </Link>
+        <div className="flex items-center justify-center gap-3 bg-white py-3 px-6 rounded-full border border-slate-100 shadow-sm w-fit">
           <div className="flex text-amber-400">
             {[1, 2, 3, 4, 5].map((i) => (
               <Star key={i} className="h-4 w-4 fill-current" />
             ))}
           </div>
           <p className="text-sm font-bold text-slate-700">
-            Trustpilot Excellent <span className="text-slate-400 font-medium">(10,000+ Reviews)</span>
+            Trustpilot Excellent <span className="text-slate-400 font-medium">(10,000+)</span>
           </p>
         </div>
       </div>

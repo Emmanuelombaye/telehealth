@@ -75,8 +75,14 @@ export function ReviewsPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] font-sans text-slate-900 pt-10 pb-32">
-      {/* Progress */}
+      {/* Header and Progress */}
       <div className="max-w-3xl mx-auto px-6 mb-12">
+        <div className="mb-6">
+          <Link to="/quiz/select-treatment" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm w-fit">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Options
+          </Link>
+        </div>
         <div className="flex items-center gap-4">
           <div className="h-1 flex-1 bg-emerald-600 rounded-full" />
           <div className="h-1 flex-1 bg-emerald-600 rounded-full" />

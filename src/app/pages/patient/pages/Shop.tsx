@@ -660,8 +660,8 @@ export function PatientShopPage() {
         <div className="flex justify-center mb-6">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
-        <button onClick={() => setStage("account_setup")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back
+        <button onClick={() => setStage("catalog")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Back to Catalog
         </button>
 
         {/* Basic Info Collection for Payment linking */}
