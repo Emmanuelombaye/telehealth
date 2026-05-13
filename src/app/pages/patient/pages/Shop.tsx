@@ -1064,9 +1064,8 @@ export function PatientShopPage() {
             Doctor-reviewed within hours · Custom-compounded by licensed pharmacies · 100% online from intake to refill.
           </p>
           <div className="flex flex-wrap items-center gap-2 mt-4 text-[11px] font-semibold">
-            <span className="px-2.5 py-1 rounded-full bg-white/70 text-[var(--brand-lavender-900)]">🇺🇸 HIPAA</span>
-            <span className="px-2.5 py-1 rounded-full bg-white/70 text-[var(--brand-lavender-900)]">🇪🇺 GDPR</span>
-            <span className="px-2.5 py-1 rounded-full bg-white/70 text-[var(--brand-lavender-900)]">Ships to 40+ countries</span>
+            <span className="px-2.5 py-1 rounded-full bg-white/70 text-[var(--brand-lavender-900)]">🇺🇸 USA Only</span>
+            <span className="px-2.5 py-1 rounded-full bg-white/70 text-[var(--brand-lavender-900)]">HIPAA Compliant</span>
           </div>
         </div>
       </div>
