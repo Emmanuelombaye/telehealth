@@ -1068,11 +1068,11 @@ export function DoctorConsultPage() {
               </Card>
 
             </div>
-          </div>    <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mt-6 bg-slate-50 py-2 rounded-lg">
-                Routing to: <span className="text-emerald-600">{order.pharmacy || "Network Pharmacy"}</span>
-              </p>
-            </CardContent>
-          </Card>
+          </div>
+
+          <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mt-6 bg-slate-50 py-2 rounded-lg">
+            Routing to: <span className="text-emerald-600">{order.pharmacy || "Network Pharmacy"}</span>
+          </p>
 
         </div>
       </div>
