@@ -15,6 +15,8 @@ const reviewData = {
       afterText: "Lost 45 lbs in 6 months",
       name: "Sarah M.",
       age: "42 years old",
+      beforeImg: "/generatedImages/image1-7.png",
+      afterImg: "/generatedImages/image1-8.png",
     },
     reviews: [
       { name: "Jessica T.", text: "This medication completely silenced my food noise. I've lost 30 pounds and feel like I have my life back.", stars: 5, time: "2 weeks ago" },
@@ -33,6 +35,8 @@ const reviewData = {
       afterText: "Sharp & Energized",
       name: "David L.",
       age: "55 years old",
+      beforeImg: "/generatedImages/image1-5.png",
+      afterImg: "/generatedImages/image1-6.png",
     },
     reviews: [
       { name: "Robert P.", text: "My afternoon brain fog is completely gone. I feel 10 years younger.", stars: 5, time: "3 weeks ago" },
@@ -51,6 +55,8 @@ const reviewData = {
       afterText: "Lean Muscle & High Energy",
       name: "Chris B.",
       age: "38 years old",
+      beforeImg: "/generatedImages/image1-9.png",
+      afterImg: "/generatedImages/image1-10.png",
     },
     reviews: [
       { name: "Marcus J.", text: "My sleep quality has skyrocketed and my recovery time after heavy lifts is cut in half.", stars: 5, time: "1 week ago" },
@@ -105,9 +111,13 @@ export function ReviewsPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {/* Before */}
             <div className="relative rounded-2xl overflow-hidden aspect-[4/5] bg-slate-100 group">
-              <div className="absolute inset-0 flex items-center justify-center text-slate-300 font-black text-2xl uppercase tracking-widest opacity-50">
-                [Image]
-              </div>
+              {data.beforeAfter.beforeImg ? (
+                <img src={data.beforeAfter.beforeImg} alt="Before" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-slate-300 font-black text-2xl uppercase tracking-widest opacity-50">
+                  [Image]
+                </div>
+              )}
               <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider text-slate-500 shadow-sm">
                 {data.beforeAfter.beforeText}
               </div>
@@ -115,9 +125,13 @@ export function ReviewsPage() {
             
             {/* After */}
             <div className={cn("relative rounded-2xl overflow-hidden aspect-[4/5] group", data.beforeAfter.imagePlaceholderBg)}>
-              <div className="absolute inset-0 flex items-center justify-center text-slate-300 font-black text-2xl uppercase tracking-widest opacity-50 mix-blend-multiply">
-                [Image]
-              </div>
+              {data.beforeAfter.afterImg ? (
+                <img src={data.beforeAfter.afterImg} alt="After" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-slate-300 font-black text-2xl uppercase tracking-widest opacity-50 mix-blend-multiply">
+                  [Image]
+                </div>
+              )}
               <div className="absolute top-4 left-4 bg-emerald-500 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 {data.beforeAfter.afterText}
