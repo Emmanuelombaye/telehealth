@@ -27,7 +27,20 @@ const defaultSchedule: Record<string, { enabled: boolean; start: string; end: st
 export function DoctorAvailabilityPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const [schedule, setSchedule] = useState(defaultSchedule);
+  const [tab, setTab] = useState<"schedule" | "bookings">("schedule");
+  const [copied, setCopied] = useState(false);
+  const [timezone, setTimezone] = useState("America/New_York");
+  const [bufferMins, setBufferMins] = useState("10");
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [saved, setSaved] = useState(false);
   const [consultTypes, setConsultTypes] = useState({ video: true, async: true });
+
+  const firstName = user?.user_metadata?.first_name || "Doctor";
+  const lastName = user?.user_metadata?.last_name || "Provider";
+  const bookingLink = `https://peakhealth.com/book/${firstName.toLowerCase()}-${lastName.toLowerCase()}`;
 
   // Load saved schedule from Supabase
   useEffect(() => {
