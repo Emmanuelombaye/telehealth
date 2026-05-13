@@ -57,10 +57,13 @@ export function DoctorAvailabilityPage() {
           .single();
 
         if (data) {
-          setSchedule(data.schedule || defaultSchedule);
+          const savedSchedule = data.schedule || defaultSchedule;
+          setSchedule(savedSchedule);
           setTimezone(data.timezone || "America/New_York");
           setBufferMins(data.buffer_mins?.toString() || "10");
+          // Support both legacy column and nested JSON structure
           if (data.consult_types) setConsultTypes(data.consult_types);
+          else if (savedSchedule.consult_types) setConsultTypes(savedSchedule.consult_types);
         }
       } catch (err) {
         console.warn("Schedule load error:", err);
@@ -101,10 +104,9 @@ export function DoctorAvailabilityPage() {
     try {
       const { error } = await supabase.from('doctor_schedules').upsert({
         doctor_id: user.id,
-        schedule,
+        schedule: { ...schedule, consult_types: consultTypes },
         timezone,
         buffer_mins: parseInt(bufferMins),
-        consult_types: consultTypes,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'doctor_id' });
 
