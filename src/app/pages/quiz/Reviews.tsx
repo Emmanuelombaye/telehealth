@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router";
 import { motion } from "framer-motion";
-import { Star, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Star, ArrowLeft, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "../../components/ui/shared";
 import { cn } from "../../components/ui/utils";
 

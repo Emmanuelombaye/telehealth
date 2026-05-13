@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Star, ShieldCheck, Activity, HeartPulse } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Star, ShieldCheck, Activity, HeartPulse } from "lucide-react";
 import { Button } from "../../components/ui/shared";
 import { cn } from "../../components/ui/utils";
 
