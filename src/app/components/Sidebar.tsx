@@ -17,7 +17,7 @@ import { usePatientStore } from "../../lib/patient-store";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 import { motion, AnimatePresence } from "framer-motion";
 
-type Role = "patient" | "doctor" | "admin" | "superadmin";
+type Role = "patient" | "doctor" | "admin" | "superadmin" | "affiliate";
 
 interface SidebarProps {
   role: Role;
@@ -84,6 +84,13 @@ const menuConfig: Record<Role, any[]> = {
     { icon: ShieldCheck, label: "Security", href: "/superadmin/security" },
     { icon: Settings, label: "Platform Settings", href: "/superadmin/settings" },
   ],
+  affiliate: [
+    { icon: Home, label: "Overview", href: "/affiliate" },
+    { icon: Share2, label: "My Referrals", href: "/affiliate/referrals" },
+    { icon: CreditCard, label: "Payouts", href: "/affiliate/payouts" },
+    { icon: ImageIcon, label: "Marketing Assets", href: "/affiliate/assets" },
+    { icon: User, label: "Profile", href: "/affiliate/settings" },
+  ],
 };
 
 const roleColors: Record<Role, string> = {
@@ -91,6 +98,7 @@ const roleColors: Record<Role, string> = {
   doctor: "bg-emerald-700",
   admin: "bg-emerald-800",
   superadmin: "bg-emerald-950",
+  affiliate: "bg-[#0A2E1F]",
 };
 
 export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
