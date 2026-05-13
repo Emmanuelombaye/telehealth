@@ -913,7 +913,16 @@ export function DoctorConsultPage() {
                     className={cn(
                       "w-full text-sm font-medium leading-relaxed border p-4 rounded-xl resize-none transition-all outline-none",
                       field === 'assessment'
-                        ? "bg-emerald-50/30 border-emerald-200 text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500          {/* STEP 5: DOCTOR DECISION MATRIX */}
+                        ? "bg-emerald-50/30 border-emerald-200 text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-28"
+                        : "bg-slate-50 border-slate-200 text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white h-24"
+                    )}
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* STEP 5: DOCTOR DECISION MATRIX */}
           <div className="lg:col-span-12">
             <div className="flex items-center gap-3 mb-4">
                <div className="h-8 w-8 rounded-full bg-[#0A2E1F] text-white flex items-center justify-center font-black text-sm">5</div>
