@@ -199,7 +199,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA]">
         <div className="flex flex-col items-center gap-4">
-          <img src="/originallogo.png" alt="Peak Health" className="h-12 object-contain opacity-80" />
+          <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-20 object-contain opacity-80" />
           <div className="flex items-center gap-3">
             <span className="h-5 w-5 border-2 border-slate-200 border-t-[#0A3622] rounded-full animate-spin" />
             <span className="text-sm font-medium tracking-wide text-slate-500">Preparing secure login...</span>
@@ -217,7 +217,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
       <div className="w-full max-w-[420px] space-y-6 pt-4">
         <div className="flex flex-col items-center text-center mb-6">
-          <img src="/originallogo.png" alt="Peak Health" className="w-[260px] h-auto object-contain -mb-8" />
+          <img src="/PeakHealthLogo.png" alt="Peak Health" className="w-[380px] h-auto object-contain -mb-12" />
           <div className="space-y-1.5 -mt-4">
             <h1 className="text-[32px] text-[#0A3622] font-medium tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>
               Welcome back
