@@ -84,7 +84,7 @@ export function AppLayout() {
     <div className="flex flex-col h-screen w-full overflow-hidden font-sans antialiased bg-white text-[#0A0D14]">
       {/* PROFESSIONAL END-TO-END HEADER (Executive Scale) */}
       <header className={cn(
-        "sticky top-0 z-50 flex w-full h-20 items-center border-b px-6 md:px-8 shadow-sm backdrop-blur-md transition-all duration-300 shrink-0",
+        "sticky top-0 z-50 flex w-full h-24 items-center border-b px-6 md:px-8 shadow-sm backdrop-blur-md transition-all duration-300 shrink-0",
         "border-slate-100 bg-white/95 text-[#0A0D14]",
         scrolled && "shadow-md shadow-emerald-950/5"
       )}>
@@ -122,7 +122,7 @@ export function AppLayout() {
             <img 
               src="/PeakHealthLogo.png" 
               alt="Peak Health" 
-              className="h-10 md:h-11 w-auto object-contain"
+              className="h-14 md:h-16 w-auto object-contain"
             />
           </Link>
         </div>
