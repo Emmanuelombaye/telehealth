@@ -192,13 +192,6 @@ export function AppLayout() {
         )}
       </div>
 
-        {sidebarRole === "patient" && (
-          <div className="md:hidden">
-            <BottomNav />
-          </div>
-        )}
-      </div>
-
       <LogoutConfirmation 
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
