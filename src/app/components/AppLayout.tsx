@@ -93,16 +93,16 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col overflow-hidden relative">
         {/* Header - Glassmorphic Design */}
         <header className={cn(
-          "sticky top-0 z-50 flex w-full h-32 items-center border-b px-8 shadow-sm backdrop-blur-xl transition-all duration-300",
+          "sticky top-0 z-50 flex w-full h-40 items-center border-b px-8 shadow-sm backdrop-blur-xl transition-all duration-300",
           "border-slate-50 bg-white/95 text-[#0A0D14]",
-          scrolled && "shadow-xl shadow-emerald-900/5 h-24"
+          scrolled && "h-24 shadow-xl shadow-emerald-900/5"
         )}>
-          {/* Left Section: Mobile Toggle & Breadcrumb Space */}
-          <div className="flex items-center gap-3 flex-1 relative z-10">
+          {/* Left Section: THE MASSIVE LOGO (Filling the left space) */}
+          <div className="flex items-center gap-8 flex-1 relative z-10">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden h-12 w-12 rounded-xl hover:bg-slate-50 transition-all">
-                  <Menu className="h-7 w-7 text-[#0a2e1f]" />
+                  <Menu className="h-8 w-8 text-[#0a2e1f]" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-80 border-r-0 shadow-2xl bg-white border-slate-100">
@@ -114,31 +114,28 @@ export function AppLayout() {
               </SheetContent>
             </Sheet>
             
-            <div className="hidden lg:flex items-center gap-2 text-slate-300">
-               <div className="bg-slate-50 p-2 rounded-lg">
-                 <Home className="h-4 w-4 text-slate-400" />
-               </div>
-               <ChevronLeft className="h-3 w-3 rotate-180" />
-               <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Clinical Command Center</span>
-            </div>
-          </div>
-
-          {/* Center Section: THE MEGA LOGO (3x Scale & Perfectly Centered) */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <Link to={`/${sidebarRole}`} className="flex items-center pointer-events-auto hover:opacity-80 transition-all duration-500 hover:scale-105">
+            <Link to={`/${sidebarRole}`} className="flex items-center hover:opacity-80 transition-all duration-500 hover:scale-110">
               <img 
                 src="/PeakHealthLogo.png" 
                 alt="Peak Health" 
                 className={cn(
-                  "h-24 sm:h-28 w-auto object-contain transition-all duration-300",
+                  "h-32 sm:h-36 w-auto object-contain drop-shadow-md transition-all duration-500",
                   scrolled && "h-16 sm:h-20"
                 )}
               />
             </Link>
+
+            <div className="hidden xl:flex items-center gap-2 text-slate-300 ml-4">
+               <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
+                 <Home className="h-5 w-5 text-emerald-700" />
+               </div>
+               <ChevronLeft className="h-4 w-4 rotate-180 text-slate-200" />
+               <span className="text-[12px] font-black uppercase tracking-[0.3em] text-slate-400">Clinical Intelligence</span>
+            </div>
           </div>
 
           {/* Right Section: Actions & Profile */}
-          <div className="flex items-center gap-3 flex-1 justify-end relative z-10">
+          <div className="flex items-center gap-4 relative z-10">
             <Button 
               variant="ghost" 
               size="icon" 
