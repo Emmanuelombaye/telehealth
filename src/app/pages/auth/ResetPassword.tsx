@@ -52,7 +52,7 @@ export function ResetPasswordPage() {
 
       <div className="w-full max-w-[420px] space-y-6 pt-8">
         <div className="flex flex-col items-center text-center space-y-8 mb-8">
-          <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+          <img src="/originallogo.png" alt="Peak Health" className="h-24 object-contain" />
           <div className="space-y-1.5">
             <h1 className="text-[32px] text-[#0A3622] font-medium tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>
               Set new password
