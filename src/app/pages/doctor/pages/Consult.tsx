@@ -522,6 +522,39 @@ export function DoctorConsultPage() {
     }
   };
 
+  const handleDisqualify = async () => {
+    if (!order || isDisqualifying) return;
+    const confirmed = window.confirm("Are you sure you want to disqualify this patient? This will trigger a refund request and notify the patient.");
+    if (!confirmed) return;
+
+    setIsDisqualifying(true);
+    try {
+      const newTimeline = order.timeline
+        ? [...order.timeline, { status: 'disqualified', date: new Date().toLocaleString(), reason: soapNotes.plan || "Clinical disqualification" }]
+        : [{ status: 'disqualified', date: new Date().toLocaleString() }];
+
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'disqualified',
+          doctor_note: soapNotes.plan,
+          timeline: newTimeline
+        })
+        .eq('id', order.id);
+      
+      if (!error) {
+        showToast('error', `✕ Patient Disqualified. Refund process initiated.`);
+        setTimeout(() => navigate('/doctor/queue'), 1500);
+      } else {
+        showToast('error', `Failed to disqualify: ${error.message}`);
+      }
+    } catch (err: any) {
+      showToast('error', `Error: ${err.message}`);
+    } finally {
+      setIsDisqualifying(false);
+    }
+  };
+
   const handleConfirmZoom = async () => {
     if (!order || isConfirmingZoom) return;
     if (!zoomLink) {
@@ -880,78 +913,153 @@ export function DoctorConsultPage() {
                     className={cn(
                       "w-full text-sm font-medium leading-relaxed border p-4 rounded-xl resize-none transition-all outline-none",
                       field === 'assessment'
-                        ? "bg-emerald-50/30 border-emerald-200 text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-28"
-                        : "bg-slate-50 border-slate-200 text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white h-24"
-                    )}
-                  />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* E-Prescribing */}
-          <Card className="border-2 border-emerald-500/20 bg-white shadow-xl overflow-hidden rounded-[1.5rem] relative">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600" />
-            <div className="p-6 border-b border-emerald-50 flex items-center gap-3 bg-emerald-50/30">
-              <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <Pill className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-[#0A2E1F] uppercase tracking-wider text-sm">E-Prescribing</h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">Secure Dispatch</p>
-              </div>
+                        ? "bg-emerald-50/30 border-emerald-200 text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500          {/* STEP 5: DOCTOR DECISION MATRIX */}
+          <div className="lg:col-span-12">
+            <div className="flex items-center gap-3 mb-4">
+               <div className="h-8 w-8 rounded-full bg-[#0A2E1F] text-white flex items-center justify-center font-black text-sm">5</div>
+               <h2 className="text-lg font-bold text-[#0A2E1F] uppercase tracking-widest">Doctor Decision</h2>
             </div>
-            <CardContent className="p-6 space-y-6">
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Medication</p>
-                  <input 
-                    value={medication}
-                    onChange={(e) => setMedication(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Instructions</p>
-                  <textarea 
-                    value={dosage}
-                    onChange={(e) => setDosage(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-[#0A2E1F] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all h-24 resize-none"
-                    placeholder="e.g. Inject three units weekly"
-                  />
-                </div>
-              </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               
-              <div className="space-y-3 pt-4 border-t border-slate-100">
-                <Button
-                  onClick={handleFinalize}
-                  disabled={isFinalizing || isRequestingVideo || isDisqualifying}
-                  className="w-full rounded-xl bg-[#0A2E1F] hover:bg-[#153e2d] text-white h-14 font-bold uppercase text-xs sm:text-sm tracking-widest shadow-lg shadow-emerald-900/20 transition-all hover:-translate-y-0.5"
-                >
-                  {isFinalizing && <Loader2 className="h-5 w-5 animate-spin mr-2" />}
-                  Sign & Dispatch to Pharmacy
-                </Button>
+              {/* PATH A: QUALIFIES */}
+              <Card className={cn(
+                "border-2 transition-all duration-300 overflow-hidden",
+                "border-emerald-100 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-900/10"
+              )}>
+                <div className="p-4 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
+                   <div className="flex items-center gap-2">
+                     <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
+                       <CheckCircle2 className="h-5 w-5" />
+                     </div>
+                     <span className="font-black text-xs text-emerald-900 uppercase tracking-widest">Patient Qualifies</span>
+                   </div>
+                   <Badge className="bg-emerald-600 text-white border-none text-[9px]">RECOMMENDED</Badge>
+                </div>
+                <CardContent className="p-5 space-y-4">
+                  <ul className="space-y-2 mb-6">
+                    {["Approve patient", "Select medication & dose", "Send to pharmacy"].map(li => (
+                      <li key={li} className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                        <div className="h-1 w-1 rounded-full bg-emerald-400" /> {li}
+                      </li>
+                    ))}
+                  </ul>
 
-                <Button
-                  variant="outline"
-                  onClick={handleRequestVideoCall}
-                  disabled={isFinalizing || isRequestingVideo || isDisqualifying}
-                  className="w-full rounded-xl border-slate-200 text-slate-700 h-12 font-bold uppercase text-xs tracking-widest hover:bg-slate-50 hover:text-[#0A2E1F] transition-all gap-2"
-                >
-                  {isRequestingVideo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />}
-                  Request Video Visit
-                </Button>
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Medication</label>
+                      <input 
+                        value={medication}
+                        onChange={(e) => setMedication(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-[#0A2E1F] outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Instructions</label>
+                      <textarea 
+                        value={dosage}
+                        onChange={(e) => setDosage(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-[#0A2E1F] outline-none focus:border-emerald-500 h-20 resize-none"
+                      />
+                    </div>
+                    <Button 
+                      onClick={handleFinalize}
+                      disabled={isFinalizing || isRequestingVideo || isDisqualifying}
+                      className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-900/10"
+                    >
+                      {isFinalizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pill className="h-4 w-4 mr-2" />}
+                      Approve & Prescribe
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
-                <Button
-                  variant="ghost"
-                  onClick={handleDisqualify}
-                  disabled={isFinalizing || isRequestingVideo || isDisqualifying}
-                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 h-10 rounded-xl font-bold uppercase text-xs tracking-widest transition-all mt-2"
-                >
-                  {isDisqualifying ? "Processing..." : "Disqualify Patient & Refund"}
-                </Button>
-              </div>
-              <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mt-6 bg-slate-50 py-2 rounded-lg">
+              {/* PATH B: NEEDS VIDEO */}
+              <Card className={cn(
+                "border-2 transition-all duration-300 overflow-hidden",
+                "border-amber-100 hover:border-amber-500 hover:shadow-xl hover:shadow-amber-900/10"
+              )}>
+                <div className="p-4 bg-amber-50 border-b border-amber-100 flex items-center justify-between">
+                   <div className="flex items-center gap-2">
+                     <div className="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center text-white">
+                       <Video className="h-4 w-4" />
+                     </div>
+                     <span className="font-black text-xs text-amber-900 uppercase tracking-widest">Needs Video Visit</span>
+                   </div>
+                </div>
+                <CardContent className="p-5 space-y-4">
+                  <ul className="space-y-2 mb-6">
+                    {["More info / safety concern", "Request video call", "Send availability to patient"].map(li => (
+                      <li key={li} className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                        <div className="h-1 w-1 rounded-full bg-amber-400" /> {li}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="pt-4 border-t border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Message to Patient</p>
+                    <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-100 text-[11px] font-medium text-amber-900 leading-relaxed mb-4 italic">
+                      "I need a brief video consultation to discuss your medical history before I can safely issue a prescription."
+                    </div>
+                    <Button 
+                      variant="outline"
+                      onClick={handleRequestVideoCall}
+                      disabled={isFinalizing || isRequestingVideo || isDisqualifying}
+                      className="w-full h-12 rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50 font-black uppercase text-xs tracking-widest"
+                    >
+                      {isRequestingVideo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4 mr-2" />}
+                      Request Video Call
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* PATH C: DISQUALIFIES */}
+              <Card className={cn(
+                "border-2 transition-all duration-300 overflow-hidden",
+                "border-red-100 hover:border-red-500 hover:shadow-xl hover:shadow-red-900/10"
+              )}>
+                <div className="p-4 bg-red-50 border-b border-red-100 flex items-center justify-between">
+                   <div className="flex items-center gap-2">
+                     <div className="h-8 w-8 rounded-full bg-red-500 flex items-center justify-center text-white">
+                       <XCircle className="h-5 w-5" />
+                     </div>
+                     <span className="font-black text-xs text-red-900 uppercase tracking-widest">Patient Disqualifies</span>
+                   </div>
+                </div>
+                <CardContent className="p-5 space-y-4">
+                  <ul className="space-y-2 mb-6">
+                    {["Not eligible / contraindicated", "Trigger refund", "Email sent to patient"].map(li => (
+                      <li key={li} className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                        <div className="h-1 w-1 rounded-full bg-red-400" /> {li}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="pt-4 border-t border-slate-100">
+                    <div className="bg-red-50/50 p-4 rounded-xl border border-red-100 mb-6">
+                       <p className="text-[10px] font-black text-red-900 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                         <AlertCircle className="h-3 w-3" /> Auto-Refund Enabled
+                       </p>
+                       <p className="text-[11px] text-red-700 leading-relaxed font-medium">
+                         Selecting this will cancel the order and place a refund request with Stripe.
+                       </p>
+                    </div>
+                    <Button 
+                      variant="ghost"
+                      onClick={handleDisqualify}
+                      disabled={isFinalizing || isRequestingVideo || isDisqualifying}
+                      className="w-full h-12 rounded-xl text-red-600 hover:bg-red-50 font-black uppercase text-xs tracking-widest"
+                    >
+                      {isDisqualifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
+                      Disqualify & Refund
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+            </div>
+          </div>    <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mt-6 bg-slate-50 py-2 rounded-lg">
                 Routing to: <span className="text-emerald-600">{order.pharmacy || "Network Pharmacy"}</span>
               </p>
             </CardContent>
