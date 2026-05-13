@@ -12,6 +12,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
@@ -85,7 +86,10 @@ export function AuthPage({ portal }: { portal: Portal }) {
     }
 
     if (!email || !password) { setError("Please enter your credentials."); return; }
-    if (mode === 'signup' && (!firstName || !lastName)) { setError("Please enter your full name."); return; }
+    if (mode === 'signup') {
+      if (!firstName || !lastName) { setError("Please enter your full name."); return; }
+      if (password !== confirmPassword) { setError("Passwords do not match."); return; }
+    }
     
     setLoading(true);
     setError(null);
@@ -308,6 +312,23 @@ export function AuthPage({ portal }: { portal: Portal }) {
                     className="absolute right-4 top-[15px] text-[#A0B3A8] hover:text-[#6A8074] transition-colors">
                     {showPassword ? <EyeOff className="h-[16px] w-[16px]" /> : <Eye className="h-[16px] w-[16px]" />}
                   </button>
+                </div>
+              </div>
+            )}
+
+            {mode === 'signup' && (
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397]">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-[15px] h-[16px] w-[16px] text-[#A0B3A8]" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full rounded-[14px] pl-[42px] pr-10 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800 font-medium tracking-[0.2em]"
+                    placeholder="••••••••"
+                  />
                 </div>
               </div>
             )}
