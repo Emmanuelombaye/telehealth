@@ -211,9 +211,9 @@ export function AuthPage({ portal }: { portal: Portal }) {
         <ArrowLeft className="h-4 w-4" /> Back to Home
       </a>
 
-      <div className="w-full max-w-[420px] space-y-6">
-        <div className="flex flex-col items-center text-center space-y-6 mb-6">
-          <img src="/originallogo.png" alt="Peak Health" className="h-[46px] object-contain" />
+      <div className="w-full max-w-[420px] space-y-6 pt-8">
+        <div className="flex flex-col items-center text-center space-y-8 mb-8">
+          <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
           <div className="space-y-1.5">
             <h1 className="text-[32px] text-[#0A3622] font-medium tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>
               Welcome back
