@@ -1,6 +1,7 @@
 import { HeroSection } from "./landing/HeroSection";
 import { TrustBar } from "./landing/TrustBar";
 import { TreatmentsSection } from "./landing/TreatmentsSection";
+import { BioOptimizationSection } from "./landing/BioOptimizationSection";
 import { HowItWorksSection } from "./landing/HowItWorksSection";
 import { BeforeAfterSection } from "./landing/BeforeAfterSection";
 import { TestimonialsSection } from "./landing/TestimonialsSection";
@@ -13,6 +14,7 @@ export function LandingPage() {
       <HeroSection />
       <TrustBar />
       <TreatmentsSection />
+      <BioOptimizationSection />
       <HowItWorksSection />
       <BeforeAfterSection />
       <TestimonialsSection />
