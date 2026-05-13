@@ -84,16 +84,16 @@ export function AppLayout() {
     <div className="flex flex-col h-screen w-full overflow-hidden font-sans antialiased bg-white text-[#0A0D14]">
       {/* PROFESSIONAL END-TO-END HEADER (Executive Scale) */}
       <header className={cn(
-        "sticky top-0 z-50 flex w-full h-24 items-center border-b px-6 md:px-8 shadow-sm backdrop-blur-md transition-all duration-300 shrink-0",
+        "sticky top-0 z-50 flex w-full h-32 items-center border-b px-8 md:px-12 shadow-sm backdrop-blur-md transition-all duration-300 shrink-0",
         "border-slate-100 bg-white/95 text-[#0A0D14]",
-        scrolled && "shadow-md shadow-emerald-950/5"
+        scrolled && "h-20 shadow-md shadow-emerald-950/5"
       )}>
         {/* Left Section: Context & Navigation */}
-        <div className="flex items-center gap-6 flex-1 relative z-10">
+        <div className="flex items-center gap-8 flex-1 relative z-10">
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden h-10 w-10 rounded-lg hover:bg-slate-50 transition-all">
-                <Menu className="h-6 w-6 text-slate-600" />
+              <Button variant="ghost" size="icon" className="md:hidden h-12 w-12 rounded-xl hover:bg-slate-50 transition-all">
+                <Menu className="h-8 w-8 text-slate-600" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-80 border-r-0 shadow-2xl bg-white">
@@ -105,24 +105,27 @@ export function AppLayout() {
             </SheetContent>
           </Sheet>
           
-          <div className="hidden lg:flex items-center gap-3">
-             <div className="bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
-               <Activity className="h-4 w-4 text-emerald-700" />
+          <div className="hidden lg:flex items-center gap-4">
+             <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100/50">
+               <Activity className="h-5 w-5 text-emerald-700" />
              </div>
              <div className="flex flex-col">
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/60 leading-tight">Clinical Portal</span>
-               <span className="text-[13px] font-bold text-slate-400">Peak Health Center</span>
+               <span className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-600/60 leading-tight">Clinical Operations</span>
+               <span className="text-[15px] font-bold text-slate-400">Peak Health Center</span>
              </div>
           </div>
         </div>
 
-        {/* Center Section: BRAND IDENTITY (Sophisticated Scale) */}
+        {/* Center Section: BRAND IDENTITY (Bold High-Luxe Scale) */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <Link to={`/${sidebarRole}`} className="flex items-center pointer-events-auto hover:opacity-80 transition-all duration-300">
             <img 
               src="/PeakHealthLogo.png" 
               alt="Peak Health" 
-              className="h-14 md:h-16 w-auto object-contain"
+              className={cn(
+                "h-20 md:h-24 w-auto object-contain transition-all duration-300",
+                scrolled && "h-14"
+              )}
             />
           </Link>
         </div>
