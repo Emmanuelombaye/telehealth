@@ -48,6 +48,7 @@ import { DoctorImagingPage } from "./pages/doctor/pages/Imaging";
 import { DoctorReferralsPage } from "./pages/doctor/pages/Referrals";
 import { DoctorBillingPage } from "./pages/doctor/pages/Billing";
 import { DoctorEducationPage } from "./pages/doctor/pages/Education";
+import { DoctorNotificationsPage } from "./pages/doctor/pages/Notifications";
 
 // Admin pages
 import { AdminPatientsPage } from "./pages/admin/pages/Patients";
@@ -186,6 +187,7 @@ export const router = createBrowserRouter([
               { path: "referrals", Component: DoctorReferralsPage },
               { path: "billing", Component: DoctorBillingPage },
               { path: "education", Component: DoctorEducationPage },
+              { path: "notifications", Component: DoctorNotificationsPage },
             ],
           },
 
@@ -209,6 +211,7 @@ export const router = createBrowserRouter([
               { path: "affiliates", Component: AdminAffiliatesPage },
               { path: "users", Component: AdminUsersPage },
               { path: "settings", Component: AdminSettingsPage },
+              { path: "notifications", Component: DoctorNotificationsPage },
             ],
           },
 
@@ -228,6 +231,7 @@ export const router = createBrowserRouter([
               { path: "orders", Component: AdminOrdersPage }, // Reusing the high-fidelity orders view for SuperAdmin
               { path: "products", Component: AdminProductsPage },
               { path: "settings", Component: AdminSettingsPage },
+              { path: "notifications", Component: DoctorNotificationsPage },
             ],
           },
 

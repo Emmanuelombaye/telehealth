@@ -139,7 +139,7 @@ export function AppLayout() {
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => navigate("/patient/notifications")}
+              onClick={() => navigate(`/${sidebarRole}/notifications`)}
               className="relative h-12 w-12 rounded-2xl group hover:bg-slate-50 border border-transparent hover:border-slate-100"
             >
               <Bell className="h-6 w-6 transition-colors text-slate-400 group-hover:text-[#0a2e1f]" />
