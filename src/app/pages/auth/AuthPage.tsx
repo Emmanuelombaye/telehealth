@@ -2,21 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuthStore, Role } from "../../../lib/auth-store";
-import { Lock, Mail, AlertCircle, Stethoscope, Shield, User, Eye, EyeOff, ArrowLeft, KeyRound, Building2, Heart } from "lucide-react";
+import { Lock, Mail, AlertCircle, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 type Portal = 'patient' | 'doctor' | 'admin' | 'superadmin';
 
-// Portal navigation data for the quick-switch section
-const PORTAL_NAV: { key: Portal; label: string; path: string; icon: React.ReactNode; color: string; activeColor: string }[] = [
-  { key: 'patient',    label: 'Patient',    path: '/patient/login',    icon: <Heart className="h-3.5 w-3.5" />,       color: 'text-emerald-400/70 hover:text-emerald-400 hover:bg-emerald-500/10',   activeColor: 'text-emerald-400 bg-emerald-500/20 ring-1 ring-emerald-500/30' },
-  { key: 'doctor',     label: 'Provider',   path: '/doctor/login',     icon: <Stethoscope className="h-3.5 w-3.5" />, color: 'text-blue-400/70 hover:text-blue-400 hover:bg-blue-500/10',             activeColor: 'text-blue-400 bg-blue-500/20 ring-1 ring-blue-500/30' },
-  { key: 'admin',      label: 'Admin',      path: '/admin/login',      icon: <Building2 className="h-3.5 w-3.5" />,   color: 'text-violet-400/70 hover:text-violet-400 hover:bg-violet-500/10',       activeColor: 'text-violet-400 bg-violet-500/20 ring-1 ring-violet-500/30' },
-  { key: 'superadmin', label: 'SuperAdmin', path: '/superadmin/login', icon: <KeyRound className="h-3.5 w-3.5" />,    color: 'text-red-400/70 hover:text-red-400 hover:bg-red-500/10',               activeColor: 'text-red-400 bg-red-500/20 ring-1 ring-red-500/30' },
-];
-
-
 export function AuthPage({ portal }: { portal: Portal }) {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot_password'>('login');
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,6 +16,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const navigate = useNavigate();
   const initialize = useAuthStore(state => state.initialize);
   const cleanupDone = useRef(false);
@@ -36,18 +28,13 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
     async function cleanup() {
       try {
-        // 1. Explicitly clear local dev roles
         localStorage.removeItem('peak_health_dev_role');
-        
-        // 2. Check for existing session first - if none, we skip sign out (faster)
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          // Only sign out if there's actually someone logged in
           await supabase.auth.signOut();
-          await initialize(null); // Explicitly pass null to clear
+          await initialize(null);
         } else {
-          // 3. Re-initialize auth store with null session (already fetched)
           await initialize(null);
         }
       } catch (err) {
@@ -57,10 +44,8 @@ export function AuthPage({ portal }: { portal: Portal }) {
       }
     }
     cleanup();
-  }, [initialize]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialize]);
 
-  // Portal target path — always go to the portal the user is logging into
-  // Added cache-buster to prevent unusual redirection/caching between portals
   const portalTarget = (p: Portal) => {
     const buster = `?v=${Date.now()}`;
     switch (p) {
@@ -71,23 +56,48 @@ export function AuthPage({ portal }: { portal: Portal }) {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setError("Please enter your email address to reset your password.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (resetError) throw resetError;
+      setSuccessMsg("If this email exists, a password reset link has been sent.");
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === 'forgot_password') {
+      return handleForgotPassword(e);
+    }
+
     if (!email || !password) { setError("Please enter your credentials."); return; }
     if (mode === 'signup' && (!firstName || !lastName)) { setError("Please enter your full name."); return; }
     
     setLoading(true);
     setError(null);
+    setSuccessMsg(null);
 
     try {
       if (mode === 'login') {
-        // ── Step 1: Always attempt real Supabase sign-in first ──
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: email.trim().toLowerCase(),
           password,
         });
 
-        // ── Step 2: Define Staff/Bypass Roles ──
         const staffAccounts: Record<string, { role: Role; password?: string }> = {
           'doctor@peakbodyco.com':   { role: 'doctor' },
           'admin@peakbodyco.com':    { role: 'brand_admin' },
@@ -96,7 +106,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
         const staffEntry = staffAccounts[email.toLowerCase()];
 
         if (signInError) {
-          // If login fails, check if it's a staff account we should bypass (for dev/testing)
           if (staffEntry) {
             console.warn('[Auth] Real login failed, using dev override for staff:', email);
             localStorage.setItem('peak_health_dev_role', staffEntry.role as string);
@@ -108,20 +117,15 @@ export function AuthPage({ portal }: { portal: Portal }) {
         }
         
         if (data.user) {
-          // ── Step 3: Handle Successful Login ──
           if (staffEntry) {
-            // Force the staff role even if metadata differs
             localStorage.setItem('peak_health_dev_role', staffEntry.role as string);
           } else {
-            // Normal user — clear any previous dev bypasses
             localStorage.removeItem('peak_health_dev_role');
           }
 
           await initialize();
           const role = useAuthStore.getState().role;
           
-          // ── Step 4: Portal Access Control ──
-          // Allow super_admin anywhere, otherwise restrict by portal
           if (role !== 'super_admin') {
             if (portal === 'superadmin') {
               setError("Access denied. Super Admin portal only.");
@@ -143,15 +147,13 @@ export function AuthPage({ portal }: { portal: Portal }) {
             }
           }
           
-          // ── Step 5: Navigate to THIS portal ──
           if (role === 'super_admin') {
             navigate('/superadmin', { replace: true });
           } else {
             navigate(portalTarget(portal), { replace: true });
           }
         }
-      } else {
-        // ── Sign Up Flow ──
+      } else if (mode === 'signup') {
         const portalRole = 
           portal === 'doctor' ? 'doctor' : 
           portal === 'admin' ? 'brand_admin' : 
@@ -177,7 +179,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
             await initialize();
             navigate(portalTarget(portal), { replace: true });
           } else {
-            setError("Account created! Please check your email for a confirmation link.");
+            setSuccessMsg("Account created! Please check your email for a confirmation link.");
             setMode('login');
           }
         }
@@ -189,78 +191,14 @@ export function AuthPage({ portal }: { portal: Portal }) {
     }
   };
 
-  // ─── Portal-specific visual configurations ───
-  const configs = {
-    patient: {
-      bg: "bg-gradient-to-br from-[#f3eeff] via-[#F2FFF8] to-[#D6F0FF]",
-      card: "bg-white/90 backdrop-blur-xl border border-white/60 shadow-2xl",
-      accent: "bg-emerald-600 hover:bg-emerald-700",
-      ring: "focus:border-emerald-500",
-      iconBg: "bg-emerald-100",
-      iconColor: "text-emerald-600",
-      icon: <User className="h-8 w-8" />,
-      title: "Patient Portal",
-      subtitle: "Sign in to access your prescriptions, orders, and care team",
-      badge: "🏥 HIPAA Secure",
-      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    },
-    doctor: {
-      bg: "bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900",
-      card: "bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl",
-      accent: "bg-blue-500 hover:bg-blue-600",
-      ring: "focus:border-blue-400",
-      iconBg: "bg-blue-500/20",
-      iconColor: "text-blue-300",
-      icon: <Stethoscope className="h-8 w-8" />,
-      title: "Provider Portal",
-      subtitle: "Clinical access for licensed medical personnel only",
-      badge: "🔒 Authorized Access",
-      badgeClass: "bg-blue-500/20 text-blue-200 border-blue-500/30",
-    },
-    admin: {
-      bg: "bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-900",
-      card: "bg-white/8 backdrop-blur-xl border border-white/15 shadow-2xl",
-      accent: "bg-violet-600 hover:bg-violet-700",
-      ring: "focus:border-violet-400",
-      iconBg: "bg-violet-500/20",
-      iconColor: "text-violet-300",
-      icon: <Shield className="h-8 w-8" />,
-      title: "Admin Portal",
-      subtitle: "Brand management and operations — authorized personnel only",
-      badge: "⚙️ Staff Only",
-      badgeClass: "bg-violet-500/20 text-violet-200 border-violet-500/30",
-    },
-    superadmin: {
-      bg: "bg-gradient-to-br from-red-950 via-slate-950 to-slate-900",
-      card: "bg-white/8 backdrop-blur-xl border border-red-500/20 shadow-2xl",
-      accent: "bg-red-600 hover:bg-red-700",
-      ring: "focus:border-red-400",
-      iconBg: "bg-red-500/20",
-      iconColor: "text-red-400",
-      icon: <KeyRound className="h-8 w-8" />,
-      title: "System Access",
-      subtitle: "Master system administration — restricted",
-      badge: "🔐 Top Secret",
-      badgeClass: "bg-red-500/20 text-red-300 border-red-500/30",
-    },
-  };
-
-  const c = configs[portal];
-  const isDark = portal !== 'patient';
-  const inputCls = isDark
-    ? `w-full rounded-xl pl-10 pr-10 py-3 text-sm border bg-white/10 border-white/20 text-white placeholder-white/40 focus:outline-none ${c.ring} transition-colors`
-    : `w-full rounded-xl pl-10 pr-10 py-3 text-sm border border-gray-200 bg-white focus:outline-none ${c.ring} transition-colors text-slate-800`;
-  const labelCls = isDark ? "text-[11px] font-bold uppercase tracking-wide text-white/50 mb-1 block" : "text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1 block";
-
-  // Show loading while cleaning up old session
   if (!ready) {
     return (
-      <div className={`fixed inset-0 flex items-center justify-center ${c.bg}`}>
+      <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA]">
         <div className="flex flex-col items-center gap-4">
-          <img src="/originallogo.png" alt="Peak Health" className="h-14 object-contain opacity-80" />
+          <img src="/originallogo.png" alt="Peak Health" className="h-12 object-contain opacity-80" />
           <div className="flex items-center gap-3">
-            <span className="h-5 w-5 border-2 border-white/20 border-t-emerald-400 rounded-full animate-spin" />
-            <span className={`text-sm font-medium tracking-wide ${isDark ? 'text-white/50' : 'text-slate-400'}`}>Preparing secure login...</span>
+            <span className="h-5 w-5 border-2 border-slate-200 border-t-[#0A3622] rounded-full animate-spin" />
+            <span className="text-sm font-medium tracking-wide text-slate-500">Preparing secure login...</span>
           </div>
         </div>
       </div>
@@ -268,192 +206,158 @@ export function AuthPage({ portal }: { portal: Portal }) {
   }
 
   return (
-    <div className={`fixed inset-0 flex items-center justify-center ${c.bg} p-4 overflow-auto`}>
-      {/* Back to home */}
-      <a href="/" className={`absolute top-6 left-6 flex items-center gap-2 text-xs font-bold ${isDark ? 'text-white/40 hover:text-white/80' : 'text-slate-400 hover:text-slate-700'} transition-colors`}>
-        <ArrowLeft className="h-4 w-4" /> Back to Peak Health
+    <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA] p-4 overflow-auto font-sans">
+      <a href="/" className="absolute top-6 left-6 flex items-center gap-2 text-xs font-bold text-[#8CA397] hover:text-[#0A3622] transition-colors">
+        <ArrowLeft className="h-4 w-4" /> Back to Home
       </a>
 
-      <div className="w-full max-w-md space-y-5">
-        {/* Logo */}
-        <div className="flex justify-center">
-          <img src="/originallogo.png" alt="Peak Health" className="h-28 object-contain" />
+      <div className="w-full max-w-[420px] space-y-6">
+        <div className="flex flex-col items-center text-center space-y-6 mb-6">
+          <img src="/originallogo.png" alt="Peak Health" className="h-[46px] object-contain" />
+          <div className="space-y-1.5">
+            <h1 className="text-[32px] text-[#0A3622] font-medium tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>
+              Welcome back
+            </h1>
+            <p className="text-[14px] text-[#6A8074]">
+              Secure access for clinicians and patients.
+            </p>
+          </div>
         </div>
 
-        {/* Portal Card */}
-        <div className={`rounded-3xl p-8 ${c.card}`}>
-          {/* Icon + Title */}
-          <div className="text-center mb-6">
-            <div className={`inline-flex items-center justify-center h-16 w-16 rounded-2xl ${c.iconBg} ${c.iconColor} mb-4`}>
-              {c.icon}
-            </div>
-            <h1 className={`text-2xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{c.title}</h1>
-            <p className={`text-sm mt-1 ${isDark ? 'text-white/50' : 'text-slate-500'}`}>{c.subtitle}</p>
-            <span className={`inline-block mt-3 text-[10px] font-bold px-3 py-1 rounded-full border ${c.badgeClass}`}>{c.badge}</span>
-          </div>
-
-          <form onSubmit={handleAuth} className="space-y-4">
-            {/* Mode Switcher */}
-            <div className={`flex p-1 rounded-xl mb-4 ${isDark ? 'bg-white/5' : 'bg-slate-100'}`}>
-              <button 
-                type="button"
-                onClick={() => setMode('login')}
-                className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'login' ? (isDark ? 'bg-white/15 shadow-sm text-white' : 'bg-white shadow-sm text-slate-900') : (isDark ? 'text-white/40 hover:text-white/70' : 'text-slate-500 hover:text-slate-700')}`}
-              >
-                Login
-              </button>
-              <button 
-                type="button"
-                onClick={() => setMode('signup')}
-                className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'signup' ? (isDark ? 'bg-white/15 shadow-sm text-white' : 'bg-white shadow-sm text-slate-900') : (isDark ? 'text-white/40 hover:text-white/70' : 'text-slate-500 hover:text-slate-700')}`}
-              >
-                Create Account
-              </button>
-            </div>
-
-            {/* Error / Success */}
+        <div className="bg-white rounded-[24px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60">
+          <form onSubmit={handleAuth} className="space-y-5">
             {error && (
-              <div className={`flex flex-col gap-2 p-3 rounded-xl text-sm ${error.includes('created') ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border border-red-500/30 text-red-300'}`}>
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <p>{error}</p>
-                </div>
-                {error === "Invalid login credentials" && (
-                  <p className="text-[10px] font-bold opacity-80 pl-6">
-                    If this is a new account, use the 
-                    <button type="button" onClick={() => setMode('signup')} className="underline ml-1">Create Account</button> tab first.
-                  </p>
-                )}
+              <div className="flex items-start gap-2 p-3 rounded-[14px] text-sm bg-red-50 border border-red-100 text-red-600">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <p>{error}</p>
+              </div>
+            )}
+            {successMsg && (
+              <div className="flex items-start gap-2 p-3 rounded-[14px] text-sm bg-emerald-50 border border-emerald-100 text-emerald-700">
+                <p>{successMsg}</p>
               </div>
             )}
 
-            {/* Name Fields for Signup */}
             {mode === 'signup' && (
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>First Name</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397]">First Name</label>
                   <input
                     type="text"
                     value={firstName}
                     onChange={e => setFirstName(e.target.value)}
                     required
-                    className={inputCls.replace('pl-10', 'pl-4')}
+                    className="w-full rounded-[14px] px-4 py-3.5 text-[13px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800"
                     placeholder="Jane"
                   />
                 </div>
-                <div>
-                  <label className={labelCls}>Last Name</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397]">Last Name</label>
                   <input
                     type="text"
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
                     required
-                    className={inputCls.replace('pl-10', 'pl-4')}
+                    className="w-full rounded-[14px] px-4 py-3.5 text-[13px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800"
                     placeholder="Doe"
                   />
                 </div>
               </div>
             )}
 
-            {/* Email */}
-            <div>
-              <label className={labelCls}>Email Address</label>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397]">Email Address</label>
               <div className="relative">
-                <Mail className={`absolute left-3 top-3.5 h-4 w-4 ${isDark ? 'text-white/30' : 'text-slate-400'}`} />
+                <Mail className="absolute left-4 top-[15px] h-[16px] w-[16px] text-[#A0B3A8]" />
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className={inputCls}
-                  placeholder="you@example.com"
+                  className="w-full rounded-[14px] pl-[42px] pr-4 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800"
+                  placeholder="name@example.com"
                 />
               </div>
             </div>
 
-            {/* Password */}
-            <div>
-              <label className={labelCls}>Password</label>
-              <div className="relative">
-                <Lock className={`absolute left-3 top-3.5 h-4 w-4 ${isDark ? 'text-white/30' : 'text-slate-400'}`} />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  className={inputCls}
-                  placeholder="••••••••"
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute right-3 top-3.5 ${isDark ? 'text-white/30 hover:text-white/60' : 'text-slate-400 hover:text-slate-600'} transition-colors`}>
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+            {mode !== 'forgot_password' && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397]">Password</label>
+                  <button 
+                    type="button" 
+                    onClick={() => { setMode('forgot_password'); setError(null); setSuccessMsg(null); }}
+                    className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397] hover:text-[#0A3622] transition-colors"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-[15px] h-[16px] w-[16px] text-[#A0B3A8]" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    className="w-full rounded-[14px] pl-[42px] pr-10 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800 font-medium tracking-[0.2em]"
+                    placeholder="••••••••"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-[15px] text-[#A0B3A8] hover:text-[#6A8074] transition-colors">
+                    {showPassword ? <EyeOff className="h-[16px] w-[16px]" /> : <Eye className="h-[16px] w-[16px]" />}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className={`w-full h-12 rounded-xl text-sm font-black text-white tracking-widest uppercase transition-all ${c.accent} disabled:opacity-50 disabled:cursor-not-allowed mt-2 shadow-lg`}
+              className="w-full h-[48px] rounded-[14px] text-[14px] font-medium text-white transition-all bg-[#0A3622] hover:bg-[#072B1A] disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-sm"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Processing...
                 </span>
-              ) : mode === 'login' ? "Secure Login" : "Create Account"}
+              ) : mode === 'login' ? "Sign in" : mode === 'signup' ? "Create Account" : "Send Reset Link"}
             </button>
           </form>
 
-          {/* ── Enhanced Portal Switcher ── */}
-          <div className={`mt-10 pt-8 space-y-4 ${isDark ? 'border-t border-white/10' : 'border-t border-slate-100'}`}>
-            <div className="flex flex-col items-center gap-1">
-              <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/30' : 'text-slate-400'}`}>
-                Access Secure Portals
-              </p>
-              <div className="h-0.5 w-8 bg-emerald-500/30 rounded-full" />
+          {mode === 'forgot_password' && (
+             <div className="mt-6 text-center">
+              <button 
+                type="button" 
+                onClick={() => { setMode('login'); setError(null); setSuccessMsg(null); }}
+                className="text-[13px] text-[#6A8074] hover:text-[#0A3622] font-medium"
+              >
+                Back to Sign in
+              </button>
             </div>
-            
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              {PORTAL_NAV.map(p => (
-                <a
-                  key={p.key}
-                  href={p.path}
-                  className={`flex items-center justify-center gap-2 px-3 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
-                    p.key === portal
-                      ? `${p.activeColor} border-transparent shadow-lg shadow-${p.key === 'superadmin' ? 'red' : p.key === 'admin' ? 'violet' : 'emerald'}-500/10`
-                      : `${isDark ? 'bg-white/5 border-white/5 text-white/50 hover:bg-white/10 hover:text-white hover:border-white/10' : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-white hover:text-slate-900 hover:border-slate-200 hover:shadow-sm'}`
-                  }`}
-                >
-                  <span className="opacity-70">{p.icon}</span>
-                  {p.label}
-                </a>
-              ))}
-            </div>
-            
-            <p className={`text-[9px] text-center italic mt-4 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>
-              Click to jump to a different access point
-            </p>
-          </div>
+          )}
 
-          {/* Patient: link to shop */}
-          {portal === 'patient' && (
-            <p className="text-center text-sm text-slate-400 mt-5">
-              New patient?{" "}
-              <a href="/" className="text-emerald-600 font-black hover:underline">
-                Start with a treatment →
-              </a>
-            </p>
+          {portal === 'patient' && mode !== 'forgot_password' && (
+            <div className="mt-6 text-center">
+              {mode === 'login' ? (
+                <p className="text-[13px] text-[#6A8074]">
+                  Don't have an account?{" "}
+                  <button type="button" onClick={() => { setMode('signup'); setError(null); }} className="text-[#0A3622] font-semibold hover:underline">
+                    Create one
+                  </button>
+                </p>
+              ) : (
+                <p className="text-[13px] text-[#6A8074]">
+                  Already have an account?{" "}
+                  <button type="button" onClick={() => { setMode('login'); setError(null); }} className="text-[#0A3622] font-semibold hover:underline">
+                    Sign in
+                  </button>
+                </p>
+              )}
+            </div>
           )}
         </div>
-
-        {/* Security footer */}
-        <p className={`text-center text-[10px] ${isDark ? 'text-white/20' : 'text-slate-300'}`}>
-          256-bit SSL · HIPAA Compliant · Peak Health Technology Group, Inc.
-        </p>
       </div>
     </div>
   );

@@ -84,6 +84,7 @@ import {
 
 import { NotFoundPage } from "./pages/NotFound";
 import { AuthPage } from "./pages/auth/AuthPage";
+import { ResetPasswordPage } from "./pages/auth/ResetPassword";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 
@@ -127,6 +128,7 @@ export const router = createBrowserRouter([
       { path: "doctor/login", element: <AuthPage portal="doctor" /> },
       { path: "admin/login", element: <AuthPage portal="admin" /> },
       { path: "superadmin/login", element: <AuthPage portal="superadmin" /> },
+      { path: "reset-password", Component: ResetPasswordPage },
       // { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
 
       // Patient Shop flow (Standalone)
