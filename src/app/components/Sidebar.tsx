@@ -121,11 +121,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
 
   const SidebarContent = () => (
     <div className={cn("flex h-full flex-col overflow-hidden text-[#0A0D14] border-r border-slate-100 bg-white")}>
-      <div className="flex h-24 items-center justify-center border-b border-slate-100 px-6 shrink-0 bg-slate-50/30 relative">
-        <div className="flex flex-col items-center">
-          <div className="h-1 w-12 bg-emerald-700 rounded-full mb-1 opacity-20" />
-          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Clinical Hub</span>
-        </div>
+      <div className="flex h-24 items-center justify-center border-b border-slate-100 px-6 shrink-0 bg-white relative">
         {onMobileClose && (
           <button onClick={onMobileClose} className="absolute right-4 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
             <X className="h-5 w-5 text-slate-500" />
