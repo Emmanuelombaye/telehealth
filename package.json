@@ -11,7 +11,8 @@
     "dev": "vite",
     "preview": "vite preview",
     "check:patient-e2e": "node scripts/patient-e2e-check.mjs",
-    "check:engineering": "node scripts/engineering-check.mjs"
+    "check:engineering": "node scripts/engineering-check.mjs",
+    "check:production": "node scripts/production-preflight.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

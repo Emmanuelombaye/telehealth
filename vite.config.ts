@@ -4,6 +4,21 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
 
+/** Injects Referly merchant id at build time from `VITE_REFERLY_SITE_ID` (see `.env.production.example`). */
+function referlyInitInject() {
+  return {
+    name: 'referly-init-inject',
+    transformIndexHtml(html: string) {
+      const id = process.env.VITE_REFERLY_SITE_ID?.trim();
+      if (!id) return html;
+      return html.replace(
+        /window\.referly\(\s*['"]init['"]\s*,\s*['"][^'"]*['"]\s*\)/,
+        `window.referly('init', ${JSON.stringify(id)})`,
+      );
+    },
+  };
+}
+
 function figmaAssetResolver() {
   return {
     name: 'figma-asset-resolver',
@@ -18,6 +33,7 @@ function figmaAssetResolver() {
 
 export default defineConfig({
   plugins: [
+    referlyInitInject(),
     figmaAssetResolver(),
     // The React and Tailwind plugins are both required for Make, even if
     // Tailwind is not being actively used – do not remove them

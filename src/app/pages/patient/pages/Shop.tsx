@@ -22,6 +22,7 @@ import {
   type ConsultRoutingRuleRow,
   type ClinicalContext,
 } from "../../../../lib/videoConsultRules";
+import { effectiveProductGateways, GATEWAY_DISPLAY } from "../../../../lib/productGateways";
 import { toSchedulingIframeSrc } from "../../../../lib/calendlyEmbed";
 import {
   ENROLLMENT_DRAFT_KEY,
@@ -129,14 +130,6 @@ const categoryTint: Record<string, string> = {
   "Mental Health": "from-[var(--brand-sage-50)] to-[var(--brand-lavender-50)]",
   "Skincare": "from-[var(--brand-peach-50)] to-[var(--brand-lavender-50)]",
   "Hormone": "from-[var(--brand-sky-50)] to-[var(--brand-lavender-100)]",
-};
-
-const gatewayConfig: Record<string, { label: string; icon: string; color: string }> = {
-  stripe: { label: "Credit / Debit Card", icon: "💳", color: "border-violet-400 bg-violet-50 dark:bg-violet-950/30" },
-  paypal: { label: "PayPal", icon: "🅿️", color: "border-violet-400 bg-violet-50 dark:bg-violet-950/30" },
-  apple_pay: { label: "Apple Pay", icon: "🍎", color: "border-gray-400 bg-gray-50 dark:bg-gray-950/30" },
-  google_pay: { label: "Google Pay", icon: "🔵", color: "border-green-400 bg-green-50 dark:bg-green-950/30" },
-  klarna: { label: "Klarna · Pay in 4", icon: "🛍️", color: "border-pink-300 bg-pink-50 dark:bg-pink-950/30" },
 };
 
 export function PatientShopPage() {
@@ -251,6 +244,18 @@ export function PatientShopPage() {
     import.meta.env.PROD && !!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
   const allowSimulatedAltGateway =
     !requireStripeOnly && (!stripeKey || import.meta.env.DEV);
+
+  useEffect(() => {
+    if (!selected) return;
+    const allowed = new Set(
+      effectiveProductGateways(selected.gateways, { requireStripeOnly }),
+    );
+    if (gateway && !allowed.has(gateway)) {
+      setGateway("");
+      setStripeClientSecret(null);
+      setStripePaymentIntentId(null);
+    }
+  }, [selected?.id, selected?.gateways, gateway, requireStripeOnly, selected]);
 
   useEffect(() => {
     let cancelled = false;
@@ -888,7 +893,7 @@ export function PatientShopPage() {
           <CardContent className="p-4 space-y-2">
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Product</span><span className="font-semibold">{selected.name}</span></div>
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Order Ref</span><span className="font-mono font-bold text-primary">{submittedOrderRef || '—'}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Payment</span><span className="font-semibold">{gatewayConfig[gateway]?.label}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Payment</span><span className="font-semibold">{GATEWAY_DISPLAY[gateway]?.label}</span></div>
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Account</span><span className="font-semibold text-emerald-600">✓ {email}</span></div>
           </CardContent>
         </Card>
@@ -1280,10 +1285,9 @@ export function PatientShopPage() {
 
   if (stage === "payment" && selected) {
     const weightLoss = selected.category === "Weight Loss";
-    const displayedGateways: string[] =
-      requireStripeOnly
-        ? (selected.gateways || []).filter((g: string) => g === "stripe")
-        : selected.gateways || ["stripe"];
+    const displayedGateways = effectiveProductGateways(selected.gateways, {
+      requireStripeOnly,
+    });
 
     const qualifierErr = (): string | null => {
       if (!firstName?.trim() || !lastName?.trim()) return "Enter your first and last name.";
@@ -1520,8 +1524,8 @@ export function PatientShopPage() {
                     : "border-slate-200 bg-white hover:border-slate-300 text-slate-700"
                 )}
               >
-                <span className="text-2xl">{gatewayConfig[gw]?.icon}</span>
-                <span className="font-semibold text-sm">{gatewayConfig[gw]?.label}</span>
+                <span className="text-2xl">{GATEWAY_DISPLAY[gw]?.icon}</span>
+                <span className="font-semibold text-sm">{GATEWAY_DISPLAY[gw]?.label}</span>
                 {gateway === gw && <CheckCircle2 className="h-5 w-5 text-primary ml-auto" />}
               </button>
             ))}
@@ -1714,7 +1718,7 @@ export function PatientShopPage() {
             {gateway && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Method</span>
-                <span className="font-semibold">{gatewayConfig[gateway]?.label ?? gateway}</span>
+                <span className="font-semibold">{GATEWAY_DISPLAY[gateway]?.label ?? gateway}</span>
               </div>
             )}
             {stripePaymentIntentId && (

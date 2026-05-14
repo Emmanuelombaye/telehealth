@@ -3,6 +3,12 @@ import { Plus, PackageSearch, RefreshCw, X, Check, Loader2, TrendingUp, Layers, 
 import { Card, Button, Input, cn } from "../../../components/ui/shared.tsx";
 import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminDataTable";
 import { supabase } from "../../../../lib/supabaseClient";
+import {
+  DEFAULT_PRODUCT_GATEWAYS,
+  GATEWAY_DISPLAY,
+  normalizeProductGateways,
+  sortGateways,
+} from "../../../../lib/productGateways";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function AdminProductsPage() {
@@ -12,6 +18,7 @@ export function AdminProductsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [routingSaving, setRoutingSaving] = useState(false);
+  const [paymentGatewaysSelected, setPaymentGatewaysSelected] = useState<string[]>([]);
   const [routeForm, setRouteForm] = useState({
     requires_video: false,
     video_states: "",
@@ -52,6 +59,7 @@ export function AdminProductsPage() {
         : {};
     const vc = (f as any).video_clinical_rules || {};
     const triggers = vc.answerTriggers || vc.answer_triggers;
+    setPaymentGatewaysSelected(normalizeProductGateways((f as any).gateways));
     setRouteForm({
       requires_video: !!(f as any).requires_video_consult,
       video_states: Array.isArray((f as any).video_required_states)
@@ -103,6 +111,13 @@ export function AdminProductsPage() {
       if (Object.keys(vc).length) next.video_clinical_rules = vc;
       else delete next.video_clinical_rules;
 
+      if (!paymentGatewaysSelected.length) {
+        alert("Select at least one payment method for this protocol.");
+        setRoutingSaving(false);
+        return;
+      }
+      next.gateways = sortGateways(paymentGatewaysSelected);
+
       const { error } = await supabase.from("products").update({ features: next }).eq("id", editingProduct.id);
       if (error) throw error;
       setEditingProduct(null);
@@ -121,7 +136,10 @@ export function AdminProductsPage() {
     try {
       const { error } = await supabase.from('products').insert([{
         ...newProduct,
-        price_usd: parseFloat(newProduct.price_usd)
+        price_usd: parseFloat(newProduct.price_usd),
+        features: {
+          gateways: [...DEFAULT_PRODUCT_GATEWAYS],
+        },
       }]);
       if (error) throw error;
       
@@ -241,7 +259,7 @@ export function AdminProductsPage() {
                       className="h-8 rounded-lg text-[10px] font-black uppercase"
                       onClick={() => prod && setEditingProduct(prod)}
                     >
-                      Video rules
+                      Checkout & video
                     </Button>
                   );
                 },
@@ -361,7 +379,7 @@ export function AdminProductsPage() {
             >
               <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">Sync video routing</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">Checkout & sync video</p>
                   <h2 className="text-xl font-black text-[#0A2E1F] mt-1">{editingProduct.name}</h2>
                 </div>
                 <button
@@ -373,6 +391,43 @@ export function AdminProductsPage() {
                 </button>
               </div>
               <form onSubmit={saveProductRouting} className="p-8 space-y-5">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                    Payment methods (shop checkout)
+                  </p>
+                  <p className="text-[11px] text-slate-500 mb-3">
+                    Per-protocol options stored as <code className="text-[10px] bg-slate-100 px-1 rounded">features.gateways</code>.
+                    With live Stripe in production, checkout shows card only; other methods apply in dev / demo.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {DEFAULT_PRODUCT_GATEWAYS.map((gw) => {
+                      const on = paymentGatewaysSelected.includes(gw);
+                      const meta = GATEWAY_DISPLAY[gw];
+                      return (
+                        <label
+                          key={gw}
+                          className={cn(
+                            "flex items-center gap-2 cursor-pointer rounded-xl border px-3 py-2 text-xs font-bold transition-colors",
+                            on ? "border-emerald-500 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            className="h-3.5 w-3.5 accent-emerald-600"
+                            checked={on}
+                            onChange={() => {
+                              setPaymentGatewaysSelected((prev) =>
+                                prev.includes(gw) ? prev.filter((x) => x !== gw) : sortGateways([...prev, gw]),
+                              );
+                            }}
+                          />
+                          <span>{meta?.icon}</span>
+                          <span>{meta?.label ?? gw}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -440,7 +495,7 @@ export function AdminProductsPage() {
                   disabled={routingSaving}
                   className="w-full h-12 bg-[#0A2E1F] hover:bg-emerald-950 text-white rounded-xl font-black uppercase text-[10px] tracking-widest"
                 >
-                  {routingSaving ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : "Save routing"}
+                  {routingSaving ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : "Save checkout & video"}
                 </Button>
               </form>
             </motion.div>

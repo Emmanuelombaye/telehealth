@@ -1,5 +1,7 @@
 # Engineering rollout — step by step
 
+**Master go-live sequence (env, Stripe, pharmacy, ops):** [`docs/PRODUCTION_LAUNCH.md`](./PRODUCTION_LAUNCH.md)
+
 Goal: one enforced security story (RLS + JWT), real data paths, no accidental “open” policies from legacy scripts.
 
 ## Step 1 — Freeze and backup

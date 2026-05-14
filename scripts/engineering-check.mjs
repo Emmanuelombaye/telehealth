@@ -48,5 +48,6 @@ if (existsSync(rollout)) {
   console.warn("⚠ Missing docs/ENGINEERING_ROLLOUT.md");
 }
 
-console.log("\nNext: follow docs/ENGINEERING_ROLLOUT.md → Step 3 (db push).\n");
+console.log("\nNext: follow docs/ENGINEERING_ROLLOUT.md → Step 3 (db push).");
+console.log("Production env gate: CI=true + secrets → npm run check:production\n");
 process.exit(ok ? 0 : 1);

@@ -22,3 +22,12 @@ export type { FulfillmentRailStep } from "./orderFulfillmentRail";
 export { useDoctorClinicalMetrics } from "./doctorClinicalMetrics";
 export { useAuthStore } from "./auth-store";
 export type { Role } from "./auth-store";
+export { runProductionPreflight } from "./productionPreflight";
+export type { PreflightIssue } from "./productionPreflight";
+export {
+  DEFAULT_PRODUCT_GATEWAYS,
+  GATEWAY_DISPLAY,
+  normalizeProductGateways,
+  effectiveProductGateways,
+  sortGateways,
+} from "./productGateways";
