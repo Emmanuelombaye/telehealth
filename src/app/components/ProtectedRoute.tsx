@@ -70,6 +70,7 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
         effectiveRole === 'pharmacy' ? '/pharmacy' :
         effectiveRole === 'super_admin' ? '/superadmin' :
         effectiveRole === 'brand_admin' ? '/admin' : 
+        effectiveRole === 'affiliate' ? '/affiliate' :
         '/patient';
       
       console.log(`[ProtectedRoute] RBAC mismatch: User role "${effectiveRole}" not in [${rolesKey}]. Redirecting to ${targetPortal}`);

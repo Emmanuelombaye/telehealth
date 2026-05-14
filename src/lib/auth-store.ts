@@ -2,7 +2,14 @@ import { create } from 'zustand';
 import { supabase } from './supabaseClient';
 import { User, Session } from '@supabase/supabase-js';
 
-export type Role = 'patient' | 'doctor' | 'pharmacy' | 'brand_admin' | 'super_admin' | null;
+export type Role =
+  | 'patient'
+  | 'doctor'
+  | 'pharmacy'
+  | 'brand_admin'
+  | 'super_admin'
+  | 'affiliate'
+  | null;
 
 interface AuthState {
   session: Session | null;
@@ -16,9 +23,8 @@ interface AuthState {
 }
 
 /**
- * Get role — reads from JWT user_metadata FIRST (instant, no DB query, no 500s).
- * Falls back to profiles table only if metadata has no role.
- * This is the correct production approach.
+ * Get role — prefers JWT `app_metadata` (server-set), then `user_metadata`,
+ * then profiles sync. Brand id uses the same precedence.
  */
 function getRoleFromSession(session: Session): { role: Role; brandId: string | null } {
   // Priority 1: Dev override (Always highest priority for staff/testing bypass)
@@ -86,10 +92,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const session = initialSession !== undefined ? initialSession : (await supabase.auth.getSession()).data.session;
 
       if (session?.user) {
-        // Read role from JWT metadata ONLY — never queries profiles table
-        // This avoids any RLS recursion issues on the profiles table
-        const { role, brandId } = getRoleFromSession(session);
-        set({ session, user: session.user, role, brandId, isLoading: false });
+        const jwtRB = getRoleFromSession(session);
+        set({ session, user: session.user, role: jwtRB.role, brandId: jwtRB.brandId, isLoading: false });
+        void syncProfile(session).then((merged) => {
+          if (merged.role !== jwtRB.role || merged.brandId !== jwtRB.brandId) {
+            set({ role: merged.role, brandId: merged.brandId });
+          }
+        });
       } else {
         // No real session — check for dev role override (staff/testing bypass)
         const devRole = typeof window !== 'undefined' ? localStorage.getItem('peak_health_dev_role') : null;
@@ -107,8 +116,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       supabase.auth.onAuthStateChange((_event, newSession) => {
         if (newSession?.user) {
-          const { role, brandId } = getRoleFromSession(newSession);
-          set({ session: newSession, user: newSession.user, role, brandId, isLoading: false });
+          const jwtRB = getRoleFromSession(newSession);
+          set({ session: newSession, user: newSession.user, role: jwtRB.role, brandId: jwtRB.brandId, isLoading: false });
+          void syncProfile(newSession).then((merged) => {
+            if (merged.role !== jwtRB.role || merged.brandId !== jwtRB.brandId) {
+              set({ role: merged.role, brandId: merged.brandId });
+            }
+          });
         } else {
           set({ session: null, user: null, role: null, brandId: null, isLoading: false });
         }
