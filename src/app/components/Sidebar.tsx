@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavLink, Link } from "react-router";
+import { useState, useMemo } from "react";
+import { NavLink, Link, useLocation } from "react-router";
 import {
   LayoutDashboard, Users, Calendar, MessageSquare, ClipboardList,
   FileText, Settings, LogOut, Stethoscope, Activity, ShieldCheck,
@@ -14,6 +14,7 @@ import { useI18n } from "../../lib/i18n.tsx";
 import { brand } from "../../lib/patient-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { usePatientStore } from "../../lib/patient-store";
+import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -110,7 +111,16 @@ const roleColors: Record<Role, string> = {
 
 export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const { t } = useI18n();
-  const menu = menuConfig[role];
+  const { pathname } = useLocation();
+  const doctorBase = doctorPortalBaseFromPath(pathname);
+  const menu = useMemo(() => {
+    const raw = menuConfig[role];
+    if (role !== "doctor") return raw;
+    return raw.map((item) => ({
+      ...item,
+      href: item.href.replace(/^\/doctor/, doctorBase),
+    }));
+  }, [role, doctorBase]);
   const { user, role: authRole } = useAuthStore();
   const { orders, notifications } = usePatientStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -161,7 +171,11 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
               
               <MotionNavLink
                 to={item.href}
-                end={item.href === `/${role}`}
+                end={
+                  role === "doctor"
+                    ? item.href === doctorBase
+                    : item.href === `/${role}`
+                }
                 onClick={onMobileClose}
                 whileHover={{ x: superNav ? 2 : 4 }}
                 whileTap={{ scale: 0.98 }}

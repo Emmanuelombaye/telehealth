@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, Input, cn } from "../../../components/ui/shared.tsx";
 import { OrderStatus, Order, usePatientStore, useAuthStore } from "../../../../lib";
+import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { supabase } from "../../../../lib/supabaseClient";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
@@ -29,6 +30,7 @@ const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg:
 
 export function DoctorQueuePage() {
   const navigate = useNavigate();
+  const doctorBase = useDoctorPortalBase();
   const MotionButton = motion(Button);
   const { orders, updateOrderStatus, fetchOrders, subscribeToOrders } = usePatientStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -328,7 +330,7 @@ export function DoctorQueuePage() {
 
               <div className="px-6 py-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 to-white flex gap-2">
                 <Link
-                  to={`/doctor/consult?orderId=${encodeURIComponent(selected.id)}`}
+                  to={`${doctorBase}/consult?orderId=${encodeURIComponent(selected.id)}`}
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0A2E1F] text-white hover:bg-[#153e2d] h-10 text-xs font-bold shadow-md transition-colors"
                 >
                   <Stethoscope className="h-4 w-4" />

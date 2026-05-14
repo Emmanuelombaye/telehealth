@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Input, cn } from "../../components/ui/shared.tsx";
 import { useI18n, getGreeting, usePatientStore, useAuthStore } from "../../../lib";
+import { useDoctorPortalBase } from "../../../lib/doctorPortalBase";
 import { Link, useNavigate } from "react-router";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
@@ -17,8 +18,7 @@ export function DoctorDashboard() {
   const greeting = getGreeting(t);
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
-
-  const user = useAuthStore(state => state.user);
+  const doctorBase = useDoctorPortalBase();
   const doctorName = user?.user_metadata?.first_name
     ? `Dr. ${user.user_metadata.first_name} ${user.user_metadata.last_name}`
     : "Dr. Clinical Provider";
@@ -82,7 +82,7 @@ export function DoctorDashboard() {
           <Button variant="outline" className="h-10 px-4 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold gap-2 whitespace-nowrap flex-1 sm:flex-none">
             <Search className="h-4 w-4 shrink-0" /> Find Patient
           </Button>
-          <Link to="/doctor/consult" className="flex-1 sm:flex-none">
+          <Link to={`${doctorBase}/consult`} className="flex-1 sm:flex-none">
             <Button className="w-full sm:w-auto h-10 px-5 rounded-xl bg-[#0A2E1F] hover:bg-[#153e2d] text-white font-semibold gap-2 shadow-md whitespace-nowrap">
               <Video className="h-4 w-4 shrink-0" /> Join Consult Suite
             </Button>
@@ -126,7 +126,7 @@ export function DoctorDashboard() {
                 </div>
                 <h2 className="text-lg font-bold text-[#0A2E1F]">Clinical Action Queue</h2>
               </div>
-              <Link to="/doctor/queue">
+              <Link to={`${doctorBase}/queue`}>
                 <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50">
                   View All <ChevronRight className="h-3 w-3 ml-1" />
                 </Button>
@@ -157,7 +157,7 @@ export function DoctorDashboard() {
                           transition: { duration: 0.2 }
                         }}
                         className="relative transition-colors group cursor-pointer border-l-2 border-transparent hover:border-emerald-500 overflow-hidden"
-                        onClick={() => navigate(`/doctor/consult?orderId=${order.order_number}`)}
+                        onClick={() => navigate(`${doctorBase}/consult?orderId=${order.order_number}`)}
                       >
                         {/* THE SCANNING BEAMS */}
                         <motion.div 
@@ -248,7 +248,7 @@ export function DoctorDashboard() {
               <h3 className="font-bold text-[#0A2E1F] flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-emerald-600" /> Today's Schedule
               </h3>
-              <Link to="/doctor/schedule">
+              <Link to={`${doctorBase}/schedule`}>
                 <Button variant="ghost" size="sm" className="h-7 text-[10px] font-semibold text-slate-500">
                   Manage
                 </Button>
@@ -290,10 +290,10 @@ export function DoctorDashboard() {
             </div>
             <CardContent className="p-4 grid grid-cols-2 gap-3">
               {[
-                { label: "Messages", icon: MessageSquare, href: "/doctor/messages" },
-                { label: "Lab Results", icon: FlaskConical, href: "/doctor/labs" },
-                { label: "E-Prescribe", icon: Pill, href: "/doctor/erx" },
-                { label: "AI Scribe", icon: Bot, href: "/doctor/scribe" }
+                { label: "Messages", icon: MessageSquare, href: `${doctorBase}/messages` },
+                { label: "Lab Results", icon: FlaskConical, href: `${doctorBase}/labs` },
+                { label: "E-Prescribe", icon: Pill, href: `${doctorBase}/erx` },
+                { label: "AI Scribe", icon: Bot, href: `${doctorBase}/scribe` },
               ].map((tool, i) => (
                 <Link key={i} to={tool.href}>
                   <Button variant="outline" className="w-full h-auto py-3 flex flex-col items-center gap-2 rounded-xl bg-white border-slate-200 hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50 transition-all shadow-sm">

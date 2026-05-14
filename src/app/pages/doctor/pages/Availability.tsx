@@ -6,6 +6,7 @@ import {
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
+import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { useNavigate } from "react-router";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -27,6 +28,7 @@ const defaultSchedule: Record<string, { enabled: boolean; start: string; end: st
 export function DoctorAvailabilityPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const doctorBase = useDoctorPortalBase();
   const [schedule, setSchedule] = useState(defaultSchedule);
   const [tab, setTab] = useState<"schedule" | "bookings">("schedule");
   const [copied, setCopied] = useState(false);
@@ -252,7 +254,7 @@ export function DoctorAvailabilityPage() {
                           <Button 
                             size="sm" 
                             className="rounded-xl text-xs h-9 font-black px-4 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all active:scale-95"
-                            onClick={() => navigate(`/doctor/consult?orderId=${b.order_number}`)}
+                            onClick={() => navigate(`${doctorBase}/consult?orderId=${b.order_number}`)}
                           >
                             <Video className="h-4 w-4 mr-2" /> JOIN
                           </Button>
@@ -346,7 +348,8 @@ export function DoctorAvailabilityPage() {
             </CardContent>
           </Card>
         </div>
-      </div>    </div>
+      </div>
+    </div>
   );
 }
 

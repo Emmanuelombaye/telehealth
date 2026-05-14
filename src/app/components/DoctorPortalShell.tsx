@@ -4,6 +4,7 @@ import { ChevronRight, Radio, ShieldCheck } from "lucide-react";
 import { cn } from "./ui/utils";
 import { DoctorCommandPalette } from "./DoctorCommandPalette";
 import { useDoctorClinicalMetrics } from "../../lib/doctorClinicalMetrics";
+import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
 
 const SEGMENT_LABEL: Record<string, string> = {
   patients: "Patient roster",
@@ -28,14 +29,18 @@ export function DoctorPortalShell() {
   const metrics = useDoctorClinicalMetrics();
 
   const crumbs = useMemo(() => {
+    const base = doctorPortalBaseFromPath(pathname);
     const segs = pathname.split("/").filter(Boolean);
-    if (segs[0] !== "doctor") return [{ label: "Physician · Overview", to: "/doctor" }];
-    if (segs.length === 1) {
-      return [{ label: "Physician · Overview", to: "/doctor" }];
+    const rootSeg = segs[0];
+    if (rootSeg !== "doctor" && rootSeg !== "providers") {
+      return [{ label: "Physician · Overview", to: base }];
     }
-    const out: { label: string; to: string }[] = [{ label: "Physician", to: "/doctor" }];
+    if (segs.length === 1) {
+      return [{ label: "Physician · Overview", to: base }];
+    }
+    const out: { label: string; to: string }[] = [{ label: "Physician", to: base }];
     const rest = segs.slice(1);
-    let acc = "/doctor";
+    let acc = base;
     for (const seg of rest) {
       acc += `/${seg}`;
       out.push({
