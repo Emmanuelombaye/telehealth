@@ -1,8 +1,11 @@
 /**
  * Maps first DNS label → app path for staff/partner portals on subdomains
- * (e.g. admin.peak-health.io → /admin). Only applied when the hostname looks
- * like our production/staging apex (see {@link shouldApplySubdomainPortalMap}).
+ * (e.g. admin.peakhealth.io → /admin). Only applied when the hostname matches
+ * our Vercel apex (see {@link shouldApplySubdomainPortalMap}).
  */
+/** Hostname suffixes where the first DNS label selects the staff portal path. */
+const PORTAL_HOST_SUFFIXES = [".peakhealth.io", ".peak-health.io"] as const;
+
 export const SUBDOMAIN_PORTAL_PATH: Record<string, string> = {
   admin: "/admin",
   superadmin: "/superadmin",
@@ -17,7 +20,7 @@ export const SUBDOMAIN_PORTAL_PATH: Record<string, string> = {
 export function shouldApplySubdomainPortalMap(hostname: string): boolean {
   const h = hostname.toLowerCase();
   if (h === "localhost" || h.startsWith("127.0.0.1")) return true;
-  return h.endsWith(".peak-health.io");
+  return PORTAL_HOST_SUFFIXES.some((suffix) => h.endsWith(suffix));
 }
 
 /** If the user landed on a portal subdomain at `/`, rewrite the path before the router mounts. */
