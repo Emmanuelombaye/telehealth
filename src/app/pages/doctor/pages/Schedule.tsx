@@ -3,7 +3,8 @@ import { Calendar, Clock, Video, ChevronRight, Plus, Loader2, CalendarPlus, Chec
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useNavigate } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
+import * as FramerMotion from "framer-motion";
+const { motion, AnimatePresence } = FramerMotion;
 import { toast } from "sonner";
 
 export function DoctorSchedulePage() {

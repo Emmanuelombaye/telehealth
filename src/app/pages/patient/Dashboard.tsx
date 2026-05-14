@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
+import * as FramerMotion from "framer-motion";
+const { motion, AnimatePresence } = FramerMotion;
 import {
   Calendar, Clock, FileText, Activity, MessageSquare, Plus,
   Droplets, Heart, ChevronRight, Video, Pill, Stethoscope,

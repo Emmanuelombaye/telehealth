@@ -3,7 +3,8 @@ import { Mic, MicOff, Save, RefreshCw, FileText, Bot, CheckCircle2, Sparkles, Ac
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
-import { motion, AnimatePresence } from "framer-motion";
+import * as FramerMotion from "framer-motion";
+const { motion, AnimatePresence } = FramerMotion;
 import { toast } from "sonner";
 
 // Extend window for Speech Recognition

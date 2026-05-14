@@ -9,7 +9,8 @@ import {
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Input, cn } from "../../components/ui/shared.tsx";
 import { useI18n, getGreeting, usePatientStore, useAuthStore } from "../../../lib";
 import { Link, useNavigate } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
+import * as FramerMotion from "framer-motion";
+const { motion, AnimatePresence } = FramerMotion;
 
 export function DoctorDashboard() {
   const { t } = useI18n();

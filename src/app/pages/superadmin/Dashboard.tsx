@@ -13,7 +13,8 @@ import {
 } from "recharts";
 import { supabase } from "../../../lib/supabaseClient";
 import { cn } from "../../components/ui/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import * as FramerMotion from "framer-motion";
+const { motion, AnimatePresence } = FramerMotion;
 
 export function SuperAdminDashboard() {
   const [orders, setOrders] = useState<any[]>([]);

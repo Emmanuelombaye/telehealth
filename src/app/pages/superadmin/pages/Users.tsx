@@ -7,7 +7,8 @@ import {
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn, Input } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
-import { motion, AnimatePresence } from "framer-motion";
+import * as FramerMotion from "framer-motion";
+const { motion, AnimatePresence } = FramerMotion;
 
 export function SuperAdminUsersPage() {
   const [search, setSearch] = useState("");

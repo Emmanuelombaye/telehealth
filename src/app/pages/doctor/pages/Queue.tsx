@@ -5,12 +5,13 @@ import {
   CheckCircle2, AlertCircle, Circle, Stethoscope, Pill,
   Phone, ToggleLeft, ToggleRight, Search, Filter, Bell, Zap,
   Activity, HeartPulse, ShieldCheck, Database, Layers, ArrowUpRight,
-  Sparkles, FlaskConical, Bot, Command, Globe, Truck, X, Loader2
+  Sparkles, FlaskConical, Bot, Command, Globe, Truck, X, Loader2, RefreshCw
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, Input, cn } from "../../../components/ui/shared.tsx";
 import { OrderStatus, Order, usePatientStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
-import { motion, AnimatePresence } from "framer-motion";
+import * as FramerMotion from "framer-motion";
+const { motion, AnimatePresence } = FramerMotion;
 import { toast } from "sonner";
 
 const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg: string; border: string }> = {
