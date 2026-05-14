@@ -44,6 +44,7 @@ import {
 } from "../../../../lib/patientShopRoutes";
 import { PatientEnrollmentStepper } from "../../../components/PatientEnrollmentStepper.tsx";
 import { PatientBrandMark } from "../../../components/patient/PatientBrandMark.tsx";
+import { PatientShopTopChrome } from "../../../components/patient/PatientShopTopChrome.tsx";
 import { motion } from "framer-motion";
 // Stripe
 import { loadStripe } from "@stripe/stripe-js";
@@ -1407,18 +1408,13 @@ export function PatientShopPage() {
     if (!paymentQualifiersPassed) {
       return (
         <div className="max-w-md mx-auto space-y-5 pb-8">
-          <PatientEnrollmentStepper stage={stage} />
-          <div className="flex justify-center mb-4">
-            <PatientBrandMark size="md" />
-          </div>
-          <button
-            type="button"
-            onClick={() => goToStage("catalog")}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to Catalog
-          </button>
-
+          <PatientShopTopChrome
+            stage={stage}
+            brandSize="md"
+            onBack={() => goToStage("catalog")}
+            backLabel="Back to catalog"
+            badgeLabel="Secure checkout"
+          />
           <Card>
             <CardContent className="p-4 flex items-center justify-between">
               <div>
@@ -1564,17 +1560,13 @@ export function PatientShopPage() {
 
     return (
       <div className="max-w-md mx-auto space-y-5 pb-10">
-        <PatientEnrollmentStepper stage={stage} />
-        <div className="flex justify-center mb-4">
-          <PatientBrandMark size="md" />
-        </div>
-        <button
-          type="button"
-          onClick={() => goToStage("catalog")}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Catalog
-        </button>
+        <PatientShopTopChrome
+          stage={stage}
+          brandSize="md"
+          onBack={() => goToStage("catalog")}
+          backLabel="Back to catalog"
+          badgeLabel="Secure checkout"
+        />
 
         <button
           type="button"
@@ -2094,26 +2086,16 @@ export function PatientShopPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.45 }}
     >
-    <div className="max-w-3xl mx-auto space-y-5 pb-24 px-4 sm:px-6">
-      <PatientEnrollmentStepper stage={stage} />
-      <div className="flex flex-col items-center gap-1 pt-1">
-        <PatientBrandMark size="lg" showTagline />
-      </div>
-      {/* Shop Header with Back button */}
-      <div className="flex items-center justify-between mb-2">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate('/patient')}
-          className="rounded-xl text-muted-foreground hover:text-foreground -ml-2"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Portal
-        </Button>
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Medical Dispensary</span>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-6 pb-24 px-4 sm:px-6">
+      <PatientShopTopChrome
+        stage={stage}
+        brandSize="sm"
+        onBack={() => navigate("/patient")}
+        backLabel="Back to portal"
+      />
 
       {/* Yucca-style hero */}
-      <div className="relative overflow-hidden rounded-3xl p-6 md:p-8" style={{ background: "var(--brand-hero)" }}>
+      <div className="relative overflow-hidden rounded-2xl p-6 md:p-8" style={{ background: "var(--brand-hero)" }}>
         <div className="relative z-10">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--brand-lavender-900)]">Treatment Programs</p>
           <h1 className="text-2xl md:text-3xl font-extrabold mt-1 text-foreground">

@@ -17,40 +17,39 @@ export function PatientEnrollmentStepper({
   const n = ENROLLMENT_JOURNEY_STEPS.length;
 
   return (
-    <div className={cn("w-full space-y-3", className)}>
-      <div className="flex flex-wrap items-center gap-2 justify-between">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-700/90">
-            Patient journey · Step {activeIdx + 1} of {n} (maps steps 2–9 after landing)
-          </p>
-          <p className="text-sm font-bold text-foreground mt-0.5">{active.title}</p>
-          <p className="text-xs text-muted-foreground">{active.subtitle}</p>
-        </div>
+    <div className={cn("w-full space-y-3.5", className)}>
+      <div className="space-y-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-800/85">
+          Enrollment · Step {activeIdx + 1} of {n}
+        </p>
+        <p className="text-base font-semibold leading-snug tracking-tight text-slate-900 sm:text-lg">
+          {active.title}
+        </p>
+        <p className="text-sm leading-relaxed text-slate-600">{active.subtitle}</p>
       </div>
 
-      {/* Progress dots — mobile-friendly */}
-      <div className="flex gap-1 overflow-x-auto pb-1">
+      <div className="flex gap-1.5 overflow-x-auto pb-0.5" role="list" aria-label="Enrollment progress">
         {ENROLLMENT_JOURNEY_STEPS.map((s, i) => {
           const done = i < activeIdx;
           const current = i === activeIdx;
           return (
             <div
               key={s.stage}
+              role="listitem"
               className={cn(
-                "h-1.5 min-w-[28px] flex-1 rounded-full transition-colors shrink-0",
+                "h-2 min-w-[32px] flex-1 rounded-full transition-colors duration-300 shrink-0",
                 done && "bg-emerald-500",
-                current && "bg-emerald-600 ring-2 ring-emerald-500/30",
-                !done && !current && "bg-muted"
+                current && "bg-emerald-600 ring-2 ring-emerald-400/35",
+                !done && !current && "bg-slate-200/90",
               )}
-              title={`${s.title} (#${s.infographicStep})`}
+              title={s.title}
             />
           );
         })}
       </div>
 
-      <p className="text-[10px] text-muted-foreground leading-relaxed border-t border-border/60 pt-2">
-        Secure & HIPAA-aligned · Save & resume (this device, up to 7 days) · Clear guidance at each step · Mobile
-        optimized
+      <p className="text-[11px] leading-relaxed text-slate-500 border-t border-slate-200/70 pt-2.5">
+        HIPAA-aligned · Your progress can save on this device for up to 7 days
       </p>
     </div>
   );
