@@ -177,17 +177,18 @@ export function AppLayout() {
           ) : (
             <Link
               to={`/${sidebarRole}`}
-              className="flex w-full max-w-[min(90vw,20rem)] items-center justify-center outline-none transition-opacity hover:opacity-90 md:max-w-[22rem]"
+              className="flex w-full max-w-[min(96vw,40rem)] items-center justify-center outline-none transition-opacity hover:opacity-90 md:max-w-[44rem]"
             >
               <img
                 src="/PeakHealthLogo.png"
                 alt="Peak Health"
-                width={320}
-                height={120}
+                width={640}
+                height={240}
                 decoding="async"
                 className={cn(
-                  "block h-[2.5rem] w-auto object-contain object-center sm:h-12 md:h-14 lg:h-[3.75rem]",
-                  scrolled && "sm:h-11 md:h-12 lg:h-14",
+                  "block h-[3.25rem] w-auto max-w-full object-contain object-center sm:h-[3.75rem] md:h-[4.5rem] lg:h-[5.25rem] xl:h-[5.75rem]",
+                  scrolled &&
+                    "h-[2.85rem] sm:h-[3.25rem] md:h-14 lg:h-[4.25rem] xl:h-[4.75rem]",
                 )}
               />
             </Link>
