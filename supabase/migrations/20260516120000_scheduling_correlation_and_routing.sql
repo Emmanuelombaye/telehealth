@@ -87,3 +87,12 @@ GRANT ALL ON TABLE public.consult_routing_rules TO service_role;
 
 COMMENT ON TABLE public.consult_routing_rules IS
   'Optional rules for mandatory sync video (state/category/product/clinical JSON).';
+
+-- -----------------------------------------------------------------------------
+-- 4) Profiles — super_admin may update clinician rows (e.g. calendly_url)
+-- -----------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Profiles: super_admin update any" ON public.profiles;
+CREATE POLICY "Profiles: super_admin update any" ON public.profiles
+  FOR UPDATE TO authenticated
+  USING (public.get_auth_role() = 'super_admin')
+  WITH CHECK (public.get_auth_role() = 'super_admin');
