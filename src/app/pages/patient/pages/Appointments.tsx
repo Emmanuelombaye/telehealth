@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { Calendar, Clock, Video, MessageSquare, Plus, ChevronRight, AlertCircle, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { useState, useEffect, type ReactNode } from "react";
+import { Calendar, Clock, Video, MessageSquare, Plus, AlertCircle, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
+import { Card, CardContent, Button, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
 import { defaultCalendlyBookingPageUrl, toSchedulingOpenTabUrl } from "../../../../lib/calendlyEmbed";
 
 // Real-time zoom status config
-const zoomStatusConfig: Record<string, { label: string; icon: React.ReactNode; card: string; badge: string }> = {
+const zoomStatusConfig: Record<string, { label: string; icon: ReactNode; card: string; badge: string }> = {
   not_requested: {
     label: "No Zoom Scheduled",
     icon: <MessageSquare className="h-5 w-5 text-slate-400" />,
@@ -39,63 +39,96 @@ const zoomStatusConfig: Record<string, { label: string; icon: React.ReactNode; c
   },
 };
 
+/** Columns that exist on older DBs — never omit or the page breaks before migrations ship. */
+const APPOINTMENTS_ORDER_SELECT_BASE =
+  "id, order_number, medication, consultation_time, zoom_status, zoom_doctor_message, zoom_rescheduled_time, status, ordered_date, zoom_join_url, doctor_id, consultation_live";
+
+function isMissingSchedulingBookingColumnError(err: { message?: string; details?: string; code?: string } | null): boolean {
+  const m = `${err?.message || ""} ${err?.details || ""}`.toLowerCase();
+  return (
+    m.includes("scheduling_booking") ||
+    (m.includes("column") && m.includes("does not exist")) ||
+    err?.code === "42703"
+  );
+}
+
 export function AppointmentsPage() {
   const { user } = useAuthStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchOrders = async () => {
-    if (!user) return;
+    if (!user?.id) {
+      setOrders([]);
+      setFetchError(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setFetchError(null);
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          id, 
-          order_number, 
-          medication, 
-          consultation_time, 
-          zoom_status, 
-          zoom_doctor_message, 
-          zoom_rescheduled_time, 
-          status, 
-          ordered_date, 
-          zoom_join_url,
-          doctor_id,
-          consultation_live,
-          scheduling_booking_url
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      let q = supabase
+        .from("orders")
+        .select(`${APPOINTMENTS_ORDER_SELECT_BASE}, scheduling_booking_url`)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      let { data, error } = await q;
+      if (error && isMissingSchedulingBookingColumnError(error)) {
+        const retry = await supabase
+          .from("orders")
+          .select(APPOINTMENTS_ORDER_SELECT_BASE)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+        data = retry.data;
+        error = retry.error;
+      }
       if (error) throw error;
       setOrders(data || []);
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Appointments fetch error:", err);
+      setOrders([]);
+      setFetchError(err instanceof Error ? err.message : "Could not load appointments.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchOrders();
+    if (!user?.id) {
+      setOrders([]);
+      setLoading(false);
+      setFetchError(null);
+      return;
+    }
 
-    // Real-time subscription — any change to patient's orders instantly reflects here
+    const uid = user.id;
+    void fetchOrders();
+
     const channel = supabase
-      .channel('patient-appointments-live')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'orders',
-      }, (payload) => {
-        console.log('Live appointment update:', payload.new);
-        setOrders(prev => prev.map(o => o.id === payload.new.id ? { ...o, ...payload.new } : o));
-        setLastUpdated(new Date());
-      })
+      .channel("patient-appointments-live")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+        },
+        (payload) => {
+          const row = payload.new as { id?: string; user_id?: string };
+          if (row.user_id !== uid) return;
+          setOrders((prev) => prev.map((o) => (o.id === row.id ? { ...o, ...payload.new } : o)));
+          setLastUpdated(new Date());
+        }
+      )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const zoomOrders = orders.filter(o => o.zoom_status && o.zoom_status !== 'not_requested');
   const noZoomOrders = orders.filter(o => !o.zoom_status || o.zoom_status === 'not_requested');
@@ -110,16 +143,29 @@ export function AppointmentsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="max-w-2xl mx-auto space-y-5 px-4 py-6 text-foreground min-h-[50vh]">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">Appointments</h1>
+          <h1 className="text-xl font-bold text-foreground">Appointments</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {lastUpdated ? `Live · Updated ${lastUpdated.toLocaleTimeString()}` : "Loading..."}
+            {lastUpdated ? `Live · Updated ${lastUpdated.toLocaleTimeString()}` : "Syncing…"}
             <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse ml-1.5" />
           </p>
         </div>
       </div>
+
+      {fetchError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100"
+        >
+          <p className="font-semibold">Could not load appointments</p>
+          <p className="mt-1 text-xs opacity-90">{fetchError}</p>
+          <Button type="button" variant="outline" className="mt-3 h-9 rounded-lg text-xs" onClick={() => void fetchOrders()}>
+            Try again
+          </Button>
+        </div>
+      )}
 
       {/* Live zoom consultations */}
       {zoomOrders.length > 0 && (
