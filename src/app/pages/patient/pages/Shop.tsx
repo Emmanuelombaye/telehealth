@@ -341,6 +341,14 @@ export function PatientShopPage() {
   const allowSimulatedAltGateway =
     import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_ALT_GATEWAYS === "true";
 
+  const hasStripePublishableKey = Boolean(stripeKey?.trim());
+  /** When Stripe.js cannot load, use the same local card UI so checkout can be completed without keys. */
+  const simulateNonStripeWallets = allowSimulatedAltGateway || !hasStripePublishableKey;
+  const showLocalCardDemo =
+    Boolean(gateway) &&
+    ((gateway !== "stripe" && simulateNonStripeWallets) ||
+      (gateway === "stripe" && !hasStripePublishableKey));
+
   useEffect(() => {
     if (!selected) return;
     const allowed = new Set(
@@ -1602,6 +1610,13 @@ export function PatientShopPage() {
             </div>
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-700/70">PCI-aware</span>
           </div>
+          {!hasStripePublishableKey && (
+            <p className="rounded-xl border border-emerald-100/90 bg-emerald-50/50 px-3 py-2 text-[11px] leading-relaxed text-emerald-950/85">
+              <span className="font-semibold">Preview mode.</span> Card and wallet options use a local demo until{" "}
+              <code className="rounded bg-white/80 px-1 font-mono text-[10px]">VITE_STRIPE_PUBLISHABLE_KEY</code> is
+              set—nothing is charged.
+            </p>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {displayedGateways.map((gw: string, i: number) => {
               const meta = GATEWAY_DISPLAY[gw];
@@ -1675,7 +1690,7 @@ export function PatientShopPage() {
           </p>
         )}
 
-        {gateway && gateway !== "stripe" && !allowSimulatedAltGateway && (
+        {gateway && gateway !== "stripe" && !simulateNonStripeWallets && (
           <AltGatewayReadinessPanel
             gatewayId={gateway}
             displayName={GATEWAY_DISPLAY[gateway]?.label ?? gateway}
@@ -1687,7 +1702,7 @@ export function PatientShopPage() {
           />
         )}
 
-        {gateway && gateway !== "stripe" && allowSimulatedAltGateway && (
+        {showLocalCardDemo && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1827,11 +1842,6 @@ export function PatientShopPage() {
             <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
             <p className="text-sm text-muted-foreground">Initialising secure payment...</p>
           </div>
-        ) : gateway === "stripe" && !stripePromise ? (
-          <p className="text-xs text-center text-amber-700 font-semibold">
-            Stripe is not configured (missing publishable key). Add{" "}
-            <code className="font-mono">VITE_STRIPE_PUBLISHABLE_KEY</code> or use a demo gateway in development.
-          </p>
         ) : !gateway ? (
           <p className="text-xs text-center text-muted-foreground">Select a payment method above.</p>
         ) : null}
