@@ -38,6 +38,8 @@ import {
   type ShopFlowStage,
 } from "../../../../lib/patientShopRoutes";
 import { PatientEnrollmentStepper } from "../../../components/PatientEnrollmentStepper.tsx";
+import { PatientBrandMark } from "../../../components/patient/PatientBrandMark.tsx";
+import { motion } from "framer-motion";
 // Stripe
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -880,7 +882,7 @@ export function PatientShopPage() {
       <div className="max-w-md mx-auto text-center space-y-5 pt-8">
         <PatientEnrollmentStepper stage={stage} className="text-left mb-2" />
         <div className="flex justify-center mb-8">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+           <PatientBrandMark size="md" />
         </div>
         <div className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center mx-auto">
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
@@ -927,7 +929,7 @@ export function PatientShopPage() {
       <div className="max-w-md mx-auto space-y-6 pt-4">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+           <PatientBrandMark size="md" />
         </div>
         <div>
           <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-100 mb-4">
@@ -1114,7 +1116,7 @@ export function PatientShopPage() {
       <div className="max-w-md mx-auto space-y-6 pt-8">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+           <PatientBrandMark size="md" />
         </div>
         <div className="text-center">
           <div className="h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1199,7 +1201,7 @@ export function PatientShopPage() {
       <div className="max-w-md mx-auto space-y-6 pt-8">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+           <PatientBrandMark size="md" />
         </div>
 
         <div className="bg-white border border-gray-200 rounded-[2rem] p-6 shadow-sm relative overflow-hidden">
@@ -1314,7 +1316,7 @@ export function PatientShopPage() {
         <div className="max-w-md mx-auto space-y-5 pb-8">
           <PatientEnrollmentStepper stage={stage} />
           <div className="flex justify-center mb-4">
-            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+            <PatientBrandMark size="md" />
           </div>
           <button
             type="button"
@@ -1471,7 +1473,7 @@ export function PatientShopPage() {
       <div className="max-w-md mx-auto space-y-5 pb-10">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
-          <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+          <PatientBrandMark size="md" />
         </div>
         <button
           type="button"
@@ -1696,7 +1698,7 @@ export function PatientShopPage() {
       <div className="max-w-md mx-auto space-y-6 pt-6 pb-12 text-center">
         <PatientEnrollmentStepper stage={stage} className="text-left" />
         <div className="flex justify-center mb-2">
-          <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+          <PatientBrandMark size="md" />
         </div>
         <div className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center mx-auto">
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
@@ -1762,7 +1764,7 @@ export function PatientShopPage() {
       <div className={cn("mx-auto space-y-5", showScheduler ? "max-w-lg" : "max-w-md")}>
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-6">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+           <PatientBrandMark size="md" />
         </div>
         <button
           type="button"
@@ -1930,8 +1932,17 @@ export function PatientShopPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5 pb-20">
+    <motion.div
+      className="min-h-[100dvh] bg-gradient-to-b from-emerald-50/45 via-white to-emerald-50/15"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.45 }}
+    >
+    <div className="max-w-3xl mx-auto space-y-5 pb-24 px-4 sm:px-6">
       <PatientEnrollmentStepper stage={stage} />
+      <div className="flex flex-col items-center gap-1 pt-1">
+        <PatientBrandMark size="lg" showTagline />
+      </div>
       {/* Shop Header with Back button */}
       <div className="flex items-center justify-between mb-2">
         <Button 
@@ -2021,8 +2032,14 @@ export function PatientShopPage() {
         <>
           {/* Product grid — 2-col cards with images */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {filteredProducts.map(product => (
-          <Card key={product.id} className="group hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer overflow-hidden border-border"
+        {filteredProducts.map((product, i) => (
+          <motion.div
+            key={product.id}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: Math.min(i * 0.045, 0.35), duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+          >
+          <Card className="group hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer overflow-hidden border-border"
             onClick={() => startFlow(product)}>
             <div className={cn("relative aspect-[4/3] overflow-hidden bg-gradient-to-br",
               categoryTint[product.category] ?? "from-muted to-muted")}>
@@ -2058,6 +2075,7 @@ export function PatientShopPage() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
           ))}
         </div>
 
@@ -2066,7 +2084,6 @@ export function PatientShopPage() {
           No products in this category yet.
         </div>
       )}
-      {/* Trust strip */}
       </>
       )}
       <div className="grid grid-cols-3 gap-3 pt-2">
@@ -2087,5 +2104,6 @@ export function PatientShopPage() {
         <Globe className="h-3.5 w-3.5" /> Multi-currency checkout · Licensed in your jurisdiction
       </div>
     </div>
+    </motion.div>
   );
 }

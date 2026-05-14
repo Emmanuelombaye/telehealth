@@ -18,6 +18,7 @@ import {
   getOrderFulfillmentRailIndex,
 } from "../../../lib";
 import { supabase } from "../../../lib/supabaseClient";
+import { PatientBrandMark } from "../../components/patient/PatientBrandMark.tsx";
 
 const stepIcon: Record<string, any> = {
   order_submitted: FileText,
@@ -95,7 +96,12 @@ export function PatientDashboard() {
   const awaitingReview = orders.filter(o => o.status === "order_submitted").length;
 
   return (
-    <div className="space-y-8 max-w-[1200px] mx-auto animate-in fade-in duration-1000 pb-10">
+    <motion.div
+      className="space-y-8 max-w-[1200px] mx-auto pb-10"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    >
 
       {/* ── HIGH-FIDELITY LIVE CONSULTATION ALERT ── */}
       <AnimatePresence>
@@ -152,22 +158,32 @@ export function PatientDashboard() {
       </AnimatePresence>
 
 
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-50">
-        <div className="text-center md:text-left">
-          <div className="flex items-center justify-center md:justify-start gap-4 mb-2">
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-[#0A2E1F]">
-              Welcome, <span className="font-serif italic font-normal text-emerald-600">{firstName}</span>
-            </h1>
-
+      <div className="relative overflow-hidden rounded-[2rem] border border-emerald-100/60 bg-gradient-to-br from-white via-emerald-50/40 to-white p-6 md:p-8 shadow-lg shadow-emerald-900/[0.04]">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-emerald-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-emerald-600/5 blur-2xl" />
+        <div className="relative flex flex-col lg:flex-row items-center justify-between gap-8">
+          <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left w-full lg:w-auto">
+            <PatientBrandMark size="sm" className="shrink-0 [&>div]:p-2.5" />
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700/70 mb-2">
+                Peak Health · Patient portal
+              </p>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-[#0A2E1F]">
+                Welcome,{" "}
+                <span className="font-serif italic font-normal text-emerald-600">{firstName}</span>
+              </h1>
+              <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto sm:mx-0">
+                Track prescriptions, visits, and messages in one secure place.
+              </p>
+            </div>
           </div>
-
+          <Link to="/patient/appointments" className="shrink-0 w-full sm:w-auto">
+            <Button className="w-full sm:w-auto rounded-[2rem] h-14 sm:h-16 px-8 sm:px-10 shadow-2xl shadow-emerald-900/10 gap-3 group bg-[#0A2E1F]">
+              <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform" />
+              {t("action.bookVisit")}
+            </Button>
+          </Link>
         </div>
-        <Link to="/patient/appointments">
-          <Button className="rounded-[2rem] h-16 px-10 shadow-2xl shadow-emerald-900/10 gap-3 group bg-[#0A2E1F]">
-            <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform" />
-            {t("action.bookVisit")}
-          </Button>
-        </Link>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-10">
@@ -373,6 +389,6 @@ export function PatientDashboard() {
            </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

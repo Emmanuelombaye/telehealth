@@ -11,6 +11,7 @@ import { cn } from "./ui/utils";
 import { supabase } from "../../lib/supabaseClient";
 import { PageErrorBoundary } from "./PageErrorBoundary";
 import { LogoutConfirmation } from "./LogoutConfirmation";
+import { motion } from "framer-motion";
 
 export function AppLayout() {
   const fetchOrders = usePatientStore(state => state.fetchOrders);
@@ -79,13 +80,24 @@ export function AppLayout() {
     : user?.email || "Guest User";
   
   const displayRole = authRole?.replace('_', ' ').toUpperCase() || sidebarRole.toUpperCase();
+  const isPatientPortal = path.startsWith("/patient");
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden font-sans antialiased bg-white text-[#0A0D14]">
+    <div
+      className={cn(
+        "flex flex-col h-screen w-full overflow-hidden font-sans antialiased text-[#0A0D14]",
+        isPatientPortal
+          ? "bg-gradient-to-br from-emerald-50/80 via-white to-slate-50/90"
+          : "bg-white",
+      )}
+    >
       {/* PROFESSIONAL END-TO-END HEADER (Executive Scale) */}
       <header className={cn(
         "sticky top-0 z-50 flex w-full h-32 items-center border-b px-8 md:px-12 shadow-sm backdrop-blur-md transition-all duration-300 shrink-0",
-        "border-slate-100 bg-white/95 text-[#0A0D14]",
+        isPatientPortal
+          ? "border-emerald-100/60 bg-white/90 shadow-emerald-950/[0.03]"
+          : "border-slate-100 bg-white/95",
+        "text-[#0A0D14]",
         scrolled && "h-20 shadow-md shadow-emerald-950/5"
       )}>
         {/* Left Section: Context & Navigation */}
@@ -111,25 +123,57 @@ export function AppLayout() {
              </div>
              <div className="flex flex-col">
                <span className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-600/60 leading-tight">
-                 {path.startsWith("/doctor") ? "Clinical command" : "Clinical operations"}
+                 {path.startsWith("/doctor")
+                   ? "Clinical command"
+                   : isPatientPortal
+                     ? "Your care"
+                     : "Clinical operations"}
                </span>
-               <span className="text-[15px] font-bold text-slate-400">Peak Health Center</span>
+               <span className="text-[15px] font-bold text-slate-400">
+                 {isPatientPortal ? "Peak Health" : "Peak Health Center"}
+               </span>
              </div>
           </div>
         </div>
 
         {/* Center Section: BRAND IDENTITY (Bold High-Luxe Scale) */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <Link to={`/${sidebarRole}`} className="flex items-center pointer-events-auto hover:opacity-80 transition-all duration-300">
-            <img 
-              src="/PeakHealthLogo.png" 
-              alt="Peak Health" 
-              className={cn(
-                "h-20 md:h-24 w-auto object-contain transition-all duration-300",
-                scrolled && "h-14"
-              )}
-            />
-          </Link>
+          {isPatientPortal ? (
+            <motion.div
+              className="pointer-events-auto"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Link
+                to={`/${sidebarRole}`}
+                className="flex items-center rounded-2xl px-2 py-1 ring-1 ring-emerald-600/10 shadow-md shadow-emerald-900/[0.06] bg-white/90 backdrop-blur-sm hover:opacity-90 transition-all duration-300"
+              >
+                <img
+                  src="/PeakHealthLogo.png"
+                  alt="Peak Health"
+                  className={cn(
+                    "h-20 md:h-24 w-auto object-contain transition-all duration-300",
+                    scrolled && "h-14 md:h-16",
+                  )}
+                />
+              </Link>
+            </motion.div>
+          ) : (
+            <Link
+              to={`/${sidebarRole}`}
+              className="flex items-center pointer-events-auto hover:opacity-80 transition-all duration-300"
+            >
+              <img
+                src="/PeakHealthLogo.png"
+                alt="Peak Health"
+                className={cn(
+                  "h-20 md:h-24 w-auto object-contain transition-all duration-300",
+                  scrolled && "h-14",
+                )}
+              />
+            </Link>
+          )}
         </div>
 
         {/* Right Section: Telemetry & Identity */}
@@ -179,9 +223,14 @@ export function AppLayout() {
           <Sidebar role={sidebarRole} />
         </div>
 
-        <main 
+        <main
           onScroll={onScroll}
-          className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth pb-12 bg-[#FBFBFC]"
+          className={cn(
+            "flex-1 overflow-y-auto overflow-x-hidden scroll-smooth pb-12",
+            isPatientPortal
+              ? "bg-gradient-to-b from-transparent via-[#FBFBFC] to-emerald-50/20"
+              : "bg-[#FBFBFC]",
+          )}
         >
           <PageErrorBoundary>
             <div className="w-full max-w-[1600px] mx-auto p-6 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
