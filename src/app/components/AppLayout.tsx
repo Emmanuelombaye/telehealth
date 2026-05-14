@@ -83,6 +83,7 @@ export function AppLayout() {
   const displayRole = authRole?.replace('_', ' ').toUpperCase() || sidebarRole.toUpperCase();
   const isPatientPortal = path.startsWith("/patient");
   const isSuperAdminPortal = path.startsWith("/superadmin");
+  const isDoctorPortal = path.startsWith("/doctor") || path.startsWith("/providers");
 
   return (
     <div
@@ -267,7 +268,9 @@ export function AppLayout() {
                 "mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700",
                 isSuperAdminPortal ? "max-w-6xl px-3 py-4 md:px-6 md:py-6" : isPatientPortal
                   ? "max-w-[1240px] px-4 py-6 sm:px-6 md:px-10 md:py-10"
-                  : "max-w-[1600px] p-6 md:p-10",
+                  : isDoctorPortal
+                    ? "max-w-[1600px] px-4 py-3 md:px-5 md:py-5"
+                    : "max-w-[1600px] p-6 md:p-10",
               )}
             >
               <Outlet />
