@@ -23,7 +23,8 @@ const STAGE_TO_SEGMENT: Record<ShopFlowStage, string> = {
   "2fa": "two-factor",
   identity: "verify-identity",
   questionnaire: "medical-intake",
-  scheduling: "schedule-visit",
+  /** Merged into medical-intake UI — kept for draft compatibility only */
+  scheduling: "medical-intake",
   confirmed: "enrollment-complete",
 };
 
@@ -32,6 +33,9 @@ const SEGMENT_TO_STAGE: Record<string, ShopFlowStage> = Object.fromEntries(
     .filter(([, seg]) => seg !== "")
     .map(([st, seg]) => [seg, st])
 ) as Record<string, ShopFlowStage>;
+// If duplicate segment keys existed, last wins — both questionnaire & scheduling use "medical-intake".
+// Force questionnaire for that segment (scheduling is never navigated via its own URL).
+SEGMENT_TO_STAGE["medical-intake"] = "questionnaire";
 
 /** Full path for router.navigate — catalog is base shop URL. */
 export function shopPathForStage(stage: ShopFlowStage): string {
@@ -42,6 +46,8 @@ export function shopPathForStage(stage: ShopFlowStage): string {
 /** Resolve stage from :step param (undefined → catalog). Invalid segment → null. */
 export function shopStageFromStepParam(step: string | undefined): ShopFlowStage | null {
   if (step === undefined || step === "" || step === "products") return "catalog";
+  /** Legacy deep link */
+  if (step === "schedule-visit") return "questionnaire";
   return SEGMENT_TO_STAGE[step] ?? null;
 }
 
@@ -58,12 +64,17 @@ export const ENROLLMENT_JOURNEY_STEPS: {
   { stage: "account_setup", infographicStep: 5, title: "Patient registration", subtitle: "Secure portal — create your credentials" },
   { stage: "2fa", infographicStep: 6, title: "Two-factor authentication", subtitle: "Verify your phone (SMS code)" },
   { stage: "identity", infographicStep: 7, title: "Identity verification", subtitle: "Government ID — Stripe Identity / compliant providers" },
-  { stage: "questionnaire", infographicStep: 8, title: "Medical intake", subtitle: "Questionnaire for your clinician" },
-  { stage: "scheduling", infographicStep: 8, title: "Schedule visit", subtitle: "When a video visit is required for your state/protocol" },
+  {
+    stage: "questionnaire",
+    infographicStep: 8,
+    title: "Medical intake & scheduling",
+    subtitle: "Clinical questionnaire — when required, book your video visit on the same step",
+  },
   { stage: "confirmed", infographicStep: 9, title: "Patient portal", subtitle: "Track progress — dashboard & orders" },
 ];
 
 export function journeyIndexForStage(stage: ShopFlowStage): number {
-  const i = ENROLLMENT_JOURNEY_STEPS.findIndex((s) => s.stage === stage);
+  const normalized = stage === "scheduling" ? "questionnaire" : stage;
+  const i = ENROLLMENT_JOURNEY_STEPS.findIndex((s) => s.stage === normalized);
   return i >= 0 ? i : 0;
 }

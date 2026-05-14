@@ -41,6 +41,8 @@ export type EnrollmentDraftV1 = {
   qualifierUsResident: boolean;
   identityStripeCompleted: boolean;
   activeCat: string;
+  /** Correlates Calendly/Cal booking webhooks with this enrollment (utm_content). */
+  scheduling_ref?: string | null;
   /** Present after successful Stripe pay; used to resume post-checkout steps. */
   stripePaymentIntentId?: string | null;
 };

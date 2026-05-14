@@ -12,6 +12,10 @@ export type CalendlyEmbedOptions = {
   embedDomain?: string;
   /** Peak brand green in hex without # */
   primaryColor?: string;
+  /** Passed through as utm_content — appears in Calendly webhooks (e.g. scheduling correlation ref). */
+  utmContent?: string;
+  /** Optional utm_campaign for analytics */
+  utmCampaign?: string;
 };
 
 function safeHost(): string {
@@ -51,6 +55,8 @@ export function toCalendlyInlineEmbedUrl(
 
   if (opts.email?.trim()) url.searchParams.set("email", opts.email.trim());
   if (opts.name?.trim()) url.searchParams.set("name", opts.name.trim());
+  if (opts.utmContent?.trim()) url.searchParams.set("utm_content", opts.utmContent.trim());
+  if (opts.utmCampaign?.trim()) url.searchParams.set("utm_campaign", opts.utmCampaign.trim());
 
   return url.toString();
 }
@@ -67,7 +73,16 @@ export function toSchedulingIframeSrc(
   if (!t) return null;
   const cal = toCalendlyInlineEmbedUrl(t, opts);
   if (cal) return cal;
-  if (t.startsWith("https://")) return t;
+  if (t.startsWith("https://")) {
+    try {
+      const u = new URL(t);
+      if (opts.utmContent?.trim()) u.searchParams.set("utm_content", opts.utmContent.trim());
+      if (opts.utmCampaign?.trim()) u.searchParams.set("utm_campaign", opts.utmCampaign.trim());
+      return u.toString();
+    } catch {
+      return t;
+    }
+  }
   return null;
 }
 
