@@ -6,7 +6,7 @@ type OrdersQuery = {
 
 /**
  * Orders columns safe for brand / platform admin UIs (no intake payloads, vitals, or prescriber free-text).
- * Keep in sync with migrations under `supabase_*.sql`; omit columns your DB does not have if PostgREST errors.
+ * Keep in sync with `supabase/migrations/20260515190000_admin_questionnaires_orders_columns_audit.sql`.
  */
 export const ORDERS_ADMIN_NON_CLINICAL_SELECT = [
   "id",

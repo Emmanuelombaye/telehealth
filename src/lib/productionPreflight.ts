@@ -24,13 +24,12 @@ export function runProductionPreflight(): PreflightIssue[] {
     issues.push({ level: "error", key: "VITE_SUPABASE_ANON_KEY", message: "Missing Supabase anon key." });
   }
 
-  if (!env("VITE_STRIPE_PUBLISHABLE_KEY")) {
+  // Stripe is optional in production (non-card gateways); avoid noisy console.warn on every load.
+  if (!env("VITE_STRIPE_PUBLISHABLE_KEY") && !prod) {
     issues.push({
       level: "warn",
       key: "VITE_STRIPE_PUBLISHABLE_KEY",
-      message: prod
-        ? "Stripe publishable key missing — checkout may use non-card gateways until set. Add VITE_STRIPE_PUBLISHABLE_KEY in Vercel."
-        : "Stripe key missing — use demo gateway in dev only.",
+      message: "Stripe key missing — use demo gateway in dev only.",
     });
   }
 

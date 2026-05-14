@@ -245,7 +245,15 @@ export function AdminQuestionnairePage() {
       </div>
     )},
     { header: "#ID", accessorKey: "id" },
-    { header: "Created Date", accessorKey: "date" },
+    {
+      header: "Created Date",
+      accessorKey: "created_at",
+      cell: (item: any) => (
+        <span className="text-muted-foreground text-sm">
+          {item.created_at ? new Date(item.created_at).toLocaleDateString() : "—"}
+        </span>
+      ),
+    },
     { header: "Questions", accessorKey: "questions" },
     { header: "Products", accessorKey: "products" },
     { header: "Checkout Pages", accessorKey: "checkoutPages" },
