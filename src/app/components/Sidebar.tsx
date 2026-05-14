@@ -45,17 +45,22 @@ const menuConfig: Record<Role, any[]> = {
     { icon: Building2, label: "Insurance", href: "/patient/insurance" },
   ],
   doctor: [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/doctor" },
-    { icon: Users, label: "Patients", href: "/doctor/patients" },
-    { icon: ClipboardList, label: "Patient Queue", href: "/doctor/queue" },
-    { icon: Calendar, label: "Schedule", href: "/doctor/schedule" },
-    { icon: Activity, label: "Availability", href: "/doctor/availability" },
-    { icon: MessageSquare, label: "Messages", href: "/doctor/messages" },
-    { icon: Stethoscope, label: "Consultation", href: "/doctor/consult" },
-    { icon: FlaskConical, label: "Lab Requests", href: "/doctor/labs" },
-    { icon: Bot, label: "AI Scribe", href: "/doctor/scribe" },
-    { icon: Pill, label: "e-Prescribing", href: "/doctor/erx" },
-    { icon: BookOpen, label: "Education", href: "/doctor/education" },
+    { group: "CLINICAL CORE", icon: LayoutDashboard, label: "Overview", href: "/doctor" },
+    { group: "CLINICAL CORE", icon: ClipboardList, label: "Clinical queue", href: "/doctor/queue" },
+    { group: "CLINICAL CORE", icon: Stethoscope, label: "Case workspace", href: "/doctor/consult" },
+    { group: "CLINICAL CORE", icon: Users, label: "Patients", href: "/doctor/patients" },
+    { group: "CARE COORDINATION", icon: Calendar, label: "Schedule", href: "/doctor/schedule" },
+    { group: "CARE COORDINATION", icon: Activity, label: "Availability", href: "/doctor/availability" },
+    { group: "CARE COORDINATION", icon: MessageSquare, label: "Messages", href: "/doctor/messages" },
+    { group: "CARE COORDINATION", icon: Bell, label: "Notifications", href: "/doctor/notifications" },
+    { group: "DIAGNOSTICS & RX", icon: FlaskConical, label: "Labs", href: "/doctor/labs" },
+    { group: "DIAGNOSTICS & RX", icon: ImageIcon, label: "Imaging", href: "/doctor/imaging" },
+    { group: "DIAGNOSTICS & RX", icon: Bot, label: "AI Scribe", href: "/doctor/scribe" },
+    { group: "DIAGNOSTICS & RX", icon: Pill, label: "e-Prescribing", href: "/doctor/erx" },
+    { group: "PROGRAMS", icon: HeartPulse, label: "RPM", href: "/doctor/rpm" },
+    { group: "PROGRAMS", icon: ArrowRightLeft, label: "Referrals", href: "/doctor/referrals" },
+    { group: "PROGRAMS", icon: CreditCard, label: "Billing", href: "/doctor/billing" },
+    { group: "PROGRAMS", icon: BookOpen, label: "Education", href: "/doctor/education" },
   ],
   admin: [
     { group: "MANAGEMENT", icon: Home, label: "Home", href: "/admin" },
@@ -110,6 +115,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const { orders, notifications } = usePatientStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const pendingCount = orders.filter(o => o.status === "order_submitted" || o.status === "medical_review").length;
+  const videoInboxCount = orders.filter(o => o.zoom_status === "requested").length;
   const unreadNotificationsCount = notifications.filter(n => n.unread).length;
 
   const fullName = user?.user_metadata?.first_name 
@@ -172,7 +178,8 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                     </div>
                     {(() => {
                       let badgeCount = item.badge;
-                      if (item.label === "Patient Queue") badgeCount = pendingCount;
+                      if (item.label === "Clinical queue") badgeCount = pendingCount;
+                      if (item.label === "Case workspace") badgeCount = videoInboxCount;
                       if (item.label === "Notifications") badgeCount = unreadNotificationsCount;
                       if (badgeCount && badgeCount > 0) {
                         return (

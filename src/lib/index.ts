@@ -19,5 +19,6 @@ export {
   orderHasConsultationRail,
 } from "./orderFulfillmentRail";
 export type { FulfillmentRailStep } from "./orderFulfillmentRail";
+export { useDoctorClinicalMetrics } from "./doctorClinicalMetrics";
 export { useAuthStore } from "./auth-store";
 export type { Role } from "./auth-store";

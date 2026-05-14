@@ -49,6 +49,7 @@ import { DoctorReferralsPage } from "./pages/doctor/pages/Referrals";
 import { DoctorBillingPage } from "./pages/doctor/pages/Billing";
 import { DoctorEducationPage } from "./pages/doctor/pages/Education";
 import { DoctorNotificationsPage } from "./pages/doctor/pages/Notifications";
+import { DoctorPortalShell } from "./components/DoctorPortalShell";
 
 // Admin pages
 import { AdminPatientsPage } from "./pages/admin/pages/Patients";
@@ -168,27 +169,32 @@ export const router = createBrowserRouter([
             ],
           },
           
-          // Doctor Portal
+          // Doctor Portal — nested shell: telemetry strip, ⌘K palette, breadcrumbs
           {
             path: "doctor",
             element: <ProtectedRoute allowedRoles={['doctor', 'super_admin']} />,
             children: [
-              { index: true, Component: DoctorDashboard },
-              { path: "patients", Component: DoctorPatientsPage },
-              { path: "queue", Component: DoctorQueuePage },
-              { path: "availability", Component: DoctorAvailabilityPage },
-              { path: "schedule", Component: DoctorSchedulePage },
-              { path: "messages", Component: DoctorMessagesPage },
-              { path: "consult", Component: DoctorConsultPage },
-              { path: "labs", Component: DoctorLabsPage },
-              { path: "scribe", Component: DoctorScribePage },
-              { path: "rpm", Component: DoctorRPMPage },
-              { path: "erx", Component: DoctorERxPage },
-              { path: "imaging", Component: DoctorImagingPage },
-              { path: "referrals", Component: DoctorReferralsPage },
-              { path: "billing", Component: DoctorBillingPage },
-              { path: "education", Component: DoctorEducationPage },
-              { path: "notifications", Component: DoctorNotificationsPage },
+              {
+                element: <DoctorPortalShell />,
+                children: [
+                  { index: true, Component: DoctorDashboard },
+                  { path: "patients", Component: DoctorPatientsPage },
+                  { path: "queue", Component: DoctorQueuePage },
+                  { path: "availability", Component: DoctorAvailabilityPage },
+                  { path: "schedule", Component: DoctorSchedulePage },
+                  { path: "messages", Component: DoctorMessagesPage },
+                  { path: "consult", Component: DoctorConsultPage },
+                  { path: "labs", Component: DoctorLabsPage },
+                  { path: "scribe", Component: DoctorScribePage },
+                  { path: "rpm", Component: DoctorRPMPage },
+                  { path: "erx", Component: DoctorERxPage },
+                  { path: "imaging", Component: DoctorImagingPage },
+                  { path: "referrals", Component: DoctorReferralsPage },
+                  { path: "billing", Component: DoctorBillingPage },
+                  { path: "education", Component: DoctorEducationPage },
+                  { path: "notifications", Component: DoctorNotificationsPage },
+                ],
+              },
             ],
           },
 

@@ -110,7 +110,9 @@ export function AppLayout() {
                <Activity className="h-5 w-5 text-emerald-700" />
              </div>
              <div className="flex flex-col">
-               <span className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-600/60 leading-tight">Clinical Operations</span>
+               <span className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-600/60 leading-tight">
+                 {path.startsWith("/doctor") ? "Clinical command" : "Clinical operations"}
+               </span>
                <span className="text-[15px] font-bold text-slate-400">Peak Health Center</span>
              </div>
           </div>

@@ -23,6 +23,7 @@ const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg:
   rx_sent: { label: "Rx Dispatched", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" },
   shipped: { label: "In Transit", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" },
   delivered: { label: "Delivered", color: "text-slate-700", bg: "bg-slate-50", border: "border-slate-200" },
+  follow_up: { label: "Follow-up", color: "text-violet-700", bg: "bg-violet-50", border: "border-violet-200" },
   refill_eligible: { label: "Refill Eligible", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" },
 };
 
@@ -323,6 +324,17 @@ export function DoctorQueuePage() {
                 >
                   <X className="h-5 w-5" />
                 </Button>
+              </div>
+
+              <div className="px-6 py-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 to-white flex gap-2">
+                <Link
+                  to={`/doctor/consult?orderId=${encodeURIComponent(selected.id)}`}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0A2E1F] text-white hover:bg-[#153e2d] h-10 text-xs font-bold shadow-md transition-colors"
+                >
+                  <Stethoscope className="h-4 w-4" />
+                  Open case workspace
+                  <ChevronRight className="h-4 w-4 opacity-80" />
+                </Link>
               </div>
 
               {/* Sidebar Scrollable Content */}
