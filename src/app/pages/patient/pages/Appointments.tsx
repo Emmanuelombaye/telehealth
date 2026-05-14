@@ -3,6 +3,7 @@ import { Calendar, Clock, Video, MessageSquare, Plus, ChevronRight, AlertCircle,
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
+import { defaultCalendlyBookingPageUrl, stripCalendlyEmbedParams } from "../../../../lib/calendlyEmbed";
 
 // Real-time zoom status config
 const zoomStatusConfig: Record<string, { label: string; icon: React.ReactNode; card: string; badge: string }> = {
@@ -204,21 +205,20 @@ export function AppointmentsPage() {
                       </p>
                       <Button 
                         onClick={async () => {
-                          // Try to fetch the doctor's specific calendly link if available
-                          let bookingUrl = 'https://calendly.com/peakhealth-medical/consultation'; // Default fallback
-                          
+                          let bookingUrl = defaultCalendlyBookingPageUrl();
+
                           if (order.doctor_id) {
                             const { data: profile } = await supabase
                               .from('profiles')
                               .select('calendly_url')
                               .eq('id', order.doctor_id)
                               .single();
-                            
+
                             if (profile?.calendly_url) {
-                              bookingUrl = profile.calendly_url;
+                              bookingUrl = stripCalendlyEmbedParams(profile.calendly_url);
                             }
                           }
-                          
+
                           window.open(bookingUrl, '_blank');
                         }}
                         className="h-8 px-3 text-xs rounded-xl bg-amber-500 hover:bg-amber-600 text-white gap-1.5"

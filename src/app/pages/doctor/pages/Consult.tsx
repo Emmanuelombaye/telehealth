@@ -565,6 +565,20 @@ export function DoctorConsultPage() {
         return;
       }
 
+      if (order.stripe_payment_intent_id && order.payment_status === 'paid') {
+        const { error: refundErr } = await supabase.functions.invoke('stripe-create-refund', {
+          body: {
+            payment_intent_id: order.stripe_payment_intent_id,
+            order_number: order.order_number,
+            reason: 'clinical_disqualification',
+          },
+        });
+        if (refundErr) {
+          console.error('stripe-create-refund:', refundErr);
+          showToast('info', 'Order cancelled — check Stripe dashboard if refund did not complete.');
+        }
+      }
+
       // ── Insert in-app notification for the patient ──
       await supabase.from('notifications').insert([{
         user_id: order.user_id,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router";
 import {
   ChevronRight, CheckCircle2, CreditCard,
@@ -22,6 +22,15 @@ import {
   type ConsultRoutingRuleRow,
   type ClinicalContext,
 } from "../../../../lib/videoConsultRules";
+import { toSchedulingIframeSrc } from "../../../../lib/calendlyEmbed";
+import {
+  ENROLLMENT_DRAFT_KEY,
+  DRAFT_MAX_AGE_MS,
+  loadEnrollmentDraft,
+  saveEnrollmentDraft,
+  clearEnrollmentDraft,
+  type EnrollmentDraftV1,
+} from "../../../../lib/enrollmentDraft";
 // Stripe
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -124,7 +133,16 @@ const gatewayConfig: Record<string, { label: string; icon: string; color: string
   klarna: { label: "Klarna · Pay in 4", icon: "🛍️", color: "border-pink-300 bg-pink-50 dark:bg-pink-950/30" },
 };
 
-type Stage = "catalog" | "payment" | "account_setup" | "2fa" | "identity" | "questionnaire" | "scheduling" | "confirmed";
+type Stage =
+  | "catalog"
+  | "payment"
+  | "payment_confirmation"
+  | "account_setup"
+  | "2fa"
+  | "identity"
+  | "questionnaire"
+  | "scheduling"
+  | "confirmed";
 
 export function PatientShopPage() {
   const navigate = useNavigate();
@@ -215,6 +233,22 @@ export function PatientShopPage() {
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
   const [stripePaymentIntentId, setStripePaymentIntentId] = useState<string | null>(null);
 
+  /** Checkout: clinical + ship-to qualifiers before PaymentIntent / Elements. */
+  const [paymentQualifiersPassed, setPaymentQualifiersPassed] = useState(false);
+  const [qualifierAge18_75, setQualifierAge18_75] = useState(false);
+  const [qualifierNotPregnant, setQualifierNotPregnant] = useState(false);
+  const [qualifierNoMtcMen2, setQualifierNoMtcMen2] = useState(false);
+  const [qualifierUsResident, setQualifierUsResident] = useState(false);
+  /** Set when Stripe Identity flow completes without error (upload not required). */
+  const [identityStripeCompleted, setIdentityStripeCompleted] = useState(false);
+  const [resumeDraftAvailable, setResumeDraftAvailable] = useState(false);
+  const saveDraftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const requireStripeOnly =
+    import.meta.env.PROD && !!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+  const allowSimulatedAltGateway =
+    !requireStripeOnly && (!stripeKey || import.meta.env.DEV);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -236,17 +270,18 @@ export function PatientShopPage() {
     };
   }, []);
 
-  // ── Create Stripe PaymentIntent when a payment gateway is selected ──────────
+  // ── Create Stripe PaymentIntent after qualifiers + Stripe gateway selected ──
   useEffect(() => {
-    if (!gateway || !selected || stripeClientSecret) return;
+    if (gateway !== "stripe" || !selected || !paymentQualifiersPassed || !stripePromise) return;
+    if (stripeClientSecret) return;
     let cancelled = false;
     (async () => {
       try {
         const amountCents = Math.round((selected.priceUSD ?? 0) * 100);
-        const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+        const { data, error } = await supabase.functions.invoke("create-payment-intent", {
           body: {
             amount: amountCents,
-            currency: 'usd',
+            currency: "usd",
             metadata: {
               product_id: selected.id,
               product_name: selected.name,
@@ -256,18 +291,29 @@ export function PatientShopPage() {
         });
         if (cancelled) return;
         if (error || !data?.clientSecret) {
-          setError('Could not initialise payment. Please try again.');
+          setError("Could not initialise payment. Please try again.");
           return;
         }
         setStripeClientSecret(data.clientSecret);
-        setStripePaymentIntentId(data.paymentIntentId);
+        setStripePaymentIntentId(data.paymentIntentId ?? null);
       } catch (e: any) {
         if (!cancelled) setError(e.message);
       }
     })();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gateway, selected]);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gateway, selected, paymentQualifiersPassed, email]);
+
+  useEffect(() => {
+    if (gateway !== "stripe" || !paymentQualifiersPassed) {
+      setStripeClientSecret(null);
+      if (stage === "payment") {
+        setStripePaymentIntentId(null);
+      }
+    }
+  }, [gateway, paymentQualifiersPassed, stage]);
 
   // ── Send real OTP when 2FA stage begins ─────────────────────────────────────
   useEffect(() => {
@@ -278,6 +324,8 @@ export function PatientShopPage() {
 
   // ── Reset Stripe secret when product changes ─────────────────────────────────
   const startFlow = (product: any) => {
+    clearEnrollmentDraft();
+    setResumeDraftAvailable(false);
     setSelected(product);
     setQStep(0);
     setAnswers({});
@@ -286,11 +334,179 @@ export function PatientShopPage() {
     setStripePaymentIntentId(null);
     setBookingAttestation(false);
     setConsultationTime("");
+    setPaymentQualifiersPassed(false);
+    setQualifierAge18_75(false);
+    setQualifierNotPregnant(false);
+    setQualifierNoMtcMen2(false);
+    setQualifierUsResident(false);
+    setIdentityStripeCompleted(false);
     setStage("payment");
   };
 
   const filteredProducts = activeCat === "All" ? dbProducts : dbProducts.filter(p => p.category === activeCat);
   const catalogCategories = ["All", ...Array.from(new Set(dbProducts.map(p => p.category)))];
+
+  useEffect(() => {
+    if (isLoadingProducts || dbProducts.length === 0) return;
+    const d = loadEnrollmentDraft();
+    if (d?.selectedProductId && dbProducts.some((p) => p.id === d.selectedProductId)) {
+      setResumeDraftAvailable(true);
+    } else if (d?.selectedProductId) {
+      clearEnrollmentDraft();
+      setResumeDraftAvailable(false);
+    }
+  }, [isLoadingProducts, dbProducts]);
+
+  useEffect(() => {
+    if (stage === "catalog" || stage === "confirmed" || !selected) return;
+    if (saveDraftTimer.current) clearTimeout(saveDraftTimer.current);
+    saveDraftTimer.current = setTimeout(() => {
+      const draft: EnrollmentDraftV1 = {
+        v: 1,
+        savedAt: Date.now(),
+        stage,
+        selectedProductId: selected.id,
+        email,
+        phone,
+        firstName,
+        lastName,
+        password,
+        dob,
+        sex,
+        heightFt,
+        heightIn,
+        weight,
+        hairColor,
+        eyeColor,
+        bloodType,
+        allergies,
+        currentMeds,
+        address,
+        city,
+        state,
+        zip,
+        agreedToTerms,
+        otp,
+        qStep,
+        answers,
+        gateway,
+        consultationTime,
+        bookingAttestation,
+        paymentQualifiersPassed,
+        qualifierAge18_75,
+        qualifierNotPregnant,
+        qualifierNoMtcMen2,
+        qualifierUsResident,
+        identityStripeCompleted,
+        activeCat,
+        stripePaymentIntentId,
+      };
+      saveEnrollmentDraft(draft);
+    }, 800);
+    return () => {
+      if (saveDraftTimer.current) clearTimeout(saveDraftTimer.current);
+    };
+  }, [
+    stage,
+    selected,
+    email,
+    phone,
+    firstName,
+    lastName,
+    password,
+    dob,
+    sex,
+    heightFt,
+    heightIn,
+    weight,
+    hairColor,
+    eyeColor,
+    bloodType,
+    allergies,
+    currentMeds,
+    address,
+    city,
+    state,
+    zip,
+    agreedToTerms,
+    otp,
+    qStep,
+    answers,
+    gateway,
+    consultationTime,
+    bookingAttestation,
+    paymentQualifiersPassed,
+    qualifierAge18_75,
+    qualifierNotPregnant,
+    qualifierNoMtcMen2,
+    qualifierUsResident,
+    identityStripeCompleted,
+    activeCat,
+    stripePaymentIntentId,
+  ]);
+
+  const applyResumeDraft = useCallback(() => {
+    const d = loadEnrollmentDraft();
+    if (!d?.selectedProductId) return;
+    const p = dbProducts.find((x) => x.id === d.selectedProductId);
+    if (!p) {
+      clearEnrollmentDraft();
+      setResumeDraftAvailable(false);
+      return;
+    }
+    const allowed: Stage[] = [
+      "payment",
+      "payment_confirmation",
+      "account_setup",
+      "2fa",
+      "identity",
+      "questionnaire",
+      "scheduling",
+    ];
+    let nextStage = (allowed.includes(d.stage as Stage) ? d.stage : "payment") as Stage;
+    setSelected(p);
+    setEmail(d.email);
+    setPhone(d.phone);
+    setFirstName(d.firstName);
+    setLastName(d.lastName);
+    setPassword(d.password);
+    setDob(d.dob);
+    setSex(d.sex);
+    setHeightFt(d.heightFt);
+    setHeightIn(d.heightIn);
+    setWeight(d.weight);
+    setHairColor(d.hairColor);
+    setEyeColor(d.eyeColor);
+    setBloodType(d.bloodType);
+    setAllergies(d.allergies);
+    setCurrentMeds(d.currentMeds);
+    setAddress(d.address);
+    setCity(d.city);
+    setState(d.state);
+    setZip(d.zip);
+    setAgreedToTerms(d.agreedToTerms);
+    setOtp(d.otp);
+    setQStep(d.qStep);
+    setAnswers(d.answers || {});
+    setGateway(d.gateway || "");
+    setConsultationTime(d.consultationTime);
+    setBookingAttestation(d.bookingAttestation);
+    setPaymentQualifiersPassed(d.paymentQualifiersPassed ?? false);
+    setQualifierAge18_75(d.qualifierAge18_75);
+    setQualifierNotPregnant(d.qualifierNotPregnant);
+    setQualifierNoMtcMen2(d.qualifierNoMtcMen2);
+    setQualifierUsResident(d.qualifierUsResident);
+    setIdentityStripeCompleted(d.identityStripeCompleted);
+    setActiveCat(d.activeCat || "All");
+    setStripeClientSecret(null);
+    const restoredPi = d.stripePaymentIntentId ?? null;
+    if (nextStage === "payment" && restoredPi) {
+      nextStage = "payment_confirmation";
+    }
+    setStripePaymentIntentId(restoredPi);
+    setError(null);
+    setStage(nextStage);
+  }, [dbProducts]);
 
   const globalVideoStates = useMemo(
     () => parseGlobalVideoStatesFromEnv(import.meta.env.VITE_VIDEO_REQUIRED_STATES),
@@ -347,12 +563,16 @@ export function PatientShopPage() {
   }, [stage]);
 
   const schedulingEmbedSrc = useMemo(() => {
-    const baseUrl = assignedDoctorForScheduling?.calendly_url || videoRules?.schedulingEmbedUrl || defaultSchedulingEmbedUrl();
-    // Pre-fill Calendly params for seamless UX
-    const url = new URL(baseUrl);
-    if (email) url.searchParams.set('email', email);
-    if (firstName || lastName) url.searchParams.set('name', `${firstName} ${lastName}`.trim());
-    return url.toString();
+    const raw =
+      assignedDoctorForScheduling?.calendly_url ||
+      videoRules?.schedulingEmbedUrl ||
+      defaultSchedulingEmbedUrl();
+    return (
+      toSchedulingIframeSrc(raw, {
+        email: email || undefined,
+        name: `${firstName} ${lastName}`.trim() || undefined,
+      }) || raw
+    );
   }, [assignedDoctorForScheduling, videoRules, email, firstName, lastName]);
 
 
@@ -450,7 +670,8 @@ export function PatientShopPage() {
         }
       }
 
-      if (!idFile) throw new Error("Please upload a photo of your government ID.");
+      if (!idFile && !identityStripeCompleted)
+        throw new Error("Please upload a photo of your government ID, or complete Stripe Identity verification.");
 
       const rules = parseProductVideoRules(selected.rawFeatures);
       const needsVideo = requiresSyncVideoVisit(rules, globalVideoStates, routingRulesFromDb, {
@@ -494,15 +715,16 @@ export function PatientShopPage() {
       const referralCode = localStorage.getItem('peak_health_referral_code');
 
       // ── Insert order into Supabase ────────────────────────────────────────────
+      const assigned = !!assignedDoctorForScheduling;
       const { error: insertError } = await supabase.from('orders').insert([{
         order_number:      freshOrderRef,
         mrn:               generateMRN(),
         doctor_id:         assignedDoctorForScheduling?.id || null,
         doctor:            assignedDoctorForScheduling?.full_name || null,
-        status:            assignedDoctorForScheduling ? 'medical_review' : 'order_submitted',
+        status:            assigned ? "medical_review" : "order_submitted",
         patient_name:      `${resolvedFirstName} ${resolvedLastName}`.trim() || "New Patient",
-        patient_email:     user?.email || null,
-        patient_state:     user?.user_metadata?.state || "NY", // Defaulting to NY if metadata is missing
+        patient_email:     resolvedEmail,
+        patient_state:     (state || "").trim().toUpperCase() || null,
         patient_avatar:    (resolvedFirstName[0] || "") + (resolvedLastName[0] || ""),
         patient_age:       age,
         patient_country:   "🇺🇸 US",
@@ -510,11 +732,9 @@ export function PatientShopPage() {
         medication:        selected.name,
         dosage_instructions: selected.tagline,
         category:          selected.category,
-        status:            "order_submitted",
         ordered_date:      new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         amount:            selected.priceUSD,
         user_id:           userId,
-        patient_email:     resolvedEmail,
         intake_complete:   true,
         intake_notes:      `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Blood: ${bloodType} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
         intake_answers:    {
@@ -536,6 +756,13 @@ export function PatientShopPage() {
 
 
       if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
+
+      if (stripePaymentIntentId) {
+        const { error: attachErr } = await supabase.functions.invoke("stripe-attach-order", {
+          body: { payment_intent_id: stripePaymentIntentId, order_number: freshOrderRef },
+        });
+        if (attachErr) console.warn("[Shop] stripe-attach-order:", attachErr.message);
+      }
 
       // ── Success: Clear referral code & Notify Referly ───────────────────────
       if (referralCode) {
@@ -559,6 +786,8 @@ export function PatientShopPage() {
       setFirstName(resolvedFirstName);
       setLastName(resolvedLastName);
       setEmail(resolvedEmail);
+      clearEnrollmentDraft();
+      setResumeDraftAvailable(false);
       setStage("confirmed");
 
     } catch (err: any) {
@@ -629,6 +858,15 @@ export function PatientShopPage() {
           <p className="text-sm text-muted-foreground mt-2">
             Your payment is secured. Let's finish creating your account so you can track your prescription and message your doctor.
           </p>
+          {stripePaymentIntentId && (
+            <button
+              type="button"
+              className="mt-3 text-xs font-semibold text-primary hover:underline"
+              onClick={() => setStage("payment_confirmation")}
+            >
+              View payment confirmation
+            </button>
+          )}
         </div>
 
         {/* ─── SECTION 1: Identity ─── */}
@@ -929,9 +1167,8 @@ export function PatientShopPage() {
                     if (result.error) {
                       setError(result.error.message || 'Verification failed.');
                     } else {
-                      // Verification flow completed (result confirmed by webhook)
-                      // Proceed to questionnaire — webhook will update kyc_status async
-                      setStage('questionnaire');
+                      setIdentityStripeCompleted(true);
+                      setStage("questionnaire");
                     }
                   } catch (e: any) {
                     setError(e.message);
@@ -966,52 +1203,244 @@ export function PatientShopPage() {
   }
 
   if (stage === "payment" && selected) {
-    // Format card number with spaces every 4 digits for display
-    const formattedCard = cardNum.replace(/(.{4})/g, '$1 ').trim();
-    const cardReady = gateway === 'stripe'
-      ? (cardNum.length === 16 && cardExpiry.length === 5 && cardCvc.length === 3)
-      : !!gateway;
+    const weightLoss = selected.category === "Weight Loss";
+    const displayedGateways: string[] =
+      requireStripeOnly
+        ? (selected.gateways || []).filter((g: string) => g === "stripe")
+        : selected.gateways || ["stripe"];
+
+    const qualifierErr = (): string | null => {
+      if (!firstName?.trim() || !lastName?.trim()) return "Enter your first and last name.";
+      if (!email?.includes("@")) return "Enter a valid email address.";
+      const st = (state || "").trim().toUpperCase();
+      if (!/^[A-Z]{2}$/.test(st)) return "Enter a valid two-letter US ship-to state.";
+      if (!qualifierUsResident) return "Please confirm US treatment eligibility.";
+      if (!qualifierAge18_75) return "Please confirm you are between 18 and 75 years of age.";
+      if (weightLoss) {
+        if (!qualifierNotPregnant) return "Please confirm pregnancy and breastfeeding attestation.";
+        if (!qualifierNoMtcMen2) return "Please confirm MTC / MEN 2 history attestation.";
+      }
+      return null;
+    };
+
+    const formattedCard = cardNum.replace(/(.{4})/g, "$1 ").trim();
+    const cardReady =
+      gateway === "stripe"
+        ? cardNum.length === 16 && cardExpiry.length === 5 && cardCvc.length === 3
+        : !!gateway;
+
+    if (!paymentQualifiersPassed) {
+      return (
+        <div className="max-w-md mx-auto space-y-5 pb-8">
+          <div className="flex justify-center mb-4">
+            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+          </div>
+          <button
+            type="button"
+            onClick={() => setStage("catalog")}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to Catalog
+          </button>
+
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="font-bold text-sm">{selected.name}</p>
+                <p className="text-xs text-muted-foreground">{selected.category}</p>
+              </div>
+              <span className="font-extrabold text-primary text-lg">{selected.price}</span>
+            </CardContent>
+          </Card>
+
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            Before checkout
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Quick eligibility and shipping confirmation. You will enter payment on the next screen.
+          </p>
+
+          <div className="space-y-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contact</p>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="text"
+                placeholder="First name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary"
+              />
+              <input
+                type="text"
+                placeholder="Last name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary"
+              />
+            </div>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary"
+            />
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                US ship-to state (2 letters)
+              </label>
+              <input
+                type="text"
+                maxLength={2}
+                placeholder="e.g. TX"
+                value={state}
+                onChange={(e) => setState(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2))}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-900 uppercase focus:outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-2xl border border-border bg-muted/20 p-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-primary shrink-0"
+                checked={qualifierUsResident}
+                onChange={(e) => setQualifierUsResident(e.target.checked)}
+              />
+              <span className="text-xs leading-relaxed text-foreground">
+                I am a US resident and understand medication ships to valid US addresses only.
+              </span>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-primary shrink-0"
+                checked={qualifierAge18_75}
+                onChange={(e) => setQualifierAge18_75(e.target.checked)}
+              />
+              <span className="text-xs leading-relaxed text-foreground">
+                I confirm I am between 18 and 75 years of age.
+              </span>
+            </label>
+            {weightLoss && (
+              <>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 accent-primary shrink-0"
+                    checked={qualifierNotPregnant}
+                    onChange={(e) => setQualifierNotPregnant(e.target.checked)}
+                  />
+                  <span className="text-xs leading-relaxed text-foreground">
+                    I am not pregnant, not breastfeeding, and not trying to conceive.
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 accent-primary shrink-0"
+                    checked={qualifierNoMtcMen2}
+                    onChange={(e) => setQualifierNoMtcMen2(e.target.checked)}
+                  />
+                  <span className="text-xs leading-relaxed text-foreground">
+                    I do not have a personal or family history of medullary thyroid carcinoma (MTC) or multiple
+                    endocrine neoplasia type 2 (MEN 2).
+                  </span>
+                </label>
+              </>
+            )}
+          </div>
+
+          {error && <p className="text-red-500 text-sm text-center font-semibold">{error}</p>}
+
+          <Button
+            className="w-full rounded-xl h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+            onClick={() => {
+              const qe = qualifierErr();
+              if (qe) {
+                setError(qe);
+                return;
+              }
+              setError(null);
+              setPaymentQualifiersPassed(true);
+            }}
+          >
+            Continue to secure payment <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      );
+    }
+
+    if (displayedGateways.length === 0) {
+      return (
+        <div className="max-w-md mx-auto space-y-4 p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Card checkout is not configured for this product. Please contact support.
+          </p>
+          <Button variant="outline" onClick={() => setStage("catalog")}>
+            Back to catalog
+          </Button>
+        </div>
+      );
+    }
 
     return (
-      <div className="max-w-md mx-auto space-y-5">
-        <div className="flex justify-center mb-6">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+      <div className="max-w-md mx-auto space-y-5 pb-10">
+        <div className="flex justify-center mb-4">
+          <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
-        <button onClick={() => setStage("catalog")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <button
+          type="button"
+          onClick={() => setStage("catalog")}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> Back to Catalog
         </button>
 
-        {/* Basic Info Collection for Payment linking */}
-        <div className="space-y-4 mb-4">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contact Information</p>
-          <div className="grid grid-cols-2 gap-3">
-             <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary" />
-             <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary" />
-          </div>
-          <input type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary" />
-        </div>
+        <button
+          type="button"
+          className="text-xs font-semibold text-primary hover:underline"
+          onClick={() => {
+            setPaymentQualifiersPassed(false);
+            setGateway("");
+            setStripeClientSecret(null);
+            setStripePaymentIntentId(null);
+            setError(null);
+          }}
+        >
+          ← Edit eligibility & contact
+        </button>
 
-        {/* Order summary */}
         <Card>
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="font-bold text-sm">{selected.name}</p>
               <p className="text-xs text-muted-foreground">
-                {selected.category}{firstName || lastName ? ` · ${firstName} ${lastName}` : ''}
+                {selected.category} · Ship to {state.toUpperCase()}
               </p>
             </div>
             <span className="font-extrabold text-primary text-lg">{selected.price}</span>
           </CardContent>
         </Card>
 
-        {/* Step 1: Choose payment method */}
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">1. Select Payment Method</p>
+          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">
+            Select payment method
+          </p>
           <div className="space-y-2">
-            {selected.gateways.map(gw => (
-              <button key={gw} onClick={() => setGateway(gw)}
-                className={cn("w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left",
-                  gateway === gw ? "border-primary bg-primary/5 text-primary" : "border-slate-200 bg-white hover:border-slate-300 text-slate-700")}>
+            {displayedGateways.map((gw: string) => (
+              <button
+                key={gw}
+                type="button"
+                onClick={() => setGateway(gw)}
+                className={cn(
+                  "w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left",
+                  gateway === gw
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-slate-200 bg-white hover:border-slate-300 text-slate-700"
+                )}
+              >
                 <span className="text-2xl">{gatewayConfig[gw]?.icon}</span>
                 <span className="font-semibold text-sm">{gatewayConfig[gw]?.label}</span>
                 {gateway === gw && <CheckCircle2 className="h-5 w-5 text-primary ml-auto" />}
@@ -1020,65 +1449,81 @@ export function PatientShopPage() {
           </div>
         </div>
 
-        {/* Step 2: Card details — always visible once a gateway is selected */}
-        {gateway && (
+        {requireStripeOnly && (
+          <p className="text-[11px] text-muted-foreground bg-muted/40 rounded-xl px-3 py-2">
+            Live checkout accepts card payments through Stripe only.
+          </p>
+        )}
+
+        {gateway && gateway !== "stripe" && !allowSimulatedAltGateway && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            Please select <strong>Credit / Debit Card</strong> to complete checkout in this environment.
+          </div>
+        )}
+
+        {gateway && gateway !== "stripe" && allowSimulatedAltGateway && (
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">
-              2. {gateway === 'stripe' ? 'Enter Card Details' : `${gatewayConfig[gateway]?.label} — Card Details`}
+              Demo card (not charged)
             </p>
-
-            {/* Visual card preview */}
             <div className="relative h-36 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-5 mb-4 overflow-hidden shadow-xl">
               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_50%,white,transparent_60%)]" />
               <div className="flex justify-between items-start">
-                <span className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Peak Health Pay</span>
+                <span className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Demo</span>
                 <CreditCard className="h-6 w-6 text-white/50" />
               </div>
               <p className="text-white font-mono text-lg tracking-[0.2em] mt-3 font-bold">
-                {cardNum ? formattedCard.padEnd(19, '·').replace(/·/g, ' ·').replace(/ ·/g, '·') : '•••• •••• •••• ••••'}
+                {cardNum
+                  ? formattedCard.padEnd(19, "·").replace(/·/g, " ·").replace(/ ·/g, "·")
+                  : "•••• •••• •••• ••••"}
               </p>
               <div className="flex justify-between items-end mt-2">
                 <div>
                   <p className="text-white/40 text-[8px] uppercase tracking-wide">Cardholder</p>
-                  <p className="text-white text-base font-bold">{firstName && lastName ? `${firstName.toUpperCase()} ${lastName.toUpperCase()}` : 'YOUR NAME'}</p>
+                  <p className="text-white text-base font-bold">
+                    {firstName && lastName ? `${firstName.toUpperCase()} ${lastName.toUpperCase()}` : "YOUR NAME"}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-white/40 text-[8px] uppercase tracking-wide">Expires</p>
-                  <p className="text-white text-sm font-bold font-mono">{cardExpiry || 'MM/YY'}</p>
+                  <p className="text-white text-sm font-bold font-mono">{cardExpiry || "MM/YY"}</p>
                 </div>
               </div>
             </div>
 
             <Card className="border-border">
               <CardContent className="p-4 space-y-4">
-                {/* Card number */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Card Number</label>
+                  <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    Card number
+                  </label>
                   <div className="relative">
                     <CreditCard className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <input
                       type="text"
                       inputMode="numeric"
                       value={formattedCard}
-                      onChange={e => setCardNum(e.target.value.replace(/\D/g, '').slice(0, 16))}
+                      onChange={(e) => setCardNum(e.target.value.replace(/\D/g, "").slice(0, 16))}
                       placeholder="0000 0000 0000 0000"
                       className="w-full pl-10 pr-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-white text-gray-900 tracking-widest"
                     />
-                    {cardNum.length === 16 && <CheckCircle2 className="absolute right-3 top-3 h-4 w-4 text-emerald-500" />}
+                    {cardNum.length === 16 && (
+                      <CheckCircle2 className="absolute right-3 top-3 h-4 w-4 text-emerald-500" />
+                    )}
                   </div>
                 </div>
-
-                {/* Expiry + CVC side by side */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Expiry Date</label>
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      Expiry
+                    </label>
                     <input
                       type="text"
                       inputMode="numeric"
                       value={cardExpiry}
-                      onChange={e => {
-                        let v = e.target.value.replace(/\D/g, '').slice(0, 4);
-                        if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
+                      onChange={(e) => {
+                        let v = e.target.value.replace(/\D/g, "").slice(0, 4);
+                        if (v.length > 2) v = v.slice(0, 2) + "/" + v.slice(2);
                         setCardExpiry(v);
                       }}
                       placeholder="MM / YY"
@@ -1086,38 +1531,40 @@ export function PatientShopPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">CVC / CVV</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={cardCvc}
-                        onChange={e => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                        placeholder="3 digits"
-                        className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background placeholder:font-sans placeholder:text-muted-foreground"
-                      />
-                      <span className="absolute right-3 top-3 text-[10px] text-muted-foreground font-bold mt-1">CVV</span>
-                    </div>
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">CVC</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={cardCvc}
+                      onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 3))}
+                      placeholder="3 digits"
+                      className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background"
+                    />
                   </div>
                 </div>
-
-                {/* Helper tip */}
-                <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                  <Shield className="h-3 w-3 text-emerald-500" />
-                  Your card details are encrypted and never stored on our servers.
-                </p>
               </CardContent>
             </Card>
+
+            <Button
+              className="w-full mt-4 rounded-xl h-12 font-bold bg-slate-700 hover:bg-slate-800 text-white"
+              disabled={!cardReady}
+              onClick={() => {
+                setStripePaymentIntentId(null);
+                setError(null);
+                setStage("payment_confirmation");
+              }}
+            >
+              Continue (demo checkout — no charge)
+            </Button>
           </div>
         )}
 
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pb-2">
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pb-1">
           <ShieldCheck className="h-4 w-4 text-emerald-500" />
-          256-bit SSL encryption · HIPAA compliant · Cancel anytime
+          256-bit SSL encryption · HIPAA compliant
         </div>
 
-        {/* ── Real Stripe PaymentElement ─────────────────────────────── */}
-        {stripeClientSecret && gateway && stripePromise ? (
+        {gateway === "stripe" && stripePromise && stripeClientSecret ? (
           <Elements
             stripe={stripePromise}
             options={{
@@ -1136,30 +1583,88 @@ export function PatientShopPage() {
               productName={selected.name}
               onSuccess={(paymentIntentId) => {
                 setStripePaymentIntentId(paymentIntentId);
-                const currentUser = useAuthStore.getState().user;
-                if (currentUser) {
-                  setFirstName(currentUser.user_metadata?.first_name || firstName);
-                  setLastName(currentUser.user_metadata?.last_name || lastName);
-                  setEmail(currentUser.email || email);
-                  setStage("questionnaire");
-                } else {
-                  setStage("account_setup");
-                }
+                setError(null);
+                setStage("payment_confirmation");
               }}
               onError={(msg) => setError(msg)}
             />
           </Elements>
-        ) : gateway ? (
-          // Loading Stripe — create payment intent
+        ) : gateway === "stripe" && stripePromise ? (
           <div className="flex flex-col items-center gap-3 py-6">
             <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
             <p className="text-sm text-muted-foreground">Initialising secure payment...</p>
           </div>
-        ) : (
-          <p className="text-xs text-center text-muted-foreground">Select a payment method above to continue</p>
-        )}
+        ) : gateway === "stripe" && !stripePromise ? (
+          <p className="text-xs text-center text-amber-700 font-semibold">
+            Stripe is not configured (missing publishable key). Add{" "}
+            <code className="font-mono">VITE_STRIPE_PUBLISHABLE_KEY</code> or use a demo gateway in development.
+          </p>
+        ) : !gateway ? (
+          <p className="text-xs text-center text-muted-foreground">Select a payment method above.</p>
+        ) : null}
 
         {error && <p className="text-red-500 text-sm text-center font-semibold">{error}</p>}
+      </div>
+    );
+  }
+
+  if (stage === "payment_confirmation" && selected) {
+    return (
+      <div className="max-w-md mx-auto space-y-6 pt-6 pb-12 text-center">
+        <div className="flex justify-center mb-2">
+          <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
+        </div>
+        <div className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center mx-auto">
+          <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold">Payment received</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Thank you{firstName ? `, ${firstName}` : ""}. Your subscription payment for{" "}
+            <span className="font-semibold text-foreground">{selected.name}</span> was processed
+            {stripePaymentIntentId ? " securely" : " (demo mode)"}.
+          </p>
+        </div>
+        <Card className="text-left">
+          <CardContent className="p-4 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Plan</span>
+              <span className="font-semibold">{selected.price}</span>
+            </div>
+            {gateway && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Method</span>
+                <span className="font-semibold">{gatewayConfig[gateway]?.label ?? gateway}</span>
+              </div>
+            )}
+            {stripePaymentIntentId && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Reference</span>
+                <span className="font-mono text-xs truncate max-w-[55%]" title={stripePaymentIntentId}>
+                  {stripePaymentIntentId.length > 20
+                    ? `${stripePaymentIntentId.slice(0, 14)}…`
+                    : stripePaymentIntentId}
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Button
+          className="w-full rounded-xl h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+          onClick={() => {
+            const currentUser = useAuthStore.getState().user;
+            if (currentUser) {
+              setFirstName(currentUser.user_metadata?.first_name || firstName);
+              setLastName(currentUser.user_metadata?.last_name || lastName);
+              setEmail(currentUser.email || email);
+              setStage("questionnaire");
+            } else {
+              setStage("account_setup");
+            }
+          }}
+        >
+          Continue <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
       </div>
     );
   }
@@ -1313,11 +1818,15 @@ export function PatientShopPage() {
                <ShieldCheck className="h-6 w-6 text-emerald-600" />
             </div>
             <div className="flex-1">
-              <p className="text-xs font-medium text-foreground">Government ID (from earlier step)</p>
+              <p className="text-xs font-medium text-foreground">Government ID or Stripe Identity</p>
               {idFile ? (
                 <p className="text-[10px] text-emerald-600 font-bold mt-1">✓ {idFile.name}</p>
+              ) : identityStripeCompleted ? (
+                <p className="text-[10px] text-emerald-600 font-bold mt-1">✓ Stripe Identity completed</p>
               ) : (
-                <p className="text-[10px] text-amber-700 font-semibold mt-1">Upload ID in the identity step if you have not yet.</p>
+                <p className="text-[10px] text-amber-700 font-semibold mt-1">
+                  Upload ID in the identity step or complete Stripe Identity.
+                </p>
               )}
             </div>
           </div>
@@ -1379,6 +1888,42 @@ export function PatientShopPage() {
           </div>
         </div>
       </div>
+
+      {resumeDraftAvailable && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="text-sm">
+              <p className="font-bold text-foreground">Resume your enrollment?</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                We saved your progress locally (up to 7 days). Continue where you left off.
+              </p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={() => {
+                  clearEnrollmentDraft();
+                  setResumeDraftAvailable(false);
+                }}
+              >
+                Discard
+              </Button>
+              <Button
+                size="sm"
+                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => {
+                  applyResumeDraft();
+                  setResumeDraftAvailable(false);
+                }}
+              >
+                Resume
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Category filter */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">

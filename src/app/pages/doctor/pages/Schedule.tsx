@@ -2,19 +2,42 @@ import { useState, useEffect, useRef } from "react";
 import { Calendar, Clock, Video, ChevronRight, Plus, Loader2, CalendarPlus, CheckCircle2, AlertCircle, Activity, ShieldCheck, UserCircle, Send, Circle, Database, MessageCircle, X } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib";
+import { toCalendlyInlineEmbedUrl, defaultCalendlySchedulingUrl } from "../../../../lib/calendlyEmbed";
 import { useNavigate } from "react-router";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
 import { toast } from "sonner";
 
 export function DoctorSchedulePage() {
+  const user = useAuthStore((s) => s.user);
   const [scheduledOrders, setScheduledOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [rescheduleTimes, setRescheduleTimes] = useState<Record<string, string>>({});
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [schedulingEmbedUrl, setSchedulingEmbedUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const availabilityRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("calendly_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      const u = data?.calendly_url?.trim();
+      if (u && u.startsWith("http")) {
+        setSchedulingEmbedUrl(
+          toCalendlyInlineEmbedUrl(u, { primaryColor: "0a2e1f" }) || u
+        );
+      } else {
+        setSchedulingEmbedUrl(defaultCalendlySchedulingUrl());
+      }
+    })();
+  }, [user?.id]);
 
   const fetchSchedule = async () => {
     try {
@@ -385,11 +408,17 @@ export function DoctorSchedulePage() {
           </Badge>
         </div>
         <div className="overflow-hidden border border-slate-200 shadow-xl shadow-slate-200/50 rounded-[1.75rem] bg-white">
+          {schedulingEmbedUrl ? (
           <iframe
-            src="https://calendly.com/calendly-demo?hide_event_type_details=1&hide_gdpr_banner=1&primary_color=0a2e1f"
-            width="100%" height="700" frameBorder="0" title="Calendly Scheduling"
+            src={schedulingEmbedUrl}
+            width="100%" height="700" frameBorder="0" title="Your scheduling calendar"
             className="w-full bg-white"
           />
+          ) : (
+            <div className="h-[400px] flex items-center justify-center text-slate-500 text-sm font-medium">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading your calendar…
+            </div>
+          )}
         </div>
       </div>
 

@@ -27,33 +27,52 @@ serve(async (req) => {
 
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object;
-        
-        // Example: Update the order to 'order_submitted' when checkout completes
-        if (session.metadata?.order_id) {
-           await supabaseClient
-             .from("orders")
-             .update({ payment_status: "paid" })
-             .eq("id", session.metadata.order_id);
+        const session = event.data.object as Stripe.Checkout.Session;
+        const meta = session.metadata || {};
+        if (meta.order_id) {
+          await supabaseClient
+            .from("orders")
+            .update({ payment_status: "paid" })
+            .eq("id", meta.order_id);
+        }
+        if (meta.order_number) {
+          await supabaseClient
+            .from("orders")
+            .update({ payment_status: "paid" })
+            .eq("order_number", meta.order_number);
         }
         break;
       }
-      
+
       case "payment_intent.succeeded": {
         const pi = event.data.object as Stripe.PaymentIntent;
+        const meta = pi.metadata || {};
         await supabaseClient
           .from("orders")
           .update({ payment_status: "paid" })
           .eq("stripe_payment_intent_id", pi.id);
+        if (meta.order_number) {
+          await supabaseClient
+            .from("orders")
+            .update({ payment_status: "paid", stripe_payment_intent_id: pi.id })
+            .eq("order_number", meta.order_number);
+        }
         break;
       }
 
       case "payment_intent.payment_failed": {
         const pi = event.data.object as Stripe.PaymentIntent;
+        const meta = pi.metadata || {};
         await supabaseClient
           .from("orders")
           .update({ payment_status: "failed" })
           .eq("stripe_payment_intent_id", pi.id);
+        if (meta.order_number) {
+          await supabaseClient
+            .from("orders")
+            .update({ payment_status: "failed" })
+            .eq("order_number", meta.order_number);
+        }
         break;
       }
       // Add other Stripe events as needed

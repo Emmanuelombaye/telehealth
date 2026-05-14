@@ -81,7 +81,7 @@ serve(async (req: Request) => {
     .from("orders")
     .update(patch)
     .eq("order_number", orderNumber)
-    .select("order_number, user_id, patient_name, consultation_time")
+    .select("order_number, user_id, patient_name, patient_email, consultation_time, zoom_join_url")
     .maybeSingle();
 
   if (error) {
@@ -105,9 +105,29 @@ serve(async (req: Request) => {
       user_id: order.user_id,
       type: "appointment",
       title: "Video Consultation Confirmed",
-      body: `Your video consultation has been booked for ${bookedTime}. Check your email for the meeting link.`,
+      body: `Your video consultation has been booked for ${bookedTime}.${order.zoom_join_url ? ` Join: ${order.zoom_join_url}` : " Check your email for the meeting link."}`,
       unread: true,
     }]);
+  }
+
+  // 4. Optional transactional email (booking confirmed)
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  const to = typeof order.patient_email === "string" ? order.patient_email : "";
+  const meet = (order.zoom_join_url as string) || "";
+  if (resendKey && to.includes("@") && meet.startsWith("http")) {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${resendKey}`,
+      },
+      body: JSON.stringify({
+        from: "Peak Health <hello@peakhealth.com>",
+        to: [to],
+        subject: "Your video visit is booked",
+        html: `<p>Hi ${order.patient_name || "Patient"},</p><p>Your consultation is confirmed.</p><p><a href="${meet}">Join your visit</a></p>`,
+      }),
+    });
   }
 
   return new Response(JSON.stringify({ ok: true, order_number: order.order_number }), {

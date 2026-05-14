@@ -17,6 +17,8 @@
  * `supabase_consult_routing_rules.sql` if the table is missing.
  */
 
+import { defaultCalendlySchedulingUrl, toSchedulingIframeSrc } from "./calendlyEmbed";
+
 export type VideoClinicalRules = {
   bmiMin?: number;
   ageMin?: number;
@@ -223,6 +225,8 @@ export function requiresSyncVideoVisit(
 
 export function defaultSchedulingEmbedUrl(): string {
   const v = import.meta.env.VITE_SCHEDULING_EMBED_URL as string | undefined;
-  if (v && v.startsWith("https://")) return v;
-  return "https://calendly.com/peakhealth-medical/consultation?embed_type=Inline&hide_gdpr_banner=1";
+  if (v && v.startsWith("https://")) {
+    return toSchedulingIframeSrc(v, {}) || v;
+  }
+  return defaultCalendlySchedulingUrl();
 }
