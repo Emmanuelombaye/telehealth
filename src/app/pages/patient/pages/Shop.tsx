@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, type RefObject } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   ChevronRight, CheckCircle2, CreditCard,
@@ -9,6 +9,7 @@ import {
   Smartphone,
   Lock,
   Sparkles,
+  Upload,
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
@@ -215,6 +216,168 @@ function AltGatewayReadinessPanel({
   );
 }
 
+const ID_ACCEPT = "image/jpeg,image/png,image/webp,application/pdf" as const;
+
+function EnrollmentIdUploadPanel({
+  idAccept,
+  idFile,
+  setIdFile,
+  identityStripeCompleted,
+  setError,
+  idUploadInputRef,
+  onOpenStripeIdentity,
+  embedded,
+}: {
+  idAccept: string;
+  idFile: File | null;
+  setIdFile: (f: File | null) => void;
+  identityStripeCompleted: boolean;
+  setError: (msg: string | null) => void;
+  idUploadInputRef: RefObject<HTMLInputElement | null>;
+  onOpenStripeIdentity: () => void;
+  /** When true, panel sits inside the last question card (divider + compact header). */
+  embedded?: boolean;
+}) {
+  if (identityStripeCompleted) {
+    return (
+      <div
+        className={cn(
+          embedded && "mt-6 border-t-2 border-emerald-100 pt-6",
+          "rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-4 dark:border-emerald-800 dark:bg-emerald-950/50",
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm dark:bg-emerald-900/80">
+            <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-300" aria-hidden />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Identity verified</p>
+            <p className="text-xs text-emerald-800/90 dark:text-emerald-200/90">Stripe Identity is complete — you can submit enrollment.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const pickFile = () => idUploadInputRef.current?.click();
+
+  return (
+    <div className={cn(embedded && "mt-6 border-t-2 border-dashed border-emerald-200/90 pt-6", "space-y-4")}>
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-900/15">
+          <ShieldCheck className="h-6 w-6" aria-hidden />
+        </div>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-900 dark:bg-amber-500/20 dark:text-amber-100">
+              Required to submit
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">ID verification</span>
+          </div>
+          <h2 className="text-base font-black text-[#0A0D14] dark:text-white">Upload a photo of your government ID</h2>
+          <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            Driver license, state ID, or passport — legible, full frame, no glare. JPG, PNG, WebP, or PDF, up to 12 MB.
+          </p>
+        </div>
+      </div>
+
+      <input
+        ref={idUploadInputRef}
+        id="gov-id-upload-shop"
+        type="file"
+        className="sr-only"
+        accept={idAccept}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) {
+            if (f.size > 12 * 1024 * 1024) {
+              setError("Please choose an ID file under 12 MB.");
+              e.target.value = "";
+              return;
+            }
+            setError(null);
+            setIdFile(f);
+          }
+        }}
+      />
+
+      <div
+        className="overflow-hidden rounded-2xl border-2 border-dashed border-emerald-400/70 bg-gradient-to-b from-emerald-50 via-white to-slate-50/80 p-5 shadow-inner dark:border-emerald-500/40 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-slate-950/80"
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const f = e.dataTransfer.files?.[0];
+          if (!f) return;
+          if (!idAccept.split(",").some((t) => f.type === t.trim())) {
+            setError("Please drop a JPG, PNG, WebP, or PDF file.");
+            return;
+          }
+          if (f.size > 12 * 1024 * 1024) {
+            setError("Please choose an ID file under 12 MB.");
+            return;
+          }
+          setError(null);
+          setIdFile(f);
+        }}
+      >
+        <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white shadow-md ring-1 ring-emerald-100 dark:bg-emerald-900/50 dark:ring-emerald-700/50">
+            <Upload className="h-8 w-8 text-emerald-600 dark:text-emerald-300" aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1 space-y-2">
+            <label htmlFor="gov-id-upload-shop" className="block cursor-pointer space-y-2 text-left">
+              <p className="text-sm font-bold text-[#0A0D14] dark:text-white">
+                {idFile ? idFile.name : "Drag and drop your ID here, or use Choose file."}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Your file stays encrypted in transit. We use it only for clinician verification.</p>
+            </label>
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+              <Button
+                type="button"
+                className="rounded-xl bg-emerald-600 px-6 text-xs font-black uppercase tracking-widest text-white hover:bg-emerald-700"
+                onClick={pickFile}
+              >
+                Choose file
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {idFile && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-950/30">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
+          <span className="text-sm font-bold text-emerald-900 dark:text-emerald-100">ID attached — ready to submit</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="ml-auto rounded-lg text-[10px]"
+            onClick={() => {
+              setIdFile(null);
+              if (idUploadInputRef.current) idUploadInputRef.current.value = "";
+            }}
+          >
+            Remove
+          </Button>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="w-full rounded-xl border border-slate-200 bg-slate-50/80 py-3 text-xs font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+        onClick={onOpenStripeIdentity}
+      >
+        Prefer Stripe Identity? Open the identity step instead →
+      </button>
+    </div>
+  );
+}
+
 // Products now fetched from Supabase directly
 
 const categoryTint: Record<string, string> = {
@@ -334,6 +497,7 @@ export function PatientShopPage() {
   const [identityStripeCompleted, setIdentityStripeCompleted] = useState(false);
   const [resumeDraftAvailable, setResumeDraftAvailable] = useState(false);
   const saveDraftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idUploadInputRef = useRef<HTMLInputElement | null>(null);
 
   /** Set `VITE_CHECKOUT_STRIPE_ONLY=true` to hide wallet options and show card only. */
   const requireStripeOnly = import.meta.env.VITE_CHECKOUT_STRIPE_ONLY === "true";
@@ -1919,7 +2083,8 @@ export function PatientShopPage() {
     const showScheduler = needsScheduledVideo && onLastIntakeStep;
 
     return (
-      <div className={cn("mx-auto space-y-5", showScheduler ? "max-w-lg" : "max-w-md")}>
+      <div className="min-h-[100dvh] w-full bg-gradient-to-b from-background via-background to-muted/20">
+        <div className="mx-auto w-full max-w-2xl space-y-6 px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-28">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-6">
            <PatientBrandMark size="md" />
@@ -1935,10 +2100,10 @@ export function PatientShopPage() {
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 gap-3">
             <h1 className="text-lg font-bold">{selected.name}</h1>
             {totalQ > 0 ? (
-              <span className="text-xs text-muted-foreground">{qStep + 1} / {totalQ}</span>
+              <span className="text-xs text-muted-foreground shrink-0">{qStep + 1} / {totalQ}</span>
             ) : (
               <span className="text-xs text-muted-foreground">Intake</span>
             )}
@@ -1991,6 +2156,18 @@ export function PatientShopPage() {
                 <span className="text-sm">{o}</span>
               </label>
             ))}
+            {onLastIntakeStep && (
+              <EnrollmentIdUploadPanel
+                idAccept={ID_ACCEPT}
+                idFile={idFile}
+                setIdFile={setIdFile}
+                identityStripeCompleted={identityStripeCompleted}
+                setError={setError}
+                idUploadInputRef={idUploadInputRef}
+                onOpenStripeIdentity={() => goToStage("identity")}
+                embedded
+              />
+            )}
           </CardContent>
         </Card>
         )}
@@ -1998,6 +2175,21 @@ export function PatientShopPage() {
           <Card>
             <CardContent className="p-5">
               <p className="text-sm text-muted-foreground">No additional clinical questions for this program. Continue below.</p>
+            </CardContent>
+          </Card>
+        )}
+        {onLastIntakeStep && totalQ === 0 && (
+          <Card className="border-2 border-emerald-200/80 shadow-lg shadow-emerald-900/5">
+            <CardContent className="p-6 space-y-2">
+              <EnrollmentIdUploadPanel
+                idAccept={ID_ACCEPT}
+                idFile={idFile}
+                setIdFile={setIdFile}
+                identityStripeCompleted={identityStripeCompleted}
+                setError={setError}
+                idUploadInputRef={idUploadInputRef}
+                onOpenStripeIdentity={() => goToStage("identity")}
+              />
             </CardContent>
           </Card>
         )}
@@ -2032,31 +2224,12 @@ export function PatientShopPage() {
                 I selected a time in the calendar above. I understand the video link will be sent by the scheduler (email/SMS) and may also appear in my Peak Health appointments.
               </span>
             </label>
-            <div className="p-4 bg-muted/20 border border-border rounded-xl space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">ID verification</p>
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                   <ShieldCheck className="h-6 w-6 text-emerald-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-foreground">Government ID or Stripe Identity</p>
-                  {idFile ? (
-                    <p className="text-[10px] text-emerald-600 font-bold mt-1">✓ {idFile.name}</p>
-                  ) : identityStripeCompleted ? (
-                    <p className="text-[10px] text-emerald-600 font-bold mt-1">✓ Stripe Identity completed</p>
-                  ) : (
-                    <p className="text-[10px] text-amber-700 font-semibold mt-1">
-                      Upload ID in the identity step or complete Stripe Identity.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
           </>
         )}
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold text-center">
-            ⚠️ {error}
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-800 shadow-sm dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-100">
+            <span className="mr-1.5 inline-block" aria-hidden>⚠️</span>
+            {error}
           </div>
         )}
         <Button
@@ -2085,6 +2258,7 @@ export function PatientShopPage() {
             </>
           )}
         </Button>
+        </div>
       </div>
     );
   }

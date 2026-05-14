@@ -85,22 +85,32 @@ export function DocumentsPage() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-300"
+          aria-hidden
+        />
         <input
           value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 bg-muted rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400"
           placeholder="Search documents..."
         />
       </div>
 
       {filtered.length === 0 ? (
-        <Card className="border-dashed border-2 bg-muted/20">
+        <Card className="border-2 border-dashed border-slate-200 bg-slate-50/80 dark:border-slate-600 dark:bg-slate-900/40">
           <CardContent className="p-10 text-center">
-            <FolderOpen className="h-10 w-10 text-primary mx-auto mb-3 opacity-50" />
-            <h3 className="font-bold">{search ? 'No results found' : 'No documents yet'}</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {search ? 'Try a different search term.' : 'Upload your medical documents for your care team to review.'}
+            <FolderOpen
+              className="mx-auto mb-3 h-10 w-10 text-emerald-700 dark:text-emerald-400"
+              aria-hidden
+            />
+            <h3 className="font-bold text-slate-900 dark:text-slate-50">
+              {search ? "No results found" : "No documents yet"}
+            </h3>
+            <p className="mt-2 max-w-sm mx-auto text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              {search
+                ? "Try a different search term."
+                : "Upload your medical documents for your care team to review."}
             </p>
           </CardContent>
         </Card>
