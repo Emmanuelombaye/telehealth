@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { useAuthStore } from "../../../../lib";
+import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { supabase } from "../../../../lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -46,6 +47,7 @@ function pharmacySlugFromOrder(pharmacy: string | null | undefined): string {
 
 function PatientPicker() {
   const navigate = useNavigate();
+  const doctorBase = useDoctorPortalBase();
   const [queue, setQueue] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -166,7 +168,7 @@ function PatientPicker() {
         ) : filtered.map((order, i) => (
           <button
             key={order.id}
-            onClick={() => navigate(`/doctor/consult?orderId=${order.order_number}`)}
+            onClick={() => navigate(`${doctorBase}/consult?orderId=${order.order_number}`)}
             style={{
               transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
@@ -345,6 +347,7 @@ export function DoctorConsultPage() {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
   const navigate = useNavigate();
+  const doctorBase = useDoctorPortalBase();
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(!!orderId);
@@ -535,7 +538,7 @@ export function DoctorConsultPage() {
       if (orderError) throw new Error(`Order update error: ${orderError.message}`);
 
       showToast('success', `✓ Prescription dispatched to pharmacy for ${order.patient_name}`);
-      setTimeout(() => navigate('/doctor/queue'), 1500);
+      setTimeout(() => navigate(`${doctorBase}/queue`), 1500);
     } catch (err: any) {
       console.error("Finalize error:", err);
       showToast('error', `Failed: ${err.message || 'Unknown error'}`);
@@ -576,7 +579,7 @@ export function DoctorConsultPage() {
       // It will fire automatically when zoom_status changes to 'requested'.
 
       showToast('info', `📅 Video visit requested — patient has been notified by app + email`);
-      setTimeout(() => navigate('/doctor/queue'), 1500);
+      setTimeout(() => navigate(`${doctorBase}/queue`), 1500);
     } catch (err: any) {
       showToast('error', `Error: ${err.message}`);
     } finally {
@@ -635,7 +638,7 @@ export function DoctorConsultPage() {
       }]);
 
       showToast('error', `✕ Patient Disqualified. Refund process initiated.`);
-      setTimeout(() => navigate('/doctor/queue'), 1500);
+      setTimeout(() => navigate(`${doctorBase}/queue`), 1500);
     } catch (err: any) {
       showToast('error', `Error: ${err.message}`);
     } finally {
@@ -678,7 +681,7 @@ export function DoctorConsultPage() {
       }]);
 
       showToast('info', `📋 Follow-up flagged — patient has been notified`);
-      setTimeout(() => navigate('/doctor/queue'), 1500);
+      setTimeout(() => navigate(`${doctorBase}/queue`), 1500);
     } catch (err: any) {
       showToast('error', `Error: ${err.message}`);
     } finally {
@@ -746,7 +749,7 @@ export function DoctorConsultPage() {
       .update({ consultation_live: false })
       .eq('id', order.id);
     showToast('info', 'Consultation ended.');
-    setTimeout(() => navigate('/doctor/queue'), 800);
+    setTimeout(() => navigate(`${doctorBase}/queue`), 800);
   };
 
   useEffect(() => {
@@ -798,7 +801,7 @@ export function DoctorConsultPage() {
       <div className="bg-white border border-slate-200 rounded-2xl px-6 py-5 flex flex-wrap items-center justify-between shadow-sm shrink-0 gap-4">
         <div className="flex items-center gap-4 min-w-0">
           <button
-            onClick={() => navigate('/doctor/consult')}
+            onClick={() => navigate(`${doctorBase}/consult`)}
             className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 flex items-center justify-center transition-all text-slate-500 shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -832,7 +835,7 @@ export function DoctorConsultPage() {
           <Button
             variant="outline"
             className="rounded-xl h-11 px-5 text-sm font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
-            onClick={() => navigate(`/doctor/consult`)}
+            onClick={() => navigate(`${doctorBase}/consult`)}
           >
             <Users className="h-4 w-4 mr-2" /> View Queue
           </Button>
@@ -920,7 +923,7 @@ export function DoctorConsultPage() {
 
                 <div className="h-6 w-px bg-white/20 mx-2 shrink-0" />
 
-                <Link to={`/doctor/messages?userId=${order.user_id}`} className="shrink-0">
+                <Link to={`${doctorBase}/messages?userId=${order.user_id}`} className="shrink-0">
                   <button className="h-10 w-10 bg-white/20 text-white hover:bg-white/30 rounded-xl flex items-center justify-center transition-all">
                     <MessageSquare className="h-4 w-4" />
                   </button>

@@ -1,12 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, Outlet } from 'react-router';
 import { useAuthStore, Role } from '../../lib/auth-store';
+import { doctorPortalBaseFromPath } from '../../lib/doctorPortalBase';
 
 const portalLoginUrl = (path: string) => {
   if (path.startsWith('/doctor')) return '/doctor/login';
+  if (path.startsWith('/providers')) return '/providers/login';
   if (path.startsWith('/pharmacy')) return '/pharmacy/login';
   if (path.startsWith('/admin')) return '/admin/login';
   if (path.startsWith('/superadmin')) return '/superadmin/login';
+  if (path.startsWith('/affiliate')) return '/affiliate/login';
   return '/patient/login';
 };
 
@@ -65,13 +68,22 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
     if (allowedRoles && effectiveRole && !allowedRoles.includes(effectiveRole)) {
       redirected.current = true;
       
-      const targetPortal = 
-        effectiveRole === 'doctor' ? '/doctor' : 
-        effectiveRole === 'pharmacy' ? '/pharmacy' :
-        effectiveRole === 'super_admin' ? '/superadmin' :
-        effectiveRole === 'brand_admin' ? '/admin' : 
-        effectiveRole === 'affiliate' ? '/affiliate' :
-        '/patient';
+      const doctorBase =
+        typeof window !== 'undefined'
+          ? doctorPortalBaseFromPath(window.location.pathname)
+          : '/doctor';
+      const targetPortal =
+        effectiveRole === 'doctor'
+          ? doctorBase
+          : effectiveRole === 'pharmacy'
+            ? '/pharmacy'
+            : effectiveRole === 'super_admin'
+              ? '/superadmin'
+              : effectiveRole === 'brand_admin'
+                ? '/admin'
+                : effectiveRole === 'affiliate'
+                  ? '/affiliate'
+                  : '/patient';
       
       console.log(`[ProtectedRoute] RBAC mismatch: User role "${effectiveRole}" not in [${rolesKey}]. Redirecting to ${targetPortal}`);
       navigate(targetPortal, { replace: true });

@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { useDoctorClinicalMetrics } from "../../lib/doctorClinicalMetrics";
+import { useDoctorPortalBase } from "../../lib/doctorPortalBase";
 
 type Cmd = {
   id: string;
@@ -62,17 +63,27 @@ export function DoctorCommandPalette() {
   const [q, setQ] = useState("");
   const navigate = useNavigate();
   const metrics = useDoctorClinicalMetrics();
+  const doctorBase = useDoctorPortalBase();
+
+  const commands = useMemo(
+    () =>
+      COMMANDS.map((c) => ({
+        ...c,
+        to: c.to.replace(/^\/doctor/, doctorBase),
+      })),
+    [doctorBase],
+  );
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return COMMANDS;
-    return COMMANDS.filter(
+    if (!s) return commands;
+    return commands.filter(
       (c) =>
         c.label.toLowerCase().includes(s) ||
         c.hint?.toLowerCase().includes(s) ||
         c.section.toLowerCase().includes(s)
     );
-  }, [q]);
+  }, [q, commands]);
 
   const run = useCallback(
     (to: string) => {

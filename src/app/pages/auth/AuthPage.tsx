@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuthStore, Role } from "../../../lib/auth-store";
+import { doctorPortalBaseFromPath } from "../../../lib/doctorPortalBase";
 import { Lock, Mail, AlertCircle, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
-type Portal = 'patient' | 'doctor' | 'admin' | 'superadmin';
+type Portal = "patient" | "doctor" | "admin" | "superadmin" | "affiliate";
 
 export function AuthPage({ portal }: { portal: Portal }) {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot_password'>('login');
@@ -50,10 +51,21 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const portalTarget = (p: Portal) => {
     const buster = `?v=${Date.now()}`;
     switch (p) {
-      case 'doctor':     return `/doctor${buster}`;
-      case 'admin':      return `/admin${buster}`;
-      case 'superadmin': return `/superadmin${buster}`;
-      default:           return `/patient${buster}`;
+      case 'doctor': {
+        const base =
+          typeof window !== 'undefined'
+            ? doctorPortalBaseFromPath(window.location.pathname)
+            : '/doctor';
+        return `${base}${buster}`;
+      }
+      case 'admin':
+        return `/admin${buster}`;
+      case 'superadmin':
+        return `/superadmin${buster}`;
+      case 'affiliate':
+        return `/affiliate${buster}`;
+      default:
+        return `/patient${buster}`;
     }
   };
 
@@ -145,6 +157,16 @@ export function AuthPage({ portal }: { portal: Portal }) {
             }
             if (portal === 'admin' && role !== 'brand_admin') {
               setError("Access denied. Admin portal only.");
+              await supabase.auth.signOut();
+              await initialize();
+              return;
+            }
+            if (
+              portal === 'affiliate' &&
+              role !== 'affiliate' &&
+              role !== 'super_admin'
+            ) {
+              setError("Access denied. Affiliate portal only.");
               await supabase.auth.signOut();
               await initialize();
               return;

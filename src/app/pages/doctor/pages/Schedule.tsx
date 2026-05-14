@@ -3,6 +3,7 @@ import { Calendar, Clock, Video, ChevronRight, Plus, Loader2, CalendarPlus, Chec
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
+import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { toCalendlyInlineEmbedUrl, defaultCalendlySchedulingUrl } from "../../../../lib/calendlyEmbed";
 import { useNavigate } from "react-router";
 import * as FramerMotion from "framer-motion";
@@ -18,7 +19,7 @@ export function DoctorSchedulePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [schedulingEmbedUrl, setSchedulingEmbedUrl] = useState<string | null>(null);
   const navigate = useNavigate();
-  const availabilityRef = useRef<HTMLDivElement>(null);
+  const doctorBase = useDoctorPortalBase();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -228,7 +229,7 @@ export function DoctorSchedulePage() {
                           <div className="shrink-0 flex items-center gap-2">
                             {isConfirmed && (
                               <Button
-                                onClick={e => { e.stopPropagation(); navigate(`/doctor/consult?orderId=${s.order_number}`); }}
+                                onClick={e => { e.stopPropagation(); navigate(`${doctorBase}/consult?orderId=${s.order_number}`); }}
                                 className="h-9 px-4 rounded-xl bg-[#0A2E1F] hover:bg-[#0d3f2a] text-white font-bold text-[10px] gap-1.5 shadow-md"
                               >
                                 <Video className="h-3.5 w-3.5" /> Join
@@ -318,7 +319,7 @@ export function DoctorSchedulePage() {
                                     )}
                                     {isConfirmed && (
                                       <Button
-                                        onClick={() => navigate(`/doctor/consult?orderId=${s.order_number}`)}
+                                        onClick={() => navigate(`${doctorBase}/consult?orderId=${s.order_number}`)}
                                         className="h-9 px-5 rounded-xl bg-[#0A2E1F] hover:bg-[#061a12] text-white font-bold text-[11px] uppercase tracking-wider gap-2 shadow-lg shadow-emerald-900/20 border border-emerald-800/30 transition-all active:scale-95"
                                       >
                                         <Video className="h-3.5 w-3.5 text-emerald-400" /> Join Consultation Room

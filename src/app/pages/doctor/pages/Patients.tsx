@@ -5,6 +5,7 @@ import { supabase } from "../../../../lib/supabaseClient";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
 import { useNavigate } from "react-router";
+import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 
 export function DoctorPatientsPage() {
   const [patients, setPatients] = useState<any[]>([]);
@@ -13,6 +14,7 @@ export function DoctorPatientsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIntakeId, setSelectedIntakeId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const doctorBase = useDoctorPortalBase();
 
   useEffect(() => {
     async function fetchPatients() {
@@ -137,7 +139,7 @@ export function DoctorPatientsPage() {
                 <div className="flex items-center gap-2">
                   <Button 
                     variant="outline" 
-                    onClick={() => navigate(`/doctor/consult?orderId=${p.order_number}`)}
+                    onClick={() => navigate(`${doctorBase}/consult?orderId=${p.order_number}`)}
                     className="h-8 w-8 p-0 rounded-lg border-slate-50 text-slate-400 group-hover:bg-[#D4AF37] group-hover:text-white group-hover:border-[#D4AF37] transition-all duration-300 shadow-sm"
                   >
                      <Video className="h-3.5 w-3.5" />
@@ -238,7 +240,7 @@ export function DoctorPatientsPage() {
                   {/* ACTION HUB (COMPACT) */}
                   <div className="pt-4 border-t border-slate-100">
                      <Button 
-                       onClick={() => navigate(`/doctor/consult?orderId=${selectedPatient?.order_number}`)}
+                       onClick={() => navigate(`${doctorBase}/consult?orderId=${selectedPatient?.order_number}`)}
                        className="w-full h-12 rounded-xl bg-[#0A2E1F] hover:bg-emerald-900 text-white font-black text-[10px] tracking-widest uppercase gap-3"
                      >
                         <Video className="h-4 w-4" /> Engage Consult

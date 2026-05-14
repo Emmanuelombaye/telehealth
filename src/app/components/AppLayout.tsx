@@ -69,10 +69,11 @@ export function AppLayout() {
   };
   
   // Determine Role for Sidebar based on current URL path
-  let sidebarRole: "patient" | "doctor" | "admin" | "superadmin" = "patient";
-  if (path.startsWith("/doctor")) sidebarRole = "doctor";
+  let sidebarRole: "patient" | "doctor" | "admin" | "superadmin" | "affiliate" = "patient";
+  if (path.startsWith("/doctor") || path.startsWith("/providers")) sidebarRole = "doctor";
   else if (path.startsWith("/admin")) sidebarRole = "admin";
   else if (path.startsWith("/superadmin")) sidebarRole = "superadmin";
+  else if (path.startsWith("/affiliate")) sidebarRole = "affiliate";
 
   // Dynamic user info
   const fullName = user?.user_metadata?.first_name 
@@ -126,7 +127,7 @@ export function AppLayout() {
              </div>
              <div className="flex flex-col">
                <span className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-600/60 leading-tight">
-                 {path.startsWith("/doctor")
+                 {path.startsWith("/doctor") || path.startsWith("/providers")
                    ? "Clinical command"
                    : isPatientPortal
                      ? "Your care"
