@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, DollarSign, Search, Globe, Users, Activity,
   ChevronRight, ToggleLeft, ToggleRight, Edit2, ExternalLink,

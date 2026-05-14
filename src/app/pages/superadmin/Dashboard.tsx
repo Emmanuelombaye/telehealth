@@ -15,9 +15,8 @@ import {
 import { Card, CardContent, Button, Badge } from "../../components/ui/shared.tsx";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { supabase } from "../../../lib/supabaseClient";
-import { ORDERS_ADMIN_NON_CLINICAL_SELECT } from "../../../lib/adminScope";
+import { ORDERS_SUPERADMIN_OVERVIEW_SELECT } from "../../../lib/adminScope";
 import { cn } from "../../components/ui/utils";
-import { motion } from "framer-motion";
 import { SuperAdminShell, saPanel } from "../../components/superadmin/SuperAdminShell.tsx";
 
 export function SuperAdminDashboard() {
@@ -29,7 +28,7 @@ export function SuperAdminDashboard() {
       try {
         const { data, error } = await supabase
           .from("orders")
-          .select(ORDERS_ADMIN_NON_CLINICAL_SELECT)
+          .select(ORDERS_SUPERADMIN_OVERVIEW_SELECT)
           .order("created_at", { ascending: false });
         if (error) throw error;
         setOrders(data || []);
@@ -271,11 +270,12 @@ export function SuperAdminDashboard() {
                         <span className="shrink-0 tabular-nums text-slate-900">${b.revenue.toLocaleString()}</span>
                       </div>
                       <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(b.revenue / (totalMRR || 1)) * 100}%` }}
-                          transition={{ duration: 0.8, delay: i * 0.06 }}
-                          className="h-full rounded-full bg-emerald-600"
+                        <div
+                          className="h-full max-w-full rounded-full bg-emerald-600 transition-[width] duration-700 ease-out"
+                          style={{
+                            width: `${(b.revenue / (totalMRR || 1)) * 100}%`,
+                            transitionDelay: `${Math.min(i, 12) * 60}ms`,
+                          }}
                         />
                       </div>
                     </div>

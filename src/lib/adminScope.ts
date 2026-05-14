@@ -58,6 +58,22 @@ export const ORDERS_ADMIN_NON_CLINICAL_SELECT = [
   "stripe_customer_id",
 ].join(",");
 
+/**
+ * Narrow column set for superadmin home analytics. PostgREST returns 400 if any
+ * selected column is missing from the remote schema — keep this list conservative.
+ */
+export const ORDERS_SUPERADMIN_OVERVIEW_SELECT = [
+  "id",
+  "order_number",
+  "patient_name",
+  "sub_brand",
+  "medication",
+  "status",
+  "amount",
+  "created_at",
+  "ordered_date",
+].join(",");
+
 export type OrdersFetchMode = "clinical" | "admin";
 
 /** Admin portals must not hydrate clinical columns into the global order store. Doctor/patient portals stay clinical. */
