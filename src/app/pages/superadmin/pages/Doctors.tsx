@@ -2,14 +2,14 @@ import { useState, useEffect, useMemo } from "react";
 import {
   Search, Filter, Edit2, ShieldOff, ShieldCheck,
   ChevronDown, Stethoscope, Plus, X, CheckCircle2, MoreHorizontal,
-  Globe, Award, Clipboard, Activity, TrendingUp, Loader2
+  Globe, Award, Clipboard, Activity, Loader2
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib/auth-store";
-import { toast } from "sonner";
+import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
 
 type DoctorRow = {
   id: string;
@@ -203,169 +203,161 @@ export function SuperAdminDoctorsPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-20">
-      {/* Header section with Premium Feel */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#1a2620] pb-8">
-        <div>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-[#e2e8f0]">Clinical Network</h1>
-          <p className="text-xs font-bold text-[#7f9488] uppercase tracking-[0.3em] mt-2">Global Provider Onboarding & Governance</p>
-        </div>
-        <Button 
-          onClick={() => setShowInviteModal(true)}
-          className="rounded-2xl h-14 px-8 bg-[#22c55e] hover:bg-[#16a34a] text-black font-black uppercase italic text-xs tracking-widest gap-3 shadow-xl shadow-[#22c55e]/10 transition-all hover:scale-105 active:scale-95"
-        >
-          <Plus className="h-5 w-5" /> Onboard New Physician
-        </Button>
-      </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "Active Providers", value: stats.active.toString(), icon: Stethoscope, color: "text-[#22c55e]", bg: "bg-[#22c55e]/5" },
-          { label: "Pending Credentials", value: stats.pending.toString(), icon: Clipboard, color: "text-amber-500", bg: "bg-amber-500/5" },
-          { label: "Total Patients", value: stats.totalPatients.toString(), icon: Activity, color: "text-blue-500", bg: "bg-blue-500/5" },
-          { label: "Network Size", value: doctors.length.toString(), icon: Award, color: "text-emerald-400", bg: "bg-emerald-400/5" },
-        ].map((s, i) => (
-          <Card key={i} className={cn("border-none rounded-[2rem] overflow-hidden group hover:bg-[#1a2620]/40 transition-all", s.bg)}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", s.bg.replace('/5', '/10'))}>
-                   <s.icon className={cn("h-5 w-5", s.color)} />
+    <>
+      <SuperAdminShell
+        eyebrow="Clinical network"
+        title="Doctors & invitations"
+        description="Merged view of `profiles` (role doctor) and pending `doctor_invitations`. Revoke and invite handlers are unchanged."
+        actions={
+          <Button
+            type="button"
+            onClick={() => setShowInviteModal(true)}
+            className="h-9 rounded-lg bg-emerald-600 px-4 text-sm font-medium text-white hover:bg-emerald-700"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Invite doctor
+          </Button>
+        }
+      >
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { label: "Active", value: stats.active.toString(), icon: Stethoscope, ring: "text-emerald-700", bg: "bg-emerald-50" },
+            { label: "Pending", value: stats.pending.toString(), icon: Clipboard, ring: "text-amber-700", bg: "bg-amber-50" },
+            { label: "Patients (sum)", value: stats.totalPatients.toString(), icon: Activity, ring: "text-blue-700", bg: "bg-blue-50" },
+            { label: "Rows", value: doctors.length.toString(), icon: Award, ring: "text-slate-700", bg: "bg-slate-100" },
+          ].map((s, i) => (
+            <Card key={i} className={saPanel}>
+              <CardContent className="space-y-2 p-4">
+                <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", s.bg, s.ring)}>
+                  <s.icon className="h-4 w-4" />
                 </div>
-                <TrendingUp className="h-4 w-4 text-[#7f9488] opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <p className={cn("text-3xl font-black italic tracking-tighter uppercase mb-1", s.color)}>{s.value}</p>
-              <p className="text-[10px] font-black text-[#7f9488] uppercase tracking-widest">{s.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Filters and Search */}
-      <div className="flex flex-col md:flex-row gap-4 items-center">
-         <div className="relative flex-1 w-full">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7f9488]" />
-            <input 
-              type="text" 
-              placeholder="SEARCH BY NAME, NPI, OR SPECIALTY..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-14 pl-14 pr-6 bg-[#0c120f] border border-[#1a2620] rounded-2xl text-xs font-bold uppercase tracking-widest text-[#e2e8f0] focus:outline-none focus:border-[#22c55e]/50 transition-all placeholder:text-[#4f6458]"
-            />
-         </div>
-         <Button variant="outline" className="h-14 w-14 rounded-2xl border-[#1a2620] bg-[#0c120f] text-[#7f9488] hover:text-[#22c55e] hover:border-[#22c55e]/30">
-            <Filter className="h-5 w-5" />
-         </Button>
-      </div>
-
-      {/* Doctor Cards */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20 text-[#7f9488]">
-          <Loader2 className="h-6 w-6 animate-spin mr-3" />
-          <span className="text-xs font-black uppercase tracking-widest">Loading clinical network...</span>
-        </div>
-      ) : filtered.length === 0 ? (
-        <Card className="border-none bg-[#0c120f] rounded-[2.5rem]">
-          <CardContent className="p-16 text-center">
-            <Stethoscope className="h-12 w-12 text-[#22c55e]/40 mx-auto mb-4" />
-            <h3 className="text-lg font-black italic uppercase text-[#e2e8f0] mb-2">
-              {search ? "No matching providers" : "No providers yet"}
-            </h3>
-            <p className="text-sm text-[#7f9488] mb-6">
-              {search ? "Try a different search term." : "Onboard your first physician to get started."}
-            </p>
-            {!search && (
-              <Button
-                onClick={() => setShowInviteModal(true)}
-                className="rounded-full h-12 px-6 bg-[#22c55e] hover:bg-[#16a34a] text-black font-black uppercase text-xs tracking-widest"
-              >
-                <Plus className="h-4 w-4 mr-2" /> Invite Doctor
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map((doc, idx) => (
-            <motion.div
-              key={`${doc.source}-${doc.id}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-            >
-              <Card className="group border-none bg-[#0c120f] hover:bg-[#1a2620]/50 transition-all rounded-[2.5rem] overflow-hidden cursor-pointer shadow-xl shadow-black/20">
-                <CardContent className="p-0">
-                  <div className="p-8 flex items-start gap-6">
-                    <div className="relative">
-                      <div className="h-20 w-20 rounded-[2rem] bg-gradient-to-br from-[#22c55e]/20 to-[#22c55e]/5 flex items-center justify-center text-2xl font-black text-[#22c55e] border border-[#22c55e]/10 group-hover:scale-105 transition-transform">
-                        {doc.avatar}
-                      </div>
-                      {doc.status === 'active' && (
-                        <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-[#22c55e] border-4 border-[#0c120f] flex items-center justify-center">
-                          <CheckCircle2 className="h-3 w-3 text-black" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <h3 className="text-xl font-black italic uppercase tracking-tight text-[#e2e8f0] group-hover:text-[#22c55e] transition-colors truncate">{doc.name}</h3>
-                          <p className="text-[10px] font-black text-[#22c55e] uppercase tracking-[0.2em] mt-1">{doc.specialty || "—"}</p>
-                          <p className="text-[10px] text-[#4f6458] mt-1 truncate">{doc.email}</p>
-                        </div>
-                        <Badge variant="outline" className={cn(
-                          "text-[9px] font-black uppercase tracking-widest border-none px-3 py-1 rounded-full shrink-0",
-                          doc.status === 'active' ? "bg-[#22c55e]/10 text-[#22c55e]" :
-                          doc.status === 'pending' ? "bg-amber-500/10 text-amber-500" :
-                          "bg-red-500/10 text-red-500"
-                        )}>
-                          {doc.status}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 mt-6">
-                        <div>
-                          <p className="text-[9px] font-black text-[#4f6458] uppercase tracking-widest mb-0.5">NPI Number</p>
-                          <p className="text-xs font-bold text-[#7f9488] font-mono">{doc.npi || "—"}</p>
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-black text-[#4f6458] uppercase tracking-widest mb-0.5">Patients</p>
-                          <p className="text-xs font-bold text-[#e2e8f0]">{doc.patients} Total</p>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-[#4f6458]">
-                           <Globe className="h-3.5 w-3.5" />
-                           <span className="text-[10px] font-black uppercase tracking-tight">{doc.licensed_states || "—"}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-[#22c55e]/10 text-[#7f9488] hover:text-[#22c55e]">
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm" variant="ghost"
-                            onClick={() => handleRevoke(doc)}
-                            className="h-9 w-9 p-0 rounded-xl hover:bg-red-500/10 text-[#7f9488] hover:text-red-500"
-                          >
-                            <ShieldOff className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-white/10 text-[#7f9488]">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                <p className="text-xl font-semibold tabular-nums text-slate-900">{s.value}</p>
+                <p className="text-xs font-medium text-slate-500">{s.label}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
-      )}
 
-      {/* Staff Invitation Modal - IMAGE REFERENCE DESIGN */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search name, email, NPI, or specialty…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-900 outline-none ring-emerald-500/20 focus:ring-2 placeholder:text-slate-400"
+            />
+          </div>
+          <Button variant="outline" size="sm" className="h-10 w-10 shrink-0 rounded-lg border-slate-200 p-0" type="button" aria-label="Filters">
+            <Filter className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-600">
+            <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
+            Loading…
+          </div>
+        ) : filtered.length === 0 ? (
+          <Card className={saPanel}>
+            <CardContent className="space-y-4 p-8 text-center">
+              <Stethoscope className="mx-auto h-10 w-10 text-slate-300" />
+              <h3 className="text-base font-semibold text-slate-900">{search ? "No matches" : "No providers yet"}</h3>
+              <p className="text-sm text-slate-600">
+                {search ? "Try another search." : "Invite a clinician to seed the network."}
+              </p>
+              {!search && (
+                <Button onClick={() => setShowInviteModal(true)} className="h-9 rounded-lg bg-slate-900 px-4 text-sm text-white">
+                  <Plus className="mr-2 h-4 w-4" /> Invite doctor
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {filtered.map((doc, idx) => (
+              <motion.div
+                key={`${doc.source}-${doc.id}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(idx * 0.04, 0.2) }}
+              >
+                <Card className={cn(saPanel, "overflow-hidden transition-shadow hover:shadow-md")}>
+                  <CardContent className="space-y-4 p-5">
+                    <div className="flex gap-4">
+                      <div className="relative shrink-0">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-100">
+                          {doc.avatar}
+                        </div>
+                        {doc.status === "active" && (
+                          <div className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-emerald-500">
+                            <CheckCircle2 className="h-2.5 w-2.5 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-base font-semibold text-slate-900">{doc.name}</h3>
+                            <p className="text-xs font-medium text-emerald-800">{doc.specialty || "—"}</p>
+                            <p className="truncate text-xs text-slate-500">{doc.email}</p>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "shrink-0 text-[10px] font-medium capitalize",
+                              doc.status === "active"
+                                ? "border-emerald-200 text-emerald-800"
+                                : doc.status === "pending"
+                                  ? "border-amber-200 text-amber-800"
+                                  : "border-red-200 text-red-700",
+                            )}
+                          >
+                            {doc.status}
+                          </Badge>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">NPI</p>
+                            <p className="font-mono text-slate-800">{doc.npi || "—"}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Patients</p>
+                            <p className="font-medium text-slate-900">{doc.patients}</p>
+                          </div>
+                        </div>
+                        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                          <span className="flex max-w-[55%] items-center gap-1 text-[11px] text-slate-500">
+                            <Globe className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{doc.licensed_states || "—"}</span>
+                          </span>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0 text-slate-500 hover:text-slate-900">
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleRevoke(doc)}
+                              className="h-8 w-8 rounded-lg p-0 text-slate-500 hover:text-red-600"
+                            >
+                              <ShieldOff className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0 text-slate-400">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </SuperAdminShell>
       <AnimatePresence>
         {showInviteModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -537,6 +529,6 @@ export function SuperAdminDoctorsPage() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }

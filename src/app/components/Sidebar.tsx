@@ -127,8 +127,15 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
 
   const MotionNavLink = motion(NavLink);
 
+  const superNav = role === "superadmin";
+
   const SidebarContent = () => (
-    <div className={cn("flex h-full flex-col overflow-hidden text-[#0A0D14] border-r border-slate-100 bg-white")}>
+    <div
+      className={cn(
+        "flex h-full flex-col overflow-hidden border-r bg-white",
+        superNav ? "border-slate-200/80 text-slate-800" : "border-slate-100 text-[#0A0D14]",
+      )}
+    >
       <div className="flex h-24 items-center justify-center border-b border-slate-100 px-6 shrink-0 bg-white relative">
         {onMobileClose && (
           <button onClick={onMobileClose} className="absolute right-4 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
@@ -156,25 +163,40 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                 to={item.href}
                 end={item.href === `/${role}`}
                 onClick={onMobileClose}
-                whileHover={{ x: 4 }}
+                whileHover={{ x: superNav ? 2 : 4 }}
                 whileTap={{ scale: 0.98 }}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center justify-between rounded-2xl px-4 py-3.5 text-[13px] font-black transition-all duration-300 group relative mb-1 overflow-hidden",
-                    isActive 
-                      ? "bg-[#0A2E1F] text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)] border-l-4 border-[#D4AF37]" 
-                      : "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80 border-l-4 border-transparent"
+                    "group relative mb-1 flex items-center justify-between overflow-hidden rounded-xl px-3 py-2.5 text-[13px] transition-colors duration-200",
+                    superNav
+                      ? isActive
+                        ? "bg-slate-900 font-medium text-white shadow-sm"
+                        : "border border-transparent font-medium text-slate-600 hover:border-slate-200 hover:bg-slate-50"
+                      : cn(
+                          "font-black duration-300",
+                          isActive
+                            ? "border-l-4 border-[#D4AF37] bg-[#0A2E1F] text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)]"
+                            : "border-l-4 border-transparent text-slate-500 hover:bg-slate-50/80 hover:text-[#0A2E1F]",
+                        ),
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <div className="flex items-center gap-3 min-w-0 relative z-10">
-                      <item.icon className={cn(
-                        "h-5 w-5 shrink-0 transition-all duration-300", 
-                        isActive ? "text-[#D4AF37] scale-110" : "text-slate-400 group-hover:text-[#0A2E1F] group-hover:scale-110"
-                      )} />
-                      <span className="truncate uppercase tracking-tight">{item.label}</span>
+                    <div className="relative z-10 flex min-w-0 items-center gap-3">
+                      <item.icon
+                        className={cn(
+                          "h-5 w-5 shrink-0 transition-all duration-300",
+                          superNav
+                            ? isActive
+                              ? "text-emerald-400"
+                              : "text-slate-400 group-hover:text-slate-700"
+                            : isActive
+                              ? "scale-110 text-[#D4AF37]"
+                              : "text-slate-400 group-hover:scale-110 group-hover:text-[#0A2E1F]",
+                        )}
+                      />
+                      <span className={cn("truncate tracking-tight", superNav ? "" : "uppercase")}>{item.label}</span>
                     </div>
                     {(() => {
                       let badgeCount = item.badge;
@@ -183,9 +205,18 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                       if (item.label === "Notifications") badgeCount = unreadNotificationsCount;
                       if (badgeCount && badgeCount > 0) {
                         return (
-                          <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 shadow-sm relative z-10",
-                            isActive ? "bg-[#D4AF37] text-[#0A2E1F]" : "bg-emerald-100 text-[#0A2E1F]"
-                          )}>
+                          <span
+                            className={cn(
+                              "relative z-10 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[9px] font-semibold shadow-sm",
+                              superNav
+                                ? isActive
+                                  ? "bg-emerald-400 text-slate-900"
+                                  : "bg-emerald-100 text-emerald-900"
+                                : isActive
+                                  ? "bg-[#D4AF37] font-black text-[#0A2E1F]"
+                                  : "bg-emerald-100 font-black text-[#0A2E1F]",
+                            )}
+                          >
                             {badgeCount}
                           </span>
                         );

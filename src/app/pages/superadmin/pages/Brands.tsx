@@ -9,7 +9,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, cn } from "../../../components/ui/shared.tsx";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { supabase } from "../../../../lib/supabaseClient";
-import { motion, AnimatePresence } from "framer-motion";
+import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
 
 const mockBrands = [
   {
@@ -133,203 +133,190 @@ export function SuperAdminBrandsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-[400px] flex flex-col items-center justify-center space-y-6">
-         <Loader2 className="h-12 w-12 text-emerald-600 animate-spin" />
-         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-800 animate-pulse">Establishing Live Brand Matrix...</p>
-      </div>
+      <SuperAdminShell eyebrow="Brands" title="White-label brands" description="Loading directory…">
+        <div className="flex min-h-[200px] items-center justify-center">
+          <Loader2 className="h-9 w-9 animate-spin text-emerald-600" />
+        </div>
+      </SuperAdminShell>
     );
   }
 
   if (selected) {
     return (
-      <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
-        <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#0A2E1F] transition-colors">
-          <ArrowLeft className="h-4 w-4" /> Global Infrastructure List
-        </button>
-
-        {/* Brand Header */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-white p-10 rounded-[48px] shadow-2xl shadow-slate-200/50 border border-slate-50 relative overflow-hidden">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
-           
-           <div className="flex items-center gap-8 relative z-10">
-              <div className="h-24 w-24 rounded-[32px] bg-gradient-to-br from-[#0A2E1F] to-[#051810] flex items-center justify-center font-black text-emerald-400 text-4xl shadow-2xl shadow-emerald-900/20 border border-emerald-500/20">
-                 {selected.name.charAt(0)}
-              </div>
-              <div>
-                 <div className="flex items-center gap-4 mb-2">
-                    <h1 className="text-4xl font-black text-[#0A2E1F] tracking-tight">{selected.name}</h1>
-                    <Badge className="bg-emerald-500 text-white border-none font-black uppercase tracking-widest text-[9px] px-3">{selected.status}</Badge>
-                 </div>
-                 <p className="text-slate-400 font-bold text-lg flex items-center gap-3">
-                   <Globe className="h-5 w-5 text-emerald-600" /> {selected.domain} <span className="h-1.5 w-1.5 rounded-full bg-slate-200"></span> {selected.country}
-                 </p>
-              </div>
-           </div>
-
-           <div className="flex gap-4 relative z-10">
-              <Button className="h-14 rounded-2xl bg-[#0A2E1F] text-white px-8 font-black uppercase tracking-widest text-[10px]">
-                 Enterprise Configuration
-              </Button>
-              <Button variant="outline" className="h-14 rounded-2xl border-slate-200 px-6">
-                 <ExternalLink className="h-5 w-5" />
-              </Button>
-           </div>
-        </div>
-
-        {/* Brand Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-           {[
-             { label: "Monthly Revenue", val: `$${(selected.mrr / 1000).toFixed(1)}k`, icon: DollarSign, color: "text-emerald-600" },
-             { label: "Active Patients", val: selected.patients.toLocaleString(), icon: Users, color: "text-[#0A2E1F]" },
-             { label: "Clinical Staff", val: selected.doctors, icon: Stethoscope, color: "text-blue-600" },
-             { label: "Performance Growth", val: `+${selected.growth}%`, icon: BarChart3, color: "text-amber-600" },
-           ].map((m, i) => (
-             <Card key={i} className="border-none shadow-xl shadow-slate-100/50 rounded-[40px] bg-white p-8 group hover:shadow-emerald-900/5 transition-all">
-                <div className={cn("h-14 w-14 rounded-[20px] mb-6 flex items-center justify-center bg-slate-50", m.color)}>
-                   <m.icon className="h-7 w-7" />
+      <SuperAdminShell
+        eyebrow="Brand"
+        title={selected.name}
+        description={`${selected.domain} · ${selected.country} · Plan ${selected.plan}`}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" className="h-9 rounded-lg" onClick={() => setSelected(null)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              All brands
+            </Button>
+            <Button size="sm" className="h-9 rounded-lg bg-slate-900 px-3 text-xs font-medium text-white hover:bg-slate-800">
+              Configuration
+            </Button>
+            <Button variant="outline" size="sm" className="h-9 w-9 rounded-lg p-0" type="button" aria-label="Open domain">
+              <ExternalLink className="h-4 w-4" />
+            </Button>
+          </div>
+        }
+      >
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+          {[
+            { label: "Monthly revenue", val: `$${(selected.mrr / 1000).toFixed(1)}k`, icon: DollarSign, tone: "text-emerald-700", bg: "bg-emerald-50" },
+            { label: "Patients", val: selected.patients.toLocaleString(), icon: Users, tone: "text-slate-800", bg: "bg-slate-100" },
+            { label: "Doctors", val: String(selected.doctors), icon: Stethoscope, tone: "text-blue-700", bg: "bg-blue-50" },
+            { label: "Growth", val: `+${selected.growth}%`, icon: BarChart3, tone: "text-amber-700", bg: "bg-amber-50" },
+          ].map((m, i) => (
+            <Card key={i} className={saPanel}>
+              <CardContent className="p-4">
+                <div className={cn("mb-2 flex h-9 w-9 items-center justify-center rounded-lg", m.bg, m.tone)}>
+                  <m.icon className="h-4 w-4" />
                 </div>
-                <h3 className="text-3xl font-black text-[#0A2E1F] tracking-tighter">{m.val}</h3>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">{m.label}</p>
-             </Card>
-           ))}
+                <p className="text-xl font-semibold tabular-nums text-slate-900">{m.val}</p>
+                <p className="text-xs font-medium text-slate-500">{m.label}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        {/* Detailed Chart Area */}
-        <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[56px] bg-white overflow-hidden p-12">
-           <div className="flex items-center justify-between mb-12">
-              <h3 className="text-3xl font-black text-[#0A2E1F] tracking-tighter">Revenue Trajectory</h3>
-              <Badge className="bg-emerald-50 text-emerald-700 border-none px-4 py-2 font-black text-[10px] uppercase tracking-widest">Live Sync</Badge>
-           </div>
-           <div className="h-[300px] w-full">
+        <Card className={saPanel}>
+          <CardContent className="space-y-4 p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-base font-semibold text-slate-900">Revenue trend</h2>
+              <Badge variant="outline" className="text-[10px] font-normal text-slate-600">
+                {selected.status}
+              </Badge>
+            </div>
+            <div className="h-[260px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                 <AreaChart data={selected.revenueData}>
-                    <defs>
-                       <linearGradient id="brandRev" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                       </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#cbd5e1", fontWeight: 900 }} />
-                    <YAxis hide />
-                    <Tooltip 
-                       contentStyle={{ backgroundColor: '#0A2E1F', border: 'none', borderRadius: '24px', color: '#fff', padding: '20px' }}
-                       formatter={(v: any) => [`$${(v/1000).toFixed(1)}k`, "REVENUE"]}
-                    />
-                    <Area type="monotone" dataKey="v" stroke="#10b981" fill="url(#brandRev)" strokeWidth={5} />
-                 </AreaChart>
+                <AreaChart data={selected.revenueData}>
+                  <defs>
+                    <linearGradient id="brandRev" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.18} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#64748b" }} />
+                  <YAxis hide />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#0f172a",
+                      border: "none",
+                      borderRadius: "10px",
+                      color: "#fff",
+                      fontSize: "12px",
+                    }}
+                    formatter={(v: any) => [`$${(v / 1000).toFixed(1)}k`, "Revenue"]}
+                  />
+                  <Area type="monotone" dataKey="v" stroke="#059669" strokeWidth={2} fill="url(#brandRev)" />
+                </AreaChart>
               </ResponsiveContainer>
-           </div>
+            </div>
+          </CardContent>
         </Card>
-      </div>
+      </SuperAdminShell>
     );
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-white p-10 rounded-[48px] shadow-2xl shadow-slate-200/50 border border-slate-50 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-3">
-             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-             <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700">Platform Brands Matrix</h1>
-          </div>
-          <h2 className="text-4xl font-black text-[#0A2E1F] tracking-tight">
-            {dbBrands.length} active instances on infrastructure
-          </h2>
-        </div>
-        
-        <Button 
-          onClick={() => setShowProvisionModal(true)}
-          className="h-16 rounded-[28px] bg-[#0A2E1F] hover:bg-emerald-950 text-white px-10 font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-emerald-900/20 group relative z-10 transition-all hover:-translate-y-1"
-        >
-          <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform" /> Provision New Brand
-        </Button>
-      </div>
-
-      <div className="relative max-w-2xl mx-auto">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
-        <input 
-          value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full pl-16 pr-8 py-6 bg-white border border-slate-100 rounded-[32px] text-lg font-bold text-[#0A2E1F] focus:outline-none focus:ring-4 focus:ring-emerald-500/5 shadow-xl shadow-slate-100/50 transition-all placeholder:text-slate-300"
-          placeholder="Search global brand infrastructure..." 
+    <>
+      <SuperAdminShell
+        eyebrow="Brands"
+        title="White-label brands"
+        description={`${dbBrands.length} brand rows (Supabase or demo). A realtime channel keeps this list updated.`}
+        actions={
+          <Button
+            type="button"
+            onClick={() => setShowProvisionModal(true)}
+            size="sm"
+            className="h-9 rounded-lg bg-slate-900 px-4 text-sm font-medium text-white hover:bg-slate-800"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            New brand
+          </Button>
+        }
+      >
+      <div className="relative max-w-xl">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none ring-emerald-500/20 focus:ring-2 placeholder:text-slate-400"
+          placeholder="Search by name or domain…"
         />
       </div>
 
-      {/* Global Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         {[
           { label: "Aggregate MRR", value: `$${(dbBrands.reduce((sum, b) => sum + (b.mrr || 0), 0) / 1000).toFixed(1)}k`, icon: DollarSign },
-          { label: "Total Patients", value: dbBrands.reduce((sum, b) => sum + (b.patients || 0), 0).toLocaleString(), icon: Users },
-          { label: "Total Doctors", value: dbBrands.reduce((sum, b) => sum + (b.doctors || 0), 0), icon: Stethoscope },
-          { label: "Infrastructure Health", value: "99.98%", icon: Activity },
+          { label: "Patients", value: dbBrands.reduce((sum, b) => sum + (b.patients || 0), 0).toLocaleString(), icon: Users },
+          { label: "Doctors", value: dbBrands.reduce((sum, b) => sum + (b.doctors || 0), 0), icon: Stethoscope },
+          { label: "Uptime (demo)", value: "99.98%", icon: Activity },
         ].map((s, i) => (
-          <Card key={i} className="border-none shadow-xl shadow-slate-100/50 rounded-[40px] bg-white p-8 group hover:shadow-emerald-900/5 transition-all">
-            <div className="h-12 w-12 rounded-[20px] mb-6 flex items-center justify-center bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform">
-               <s.icon size={24} />
-            </div>
-            <h3 className="text-3xl font-black text-[#0A2E1F] tracking-tighter">{s.value}</h3>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">{s.label}</p>
+          <Card key={i} className={saPanel}>
+            <CardContent className="space-y-2 p-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+                <s.icon className="h-4 w-4" />
+              </div>
+              <p className="text-xl font-semibold tabular-nums text-slate-900">{s.value}</p>
+              <p className="text-xs font-medium text-slate-500">{s.label}</p>
+            </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Brand List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {filtered.map((brand, i) => (
-          <motion.div 
+          <motion.div
             key={brand.id || i}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
+            transition={{ delay: Math.min(i * 0.05, 0.25) }}
             onClick={() => setSelected(brand)}
-            className="group cursor-pointer"
+            className="cursor-pointer"
           >
-            <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[48px] bg-white p-10 hover:shadow-emerald-900/10 hover:-translate-y-2 transition-all border border-transparent hover:border-emerald-100 overflow-hidden relative h-full">
-              <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:opacity-[0.08] group-hover:scale-125 transition-all duration-1000">
-                 <Building2 size={180} />
-              </div>
-              
-              <div className="flex items-center gap-6 mb-8 relative z-10">
-                 <div className="h-20 w-20 rounded-[28px] bg-[#0A2E1F] flex items-center justify-center font-black text-emerald-400 text-3xl group-hover:rotate-6 transition-transform">
-                   {brand.name.charAt(0)}
-                 </div>
-                 <div>
-                    <div className="flex items-center gap-3 mb-1">
-                       <h3 className="text-2xl font-black text-[#0A2E1F] tracking-tight">{brand.name}</h3>
-                       <Badge className="bg-emerald-50 text-emerald-700 border-none text-[8px] font-black uppercase tracking-widest px-2">{brand.status}</Badge>
+            <Card className={cn(saPanel, "h-full transition-shadow hover:shadow-md")}>
+              <CardContent className="space-y-4 p-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-sm font-semibold text-emerald-400">
+                    {brand.name.charAt(0)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="truncate text-base font-semibold text-slate-900">{brand.name}</h3>
+                      <Badge variant="outline" className="text-[10px] font-normal capitalize">
+                        {brand.status}
+                      </Badge>
                     </div>
-                    <p className="text-slate-400 font-bold text-sm flex items-center gap-2">
-                       <Globe2 className="h-4 w-4" /> {brand.domain}
+                    <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-slate-500">
+                      <Globe2 className="h-3.5 w-3.5 shrink-0" />
+                      {brand.domain}
                     </p>
-                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 relative z-10">
-                 <div className="p-4 rounded-3xl bg-slate-50 border border-slate-100 group-hover:bg-white group-hover:border-emerald-100 transition-all">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Patients</p>
-                    <p className="text-xl font-black text-[#0A2E1F]">{brand.patients.toLocaleString()}</p>
-                 </div>
-                 <div className="p-4 rounded-3xl bg-slate-50 border border-slate-100 group-hover:bg-white group-hover:border-emerald-100 transition-all">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Monthly RR</p>
-                    <p className="text-xl font-black text-emerald-600">${(brand.mrr / 1000).toFixed(0)}k</p>
-                 </div>
-              </div>
-              
-              <div className="mt-8 flex items-center justify-between relative z-10">
-                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Instance Plan:</span>
-                    <span className="text-[10px] font-black text-[#0A2E1F] uppercase tracking-widest">{brand.plan}</span>
-                 </div>
-                 <ArrowRight className="h-5 w-5 text-slate-200 group-hover:text-emerald-600 group-hover:translate-x-2 transition-all" />
-              </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Patients</p>
+                    <p className="text-sm font-semibold text-slate-900">{brand.patients.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">MRR</p>
+                    <p className="text-sm font-semibold text-emerald-700">${(brand.mrr / 1000).toFixed(0)}k</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
+                  <span>{brand.plan}</span>
+                  <ArrowRight className="h-4 w-4 text-slate-300" />
+                </div>
+              </CardContent>
             </Card>
           </motion.div>
         ))}
       </div>
+      </SuperAdminShell>
 
       {/* PROVISIONING MODAL - EXECUTIVE EDITION */}
       <AnimatePresence>
@@ -443,7 +430,7 @@ export function SuperAdminBrandsPage() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
 

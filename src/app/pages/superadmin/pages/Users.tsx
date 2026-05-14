@@ -5,7 +5,7 @@ import {
   Mail, Globe, Phone, MoreHorizontal, Ban, Trash2, ArrowUpRight,
   ShieldAlert, Fingerprint, Activity, Clock, CheckCircle2
 } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn, Input } from "../../../components/ui/shared.tsx";
+import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
@@ -106,35 +106,30 @@ export function SuperAdminUsersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-[400px] flex flex-col items-center justify-center space-y-6">
-         <Loader2 className="h-12 w-12 text-emerald-600 animate-spin" />
-         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-800 animate-pulse">Establishing Live Identity Grid...</p>
-      </div>
+      <SuperAdminShell eyebrow="Directory" title="Platform users" description="Loading directory…">
+        <div className="flex min-h-[240px] flex-col items-center justify-center gap-3">
+          <Loader2 className="h-9 w-9 animate-spin text-emerald-600" />
+          <p className="text-sm text-slate-600">Loading profiles…</p>
+        </div>
+      </SuperAdminShell>
     );
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      
-      {/* USER COCKPIT HEADER */}
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-8 bg-white p-10 rounded-[48px] shadow-2xl shadow-slate-200/50 border border-slate-50 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-3">
-             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-             <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700">Global Identity Matrix</h1>
-          </div>
-          <h2 className="text-4xl font-black text-[#0A2E1F] tracking-tight">User Management</h2>
-        </div>
-
-        <Button 
+    <SuperAdminShell
+      eyebrow="Directory"
+      title="Platform users"
+      description="Search and manage profiles in Supabase. Actions below use the same handlers as before."
+      actions={
+        <Button
           onClick={() => setShowInviteModal(true)}
-          className="h-16 rounded-[28px] bg-[#0A2E1F] hover:bg-emerald-950 text-white px-10 font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-emerald-900/20 gap-3 group relative z-10 transition-all hover:-translate-y-1"
+          className="h-9 rounded-lg bg-slate-900 px-4 text-sm font-medium text-white hover:bg-slate-800"
         >
-          <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform" /> Invite Platform User
+          <Plus className="mr-2 h-4 w-4" />
+          Invite user
         </Button>
-      </div>
+      }
+    >
 
       {/* KPI METRICS GRID */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
@@ -145,115 +140,128 @@ export function SuperAdminUsersPage() {
           { label: "Admin Nodes", value: counts.admins, icon: Shield, color: "text-violet-600" },
           { label: "Suspended", value: counts.suspended, icon: Ban, color: "text-red-600" },
         ].map((s, i) => (
-          <Card key={i} className="border-none shadow-xl shadow-slate-100/50 rounded-[40px] bg-white p-8 group hover:shadow-emerald-900/5 transition-all">
-            <div className={cn("h-12 w-12 rounded-[20px] mb-6 flex items-center justify-center bg-slate-50", s.color)}>
-               <s.icon className="h-6 w-6" />
+          <Card key={i} className={saPanel}>
+            <CardContent className="p-4">
+            <div className={cn("mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50", s.color)}>
+               <s.icon className="h-5 w-5" />
             </div>
-            <h3 className="text-3xl font-black text-[#0A2E1F] tracking-tighter">{s.value}</h3>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">{s.label}</p>
+            <h3 className="text-2xl font-semibold tabular-nums tracking-tight text-slate-900">{s.value}</h3>
+            <p className="mt-1 text-xs font-medium text-slate-500">{s.label}</p>
+            </CardContent>
           </Card>
         ))}
       </div>
 
       {/* SEARCH & FILTERS */}
-      <div className="flex flex-col md:flex-row gap-4 max-w-5xl mx-auto bg-white p-4 rounded-[32px] shadow-xl shadow-slate-100/50 border border-slate-50">
-        <div className="relative flex-1">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
-          <input 
-            value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-16 pr-8 py-5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-[#0A2E1F] focus:ring-4 focus:ring-emerald-500/5 transition-all"
-            placeholder="Search identities by name or email..." 
+      <div className={cn(saPanel, "flex flex-col gap-3 p-3 md:flex-row md:items-center")}>
+        <div className="relative min-w-0 flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none ring-emerald-500/20 focus:ring-2"
+            placeholder="Search by name or email…"
           />
         </div>
-        <select 
-          value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
-          className="h-[60px] px-8 rounded-2xl bg-slate-50 border-none text-[10px] font-black uppercase tracking-widest text-[#0A2E1F] focus:ring-4 focus:ring-emerald-500/5 cursor-pointer appearance-none"
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="h-10 shrink-0 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-800 md:w-40"
         >
-          <option value="all">All Roles</option>
+          <option value="all">All roles</option>
           <option value="patient">Patients</option>
           <option value="doctor">Doctors</option>
           <option value="admin">Admins</option>
         </select>
-        <select 
-          value={brandFilter} onChange={e => setBrandFilter(e.target.value)}
-          className="h-[60px] px-8 rounded-2xl bg-slate-50 border-none text-[10px] font-black uppercase tracking-widest text-[#0A2E1F] focus:ring-4 focus:ring-emerald-500/5 cursor-pointer appearance-none"
+        <select
+          value={brandFilter}
+          onChange={(e) => setBrandFilter(e.target.value)}
+          className="h-10 shrink-0 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-800 md:w-44"
         >
-          <option value="all">All Brands</option>
+          <option value="all">All brands</option>
           <option value="Peak Health">Peak Health</option>
           <option value="Bio-Optimizers">Bio-Optimizers</option>
         </select>
       </div>
 
       {/* USER ARCHITECTURE GRID */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {filtered.map((u, i) => (
-          <motion.div 
-            key={u.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[48px] bg-white p-10 hover:shadow-emerald-900/10 hover:-translate-y-1 transition-all border border-transparent hover:border-emerald-100 overflow-hidden relative group">
-              <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover:opacity-[0.05] group-hover:scale-125 transition-all duration-1000">
-                 <Users size={160} />
-              </div>
-              
-              <div className="flex items-center gap-8 relative z-10">
-                 <div className="h-20 w-20 rounded-[28px] bg-[#0A2E1F] flex items-center justify-center font-black text-emerald-400 text-3xl group-hover:rotate-6 transition-transform">
+          <motion.div key={u.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+            <Card className={cn(saPanel, "transition-shadow hover:shadow-md")}>
+              <CardContent className="relative space-y-4 p-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-sm font-semibold text-emerald-400">
                     {(u.full_name || "U").charAt(0)}
-                 </div>
-                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                       <h3 className="text-2xl font-black text-[#0A2E1F] tracking-tight truncate">{u.full_name}</h3>
-                       <Badge className={cn(
-                         "text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border-none",
-                         u.role === 'doctor' ? 'bg-emerald-50 text-emerald-700' : 
-                         u.role === 'admin' ? 'bg-violet-50 text-violet-700' : 'bg-blue-50 text-blue-700'
-                       )}>
-                          {u.role}
-                       </Badge>
-                       {u.status === 'suspended' && <Badge className="bg-red-50 text-red-600 border-none text-[9px] font-black uppercase tracking-widest">Suspended</Badge>}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="truncate text-base font-semibold text-slate-900">{u.full_name}</h3>
+                      <Badge
+                        className={cn(
+                          "text-[10px] font-medium capitalize",
+                          u.role === "doctor"
+                            ? "bg-emerald-50 text-emerald-800"
+                            : u.role === "admin"
+                              ? "bg-violet-50 text-violet-800"
+                              : "bg-sky-50 text-sky-800",
+                        )}
+                      >
+                        {u.role}
+                      </Badge>
+                      {u.status === "suspended" && (
+                        <Badge className="bg-red-50 text-[10px] font-medium text-red-700">Suspended</Badge>
+                      )}
                     </div>
-                    <div className="flex items-center gap-4 text-slate-400 font-bold text-sm">
-                       <span className="flex items-center gap-2"><Mail size={14} className="text-emerald-600" /> {u.email}</span>
-                       <span className="flex items-center gap-2"><Building2 size={14} /> {u.brand_id || u.sub_brand || "Peak Health"}</span>
+                    <div className="mt-1 flex flex-col gap-1 text-xs text-slate-600 sm:flex-row sm:items-center sm:gap-3">
+                      <span className="flex items-center gap-1.5 truncate">
+                        <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        {u.email}
+                      </span>
+                      <span className="flex items-center gap-1.5 truncate">
+                        <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        {u.brand_id || u.sub_brand || "Peak Health"}
+                      </span>
                     </div>
-                 </div>
-              </div>
+                  </div>
+                </div>
 
-              <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between relative z-10">
-                 <div className="flex items-center gap-6">
-                    <div className="flex flex-col">
-                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Joined Platform</span>
-                       <span className="text-xs font-black text-[#0A2E1F]">{new Date(u.created_at).toLocaleDateString()}</span>
+                <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+                    <div>
+                      <span className="block text-[10px] font-medium uppercase tracking-wide text-slate-400">Joined</span>
+                      <span className="font-medium text-slate-800">{new Date(u.created_at).toLocaleDateString()}</span>
                     </div>
-                    <div className="flex flex-col">
-                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Identity Status</span>
-                       <span className={cn("text-xs font-black uppercase tracking-widest", u.status === 'active' ? 'text-emerald-600' : 'text-red-600')}>
-                          {u.status === 'active' ? '● Live' : '● Inactive'}
-                       </span>
+                    <div>
+                      <span className="block text-[10px] font-medium uppercase tracking-wide text-slate-400">Status</span>
+                      <span className={cn("font-medium", u.status === "active" ? "text-emerald-700" : "text-red-600")}>
+                        {u.status === "active" ? "Active" : "Inactive"}
+                      </span>
                     </div>
-                 </div>
-                 
-                 <div className="flex gap-2">
-                    <Button variant="outline" className="h-12 w-12 rounded-xl border-slate-100 hover:bg-emerald-50 hover:text-emerald-600 transition-all shadow-sm">
-                       <Edit2 size={18} />
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" className="h-9 w-9 rounded-lg p-0">
+                      <Edit2 className="h-4 w-4" />
                     </Button>
-                    <Button 
+                    <Button
                       onClick={() => handleStatusUpdate(u.id, u.status)}
-                      variant="outline" 
+                      variant="outline"
+                      size="sm"
                       className={cn(
-                        "h-12 w-12 rounded-xl border-slate-100 transition-all shadow-sm",
-                        u.status === 'active' ? 'hover:bg-red-50 hover:text-red-600' : 'hover:bg-emerald-50 hover:text-emerald-600'
+                        "h-9 w-9 rounded-lg p-0",
+                        u.status === "active" ? "hover:border-red-200 hover:bg-red-50" : "hover:border-emerald-200 hover:bg-emerald-50",
                       )}
                     >
-                       {u.status === 'active' ? <Ban size={18} /> : <CheckCircle2 size={18} />}
+                      {u.status === "active" ? <Ban className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                     </Button>
-                    <Button variant="outline" className="h-12 px-6 rounded-xl border-slate-100 text-[#0A2E1F] hover:bg-slate-50 transition-all shadow-sm font-black uppercase tracking-widest text-[9px] gap-2">
-                       Impersonate <Eye size={16} />
+                    <Button variant="outline" size="sm" className="h-9 gap-1.5 rounded-lg px-3 text-xs font-medium">
+                      <Eye className="h-3.5 w-3.5" />
+                      View
                     </Button>
-                 </div>
-              </div>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
           </motion.div>
         ))}
@@ -369,6 +377,6 @@ export function SuperAdminUsersPage() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </SuperAdminShell>
   );
 }

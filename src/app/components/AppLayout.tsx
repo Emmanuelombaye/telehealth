@@ -81,6 +81,7 @@ export function AppLayout() {
   
   const displayRole = authRole?.replace('_', ' ').toUpperCase() || sidebarRole.toUpperCase();
   const isPatientPortal = path.startsWith("/patient");
+  const isSuperAdminPortal = path.startsWith("/superadmin");
 
   return (
     <div
@@ -88,7 +89,9 @@ export function AppLayout() {
         "flex flex-col h-screen w-full overflow-hidden font-sans antialiased text-[#0A0D14]",
         isPatientPortal
           ? "bg-gradient-to-br from-emerald-50/80 via-white to-slate-50/90"
-          : "bg-white",
+          : isSuperAdminPortal
+            ? "bg-slate-100/90"
+            : "bg-white",
       )}
     >
       {/* PROFESSIONAL END-TO-END HEADER (Executive Scale) */}
@@ -127,10 +130,12 @@ export function AppLayout() {
                    ? "Clinical command"
                    : isPatientPortal
                      ? "Your care"
-                     : "Clinical operations"}
+                     : isSuperAdminPortal
+                       ? "Control plane"
+                       : "Clinical operations"}
                </span>
                <span className="text-[15px] font-bold text-slate-400">
-                 {isPatientPortal ? "Peak Health" : "Peak Health Center"}
+                 {isPatientPortal ? "Peak Health" : isSuperAdminPortal ? "Superadmin" : "Peak Health Center"}
                </span>
              </div>
           </div>
@@ -200,7 +205,7 @@ export function AppLayout() {
             <div className="hidden sm:flex flex-col text-right">
               <span className="text-[14px] font-bold tracking-tight text-slate-900 leading-tight">{fullName}</span>
               <span className="text-[9px] uppercase font-black tracking-[0.2em] text-emerald-600/70">
-                {sidebarRole === 'doctor' ? 'Licensed Provider' : sidebarRole === 'admin' ? 'System Operator' : sidebarRole === 'superadmin' ? 'Root Authority' : 'Verified User'}
+                {sidebarRole === 'doctor' ? 'Licensed Provider' : sidebarRole === 'admin' ? 'System Operator' : sidebarRole === 'superadmin' ? 'Super administrator' : 'Verified User'}
               </span>
             </div>
             
@@ -229,11 +234,18 @@ export function AppLayout() {
             "flex-1 overflow-y-auto overflow-x-hidden scroll-smooth pb-12",
             isPatientPortal
               ? "bg-gradient-to-b from-transparent via-[#FBFBFC] to-emerald-50/20"
-              : "bg-[#FBFBFC]",
+              : isSuperAdminPortal
+                ? "bg-slate-50"
+                : "bg-[#FBFBFC]",
           )}
         >
           <PageErrorBoundary>
-            <div className="w-full max-w-[1600px] mx-auto p-6 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div
+              className={cn(
+                "mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700",
+                isSuperAdminPortal ? "max-w-6xl px-3 py-4 md:px-6 md:py-6" : "max-w-[1600px] p-6 md:p-10",
+              )}
+            >
               <Outlet />
             </div>
           </PageErrorBoundary>
