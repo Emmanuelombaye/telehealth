@@ -10,6 +10,7 @@ import {
   getOrderTrackingVerticalIndex,
   type FulfillmentRailStep,
 } from "../../../../lib";
+import type { Order } from "../../../../lib";
 import { useAuthStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
 
@@ -214,7 +215,7 @@ export function PatientOrderTrackingPage() {
                     )}
                     <Link to="/patient/appointments" className="flex-1">
                       <Button
-                        variant={joinUrl ? "outline" : "default"}
+                        variant={joinUrl ? "outline" : "primary"}
                         className={cn(
                           "w-full h-10 rounded-xl text-xs font-bold gap-2",
                           joinUrl ? "" : "bg-blue-600 hover:bg-blue-700 text-white"
