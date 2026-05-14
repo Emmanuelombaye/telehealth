@@ -26,14 +26,20 @@ const PHARMACY_API_KEY = Deno.env.get("PHARMACY_API_KEY") ?? "";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, prefer",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, prefer, x-region, x-brand-id",
   "Access-Control-Max-Age": "86400",
 };
 
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return new Response("ok", { 
+      status: 200, 
+      headers: {
+        ...corsHeaders,
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, prefer, x-region, x-brand-id"
+      } 
+    });
   }
 
   if (req.method !== "POST") {
