@@ -148,26 +148,27 @@ export function AppLayout() {
           </div>
         </div>
 
-        <div className="flex shrink-0 justify-center px-1">
+        <div className="flex min-w-0 justify-center px-2 sm:px-4">
           {isPatientPortal ? (
             <motion.div
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="flex w-full max-w-[min(94vw,28rem)] justify-center sm:max-w-[30rem] md:max-w-[32rem]"
             >
               <Link
                 to="/patient"
-                className="group flex items-center rounded-2xl border border-emerald-100/80 bg-white/95 px-2 py-1.5 shadow-sm shadow-emerald-900/[0.06] ring-1 ring-emerald-900/[0.04] transition hover:border-emerald-200/90 hover:shadow-md"
+                className="flex items-center justify-center outline-none transition-opacity hover:opacity-90 focus-visible:opacity-90"
               >
                 <img
                   src="/PeakHealthLogo.png"
                   alt="Peak Health"
-                  width={200}
-                  height={72}
+                  width={320}
+                  height={120}
                   decoding="async"
                   className={cn(
-                    "block h-9 w-auto max-w-[min(46vw,11.5rem)] object-contain object-center transition-[height,max-width] duration-300 sm:h-10 sm:max-w-[13rem] md:h-11",
-                    scrolled && "h-8 max-w-[min(42vw,10rem)] sm:h-9 sm:max-w-[11.5rem] md:h-10",
+                    "block h-[3rem] w-auto max-h-none object-contain object-center sm:h-[3.5rem] md:h-[4.5rem] lg:h-[5rem]",
+                    scrolled && "h-[2.65rem] sm:h-[3.1rem] md:h-[3.75rem] lg:h-[4.1rem]",
                   )}
                 />
               </Link>
@@ -175,17 +176,17 @@ export function AppLayout() {
           ) : (
             <Link
               to={`/${sidebarRole}`}
-              className="flex items-center rounded-2xl border border-transparent px-2 py-1 transition hover:border-slate-200/80 hover:bg-slate-50/60"
+              className="flex w-full max-w-[min(90vw,20rem)] items-center justify-center outline-none transition-opacity hover:opacity-90 md:max-w-[22rem]"
             >
               <img
                 src="/PeakHealthLogo.png"
                 alt="Peak Health"
-                width={200}
-                height={72}
+                width={320}
+                height={120}
                 decoding="async"
                 className={cn(
-                  "block h-9 w-auto max-w-[min(48vw,12rem)] object-contain object-center transition-[height,max-width] duration-300 sm:h-10 sm:max-w-[13.5rem] md:h-12",
-                  scrolled && "h-8 max-w-[min(44vw,11rem)] sm:h-9 md:h-10",
+                  "block h-[2.5rem] w-auto object-contain object-center sm:h-12 md:h-14 lg:h-[3.75rem]",
+                  scrolled && "sm:h-11 md:h-12 lg:h-14",
                 )}
               />
             </Link>

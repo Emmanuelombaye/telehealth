@@ -18,7 +18,6 @@ import {
   getOrderFulfillmentRailIndex,
 } from "../../../lib";
 import { supabase } from "../../../lib/supabaseClient";
-import { PatientBrandMark } from "../../components/patient/PatientBrandMark.tsx";
 
 const stepIcon: Record<string, any> = {
   order_submitted: FileText,
@@ -168,22 +167,19 @@ export function PatientDashboard() {
         <div className="pointer-events-none absolute -left-20 bottom-0 h-48 w-48 rounded-full bg-teal-300/10 blur-3xl" />
 
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:text-left">
-            <PatientBrandMark size="sm" className="shrink-0" />
-            <div className="max-w-xl space-y-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-800/70">
-                Peak Health · Patient
-              </p>
-              <h1 className="text-balance text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl md:text-[2.65rem] md:leading-[1.08]">
-                Welcome back,{" "}
-                <span className="bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text font-medium text-transparent">
-                  {firstName}
-                </span>
-              </h1>
-              <p className="text-pretty text-sm leading-relaxed text-slate-600 sm:text-[0.9375rem]">
-                Visits, prescriptions, and clinician messages stay in one encrypted place—so you always know what happens next.
-              </p>
-            </div>
+          <div className="mx-auto max-w-xl space-y-3 text-center sm:mx-0 sm:text-left">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-800/70">
+              Peak Health · Patient
+            </p>
+            <h1 className="text-balance text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl md:text-[2.65rem] md:leading-[1.08]">
+              Welcome back,{" "}
+              <span className="bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text font-medium text-transparent">
+                {firstName}
+              </span>
+            </h1>
+            <p className="text-pretty text-sm leading-relaxed text-slate-600 sm:text-[0.9375rem]">
+              Visits, prescriptions, and clinician messages stay in one encrypted place—so you always know what happens next.
+            </p>
           </div>
           <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center lg:w-auto lg:flex-col lg:items-stretch">
             <Link to="/patient/appointments" className="w-full sm:max-w-xs lg:max-w-none">
