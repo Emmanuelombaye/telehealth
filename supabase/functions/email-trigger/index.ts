@@ -61,7 +61,7 @@ async function resolveBookingLink(
   supabase: ReturnType<typeof createClient>,
   record: Record<string, unknown>
 ): Promise<string> {
-  let bookingLink = "https://peakhealth.com/patient/appointments";
+  const fallback = "https://peakhealth.com/patient/appointments";
   const doctorId = record.doctor_id as string | undefined;
   if (doctorId) {
     const { data: profile } = await supabase
@@ -69,9 +69,12 @@ async function resolveBookingLink(
       .select("calendly_url, full_name")
       .eq("id", doctorId)
       .maybeSingle();
-    if (profile?.calendly_url) bookingLink = profile.calendly_url as string;
+    const cal = profile?.calendly_url;
+    if (typeof cal === "string" && /^https?:\/\//i.test(cal.trim())) return cal.trim();
   }
-  return bookingLink;
+  const saved = record.scheduling_booking_url;
+  if (typeof saved === "string" && /^https?:\/\//i.test(saved.trim())) return saved.trim();
+  return fallback;
 }
 
 async function sendVideoBookingRequested(

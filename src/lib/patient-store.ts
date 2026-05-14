@@ -83,6 +83,7 @@ export type Order = {
   /** Primary key UUID in public.orders — use for .eq('id', ...) and Edge Functions that expect UUID. */
   dbId?: string;
   stripe_payment_intent_id?: string | null;
+  scheduling_booking_url?: string | null;
   // DB column aliases (snake_case from Supabase)
   created_at?: string;
   sub_brand?: string;
@@ -384,6 +385,7 @@ export const usePatientStore = create<AppState>()(
             refillIntervalDays: d.refill_interval_days,
             doctor_id: d.doctor_id,
             stripe_payment_intent_id: d.stripe_payment_intent_id ?? null,
+            scheduling_booking_url: d.scheduling_booking_url ?? null,
             created_at: d.created_at
           }));
           set({ orders: mappedOrders });

@@ -88,16 +88,27 @@ serve(async (req) => {
   try {
     const { data: doctors, error: docError } = await admin
       .from("profiles")
-      .select("id, full_name, patients_count, licensed_states")
+      .select("id, full_name, patients_count, licensed_states, calendly_url")
       .eq("role", "doctor")
       .eq("status", "active")
       .order("patients_count", { ascending: true });
 
     if (docError) throw docError;
 
-    const assignedDoctor = (doctors || []).find((d) =>
-      d.licensed_states?.split(",").map((s: string) => s.trim().toUpperCase()).includes(patientState.toUpperCase())
-    );
+    const pool = doctors || [];
+    const st = patientState.toUpperCase();
+    const inState = (d: { licensed_states?: string | null }) =>
+      (d.licensed_states || "")
+        .split(",")
+        .map((s: string) => s.trim().toUpperCase())
+        .filter(Boolean)
+        .includes(st);
+    const withCal = (d: { calendly_url?: string | null }) =>
+      typeof d.calendly_url === "string" && /^https?:\/\//i.test(d.calendly_url.trim());
+
+    const assignedDoctor =
+      pool.find((d) => inState(d) && withCal(d)) ||
+      pool.find((d) => inState(d));
 
     if (!assignedDoctor) {
       console.warn(`[assign-doctor] No licensed doctor for state ${patientState}`);

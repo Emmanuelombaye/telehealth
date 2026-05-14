@@ -6,7 +6,8 @@ type OrdersQuery = {
 
 /**
  * Orders columns safe for brand / platform admin UIs (no intake payloads, vitals, or prescriber free-text).
- * Keep in sync with `supabase/migrations/20260515190000_admin_questionnaires_orders_columns_audit.sql`.
+ * Keep in sync with `supabase/migrations/20260515190000_admin_questionnaires_orders_columns_audit.sql`
+ * and `supabase/migrations/20260516120000_scheduling_correlation_and_routing.sql`.
  */
 export const ORDERS_ADMIN_NON_CLINICAL_SELECT = [
   "id",
@@ -56,6 +57,8 @@ export const ORDERS_ADMIN_NON_CLINICAL_SELECT = [
   "refill_interval_days",
   "stripe_payment_intent_id",
   "stripe_customer_id",
+  "scheduling_ref",
+  "scheduling_booking_url",
 ].join(",");
 
 /**

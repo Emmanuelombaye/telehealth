@@ -3,7 +3,7 @@ import { Calendar, Clock, Video, MessageSquare, Plus, ChevronRight, AlertCircle,
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
-import { defaultCalendlyBookingPageUrl, stripCalendlyEmbedParams } from "../../../../lib/calendlyEmbed";
+import { defaultCalendlyBookingPageUrl, toSchedulingOpenTabUrl } from "../../../../lib/calendlyEmbed";
 
 // Real-time zoom status config
 const zoomStatusConfig: Record<string, { label: string; icon: React.ReactNode; card: string; badge: string }> = {
@@ -62,7 +62,8 @@ export function AppointmentsPage() {
           ordered_date, 
           zoom_join_url,
           doctor_id,
-          consultation_live
+          consultation_live,
+          scheduling_booking_url
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -214,9 +215,25 @@ export function AppointmentsPage() {
                               .eq('id', order.doctor_id)
                               .single();
 
-                            if (profile?.calendly_url) {
-                              bookingUrl = stripCalendlyEmbedParams(profile.calendly_url);
+                            if (profile?.calendly_url && String(profile.calendly_url).trim().startsWith("http")) {
+                              bookingUrl =
+                                toSchedulingOpenTabUrl(String(profile.calendly_url).trim()) ||
+                                String(profile.calendly_url).trim();
+                            } else if (
+                              order.scheduling_booking_url &&
+                              String(order.scheduling_booking_url).trim().startsWith("http")
+                            ) {
+                              bookingUrl =
+                                toSchedulingOpenTabUrl(String(order.scheduling_booking_url).trim()) ||
+                                String(order.scheduling_booking_url).trim();
                             }
+                          } else if (
+                            order.scheduling_booking_url &&
+                            String(order.scheduling_booking_url).trim().startsWith("http")
+                          ) {
+                            bookingUrl =
+                              toSchedulingOpenTabUrl(String(order.scheduling_booking_url).trim()) ||
+                              String(order.scheduling_booking_url).trim();
                           }
 
                           window.open(bookingUrl, '_blank');

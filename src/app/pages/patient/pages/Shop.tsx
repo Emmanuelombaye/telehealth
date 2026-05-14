@@ -28,7 +28,11 @@ import {
   type ClinicalContext,
 } from "../../../../lib/videoConsultRules";
 import { effectiveProductGateways, GATEWAY_DISPLAY } from "../../../../lib/productGateways";
-import { defaultCalendlyBookingPageUrl, toSchedulingIframeSrc } from "../../../../lib/calendlyEmbed";
+import {
+  defaultCalendlyBookingPageUrl,
+  toSchedulingIframeSrc,
+  toSchedulingOpenTabUrl,
+} from "../../../../lib/calendlyEmbed";
 import {
   ENROLLMENT_DRAFT_KEY,
   DRAFT_MAX_AGE_MS,
@@ -1122,6 +1126,13 @@ export function PatientShopPage() {
         payment_status:    stripePaymentIntentId ? "paid" : "pending",
         timeline: intakeTimeline,
         scheduling_ref: needsVideo && schedulingRef ? schedulingRef : null,
+        scheduling_booking_url:
+          needsVideo
+            ? (() => {
+                const tab = toSchedulingOpenTabUrl(schedulingEmbedSrc);
+                return tab && /^https?:\/\//i.test(tab) ? tab.slice(0, 4000) : null;
+              })()
+            : null,
       }]).select("id").maybeSingle();
 
 

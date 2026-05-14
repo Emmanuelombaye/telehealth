@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import {
   Search, Filter, Edit2, ShieldOff, ShieldCheck,
   ChevronDown, Stethoscope, Plus, X, CheckCircle2, MoreHorizontal,
-  Globe, Award, Clipboard, Activity, Loader2
+  Globe, Award, Clipboard, Activity, Loader2, Link2
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import * as FramerMotion from "framer-motion";
@@ -10,6 +10,7 @@ const { motion, AnimatePresence } = FramerMotion;
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib/auth-store";
 import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
+import { toast } from "sonner";
 
 type DoctorRow = {
   id: string;
@@ -23,6 +24,7 @@ type DoctorRow = {
   patients: number;
   avatar: string;
   source: 'profile' | 'invitation';
+  calendly_url?: string | null;
 };
 
 const SPECIALTIES = [
@@ -38,6 +40,9 @@ function initials(name: string) {
 export function SuperAdminDoctorsPage() {
   const user = useAuthStore(s => s.user);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [editDoc, setEditDoc] = useState<DoctorRow | null>(null);
+  const [editCalUrl, setEditCalUrl] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +70,7 @@ export function SuperAdminDoctorsPage() {
       // 1. Active doctors from profiles
       const { data: profileRows, error: pErr } = await supabase
         .from('profiles')
-        .select('id, email, full_name, first_name, last_name, specialty, npi_number, credentials, licensed_states, status, patients_count, role')
+        .select('id, email, full_name, first_name, last_name, specialty, npi_number, credentials, licensed_states, status, patients_count, role, calendly_url')
         .eq('role', 'doctor');
 
       // 2. Pending invitations
@@ -88,6 +93,7 @@ export function SuperAdminDoctorsPage() {
           patients: p.patients_count || 0,
           avatar: initials(name),
           source: 'profile',
+          calendly_url: p.calendly_url ?? null,
         };
       });
 
@@ -177,6 +183,36 @@ export function SuperAdminDoctorsPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSaveDoctorCalendar = async () => {
+    if (!editDoc || editSaving) return;
+    const url = editCalUrl.trim();
+    if (url && !/^https?:\/\//i.test(url)) {
+      toast.error("Calendar URL must start with http:// or https://");
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const { error } = await supabase.from("profiles").update({ calendly_url: url || null }).eq("id", editDoc.id);
+      if (error) throw error;
+      toast.success("Calendar link updated.");
+      setEditDoc(null);
+      fetchDoctors();
+    } catch (err: any) {
+      toast.error(err.message || "Could not save calendar link.");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const openDoctorCalendarEditor = (doc: DoctorRow) => {
+    if (doc.source !== "profile") {
+      toast.message("Pending invitations use the invite form. Accept the invite first, then edit the profile.");
+      return;
+    }
+    setEditCalUrl(doc.calendly_url?.trim() || "");
+    setEditDoc(doc);
   };
 
   const handleRevoke = async (doc: DoctorRow) => {
@@ -327,13 +363,28 @@ export function SuperAdminDoctorsPage() {
                             <p className="font-medium text-slate-900">{doc.patients}</p>
                           </div>
                         </div>
+                        {doc.calendly_url ? (
+                          <div className="mt-2 flex items-start gap-1.5 rounded-lg bg-blue-50/80 px-2 py-1.5 text-[10px] text-blue-900 ring-1 ring-blue-100">
+                            <Link2 className="h-3 w-3 shrink-0 mt-0.5" />
+                            <span className="min-w-0 break-all leading-snug">{doc.calendly_url}</span>
+                          </div>
+                        ) : doc.source === "profile" ? (
+                          <p className="mt-2 text-[10px] text-amber-700">No Cal/Calendly link — add one so patients can book video visits.</p>
+                        ) : null}
                         <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
                           <span className="flex max-w-[55%] items-center gap-1 text-[11px] text-slate-500">
                             <Globe className="h-3.5 w-3.5 shrink-0" />
                             <span className="truncate">{doc.licensed_states || "—"}</span>
                           </span>
                           <div className="flex gap-1">
-                            <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0 text-slate-500 hover:text-slate-900">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              type="button"
+                              onClick={() => openDoctorCalendarEditor(doc)}
+                              className="h-8 w-8 rounded-lg p-0 text-slate-500 hover:text-slate-900"
+                              aria-label="Edit calendar link"
+                            >
                               <Edit2 className="h-4 w-4" />
                             </Button>
                             <Button
@@ -435,12 +486,12 @@ export function SuperAdminDoctorsPage() {
                   </div>
                   {/* Calendly */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Calendly (Optional)</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cal / Calendly booking URL (optional)</label>
                     <input
-                      type="text"
+                      type="url"
                       value={invCalendly}
                       onChange={e => setInvCalendly(e.target.value)}
-                      placeholder="https://calendly.com/dr-smith"
+                      placeholder="https://cal.com/org/visit or https://calendly.com/dr-smith"
                       className="w-full h-14 px-5 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:outline-none focus:border-[#0a2e1f] focus:ring-4 focus:ring-[#0a2e1f]/5 transition-all"
                     />
                   </div>
@@ -524,6 +575,74 @@ export function SuperAdminDoctorsPage() {
                      ) : "Send Invitation"}
                    </Button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {editDoc && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !editSaving && setEditDoc(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              className="relative z-[101] w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Booking calendar</h3>
+                  <p className="mt-1 text-sm text-slate-500">{editDoc.name}</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={editSaving}
+                  onClick={() => setEditDoc(null)}
+                  className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <label className="mt-4 block text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                Cal.com or Calendly URL
+              </label>
+              <textarea
+                value={editCalUrl}
+                onChange={(e) => setEditCalUrl(e.target.value)}
+                rows={3}
+                placeholder="https://cal.com/your-org/video-intake"
+                className="mt-1 w-full resize-y rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-[#0a2e1f] focus:outline-none focus:ring-2 focus:ring-[#0a2e1f]/15"
+              />
+              <p className="mt-2 text-xs text-slate-500">
+                Paste the clinician&apos;s public booking link. Patients see this in enrollment and appointment emails when a video visit is required.
+              </p>
+              <div className="mt-6 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={editSaving}
+                  onClick={() => setEditDoc(null)}
+                  className="rounded-xl border-slate-200"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={editSaving}
+                  onClick={() => void handleSaveDoctorCalendar()}
+                  className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
+                >
+                  {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                </Button>
               </div>
             </motion.div>
           </div>
