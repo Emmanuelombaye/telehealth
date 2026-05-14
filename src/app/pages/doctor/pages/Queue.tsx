@@ -8,7 +8,7 @@ import {
   Sparkles, FlaskConical, Bot, Command, Globe, Truck, X, Loader2, RefreshCw
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, Input, cn } from "../../../components/ui/shared.tsx";
-import { OrderStatus, Order, usePatientStore } from "../../../../lib";
+import { OrderStatus, Order, usePatientStore, useAuthStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
@@ -30,7 +30,7 @@ const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg:
 export function DoctorQueuePage() {
   const navigate = useNavigate();
   const MotionButton = motion(Button);
-  const { orders, updateOrderStatus, updateOrderRx, fetchOrders, subscribeToOrders } = usePatientStore();
+  const { orders, updateOrderStatus, fetchOrders, subscribeToOrders } = usePatientStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rxNote, setRxNote] = useState("");
   const [dosage, setDosage] = useState("");
@@ -449,30 +449,86 @@ export function DoctorQueuePage() {
                   onClick={async () => {
                     setIsDispatching(true);
                     try {
-                      try {
-                        await supabase.functions.invoke('dispatch-prescription', {
+                      const { data: dispatchData, error: dispatchError } = await supabase.functions.invoke(
+                        "dispatch-prescription",
+                        {
                           body: {
                             order_id: selected.id,
                             dosage_instructions: dosage || selected.dosageInstructions,
                             doctor_note: rxNote,
                             pharmacy: selectedPharmacy,
                           },
-                        });
-                      } catch (e) {
-                        console.log("Edge function not found, proceeding with DB update...");
-                      }
-
-                      await updateOrderRx(
-                        selected.id, 
-                        selected.medication, 
-                        dosage || selected.dosageInstructions || "As directed",
-                        rxNote || "Patient approved via clinical review."
+                        },
                       );
 
-                      toast.success(`Prescription dispatched to ${selectedPharmacy}!`);
+                      const payload = dispatchData as { success?: boolean; detail?: string; error?: string } | null;
+                      const pharmacyRejected =
+                        !!dispatchError ||
+                        (payload && typeof payload === "object" && payload.success === false);
+
+                      if (pharmacyRejected) {
+                        let msg =
+                          payload?.detail ||
+                          payload?.error ||
+                          dispatchError?.message ||
+                          "Pharmacy did not accept this dispatch.";
+                        const ctx = dispatchError && (dispatchError as { context?: Response }).context;
+                        if (ctx && typeof ctx.json === "function") {
+                          try {
+                            const body = await ctx.clone().json();
+                            if (body?.detail) msg = String(body.detail);
+                            else if (body?.error) msg = String(body.error);
+                          } catch {
+                            /* ignore */
+                          }
+                        }
+                        toast.error(`Pharmacy dispatch failed: ${msg}`);
+                        await fetchOrders();
+                        return;
+                      }
+
+                      const currentUser = useAuthStore.getState().user;
+                      const doctorName = currentUser?.user_metadata?.first_name
+                        ? `Dr. ${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name || ""}`.trim()
+                        : "Attending Physician";
+
+                      const { error: docErr } = await supabase
+                        .from("orders")
+                        .update({
+                          doctor: doctorName,
+                          doctor_id: currentUser?.id ?? null,
+                          last_approved_at: new Date().toISOString(),
+                        })
+                        .eq("order_number", selected.id);
+                      if (docErr) console.warn("[Queue] doctor attribution:", docErr.message);
+
+                      const rxDosage = dosage || selected.dosageInstructions || "As directed";
+                      const rxNoteFinal = rxNote || "Patient approved via clinical review.";
+                      const patientId = selected.userId || selected.user_id;
+                      if (patientId) {
+                        const { error: rxInsErr } = await supabase.from("prescriptions").insert([
+                          {
+                            patient_id: patientId,
+                            doctor_id: currentUser?.id,
+                            medication: selected.medication,
+                            dosage: rxDosage,
+                            frequency: rxNoteFinal,
+                            status: "active",
+                            refills_remaining: 5,
+                            pharmacy_name: selectedPharmacy || selected.pharmacy || "VIALSRX EXPRESS",
+                          },
+                        ]);
+                        if (rxInsErr) console.warn("[Queue] prescription insert:", rxInsErr.message);
+                      } else {
+                        console.warn("[Queue] missing patient id — skipped prescription row");
+                      }
+
+                      await fetchOrders();
+                      toast.success(`Prescription dispatched to ${selectedPharmacy}.`);
                       setSelectedId(null);
-                    } catch (err: any) {
-                      toast.error(`Dispatch failed: ${err.message}`);
+                    } catch (err: unknown) {
+                      const m = err instanceof Error ? err.message : String(err);
+                      toast.error(`Dispatch failed: ${m}`);
                     } finally {
                       setIsDispatching(false);
                     }

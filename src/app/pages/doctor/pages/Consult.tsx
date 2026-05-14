@@ -36,6 +36,14 @@ function ToastBar({ toasts }: { toasts: Array<{ id: number; type: ToastType; mes
   );
 }
 
+/** Maps stored pharmacy label to dispatch-prescription `pharmacy` slug. */
+function pharmacySlugFromOrder(pharmacy: string | null | undefined): string {
+  const p = (pharmacy ?? "").toLowerCase();
+  if (p.includes("alto")) return "alto";
+  if (p.includes("capsule")) return "capsule";
+  return "truepill";
+}
+
 function PatientPicker() {
   const navigate = useNavigate();
   const [queue, setQueue] = useState<any[]>([]);
@@ -440,7 +448,53 @@ export function DoctorConsultPage() {
         ? `Dr. ${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}`
         : "Attending Physician";
 
-      // 1. Visit summary
+      const med = medication;
+      const dos = dosage || "As directed";
+      if (med !== order.medication || dos !== (order.dosage_instructions || "")) {
+        const { error: preErr } = await supabase
+          .from("orders")
+          .update({ medication: med, dosage_instructions: dos })
+          .eq("id", order.id);
+        if (preErr) throw new Error(`Order update error: ${preErr.message}`);
+      }
+
+      const { data: dispatchData, error: dispatchError } = await supabase.functions.invoke(
+        "dispatch-prescription",
+        {
+          body: {
+            order_id: order.id,
+            dosage_instructions: dos,
+            doctor_note: soapNotes.plan,
+            pharmacy: pharmacySlugFromOrder(order.pharmacy),
+          },
+        },
+      );
+
+      const payload = dispatchData as { success?: boolean; detail?: string; error?: string } | null;
+      const pharmacyRejected =
+        !!dispatchError ||
+        (payload && typeof payload === "object" && payload.success === false);
+
+      if (pharmacyRejected) {
+        let msg =
+          payload?.detail ||
+          payload?.error ||
+          dispatchError?.message ||
+          "Pharmacy did not accept this dispatch.";
+        const ctx = dispatchError && (dispatchError as { context?: Response }).context;
+        if (ctx && typeof ctx.json === "function") {
+          try {
+            const body = await ctx.clone().json();
+            if (body?.detail) msg = String(body.detail);
+            else if (body?.error) msg = String(body.error);
+          } catch {
+            /* ignore */
+          }
+        }
+        showToast("error", `Pharmacy dispatch failed: ${msg}`);
+        return;
+      }
+
       try {
         await supabase.from('visit_summaries').insert([{
           patient_id: order.user_id,
@@ -454,11 +508,10 @@ export function DoctorConsultPage() {
         console.warn("visit_summaries insert failed (table may not exist):", e);
       }
 
-      // 2. Prescription
       const { error: rxError } = await supabase.from('prescriptions').insert([{
         patient_id: order.user_id,
-        medication: medication,
-        dosage: dosage || "As directed",
+        medication: med,
+        dosage: dos,
         frequency: soapNotes.plan,
         status: 'active',
         refills_remaining: 3,
@@ -467,22 +520,15 @@ export function DoctorConsultPage() {
       }]);
       if (rxError) throw new Error(`Prescription error: ${rxError.message}`);
 
-      // 3. Update order → rx_sent
-      const newTimeline = order.timeline
-        ? [...order.timeline, { status: 'rx_sent', date: new Date().toLocaleString() }]
-        : [{ status: 'rx_sent', date: new Date().toLocaleString() }];
-
       const { error: orderError } = await supabase
         .from('orders')
         .update({
-          status: 'rx_sent',
-          medication: medication,
-          dosage_instructions: dosage,
+          medication: med,
+          dosage_instructions: dos,
           doctor: doctorName,
           doctor_note: soapNotes.plan,
           doctor_id: currentUser?.id,
           last_approved_at: new Date().toISOString(),
-          timeline: newTimeline,
           consultation_live: false,
         })
         .eq('id', order.id);
