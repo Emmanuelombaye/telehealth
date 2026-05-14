@@ -18,6 +18,7 @@ const stepIcon: Record<string, any> = {
   rx_sent: Pill,
   shipped: Truck,
   delivered: Package,
+  follow_up: MessageSquare,
   refill_eligible: CheckCircle2,
 };
 
@@ -146,6 +147,32 @@ export function PatientOrderTrackingPage() {
                     <Link to="/patient/appointments" className="flex-1">
                       <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10 rounded-xl text-xs font-bold gap-2">
                          View Schedule <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Follow-up banner */}
+        {activeSelected.status === 'follow_up' && (
+          <Card className="border-amber-200 bg-amber-50 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
+                  <MessageSquare className="h-6 w-6 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-black text-amber-900 uppercase tracking-tight">Information Required</h3>
+                  <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                    {activeSelected.doctor_note || "Your physician needs some additional information to proceed with your treatment."}
+                  </p>
+                  <div className="flex gap-2 mt-4">
+                    <Link to="/patient/messages" className="flex-1">
+                      <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white h-10 rounded-xl text-xs font-bold gap-2">
+                         Open Messages <ChevronRight className="h-4 w-4" />
                       </Button>
                     </Link>
                   </div>

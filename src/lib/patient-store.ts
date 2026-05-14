@@ -16,6 +16,7 @@ export type OrderStatus =
   | "rx_sent"
   | "shipped"
   | "delivered"
+  | "follow_up"
   | "refill_eligible";
 
 export const ORDER_STEPS: { key: OrderStatus; label: string; desc: string }[] = [
@@ -27,6 +28,7 @@ export const ORDER_STEPS: { key: OrderStatus; label: string; desc: string }[] = 
   { key: "rx_sent", label: "Prescribed", desc: "Approval granted and prescription sent to pharmacy" },
   { key: "shipped", label: "Shipped", desc: "Medication is in transit to your address" },
   { key: "delivered", label: "Delivered", desc: "Package has been successfully delivered" },
+  { key: "follow_up", label: "Follow-Up Required", desc: "Your physician needs additional information to proceed" },
   { key: "refill_eligible", label: "Refill Eligible", desc: "You are now eligible to request a treatment refill" },
 ];
 

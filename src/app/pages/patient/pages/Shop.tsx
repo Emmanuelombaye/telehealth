@@ -1,20 +1,106 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router";
 import {
   ChevronRight, CheckCircle2, CreditCard,
   Star, Shield, ShieldCheck, Clock, Package, ArrowLeft, Globe, Zap, Loader2,
-  Video, MessageSquare
+  Calendar,
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
-import { usePatientStore } from "../../../../lib/patient-store";
+import { 
+  usePatientStore, 
+  generateMRN 
+} from "../../../../lib/patient-store";
+import {
+  parseProductVideoRules,
+  parseGlobalVideoStatesFromEnv,
+  defaultSchedulingEmbedUrl,
+  requiresSyncVideoVisit,
+  computeNumericBmi,
+  computeAgeYears,
+  type ConsultRoutingRuleRow,
+  type ClinicalContext,
+} from "../../../../lib/videoConsultRules";
+// Stripe
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
-const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=600&q=80`;
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "");
+
+// ── Stripe PaymentElement inner form ─────────────────────────────────────────
+function StripePaymentForm({
+  priceUSD,
+  firstName,
+  lastName,
+  email,
+  productName,
+  onSuccess,
+  onError,
+}: {
+  priceUSD: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  productName: string;
+  onSuccess: (paymentIntentId: string) => void;
+  onError: (msg: string) => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [paying, setPaying] = useState(false);
+
+  const handlePay = async () => {
+    if (!stripe || !elements) return;
+    setPaying(true);
+    try {
+      const result = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          payment_method_data: {
+            billing_details: {
+              name: `${firstName} ${lastName}`.trim(),
+              email,
+            },
+          },
+          // We handle redirect ourselves — return_url is for 3DS redirect only
+          return_url: window.location.href,
+        },
+        redirect: "if_required",
+      });
+      if (result.error) {
+        onError(result.error.message ?? "Payment failed.");
+      } else if (result.paymentIntent?.status === "succeeded") {
+        onSuccess(result.paymentIntent.id);
+      } else {
+        onError("Payment incomplete. Please try again.");
+      }
+    } catch (e: any) {
+      onError(e.message);
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <PaymentElement options={{ layout: "tabs" }} />
+      <Button
+        className="w-full rounded-xl h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+        disabled={!stripe || !elements || paying || !firstName || !lastName || !email.includes('@')}
+        onClick={handlePay}
+      >
+        {paying ? (
+          <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Processing Payment...</span>
+        ) : (
+          <><CreditCard className="h-5 w-5 mr-2" /> Pay ${priceUSD}/mo & Continue</>
+        )}
+      </Button>
+    </div>
+  );
+}
 
 // Products now fetched from Supabase directly
-
-const categories = ["All", "Weight Loss", "Sexual Wellness", "Hair", "Sleep", "Mental Health", "Skincare", "Hormone"] as const;
 
 const categoryTint: Record<string, string> = {
   "Weight Loss": "from-[var(--brand-sage-50)] to-[var(--brand-sage-100)]",
@@ -41,6 +127,7 @@ export function PatientShopPage() {
   const { initialize } = useAuthStore();
   const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [assignedDoctorForScheduling, setAssignedDoctorForScheduling] = useState<any>(null);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -61,6 +148,7 @@ export function PatientShopPage() {
           description: p.description,
           questionnaire: p.features?.questionnaire || [],
           gateways: p.features?.gateways || ["stripe", "paypal", "apple_pay", "klarna"],
+          rawFeatures: p.features,
         }));
         setDbProducts(mapped);
       } catch (err) {
@@ -78,9 +166,8 @@ export function PatientShopPage() {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [gateway, setGateway] = useState<string>("");
   const [consultationTime, setConsultationTime] = useState<string>("");
-  const [zoomWanted, setZoomWanted] = useState<boolean | null>(null);
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
+  /** Required visit: patient confirms they used the embedded scheduler (Cal / Calendly). */
+  const [bookingAttestation, setBookingAttestation] = useState(false);
   // orderRef is now generated fresh at submission time — static useState caused 409 conflicts on retry
   const [activeCat, setActiveCat] = useState("All");
   
@@ -119,17 +206,151 @@ export function PatientShopPage() {
   const [otp, setOtp] = useState("");
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isVerifyingIdentity, setIsVerifyingIdentity] = useState(false);
+  const [routingRulesFromDb, setRoutingRulesFromDb] = useState<ConsultRoutingRuleRow[]>([]);
+  // Stripe state
+  const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
+  const [stripePaymentIntentId, setStripePaymentIntentId] = useState<string | null>(null);
 
-  const filteredProducts = activeCat === "All" ? dbProducts : dbProducts.filter(p => p.category === activeCat);
-  const categories = ["All", ...Array.from(new Set(dbProducts.map(p => p.category)))];
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("consult_routing_rules")
+        .select("*")
+        .eq("active", true)
+        .order("priority", { ascending: true });
+      if (cancelled) return;
+      if (error) {
+        console.warn("[Shop] consult_routing_rules:", error.message);
+        setRoutingRulesFromDb([]);
+        return;
+      }
+      setRoutingRulesFromDb((data || []) as ConsultRoutingRuleRow[]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
+  // ── Create Stripe PaymentIntent when a payment gateway is selected ──────────
+  useEffect(() => {
+    if (!gateway || !selected || stripeClientSecret) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const amountCents = Math.round((selected.priceUSD ?? 0) * 100);
+        const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+          body: {
+            amount: amountCents,
+            currency: 'usd',
+            metadata: {
+              product_id: selected.id,
+              product_name: selected.name,
+              customer_email: email,
+            },
+          },
+        });
+        if (cancelled) return;
+        if (error || !data?.clientSecret) {
+          setError('Could not initialise payment. Please try again.');
+          return;
+        }
+        setStripeClientSecret(data.clientSecret);
+        setStripePaymentIntentId(data.paymentIntentId);
+      } catch (e: any) {
+        if (!cancelled) setError(e.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gateway, selected]);
+
+  // ── Send real OTP when 2FA stage begins ─────────────────────────────────────
+  useEffect(() => {
+    if (stage !== '2fa' || !phone) return;
+    const e164 = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g, '')}`;
+    supabase.functions.invoke('send-otp', { body: { phone: e164 } }).catch(console.warn);
+  }, [stage]);
+
+  // ── Reset Stripe secret when product changes ─────────────────────────────────
   const startFlow = (product: any) => {
     setSelected(product);
     setQStep(0);
     setAnswers({});
     setGateway("");
+    setStripeClientSecret(null);
+    setStripePaymentIntentId(null);
+    setBookingAttestation(false);
+    setConsultationTime("");
     setStage("payment");
   };
+
+  const filteredProducts = activeCat === "All" ? dbProducts : dbProducts.filter(p => p.category === activeCat);
+  const catalogCategories = ["All", ...Array.from(new Set(dbProducts.map(p => p.category)))];
+
+  const globalVideoStates = useMemo(
+    () => parseGlobalVideoStatesFromEnv(import.meta.env.VITE_VIDEO_REQUIRED_STATES),
+    []
+  );
+  const videoRules = useMemo(
+    () => (selected ? parseProductVideoRules(selected.rawFeatures) : null),
+    [selected]
+  );
+  const clinicalContext: ClinicalContext = useMemo(() => {
+    const bmi = computeNumericBmi(heightFt, heightIn, weight);
+    const ageY = computeAgeYears(dob);
+    const ageFallback =
+      dob ? new Date().getFullYear() - new Date(dob).getFullYear() : null;
+    return {
+      patientState: state,
+      productCategory: selected?.category ?? "",
+      productId: selected?.id ?? "",
+      bmi,
+      age: ageY ?? ageFallback,
+      answers,
+    };
+  }, [state, selected, heightFt, heightIn, weight, dob, answers]);
+
+  const needsScheduledVideo = useMemo(() => {
+    if (!videoRules) return false;
+    return requiresSyncVideoVisit(videoRules, globalVideoStates, routingRulesFromDb, clinicalContext);
+  }, [videoRules, globalVideoStates, routingRulesFromDb, clinicalContext]);
+
+  // Step 7/10: Resolve Dynamic Doctor Link for Embed
+  const fetchEligibleDoctor = async () => {
+    try {
+      const { data: doctors } = await supabase
+        .from('profiles')
+        .select('id, full_name, calendly_url, licensed_states')
+        .eq('role', 'doctor')
+        .eq('status', 'active');
+      
+      const eligible = (doctors || []).find(d => 
+        d.licensed_states?.split(',').map((s: string) => s.trim().toUpperCase())
+          .includes(state.toUpperCase())
+      );
+      
+      if (eligible) setAssignedDoctorForScheduling(eligible);
+    } catch (err) {
+      console.error("Error fetching doctor for scheduling:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (stage === 'scheduling' && !assignedDoctorForScheduling) {
+      fetchEligibleDoctor();
+    }
+  }, [stage]);
+
+  const schedulingEmbedSrc = useMemo(() => {
+    const baseUrl = assignedDoctorForScheduling?.calendly_url || videoRules?.schedulingEmbedUrl || defaultSchedulingEmbedUrl();
+    // Pre-fill Calendly params for seamless UX
+    const url = new URL(baseUrl);
+    if (email) url.searchParams.set('email', email);
+    if (firstName || lastName) url.searchParams.set('name', `${firstName} ${lastName}`.trim());
+    return url.toString();
+  }, [assignedDoctorForScheduling, videoRules, email, firstName, lastName]);
+
 
   const handleAnswer = (id: string, val: string) => {
     setAnswers(a => ({ ...a, [id]: val }));
@@ -225,9 +446,20 @@ export function PatientShopPage() {
         }
       }
 
-      if (zoomWanted === null) throw new Error("Please select your consultation preference.");
-      if (zoomWanted === true && !consultationTime) throw new Error("Please select a date and time for your consultation.");
       if (!idFile) throw new Error("Please upload a photo of your government ID.");
+
+      const rules = parseProductVideoRules(selected.rawFeatures);
+      const needsVideo = requiresSyncVideoVisit(rules, globalVideoStates, routingRulesFromDb, {
+        patientState: state,
+        productCategory: selected.category,
+        productId: selected.id,
+        bmi: computeNumericBmi(heightFt, heightIn, weight),
+        age: computeAgeYears(dob) ?? (dob ? new Date().getFullYear() - new Date(dob).getFullYear() : null),
+        answers,
+      });
+      if (needsVideo && !bookingAttestation) {
+        throw new Error("Please book a time in the calendar above and confirm before continuing.");
+      }
 
       if (!userId) throw new Error("Could not determine user ID — please try again.");
 
@@ -260,7 +492,13 @@ export function PatientShopPage() {
       // ── Insert order into Supabase ────────────────────────────────────────────
       const { error: insertError } = await supabase.from('orders').insert([{
         order_number:      freshOrderRef,
+        mrn:               generateMRN(),
+        doctor_id:         assignedDoctorForScheduling?.id || null,
+        doctor:            assignedDoctorForScheduling?.full_name || null,
+        status:            assignedDoctorForScheduling ? 'medical_review' : 'order_submitted',
         patient_name:      `${resolvedFirstName} ${resolvedLastName}`.trim() || "New Patient",
+        patient_email:     user?.email || null,
+        patient_state:     user?.user_metadata?.state || "NY", // Defaulting to NY if metadata is missing
         patient_avatar:    (resolvedFirstName[0] || "") + (resolvedLastName[0] || ""),
         patient_age:       age,
         patient_country:   "🇺🇸 US",
@@ -272,17 +510,26 @@ export function PatientShopPage() {
         ordered_date:      new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         amount:            selected.priceUSD,
         user_id:           userId,
+        patient_email:     resolvedEmail,
         intake_complete:   true,
         intake_notes:      `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Blood: ${bloodType} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
-        intake_answers:    answers,
+        intake_answers:    {
+          ...answers,
+          ...(needsVideo
+            ? { _scheduling: { external_calendar: true, acknowledged_booking: bookingAttestation } }
+            : {}),
+        },
         patient_vitals:    patientVitals,
-        consultation_time: consultationTime || null,
-        zoom_status:       zoomWanted && consultationTime ? 'requested' : 'not_requested',
+        consultation_time: needsVideo ? (consultationTime || null) : null,
+        zoom_status: needsVideo ? "requested" : "not_requested",
         zoom_doctor_message:   null,
         zoom_rescheduled_time: null,
         referral_code:     referralCode,
+        stripe_payment_intent_id: stripePaymentIntentId || null,
+        payment_status:    stripePaymentIntentId ? "paid" : "pending",
         timeline: [{ status: "order_submitted", date: new Date().toLocaleDateString() }]
       }]);
+
 
       if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
 
@@ -549,52 +796,76 @@ export function PatientShopPage() {
         </div>
         <div className="text-center">
           <div className="h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-             <MessageSquare className="h-8 w-8 text-blue-500" />
+             <ShieldCheck className="h-8 w-8 text-blue-500" />
           </div>
           <h1 className="text-2xl font-bold">Verify your phone</h1>
           <p className="text-sm text-muted-foreground mt-2">
-            We've sent a 6-digit verification code to<br />
+            We sent a 6-digit code to<br />
             <span className="font-bold text-foreground">{phone || "(555) 000-0000"}</span>
           </p>
         </div>
 
         <div className="space-y-4 pt-4">
           <div className="flex justify-center gap-2">
-            {[1,2,3,4,5,6].map((_, i) => (
-              <input 
+            {[0,1,2,3,4,5].map((i) => (
+              <input
                 key={i}
-                type="text" 
-                maxLength={1} 
+                id={`otp-${i}`}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
                 className="w-12 h-14 text-center text-xl font-bold border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white shadow-sm"
                 value={otp[i] || ""}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, "");
-                  const newOtp = otp.split("");
-                  newOtp[i] = val;
-                  setOtp(newOtp.join(""));
+                  const val = e.target.value.replace(/\D/g, "").slice(0,1);
+                  const chars = otp.split("");
+                  chars[i] = val;
+                  setOtp(chars.join(""));
                   if (val && i < 5) {
-                    const next = e.target.nextElementSibling as HTMLInputElement;
-                    if (next) next.focus();
+                    (document.getElementById(`otp-${i+1}`) as HTMLInputElement)?.focus();
                   }
                 }}
               />
             ))}
           </div>
-          <Button 
+          {error && <p className="text-red-500 text-xs text-center font-semibold">{error}</p>}
+          <Button
             className="w-full rounded-xl h-12 text-base font-bold bg-primary hover:bg-primary/90 text-white"
             disabled={otp.length !== 6 || isVerifyingOtp}
-            onClick={() => {
+            onClick={async () => {
               setIsVerifyingOtp(true);
-              setTimeout(() => {
+              setError(null);
+              try {
+                // Format phone to E.164
+                const e164 = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g,'')}`;
+                const res = await supabase.functions.invoke('verify-otp', {
+                  body: { phone: e164, code: otp },
+                });
+                if (res.error || !res.data?.verified) {
+                  setError(res.data?.error || 'Invalid code. Please try again.');
+                } else {
+                  setStage('identity');
+                }
+              } catch (e: any) {
+                setError(e.message);
+              } finally {
                 setIsVerifyingOtp(false);
-                setStage("identity");
-              }, 1500);
+              }
             }}
           >
             {isVerifyingOtp ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify & Continue"}
           </Button>
           <p className="text-xs text-center text-muted-foreground mt-4">
-            Didn't receive the code? <button className="font-bold text-primary hover:underline">Resend SMS</button>
+            Didn't receive the code?{" "}
+            <button
+              className="font-bold text-primary hover:underline"
+              onClick={async () => {
+                const e164 = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g,'')}`;
+                await supabase.functions.invoke('send-otp', { body: { phone: e164 } });
+              }}
+            >
+              Resend SMS
+            </button>
           </p>
         </div>
       </div>
@@ -607,60 +878,84 @@ export function PatientShopPage() {
         <div className="flex justify-center mb-4">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
-        
+
         <div className="bg-white border border-gray-200 rounded-[2rem] p-6 shadow-sm relative overflow-hidden">
            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
              <ShieldCheck className="h-32 w-32" />
            </div>
-           
+
            <div className="flex items-center gap-2 mb-2">
              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-50 text-[10px] font-black uppercase">
-               Powered by Vouched™
+               Powered by Stripe Identity™
              </Badge>
            </div>
            <h1 className="text-2xl font-bold mt-4">Identity Verification</h1>
            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-             To comply with KYC and telemedicine regulations, we need to quickly verify your identity. This usually takes less than 30 seconds.
+             To comply with KYC and telemedicine regulations, we need to quickly verify your identity using a government-issued ID. This usually takes less than 60 seconds.
            </p>
 
-           <div className="space-y-4 mt-8 relative z-10">
-              <label className="flex items-center gap-4 w-full border-2 border-dashed border-gray-300 rounded-2xl px-4 py-5 cursor-pointer hover:border-primary transition-colors bg-gray-50/50 group">
-                <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                  <CreditCard className="h-5 w-5 text-gray-500" />
-                </div>
-                <div>
-                  <span className="block font-bold text-sm text-gray-900">
-                    {idFile ? <span className="text-emerald-600">✓ {idFile.name}</span> : "Upload Government ID"}
-                  </span>
-                  <span className="block text-xs text-muted-foreground mt-0.5">Driver's License, Passport, or State ID</span>
-                </div>
-                <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => setIdFile(e.target.files?.[0] || null)} />
-              </label>
+           {error && (
+             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold">
+               {error}
+             </div>
+           )}
 
-              <Button 
+           <div className="space-y-4 mt-8 relative z-10">
+              <Button
                 className="w-full rounded-2xl h-14 text-base font-bold bg-[#0A0D14] hover:bg-gray-800 text-white shadow-xl shadow-gray-900/10"
-                disabled={!idFile || isVerifyingIdentity}
-                onClick={() => {
+                disabled={isVerifyingIdentity}
+                onClick={async () => {
                   setIsVerifyingIdentity(true);
-                  setTimeout(() => {
+                  setError(null);
+                  try {
+                    // Call our Edge Function to create a Stripe Identity session
+                    const { data, error: fnErr } = await supabase.functions.invoke('verify-identity', {
+                      body: {
+                        userId: useAuthStore.getState().user?.id ?? null,
+                        orderId: null, // order not created yet at this stage
+                      },
+                    });
+                    if (fnErr || !data?.clientSecret) {
+                      throw new Error(fnErr?.message || 'Could not start identity verification.');
+                    }
+                    // Load Stripe Identity SDK dynamically
+                    const stripe = await stripePromise;
+                    if (!stripe) throw new Error('Stripe failed to load.');
+                    const result = await (stripe as any).verifyIdentity(data.clientSecret);
+                    if (result.error) {
+                      setError(result.error.message || 'Verification failed.');
+                    } else {
+                      // Verification flow completed (result confirmed by webhook)
+                      // Proceed to questionnaire — webhook will update kyc_status async
+                      setStage('questionnaire');
+                    }
+                  } catch (e: any) {
+                    setError(e.message);
+                  } finally {
                     setIsVerifyingIdentity(false);
-                    setStage("questionnaire");
-                  }, 2000);
+                  }
                 }}
               >
                 {isVerifyingIdentity ? (
                   <span className="flex items-center gap-2">
-                    <Loader2 className="h-5 w-5 animate-spin text-emerald-400" /> Analyzing ID...
+                    <Loader2 className="h-5 w-5 animate-spin text-emerald-400" /> Launching Verification...
                   </span>
                 ) : (
-                  "Verify My Identity"
+                  <span className="flex items-center gap-2"><Shield className="h-5 w-5" /> Verify My Identity</span>
                 )}
               </Button>
+
+              <button
+                className="w-full text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                onClick={() => setStage('questionnaire')}
+              >
+                Skip for now (verification required before prescription is issued)
+              </button>
            </div>
         </div>
-        
+
         <p className="text-xs text-center text-muted-foreground mt-6 flex items-center justify-center gap-1.5">
-           <Shield className="h-3.5 w-3.5 text-emerald-500" /> End-to-end encrypted and HIPAA compliant
+           <Shield className="h-3.5 w-3.5 text-emerald-500" /> End-to-end encrypted · HIPAA compliant · Powered by Stripe
         </p>
       </div>
     );
@@ -817,38 +1112,49 @@ export function PatientShopPage() {
           256-bit SSL encryption · HIPAA compliant · Cancel anytime
         </div>
 
-        <Button
-          className="w-full rounded-xl h-12 text-base font-bold relative overflow-hidden bg-emerald-600 hover:bg-emerald-700 text-white"
-          disabled={!cardReady || isPaying || !firstName || !lastName || !email.includes('@')}
-          onClick={() => {
-            setIsPaying(true);
-            setTimeout(() => {
-              setIsPaying(false);
-              const currentUser = useAuthStore.getState().user;
-              if (currentUser) {
-                // If logged in, use their metadata and skip account setup
-                setFirstName(currentUser.user_metadata?.first_name || firstName);
-                setLastName(currentUser.user_metadata?.last_name || lastName);
-                setEmail(currentUser.email || email);
-                setStage("questionnaire");
-              } else {
-                setStage("account_setup");
-              }
-            }, 1500);
-          }}>
-          {isPaying ? (
-            <span className="flex items-center gap-2">
-              Processing Payment... <Zap className="h-4 w-4 animate-pulse" />
-            </span>
-          ) : (
-            <><CreditCard className="h-5 w-5 mr-2" /> Pay {selected.price} &amp; Continue</>
-          )}
-        </Button>
-
-        {!gateway && <p className="text-xs text-center text-muted-foreground">Select a payment method above to continue</p>}
-        {gateway === 'stripe' && cardNum.length > 0 && cardNum.length < 16 && (
-          <p className="text-amber-500 text-xs text-center">{16 - cardNum.length} more digits needed</p>
+        {/* ── Real Stripe PaymentElement ─────────────────────────────── */}
+        {stripeClientSecret && gateway ? (
+          <Elements
+            stripe={stripePromise}
+            options={{
+              clientSecret: stripeClientSecret,
+              appearance: {
+                theme: "stripe",
+                variables: { colorPrimary: "#059669" },
+              },
+            }}
+          >
+            <StripePaymentForm
+              priceUSD={selected.priceUSD}
+              firstName={firstName}
+              lastName={lastName}
+              email={email}
+              productName={selected.name}
+              onSuccess={(paymentIntentId) => {
+                setStripePaymentIntentId(paymentIntentId);
+                const currentUser = useAuthStore.getState().user;
+                if (currentUser) {
+                  setFirstName(currentUser.user_metadata?.first_name || firstName);
+                  setLastName(currentUser.user_metadata?.last_name || lastName);
+                  setEmail(currentUser.email || email);
+                  setStage("questionnaire");
+                } else {
+                  setStage("account_setup");
+                }
+              }}
+              onError={(msg) => setError(msg)}
+            />
+          </Elements>
+        ) : gateway ? (
+          // Loading Stripe — create payment intent
+          <div className="flex flex-col items-center gap-3 py-6">
+            <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+            <p className="text-sm text-muted-foreground">Initialising secure payment...</p>
+          </div>
+        ) : (
+          <p className="text-xs text-center text-muted-foreground">Select a payment method above to continue</p>
         )}
+
         {error && <p className="text-red-500 text-sm text-center font-semibold">{error}</p>}
       </div>
     );
@@ -921,116 +1227,98 @@ export function PatientShopPage() {
           onClick={() => {
             if (qStep < totalQ - 1) {
               setQStep(s => s + 1);
-            } else {
+            } else if (needsScheduledVideo) {
+              setBookingAttestation(false);
               setStage("scheduling");
+            } else {
+              void handleCompleteSetup();
             }
           }}>
-          {qStep < totalQ - 1 ? "Continue" : "Next: Consultation Preference"} <ChevronRight className="h-4 w-4 ml-1" />
+          {qStep < totalQ - 1
+            ? "Continue"
+            : needsScheduledVideo
+              ? "Next: required video visit"
+              : "Submit enrollment"}
+          <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
     );
   }
 
-  if (stage === "scheduling" && selected) {
-    const dates = ["Today", "Tomorrow", "Wed", "Thu", "Fri", "Sat"];
-    const times = ["9:00 AM", "10:30 AM", "12:00 PM", "1:00 PM", "2:45 PM", "4:00 PM"];
+  if (stage === "scheduling" && selected && !needsScheduledVideo) {
     return (
-      <div className="max-w-md mx-auto space-y-5">
+      <div className="max-w-md mx-auto space-y-6 pt-8">
+        <p className="text-sm text-muted-foreground text-center">
+          A video scheduling step is not required for your treatment and state. Continue to submit your enrollment.
+        </p>
+        <Button className="w-full rounded-xl" onClick={() => void handleCompleteSetup()}>
+          Submit enrollment
+        </Button>
+        <Button variant="ghost" className="w-full" onClick={() => setStage("questionnaire")}>
+          Back to questionnaire
+        </Button>
+      </div>
+    );
+  }
+
+  if (stage === "scheduling" && selected && needsScheduledVideo) {
+    return (
+      <div className="max-w-lg mx-auto space-y-5">
         <div className="flex justify-center mb-6">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
-        <button onClick={() => setStage("questionnaire")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <button type="button" onClick={() => setStage("questionnaire")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
         <div>
-          <h1 className="text-xl font-bold">Zoom Consultation</h1>
-          <p className="text-sm text-muted-foreground">Would you like a video consultation with your doctor?</p>
+          <h1 className="text-xl font-bold">Required clinician visit</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Based on your treatment and shipping state, a brief video visit is required. Use the scheduler below — your meeting link (Zoom or Google Meet) comes from the calendar tool once you pick a time.
+          </p>
         </div>
 
-        {/* Zoom preference choice */}
-        <div className="space-y-3">
-          <button onClick={() => { setZoomWanted(true); }}
-            className={cn("w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all",
-              zoomWanted === true ? "border-primary bg-primary/5" : "border-border hover:border-primary/40")}>
-            <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-              <Video className="h-5 w-5 text-blue-600" />
+        <Card className="border-primary/25 overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex items-center gap-2 px-4 py-2 bg-muted/40 border-b border-border text-xs font-semibold text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5" /> Book with our clinical team
             </div>
-            <div>
-              <p className="font-bold text-sm">Yes, I want a Zoom consultation</p>
-              <p className="text-xs text-muted-foreground">Choose a date and time for your video visit with the doctor</p>
-            </div>
-            {zoomWanted === true && <CheckCircle2 className="h-5 w-5 text-primary ml-auto shrink-0" />}
-          </button>
+            <iframe
+              title="Schedule your video visit"
+              src={schedulingEmbedSrc}
+              className="w-full min-h-[620px] border-0 bg-white"
+            />
+          </CardContent>
+        </Card>
 
-          <button onClick={() => { setZoomWanted(false); setConsultationTime(""); setSelectedDate(""); setSelectedTime(""); }}
-            className={cn("w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all",
-              zoomWanted === false ? "border-emerald-500 bg-emerald-50" : "border-border hover:border-emerald-400/40")}>
-            <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-              <MessageSquare className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="font-bold text-sm">No, asynchronous review is fine</p>
-              <p className="text-xs text-muted-foreground">Doctor reviews your intake and sends prescription — no meeting needed</p>
-            </div>
-            {zoomWanted === false && <CheckCircle2 className="h-5 w-5 text-emerald-500 ml-auto shrink-0" />}
-          </button>
-        </div>
-
-        {/* Date/time picker — only when zoom wanted */}
-        {zoomWanted === true && (
-          <Card className="border-primary/20">
-            <CardContent className="p-4 space-y-4">
-              <div className="space-y-2">
-                <p className="text-xs font-bold uppercase text-muted-foreground tracking-wide">Select Date</p>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {dates.map(d => (
-                    <button key={d} onClick={() => { setSelectedDate(d); setConsultationTime(selectedTime ? `${d} at ${selectedTime}` : ""); }}
-                      className={cn("shrink-0 px-4 py-2 border rounded-xl text-sm font-semibold transition-all",
-                        selectedDate === d ? "border-primary bg-primary text-white" : "hover:border-primary")}>
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs font-bold uppercase text-muted-foreground tracking-wide">Select Time (EST)</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {times.map(t => (
-                    <button key={t} onClick={() => { setSelectedTime(t); setConsultationTime(selectedDate ? `${selectedDate} at ${t}` : `at ${t}`); }}
-                      className={cn("px-3 py-2 border rounded-xl text-xs font-semibold transition-all",
-                        selectedTime === t ? "border-primary bg-primary text-white" : "hover:border-primary")}>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {consultationTime && (
-                <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs font-bold text-blue-700">
-                  <Video className="h-4 w-4" />
-                  Zoom requested: {consultationTime} — doctor will confirm
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+        <label className="flex items-start gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50/80 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4 accent-primary shrink-0"
+            checked={bookingAttestation}
+            onChange={(e) => setBookingAttestation(e.target.checked)}
+          />
+          <span className="text-sm text-amber-950">
+            I selected a time in the calendar above. I understand the video link will be sent by the scheduler (email/SMS) and may also appear in my Peak Health appointments.
+          </span>
+        </label>
 
         <div className="p-4 bg-muted/20 border border-border rounded-xl space-y-3">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">ID Verification Required</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">ID verification</p>
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
                <ShieldCheck className="h-6 w-6 text-emerald-600" />
             </div>
             <div className="flex-1">
-              <p className="text-xs font-medium text-foreground">Upload a photo of your government ID</p>
-              <input type="file" className="mt-2 text-xs" onChange={(e) => setIdFile(e.target.files?.[0] || null)} />
+              <p className="text-xs font-medium text-foreground">Government ID (from earlier step)</p>
+              {idFile ? (
+                <p className="text-[10px] text-emerald-600 font-bold mt-1">✓ {idFile.name}</p>
+              ) : (
+                <p className="text-[10px] text-amber-700 font-semibold mt-1">Upload ID in the identity step if you have not yet.</p>
+              )}
             </div>
           </div>
-          {idFile && (
-            <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 italic">✓ {idFile.name} attached</p>
-          )}
         </div>
 
-        {/* Error display — previously silent */}
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold text-center">
             ⚠️ {error}
@@ -1049,7 +1337,7 @@ export function PatientShopPage() {
               </svg>
               Submitting your enrollment...
             </>
-          ) : "Complete Enrollment →"}
+          ) : "Complete enrollment →"}
         </Button>
       </div>
     );
@@ -1090,7 +1378,7 @@ export function PatientShopPage() {
 
       {/* Category filter */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-        {categories.map(cat => (
+        {catalogCategories.map(cat => (
           <button key={cat} onClick={() => setActiveCat(cat)}
             className={cn("shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all",
               activeCat === cat

@@ -10,6 +10,16 @@ export function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [routingSaving, setRoutingSaving] = useState(false);
+  const [routeForm, setRouteForm] = useState({
+    requires_video: false,
+    video_states: "",
+    scheduling_embed_url: "",
+    bmi_min: "",
+    age_min: "",
+    answer_triggers_json: "",
+  });
   
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -33,8 +43,77 @@ export function AdminProductsPage() {
   }
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (!editingProduct) return;
+    const f =
+      editingProduct.features &&
+      typeof editingProduct.features === "object" &&
+      !Array.isArray(editingProduct.features)
+        ? editingProduct.features
+        : {};
+    const vc = (f as any).video_clinical_rules || {};
+    const triggers = vc.answerTriggers || vc.answer_triggers;
+    setRouteForm({
+      requires_video: !!(f as any).requires_video_consult,
+      video_states: Array.isArray((f as any).video_required_states)
+        ? (f as any).video_required_states.join(", ")
+        : "",
+      scheduling_embed_url: typeof (f as any).scheduling_embed_url === "string" ? (f as any).scheduling_embed_url : "",
+      bmi_min: vc.bmiMin != null ? String(vc.bmiMin) : vc.bmi_min != null ? String(vc.bmi_min) : "",
+      age_min: vc.ageMin != null ? String(vc.ageMin) : vc.age_min != null ? String(vc.age_min) : "",
+      answer_triggers_json: triggers ? JSON.stringify(triggers, null, 2) : "",
+    });
+  }, [editingProduct]);
+
+  async function saveProductRouting(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingProduct) return;
+    setRoutingSaving(true);
+    try {
+      const prev =
+        editingProduct.features &&
+        typeof editingProduct.features === "object" &&
+        !Array.isArray(editingProduct.features)
+          ? { ...editingProduct.features }
+          : {};
+      const states = routeForm.video_states
+        .split(/[,;\s]+/)
+        .map((s) => s.trim().toUpperCase())
+        .filter((s) => /^[A-Z]{2}$/.test(s));
+      const next: Record<string, unknown> = { ...prev };
+      next.requires_video_consult = routeForm.requires_video;
+      next.video_required_states = states.length ? states : [];
+      if (routeForm.scheduling_embed_url.trim().startsWith("https://")) {
+        next.scheduling_embed_url = routeForm.scheduling_embed_url.trim();
+      } else {
+        delete next.scheduling_embed_url;
+      }
+      const vc: Record<string, unknown> = {};
+      if (routeForm.bmi_min.trim()) vc.bmiMin = Number(routeForm.bmi_min);
+      if (routeForm.age_min.trim()) vc.ageMin = Number(routeForm.age_min);
+      if (routeForm.answer_triggers_json.trim()) {
+        try {
+          const parsed = JSON.parse(routeForm.answer_triggers_json);
+          if (Array.isArray(parsed)) vc.answerTriggers = parsed;
+        } catch {
+          alert("Answer triggers must be valid JSON array.");
+          setRoutingSaving(false);
+          return;
+        }
+      }
+      if (Object.keys(vc).length) next.video_clinical_rules = vc;
+      else delete next.video_clinical_rules;
+
+      const { error } = await supabase.from("products").update({ features: next }).eq("id", editingProduct.id);
+      if (error) throw error;
+      setEditingProduct(null);
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      alert("Save failed — check console / RLS.");
+    } finally {
+      setRoutingSaving(false);
+    }
+  }
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,7 +228,24 @@ export function AdminProductsPage() {
               { header: "Category", accessorKey: "category", cell: (item: any) => <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{item.category}</span> },
               { header: "MSRP", accessorKey: "price", cell: (item: any) => <span className="font-black text-emerald-600">{item.price}</span> },
               { header: "Status", accessorKey: "status", cell: (item: any) => <StatusText status={item.status} /> },
-              { header: "Deployed", accessorKey: "updated", cell: (item: any) => <span className="text-[11px] font-bold text-slate-400">{item.updated}</span> }
+              { header: "Deployed", accessorKey: "updated", cell: (item: any) => <span className="text-[11px] font-bold text-slate-400">{item.updated}</span> },
+              {
+                header: "",
+                accessorKey: "actions",
+                cell: (item: any) => {
+                  const prod = products.find((p) => p.id.substring(0, 8) === item.id);
+                  return (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-8 rounded-lg text-[10px] font-black uppercase"
+                      onClick={() => prod && setEditingProduct(prod)}
+                    >
+                      Video rules
+                    </Button>
+                  );
+                },
+              },
             ]} 
             searchPlaceholder="Search repository by name or category..." 
           />
@@ -240,6 +336,112 @@ export function AdminProductsPage() {
                  >
                     {submitting ? <Loader2 className="h-6 w-6 animate-spin mx-auto text-emerald-400" /> : "Authorize Deployment"}
                  </Button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingProduct && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-[#0A2E1F]/40 backdrop-blur-md"
+              onClick={() => setEditingProduct(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              className="relative bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[32px] shadow-2xl border border-slate-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">Sync video routing</p>
+                  <h2 className="text-xl font-black text-[#0A2E1F] mt-1">{editingProduct.name}</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                  className="h-10 w-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <form onSubmit={saveProductRouting} className="p-8 space-y-5">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-emerald-600"
+                    checked={routeForm.requires_video}
+                    onChange={(e) => setRouteForm((f) => ({ ...f, requires_video: e.target.checked }))}
+                  />
+                  <span className="text-sm font-bold text-[#0A2E1F]">Always require sync video for this protocol</span>
+                </label>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Video if ship-to state (comma, 2-letter)</label>
+                  <Input
+                    placeholder="e.g. CA, NY"
+                    value={routeForm.video_states}
+                    onChange={(e) => setRouteForm((f) => ({ ...f, video_states: e.target.value }))}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Scheduling embed URL (https)</label>
+                  <Input
+                    placeholder="https://calendly.com/... or Cal.com embed"
+                    value={routeForm.scheduling_embed_url}
+                    onChange={(e) => setRouteForm((f) => ({ ...f, scheduling_embed_url: e.target.value }))}
+                    className="rounded-xl text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">BMI ≥ triggers video</label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 40"
+                      value={routeForm.bmi_min}
+                      onChange={(e) => setRouteForm((f) => ({ ...f, bmi_min: e.target.value }))}
+                      className="rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Age ≥ triggers video</label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 65"
+                      value={routeForm.age_min}
+                      onChange={(e) => setRouteForm((f) => ({ ...f, age_min: e.target.value }))}
+                      className="rounded-xl"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Answer triggers (JSON array)</label>
+                  <textarea
+                    className="w-full min-h-[100px] rounded-xl border border-slate-200 px-3 py-2 text-xs font-mono"
+                    placeholder='[{"questionId":"q_x","values":["Yes"]}]'
+                    value={routeForm.answer_triggers_json}
+                    onChange={(e) => setRouteForm((f) => ({ ...f, answer_triggers_json: e.target.value }))}
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Global state list for <strong>all</strong> protocols: set <code className="text-[10px] bg-slate-100 px-1 rounded">VITE_VIDEO_REQUIRED_STATES</code> in env.
+                  Cross-product rules (e.g. GLP-1 + CA + BMI): use Supabase table <code className="text-[10px] bg-slate-100 px-1 rounded">consult_routing_rules</code> — run <code className="text-[10px] bg-slate-100 px-1 rounded">supabase_consult_routing_rules.sql</code>.
+                </p>
+                <Button
+                  type="submit"
+                  disabled={routingSaving}
+                  className="w-full h-12 bg-[#0A2E1F] hover:bg-emerald-950 text-white rounded-xl font-black uppercase text-[10px] tracking-widest"
+                >
+                  {routingSaving ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : "Save routing"}
+                </Button>
               </form>
             </motion.div>
           </div>

@@ -345,6 +345,7 @@ export function DoctorConsultPage() {
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isRequestingVideo, setIsRequestingVideo] = useState(false);
   const [isDisqualifying, setIsDisqualifying] = useState(false);
+  const [isFollowingUp, setIsFollowingUp] = useState(false);
 
   // Toast system
   const [toasts, setToasts] = useState<Array<{ id: number; type: ToastType; message: string }>>([]);
@@ -501,20 +502,35 @@ export function DoctorConsultPage() {
     if (!order || isRequestingVideo) return;
     setIsRequestingVideo(true);
     try {
+      const doctorMessage = soapNotes.plan || "Please book a time on my calendar for a brief consultation.";
       const { error } = await supabase
         .from('orders')
         .update({ 
           zoom_status: 'requested', 
-          zoom_doctor_message: soapNotes.plan || "Please book a time on my calendar for a brief consultation."
+          zoom_doctor_message: doctorMessage,
         })
         .eq('id', order.id);
       
-      if (!error) {
-        showToast('info', `📅 Video visit requested — patient has been notified`);
-        setTimeout(() => navigate('/doctor/queue'), 1500);
-      } else {
+      if (error) {
         showToast('error', `Failed to request video visit: ${error.message}`);
+        return;
       }
+
+      // ── Insert in-app notification for the patient ──
+      await supabase.from('notifications').insert([{
+        user_id: order.user_id,
+        type: 'video_consult',
+        title: 'Video Consultation Required',
+        body: `Your physician has reviewed your intake and requests a brief video consultation. Message: "${doctorMessage}"`,
+        unread: true,
+      }]);
+
+      // ── Trigger Resend email via email-trigger edge function ──
+      // The email-trigger is set up as a DB webhook on orders UPDATE — no manual call needed.
+      // It will fire automatically when zoom_status changes to 'requested'.
+
+      showToast('info', `📅 Video visit requested — patient has been notified by app + email`);
+      setTimeout(() => navigate('/doctor/queue'), 1500);
     } catch (err: any) {
       showToast('error', `Error: ${err.message}`);
     } finally {
@@ -529,8 +545,9 @@ export function DoctorConsultPage() {
 
     setIsDisqualifying(true);
     try {
+      const reason = soapNotes.plan || "Clinical disqualification";
       const newTimeline = order.timeline
-        ? [...order.timeline, { status: 'cancelled', date: new Date().toLocaleString(), reason: soapNotes.plan || "Clinical disqualification" }]
+        ? [...order.timeline, { status: 'cancelled', date: new Date().toLocaleString(), reason }]
         : [{ status: 'cancelled', date: new Date().toLocaleString() }];
 
       const { error } = await supabase
@@ -538,20 +555,74 @@ export function DoctorConsultPage() {
         .update({ 
           status: 'cancelled',
           doctor_note: soapNotes.plan,
+          refund_reason: reason,
           timeline: newTimeline
         })
         .eq('id', order.id);
       
-      if (!error) {
-        showToast('error', `✕ Patient Disqualified. Refund process initiated.`);
-        setTimeout(() => navigate('/doctor/queue'), 1500);
-      } else {
+      if (error) {
         showToast('error', `Failed to disqualify: ${error.message}`);
+        return;
       }
+
+      // ── Insert in-app notification for the patient ──
+      await supabase.from('notifications').insert([{
+        user_id: order.user_id,
+        type: 'other',
+        title: 'Consultation Update',
+        body: `Your consultation could not be approved at this time. A refund has been initiated. ${reason !== 'Clinical disqualification' ? `Reason: ${reason}` : ''}`,
+        unread: true,
+      }]);
+
+      showToast('error', `✕ Patient Disqualified. Refund process initiated.`);
+      setTimeout(() => navigate('/doctor/queue'), 1500);
     } catch (err: any) {
       showToast('error', `Error: ${err.message}`);
     } finally {
       setIsDisqualifying(false);
+    }
+  };
+
+  // ── NEW: Follow-up required ─────────────────────────────────────────
+  const handleFollowUp = async () => {
+    if (!order || isFollowingUp) return;
+    setIsFollowingUp(true);
+    try {
+      const reason = soapNotes.plan || "Additional information required before prescription can be issued.";
+      const newTimeline = order.timeline
+        ? [...order.timeline, { status: 'follow_up', date: new Date().toLocaleString() }]
+        : [{ status: 'follow_up', date: new Date().toLocaleString() }];
+
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'medical_review',  // keeps it in review queue
+          doctor_note: reason,
+          follow_up_reason: reason,
+          timeline: newTimeline,
+        })
+        .eq('id', order.id);
+      
+      if (error) {
+        showToast('error', `Failed to mark follow-up: ${error.message}`);
+        return;
+      }
+
+      // ── Insert in-app notification for the patient ──
+      await supabase.from('notifications').insert([{
+        user_id: order.user_id,
+        type: 'message',
+        title: 'Follow-Up Required',
+        body: `Your physician needs additional information. Note: "${reason}" — Please check your messages or contact us to continue.`,
+        unread: true,
+      }]);
+
+      showToast('info', `📋 Follow-up flagged — patient has been notified`);
+      setTimeout(() => navigate('/doctor/queue'), 1500);
+    } catch (err: any) {
+      showToast('error', `Error: ${err.message}`);
+    } finally {
+      setIsFollowingUp(false);
     }
   };
 
@@ -929,7 +1000,7 @@ export function DoctorConsultPage() {
                <h2 className="text-lg font-bold text-[#0A2E1F] uppercase tracking-widest">Doctor Decision</h2>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
               
               {/* PATH A: QUALIFIES */}
               <Card className={cn(
@@ -973,7 +1044,7 @@ export function DoctorConsultPage() {
                     </div>
                     <Button 
                       onClick={handleFinalize}
-                      disabled={isFinalizing || isRequestingVideo || isDisqualifying}
+                      disabled={isFinalizing || isRequestingVideo || isDisqualifying || isFollowingUp}
                       className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-900/10"
                     >
                       {isFinalizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pill className="h-4 w-4 mr-2" />}
@@ -1013,7 +1084,7 @@ export function DoctorConsultPage() {
                     <Button 
                       variant="outline"
                       onClick={handleRequestVideoCall}
-                      disabled={isFinalizing || isRequestingVideo || isDisqualifying}
+                      disabled={isFinalizing || isRequestingVideo || isDisqualifying || isFollowingUp}
                       className="w-full h-12 rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50 font-black uppercase text-xs tracking-widest"
                     >
                       {isRequestingVideo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4 mr-2" />}
@@ -1023,7 +1094,46 @@ export function DoctorConsultPage() {
                 </CardContent>
               </Card>
 
-              {/* PATH C: DISQUALIFIES */}
+              {/* PATH C: FOLLOW-UP REQUIRED — NEW */}
+              <Card className={cn(
+                "border-2 transition-all duration-300 overflow-hidden",
+                "border-blue-100 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-900/10"
+              )}>
+                <div className="p-4 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+                   <div className="flex items-center gap-2">
+                     <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                       <FileSignature className="h-4 w-4" />
+                     </div>
+                     <span className="font-black text-xs text-blue-900 uppercase tracking-widest">Follow-Up Required</span>
+                   </div>
+                </div>
+                <CardContent className="p-5 space-y-4">
+                  <ul className="space-y-2 mb-6">
+                    {["Missing information", "Needs clarification", "Patient stays in queue"].map(li => (
+                      <li key={li} className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                        <div className="h-1 w-1 rounded-full bg-blue-400" /> {li}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="pt-4 border-t border-slate-100">
+                    <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100 text-[11px] font-medium text-blue-900 leading-relaxed mb-4 italic">
+                      "Use the Plan field in SOAP notes above to write your follow-up message to the patient."
+                    </div>
+                    <Button 
+                      variant="outline"
+                      onClick={handleFollowUp}
+                      disabled={isFinalizing || isRequestingVideo || isDisqualifying || isFollowingUp}
+                      className="w-full h-12 rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50 font-black uppercase text-xs tracking-widest"
+                    >
+                      {isFollowingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSignature className="h-4 w-4 mr-2" />}
+                      Flag Follow-Up
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* PATH D: DISQUALIFIES */}
               <Card className={cn(
                 "border-2 transition-all duration-300 overflow-hidden",
                 "border-red-100 hover:border-red-500 hover:shadow-xl hover:shadow-red-900/10"
@@ -1051,13 +1161,13 @@ export function DoctorConsultPage() {
                          <AlertCircle className="h-3 w-3" /> Auto-Refund Enabled
                        </p>
                        <p className="text-[11px] text-red-700 leading-relaxed font-medium">
-                         Selecting this will cancel the order and place a refund request with Stripe.
+                         Selecting this will cancel the order, mark payment as refunded, and notify the patient by app + email.
                        </p>
                     </div>
                     <Button 
                       variant="ghost"
                       onClick={handleDisqualify}
-                      disabled={isFinalizing || isRequestingVideo || isDisqualifying}
+                      disabled={isFinalizing || isRequestingVideo || isDisqualifying || isFollowingUp}
                       className="w-full h-12 rounded-xl text-red-600 hover:bg-red-50 font-black uppercase text-xs tracking-widest"
                     >
                       {isDisqualifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}

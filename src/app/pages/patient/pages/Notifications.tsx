@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, Calendar, FileText, Pill, MessageSquare, ShieldCheck, CheckCheck, Loader2 } from "lucide-react";
+import { Bell, Calendar, FileText, Pill, MessageSquare, ShieldCheck, CheckCheck, Loader2, Video } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
@@ -10,6 +10,8 @@ const iconMap: Record<string, any> = {
   message: MessageSquare,
   prescription: Pill,
   security: ShieldCheck,
+  video_consult: Video,
+  other: Bell,
 };
 
 const typeColors: Record<string, string> = {
@@ -18,6 +20,8 @@ const typeColors: Record<string, string> = {
   message: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40",
   prescription: "bg-amber-100 text-amber-600 dark:bg-amber-950/40",
   security: "bg-red-100 text-red-600 dark:bg-red-950/40",
+  video_consult: "bg-blue-100 text-blue-600 dark:bg-blue-950/40",
+  other: "bg-slate-100 text-slate-600 dark:bg-slate-950/40",
 };
 
 export function NotificationsPage() {

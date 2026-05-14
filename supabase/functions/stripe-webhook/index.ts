@@ -39,14 +39,21 @@ serve(async (req) => {
         break;
       }
       
+      case "payment_intent.succeeded": {
+        const pi = event.data.object as Stripe.PaymentIntent;
+        await supabaseClient
+          .from("orders")
+          .update({ payment_status: "paid" })
+          .eq("stripe_payment_intent_id", pi.id);
+        break;
+      }
+
       case "payment_intent.payment_failed": {
-        const paymentIntent = event.data.object;
-        if (paymentIntent.metadata?.order_id) {
-           await supabaseClient
-             .from("orders")
-             .update({ payment_status: "failed" })
-             .eq("id", paymentIntent.metadata.order_id);
-        }
+        const pi = event.data.object as Stripe.PaymentIntent;
+        await supabaseClient
+          .from("orders")
+          .update({ payment_status: "failed" })
+          .eq("stripe_payment_intent_id", pi.id);
         break;
       }
       // Add other Stripe events as needed
