@@ -4,6 +4,11 @@ import {
   ChevronRight, CheckCircle2, CreditCard,
   Star, Shield, ShieldCheck, Clock, Package, ArrowLeft, Globe, Zap, Loader2,
   Calendar,
+  Wallet,
+  WalletCards,
+  Smartphone,
+  Lock,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
@@ -122,6 +127,93 @@ function StripePaymentForm({
   );
 }
 
+function gatewayTileIcon(gw: string) {
+  const iconCls = "h-7 w-7 shrink-0";
+  switch (gw) {
+    case "stripe":
+      return <CreditCard className={cn(iconCls, "text-violet-600")} aria-hidden />;
+    case "paypal":
+      return <Wallet className={cn(iconCls, "text-sky-600")} aria-hidden />;
+    case "apple_pay":
+      return <Smartphone className={cn(iconCls, "text-white drop-shadow-sm")} aria-hidden />;
+    case "google_pay":
+      return <WalletCards className={cn(iconCls, "text-blue-600")} aria-hidden />;
+    default:
+      return (
+        <span className="text-2xl shrink-0 leading-none" aria-hidden>
+          {GATEWAY_DISPLAY[gw]?.icon ?? "💳"}
+        </span>
+      );
+  }
+}
+
+const ALT_HEADER_GRADIENT: Record<string, string> = {
+  paypal: "from-[#001435] via-[#0070ba] to-sky-400",
+  apple_pay: "from-zinc-950 via-zinc-800 to-zinc-600",
+  google_pay: "from-blue-600 via-emerald-500 to-amber-300",
+  klarna: "from-pink-600 via-rose-500 to-orange-400",
+};
+
+function AltGatewayReadinessPanel({
+  gatewayId,
+  displayName,
+  priceText,
+  onChooseCard,
+}: {
+  gatewayId: string;
+  displayName: string;
+  priceText: string;
+  onChooseCard: () => void;
+}) {
+  const bar = ALT_HEADER_GRADIENT[gatewayId] ?? "from-slate-800 to-slate-600";
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+      className="overflow-hidden rounded-[1.35rem] border border-slate-200/90 bg-white shadow-xl shadow-slate-900/[0.08]"
+    >
+      <div className={cn("h-1.5 w-full bg-gradient-to-r", bar)} />
+      <div className="p-5 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+            <Lock className="h-5 w-5" aria-hidden />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Wallet checkout</p>
+            <h3 className="text-lg font-bold text-slate-900 leading-tight">{displayName}</h3>
+            <p className="text-sm text-slate-500 mt-1 leading-relaxed">
+              Final connection for this wallet is still being switched on. Use card checkout to complete your enrollment
+              today.
+            </p>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-slate-100 bg-slate-50/90 px-4 py-3 flex justify-between items-center text-sm">
+          <span className="text-muted-foreground">Due today</span>
+          <span className="font-extrabold text-emerald-700 tabular-nums">{priceText}</span>
+        </div>
+        <ul className="text-xs text-slate-600 space-y-2">
+          <li className="flex gap-2">
+            <Sparkles className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" aria-hidden />
+            <span>When this wallet goes live, you will authorise in one tap without retyping your card.</span>
+          </li>
+          <li className="flex gap-2">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" aria-hidden />
+            <span>Same encrypted session and order record as card payments.</span>
+          </li>
+        </ul>
+        <Button
+          type="button"
+          className="w-full rounded-xl h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-900/10"
+          onClick={onChooseCard}
+        >
+          <CreditCard className="h-4 w-4 mr-2" /> Pay with card instead
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
 // Products now fetched from Supabase directly
 
 const categoryTint: Record<string, string> = {
@@ -168,7 +260,7 @@ export function PatientShopPage() {
           image: p.image_url,
           description: p.description,
           questionnaire: p.features?.questionnaire || [],
-          gateways: p.features?.gateways || ["stripe", "paypal", "apple_pay", "klarna"],
+          gateways: p.features?.gateways || ["stripe", "paypal", "apple_pay", "google_pay"],
           rawFeatures: p.features,
         }));
         setDbProducts(mapped);
@@ -242,10 +334,11 @@ export function PatientShopPage() {
   const [resumeDraftAvailable, setResumeDraftAvailable] = useState(false);
   const saveDraftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const requireStripeOnly =
-    import.meta.env.PROD && !!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+  /** Set `VITE_CHECKOUT_STRIPE_ONLY=true` to hide wallet options and show card only. */
+  const requireStripeOnly = import.meta.env.VITE_CHECKOUT_STRIPE_ONLY === "true";
+  /** Demo card flow for non-Stripe gateways (dev, or staging with `VITE_ENABLE_DEMO_ALT_GATEWAYS=true`). */
   const allowSimulatedAltGateway =
-    !requireStripeOnly && (!stripeKey || import.meta.env.DEV);
+    import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_ALT_GATEWAYS === "true";
 
   useEffect(() => {
     if (!selected) return;
@@ -1509,48 +1602,111 @@ export function PatientShopPage() {
           </CardContent>
         </Card>
 
-        <div>
-          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">
-            Select payment method
-          </p>
-          <div className="space-y-2">
-            {displayedGateways.map((gw: string) => (
-              <button
-                key={gw}
-                type="button"
-                onClick={() => setGateway(gw)}
-                className={cn(
-                  "w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left",
-                  gateway === gw
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-slate-200 bg-white hover:border-slate-300 text-slate-700"
-                )}
-              >
-                <span className="text-2xl">{GATEWAY_DISPLAY[gw]?.icon}</span>
-                <span className="font-semibold text-sm">{GATEWAY_DISPLAY[gw]?.label}</span>
-                {gateway === gw && <CheckCircle2 className="h-5 w-5 text-primary ml-auto" />}
-              </button>
-            ))}
+        <motion.div layout className="space-y-3">
+          <div className="flex items-end justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Checkout</p>
+              <p className="text-base font-bold text-foreground tracking-tight">Choose how you pay</p>
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-700/70">PCI-aware</span>
           </div>
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {displayedGateways.map((gw: string, i: number) => {
+              const meta = GATEWAY_DISPLAY[gw];
+              const selected = gateway === gw;
+              const darkTile = gw === "apple_pay";
+              return (
+                <motion.button
+                  key={gw}
+                  type="button"
+                  layout
+                  onClick={() => setGateway(gw)}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.06, 0.24), duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                  className={cn(
+                    "relative flex flex-col gap-0.5 rounded-2xl border-2 p-4 text-left transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-2",
+                    meta?.tileClass ?? "border-slate-200 bg-white",
+                    selected
+                      ? cn("shadow-lg shadow-slate-900/10 scale-[1.02]", meta?.selectedRing ?? "ring-2 ring-primary/35 ring-offset-2 ring-offset-white")
+                      : "hover:shadow-md hover:-translate-y-0.5 border-transparent hover:border-slate-200/90",
+                    darkTile && "text-white",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-inner",
+                        darkTile
+                          ? "border-white/15 bg-white/10 backdrop-blur-md"
+                          : "border-black/[0.04] bg-white/90",
+                      )}
+                    >
+                      {gatewayTileIcon(gw)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={cn("font-bold text-sm leading-tight", darkTile ? "text-white" : "text-slate-900")}>
+                        {meta?.label ?? gw}
+                      </p>
+                      <p
+                        className={cn(
+                          "text-[11px] mt-0.5 leading-snug",
+                          darkTile ? "text-zinc-300" : "text-muted-foreground",
+                        )}
+                      >
+                        {meta?.tagline ?? "Secure payment"}
+                      </p>
+                    </div>
+                    {selected ? (
+                      <CheckCircle2
+                        className={cn("h-6 w-6 shrink-0", darkTile ? "text-emerald-400" : "text-emerald-600")}
+                        aria-hidden
+                      />
+                    ) : (
+                      <div
+                        className={cn("h-5 w-5 shrink-0 rounded-full border-2", darkTile ? "border-zinc-500" : "border-slate-200")}
+                        aria-hidden
+                      />
+                    )}
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
+        </motion.div>
 
         {requireStripeOnly && (
-          <p className="text-[11px] text-muted-foreground bg-muted/40 rounded-xl px-3 py-2">
-            Live checkout accepts card payments through Stripe only.
+          <p className="text-[11px] text-muted-foreground bg-muted/40 rounded-xl px-3 py-2 leading-relaxed">
+            Wallet buttons are hidden because{" "}
+            <code className="font-mono text-[10px]">VITE_CHECKOUT_STRIPE_ONLY=true</code>. Remove it to show the full
+            picker.
           </p>
         )}
 
         {gateway && gateway !== "stripe" && !allowSimulatedAltGateway && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Please select <strong>Credit / Debit Card</strong> to complete checkout in this environment.
-          </div>
+          <AltGatewayReadinessPanel
+            gatewayId={gateway}
+            displayName={GATEWAY_DISPLAY[gateway]?.label ?? gateway}
+            priceText={selected.price}
+            onChooseCard={() => {
+              setGateway("stripe");
+              setError(null);
+            }}
+          />
         )}
 
         {gateway && gateway !== "stripe" && allowSimulatedAltGateway && (
-          <div>
-            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">
-              Demo card (not charged)
-            </p>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                {GATEWAY_DISPLAY[gateway]?.label ?? gateway} · demo
+              </p>
+              <span className="text-[10px] font-bold text-amber-700/90 uppercase tracking-wide">Not charged</span>
+            </div>
             <div className="relative h-36 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-5 mb-4 overflow-hidden shadow-xl">
               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_50%,white,transparent_60%)]" />
               <div className="flex justify-between items-start">
@@ -1641,7 +1797,7 @@ export function PatientShopPage() {
             >
               Continue (demo checkout — no charge)
             </Button>
-          </div>
+          </motion.div>
         )}
 
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pb-1">

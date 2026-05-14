@@ -397,7 +397,9 @@ export function AdminProductsPage() {
                   </p>
                   <p className="text-[11px] text-slate-500 mb-3">
                     Per-protocol options stored as <code className="text-[10px] bg-slate-100 px-1 rounded">features.gateways</code>.
-                    With live Stripe in production, checkout shows card only; other methods apply in dev / demo.
+                    The shop shows every method you enable here. Card uses Stripe Elements; enable{" "}
+                    <code className="text-[10px] bg-slate-100 px-1 rounded">VITE_ENABLE_DEMO_ALT_GATEWAYS=true</code> on
+                    staging to exercise wallet flows without live APIs.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {DEFAULT_PRODUCT_GATEWAYS.map((gw) => {
