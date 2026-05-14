@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import {
   ChevronRight, CheckCircle2, CreditCard,
   Star, Shield, ShieldCheck, Clock, Package, ArrowLeft, Globe, Zap, Loader2,
@@ -31,6 +31,12 @@ import {
   clearEnrollmentDraft,
   type EnrollmentDraftV1,
 } from "../../../../lib/enrollmentDraft";
+import {
+  shopPathForStage,
+  shopStageFromStepParam,
+  type ShopFlowStage,
+} from "../../../../lib/patientShopRoutes";
+import { PatientEnrollmentStepper } from "../../../components/PatientEnrollmentStepper.tsx";
 // Stripe
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -133,19 +139,17 @@ const gatewayConfig: Record<string, { label: string; icon: string; color: string
   klarna: { label: "Klarna · Pay in 4", icon: "🛍️", color: "border-pink-300 bg-pink-50 dark:bg-pink-950/30" },
 };
 
-type Stage =
-  | "catalog"
-  | "payment"
-  | "payment_confirmation"
-  | "account_setup"
-  | "2fa"
-  | "identity"
-  | "questionnaire"
-  | "scheduling"
-  | "confirmed";
-
 export function PatientShopPage() {
   const navigate = useNavigate();
+  const { step: stepParam } = useParams();
+
+  const readInitialStage = (): ShopFlowStage => {
+    if (typeof window === "undefined") return "catalog";
+    const seg = window.location.pathname.replace(/^\/patient\/shop\/?/, "").split("/")[0];
+    return shopStageFromStepParam(seg || undefined) ?? "catalog";
+  };
+
+  const [stage, setStageState] = useState<ShopFlowStage>(readInitialStage);
   const { initialize } = useAuthStore();
   const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -182,7 +186,6 @@ export function PatientShopPage() {
     fetchProducts();
   }, []);
 
-  const [stage, setStage] = useState<Stage>("catalog");
   const [selected, setSelected] = useState<any | null>(null);
   const [qStep, setQStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
@@ -322,6 +325,33 @@ export function PatientShopPage() {
     supabase.functions.invoke('send-otp', { body: { phone: e164 } }).catch(console.warn);
   }, [stage]);
 
+  const goToStage = useCallback(
+    (next: ShopFlowStage, opts?: { replace?: boolean }) => {
+      setStageState(next);
+      navigate(shopPathForStage(next), { replace: opts?.replace ?? false });
+    },
+    [navigate]
+  );
+
+  /** Browser back/forward and shared URLs stay in sync with wizard stage. */
+  useEffect(() => {
+    const parsed = shopStageFromStepParam(stepParam);
+    if (stepParam && parsed === null) {
+      navigate("/patient/shop", { replace: true });
+      return;
+    }
+    setStageState(parsed ?? "catalog");
+  }, [stepParam, navigate]);
+
+  /** Deep link to a step without a chosen program → back to catalog. */
+  useEffect(() => {
+    if (stage === "catalog") return;
+    if (selected) return;
+    if (resumeDraftAvailable) return;
+    navigate("/patient/shop", { replace: true });
+    setStageState("catalog");
+  }, [stage, selected, resumeDraftAvailable, navigate]);
+
   // ── Reset Stripe secret when product changes ─────────────────────────────────
   const startFlow = (product: any) => {
     clearEnrollmentDraft();
@@ -340,7 +370,7 @@ export function PatientShopPage() {
     setQualifierNoMtcMen2(false);
     setQualifierUsResident(false);
     setIdentityStripeCompleted(false);
-    setStage("payment");
+    goToStage("payment");
   };
 
   const filteredProducts = activeCat === "All" ? dbProducts : dbProducts.filter(p => p.category === activeCat);
@@ -454,7 +484,7 @@ export function PatientShopPage() {
       setResumeDraftAvailable(false);
       return;
     }
-    const allowed: Stage[] = [
+    const allowed: ShopFlowStage[] = [
       "payment",
       "payment_confirmation",
       "account_setup",
@@ -463,7 +493,7 @@ export function PatientShopPage() {
       "questionnaire",
       "scheduling",
     ];
-    let nextStage = (allowed.includes(d.stage as Stage) ? d.stage : "payment") as Stage;
+    let nextStage = (allowed.includes(d.stage as ShopFlowStage) ? d.stage : "payment") as ShopFlowStage;
     setSelected(p);
     setEmail(d.email);
     setPhone(d.phone);
@@ -505,8 +535,8 @@ export function PatientShopPage() {
     }
     setStripePaymentIntentId(restoredPi);
     setError(null);
-    setStage(nextStage);
-  }, [dbProducts]);
+    goToStage(nextStage);
+  }, [dbProducts, goToStage]);
 
   const globalVideoStates = useMemo(
     () => parseGlobalVideoStatesFromEnv(import.meta.env.VITE_VIDEO_REQUIRED_STATES),
@@ -788,7 +818,7 @@ export function PatientShopPage() {
       setEmail(resolvedEmail);
       clearEnrollmentDraft();
       setResumeDraftAvailable(false);
-      setStage("confirmed");
+      goToStage("confirmed");
 
     } catch (err: any) {
       console.error("[Enrollment error]", err);
@@ -801,6 +831,7 @@ export function PatientShopPage() {
   if (stage === "confirmed" && selected) {
     return (
       <div className="max-w-md mx-auto text-center space-y-5 pt-8">
+        <PatientEnrollmentStepper stage={stage} className="text-left mb-2" />
         <div className="flex justify-center mb-8">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
@@ -847,6 +878,7 @@ export function PatientShopPage() {
   if (stage === "account_setup" && selected) {
     return (
       <div className="max-w-md mx-auto space-y-6 pt-4">
+        <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
@@ -862,7 +894,7 @@ export function PatientShopPage() {
             <button
               type="button"
               className="mt-3 text-xs font-semibold text-primary hover:underline"
-              onClick={() => setStage("payment_confirmation")}
+              onClick={() => goToStage("payment_confirmation")}
             >
               View payment confirmation
             </button>
@@ -1019,9 +1051,9 @@ export function PatientShopPage() {
           onClick={() => {
             const currentUser = useAuthStore.getState().user;
             if (currentUser) {
-              setStage("questionnaire");
+              goToStage("questionnaire");
             } else {
-              setStage("2fa");
+              goToStage("2fa");
             }
           }}>
           Continue to Phone Verification <ChevronRight className="h-4 w-4 ml-1" />
@@ -1033,6 +1065,7 @@ export function PatientShopPage() {
   if (stage === "2fa" && selected) {
     return (
       <div className="max-w-md mx-auto space-y-6 pt-8">
+        <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
@@ -1086,7 +1119,7 @@ export function PatientShopPage() {
                 if (res.error || !res.data?.verified) {
                   setError(res.data?.error || 'Invalid code. Please try again.');
                 } else {
-                  setStage('identity');
+                  goToStage('identity');
                 }
               } catch (e: any) {
                 setError(e.message);
@@ -1117,6 +1150,7 @@ export function PatientShopPage() {
   if (stage === "identity" && selected) {
     return (
       <div className="max-w-md mx-auto space-y-6 pt-8">
+        <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
@@ -1168,7 +1202,7 @@ export function PatientShopPage() {
                       setError(result.error.message || 'Verification failed.');
                     } else {
                       setIdentityStripeCompleted(true);
-                      setStage("questionnaire");
+                      goToStage("questionnaire");
                     }
                   } catch (e: any) {
                     setError(e.message);
@@ -1188,7 +1222,7 @@ export function PatientShopPage() {
 
               <button
                 className="w-full text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-                onClick={() => setStage('questionnaire')}
+                onClick={() => goToStage('questionnaire')}
               >
                 Skip for now (verification required before prescription is issued)
               </button>
@@ -1232,12 +1266,13 @@ export function PatientShopPage() {
     if (!paymentQualifiersPassed) {
       return (
         <div className="max-w-md mx-auto space-y-5 pb-8">
+          <PatientEnrollmentStepper stage={stage} />
           <div className="flex justify-center mb-4">
             <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
           </div>
           <button
             type="button"
-            onClick={() => setStage("catalog")}
+            onClick={() => goToStage("catalog")}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Catalog
@@ -1375,10 +1410,11 @@ export function PatientShopPage() {
     if (displayedGateways.length === 0) {
       return (
         <div className="max-w-md mx-auto space-y-4 p-6 text-center">
+          <PatientEnrollmentStepper stage={stage} />
           <p className="text-sm text-muted-foreground">
             Card checkout is not configured for this product. Please contact support.
           </p>
-          <Button variant="outline" onClick={() => setStage("catalog")}>
+          <Button variant="outline" onClick={() => goToStage("catalog")}>
             Back to catalog
           </Button>
         </div>
@@ -1387,12 +1423,13 @@ export function PatientShopPage() {
 
     return (
       <div className="max-w-md mx-auto space-y-5 pb-10">
+        <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
         <button
           type="button"
-          onClick={() => setStage("catalog")}
+          onClick={() => goToStage("catalog")}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" /> Back to Catalog
@@ -1551,7 +1588,7 @@ export function PatientShopPage() {
               onClick={() => {
                 setStripePaymentIntentId(null);
                 setError(null);
-                setStage("payment_confirmation");
+                goToStage("payment_confirmation");
               }}
             >
               Continue (demo checkout — no charge)
@@ -1584,7 +1621,7 @@ export function PatientShopPage() {
               onSuccess={(paymentIntentId) => {
                 setStripePaymentIntentId(paymentIntentId);
                 setError(null);
-                setStage("payment_confirmation");
+                goToStage("payment_confirmation");
               }}
               onError={(msg) => setError(msg)}
             />
@@ -1611,6 +1648,7 @@ export function PatientShopPage() {
   if (stage === "payment_confirmation" && selected) {
     return (
       <div className="max-w-md mx-auto space-y-6 pt-6 pb-12 text-center">
+        <PatientEnrollmentStepper stage={stage} className="text-left" />
         <div className="flex justify-center mb-2">
           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
@@ -1657,9 +1695,9 @@ export function PatientShopPage() {
               setFirstName(currentUser.user_metadata?.first_name || firstName);
               setLastName(currentUser.user_metadata?.last_name || lastName);
               setEmail(currentUser.email || email);
-              setStage("questionnaire");
+              goToStage("questionnaire");
             } else {
-              setStage("account_setup");
+              goToStage("account_setup");
             }
           }}
         >
@@ -1673,10 +1711,11 @@ export function PatientShopPage() {
   if (stage === "questionnaire" && selected && currentQ) {
     return (
       <div className="max-w-md mx-auto space-y-5">
+        <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-6">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
-        <button onClick={() => qStep === 0 ? setStage("catalog") : setQStep(q => q - 1)}
+        <button onClick={() => qStep === 0 ? goToStage("catalog") : setQStep(q => q - 1)}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
@@ -1738,7 +1777,7 @@ export function PatientShopPage() {
               setQStep(s => s + 1);
             } else if (needsScheduledVideo) {
               setBookingAttestation(false);
-              setStage("scheduling");
+              goToStage("scheduling");
             } else {
               void handleCompleteSetup();
             }
@@ -1757,13 +1796,14 @@ export function PatientShopPage() {
   if (stage === "scheduling" && selected && !needsScheduledVideo) {
     return (
       <div className="max-w-md mx-auto space-y-6 pt-8">
+        <PatientEnrollmentStepper stage={stage} />
         <p className="text-sm text-muted-foreground text-center">
           A video scheduling step is not required for your treatment and state. Continue to submit your enrollment.
         </p>
         <Button className="w-full rounded-xl" onClick={() => void handleCompleteSetup()}>
           Submit enrollment
         </Button>
-        <Button variant="ghost" className="w-full" onClick={() => setStage("questionnaire")}>
+        <Button variant="ghost" className="w-full" onClick={() => goToStage("questionnaire")}>
           Back to questionnaire
         </Button>
       </div>
@@ -1773,10 +1813,11 @@ export function PatientShopPage() {
   if (stage === "scheduling" && selected && needsScheduledVideo) {
     return (
       <div className="max-w-lg mx-auto space-y-5">
+        <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-6">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
-        <button type="button" onClick={() => setStage("questionnaire")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <button type="button" onClick={() => goToStage("questionnaire")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
         <div>
@@ -1858,6 +1899,7 @@ export function PatientShopPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5 pb-20">
+      <PatientEnrollmentStepper stage={stage} />
       {/* Shop Header with Back button */}
       <div className="flex items-center justify-between mb-2">
         <Button 

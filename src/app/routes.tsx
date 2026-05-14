@@ -136,7 +136,8 @@ export const router = createBrowserRouter([
       { path: "reset-password", Component: ResetPasswordPage },
       // { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
 
-      // Patient Shop flow (Standalone)
+      // Patient Shop flow (Standalone) — shareable steps: /patient/shop/checkout, /create-account, etc.
+      { path: "patient/shop/:step", Component: PatientShopPage },
       { path: "patient/shop", Component: PatientShopPage },
 
       // --- PROTECTED PORTALS (All use AppLayout) ---
