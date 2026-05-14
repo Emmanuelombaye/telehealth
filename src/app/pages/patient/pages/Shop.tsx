@@ -26,7 +26,11 @@ import {
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "");
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+if (!stripeKey && import.meta.env.DEV) {
+  console.warn("⚠️ VITE_STRIPE_PUBLISHABLE_KEY is missing. Stripe Elements will not load.");
+}
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 // ── Stripe PaymentElement inner form ─────────────────────────────────────────
 function StripePaymentForm({
@@ -1113,7 +1117,7 @@ export function PatientShopPage() {
         </div>
 
         {/* ── Real Stripe PaymentElement ─────────────────────────────── */}
-        {stripeClientSecret && gateway ? (
+        {stripeClientSecret && gateway && stripePromise ? (
           <Elements
             stripe={stripePromise}
             options={{
