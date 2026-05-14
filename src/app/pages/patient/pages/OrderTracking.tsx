@@ -1,20 +1,25 @@
 import { useState, useEffect } from "react";
 import {
-  Package, CheckCircle2, Stethoscope, Pill, Truck, ShoppingBag, Hourglass, FileText,
-  ChevronRight, Search, MapPin, ExternalLink, MessageSquare, Copy, Activity, Video
+  Package, CheckCircle2, Stethoscope, Pill, Truck, ShoppingBag, FileText,
+  ChevronRight, Search, MapPin, ExternalLink, MessageSquare, Copy, Activity, Video, ShieldCheck
 } from "lucide-react";
 import { Link } from "react-router";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
-import { ORDER_STEPS, getStepIndex, type Order } from "../../../../lib/patient-store";
+import {
+  buildOrderTrackingVerticalSteps,
+  getOrderTrackingVerticalIndex,
+  type FulfillmentRailStep,
+} from "../../../../lib";
 import { useAuthStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
 
 const stepIcon: Record<string, any> = {
   order_submitted: ShoppingBag,
   account_created: CheckCircle2,
-  id_verified: FileText,
-  intake_completed: FileText,
+  id_verified: ShieldCheck,
+  intake_completed: Activity,
   medical_review: Stethoscope,
+  consultation: Video,
   rx_sent: Pill,
   shipped: Truck,
   delivered: Package,
@@ -22,7 +27,9 @@ const stepIcon: Record<string, any> = {
   refill_eligible: CheckCircle2,
 };
 
-const statusSteps = ORDER_STEPS.map(s => ({ ...s, icon: stepIcon[s.key] }));
+function trackingRowIcon(step: FulfillmentRailStep) {
+  return stepIcon[step.key] ?? FileText;
+}
 
 export function PatientOrderTrackingPage() {
   const [selected, setSelected] = useState<Order | null>(null);
@@ -77,7 +84,16 @@ export function PatientOrderTrackingPage() {
   const activeSelected = selected ? orders.find(o => o.id === selected.id) || selected : null;
 
   if (activeSelected) {
-    const currentIdx = getStepIndex(activeSelected.status);
+    const trackSteps = buildOrderTrackingVerticalSteps(activeSelected);
+    const trackIdx = getOrderTrackingVerticalIndex(activeSelected);
+    const zoomSt = (activeSelected.zoom_status || activeSelected.zoomStatus || "not_requested") as string;
+    const joinUrl =
+      typeof activeSelected.zoom_join_url === "string" && /^https?:\/\//i.test(activeSelected.zoom_join_url)
+        ? activeSelected.zoom_join_url
+        : undefined;
+    const showVideoCareCard =
+      zoomSt === "requested" || zoomSt === "confirmed" || zoomSt === "rescheduled";
+
     return (
       <div className="max-w-lg mx-auto space-y-5">
         <button onClick={() => setSelected(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
@@ -98,28 +114,43 @@ export function PatientOrderTrackingPage() {
         <Card>
           <CardContent className="p-5">
             <div className="space-y-0">
-              {statusSteps.map((step, i) => {
-                const done = i <= currentIdx;
-                const active = i === currentIdx;
-                const timelineEntry = activeSelected.timeline.find(t => t.status === step.key);
+              {trackSteps.map((step, i) => {
+                const Icon = trackingRowIcon(step);
+                const done = i <= trackIdx;
+                const active = i === trackIdx;
+                const timelineEntry =
+                  step.key !== "consultation"
+                    ? (activeSelected.timeline || []).find((t: { status: string }) => t.status === step.key)
+                    : undefined;
+                const consultWhen =
+                  step.key === "consultation"
+                    ? activeSelected.consultation_time ||
+                      activeSelected.consultationTime ||
+                      activeSelected.zoom_rescheduled_time ||
+                      null
+                    : null;
                 return (
                   <div key={step.key} className="flex gap-3">
                     <div className="flex flex-col items-center">
                       <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition-all",
                         done ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
-                        <step.icon className="h-4 w-4" />
+                        <Icon className="h-4 w-4" />
                       </div>
-                      {i < statusSteps.length - 1 && (
-                        <div className={cn("w-0.5 flex-1 my-1 min-h-[20px]", done && i < currentIdx ? "bg-primary" : "bg-border")} />
+                      {i < trackSteps.length - 1 && (
+                        <div className={cn("w-0.5 flex-1 my-1 min-h-[20px]", done && i < trackIdx ? "bg-primary" : "bg-border")} />
                       )}
                     </div>
-                    <div className={cn("pb-4 flex-1", i === statusSteps.length - 1 && "pb-0")}>
-                      <div className="flex items-center justify-between">
+                    <div className={cn("pb-4 flex-1", i === trackSteps.length - 1 && "pb-0")}>
+                      <div className="flex items-center justify-between gap-2">
                         <p className={cn("text-sm font-semibold", done ? "text-foreground" : "text-muted-foreground")}>
                           {step.label}
                           {active && <span className="ml-2 text-[10px] bg-primary text-white px-1.5 py-0.5 rounded-full font-bold">CURRENT</span>}
                         </p>
-                        {timelineEntry && <span className="text-[10px] text-muted-foreground">{timelineEntry.date}</span>}
+                        {(timelineEntry?.date || consultWhen) && (
+                          <span className="text-[10px] text-muted-foreground shrink-0">
+                            {timelineEntry?.date || (typeof consultWhen === "string" ? consultWhen : "")}
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{step.desc}</p>
                     </div>
@@ -130,23 +161,66 @@ export function PatientOrderTrackingPage() {
           </CardContent>
         </Card>
 
-        {/* Zoom/Video request banner */}
-        {activeSelected.zoom_status === 'requested' && (
-          <Card className="border-blue-200 bg-blue-50/50 shadow-sm animate-pulse">
+        {/* Video / sync visit */}
+        {showVideoCareCard && (
+          <Card
+            className={cn(
+              "shadow-sm border",
+              zoomSt === "requested" ? "border-blue-200 bg-blue-50/50 animate-pulse" : "border-emerald-200 bg-emerald-50/50"
+            )}
+          >
             <CardContent className="p-5">
               <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-blue-100 flex items-center justify-center shrink-0">
-                  <Video className="h-6 w-6 text-blue-600" />
+                <div
+                  className={cn(
+                    "h-12 w-12 rounded-2xl flex items-center justify-center shrink-0",
+                    zoomSt === "requested" ? "bg-blue-100" : "bg-emerald-100"
+                  )}
+                >
+                  <Video className={cn("h-6 w-6", zoomSt === "requested" ? "text-blue-600" : "text-emerald-600")} />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-sm font-black text-blue-900 uppercase tracking-tight">Video Consult Requested</h3>
-                  <p className="text-xs text-blue-700 mt-1 leading-relaxed">
-                    {activeSelected.zoom_doctor_message || "Your physician has requested a live video consultation to finalize your treatment plan."}
+                  <h3
+                    className={cn(
+                      "text-sm font-black uppercase tracking-tight",
+                      zoomSt === "requested" ? "text-blue-900" : "text-emerald-900"
+                    )}
+                  >
+                    {zoomSt === "requested"
+                      ? "Video consult requested"
+                      : zoomSt === "rescheduled"
+                        ? "Visit rescheduled"
+                        : "Video visit scheduled"}
+                  </h3>
+                  <p
+                    className={cn(
+                      "text-xs mt-1 leading-relaxed",
+                      zoomSt === "requested" ? "text-blue-700" : "text-emerald-800"
+                    )}
+                  >
+                    {activeSelected.zoom_doctor_message ||
+                      (joinUrl
+                        ? "Use your meeting link below or open Appointments for details."
+                        : "Your physician has requested a live video consultation to finalize your treatment plan.")}
                   </p>
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                    {joinUrl && (
+                      <Button
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white h-10 rounded-xl text-xs font-bold gap-2"
+                        onClick={() => window.open(joinUrl, "_blank", "noopener,noreferrer")}
+                      >
+                        Join meeting <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Link to="/patient/appointments" className="flex-1">
-                      <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10 rounded-xl text-xs font-bold gap-2">
-                         View Schedule <ChevronRight className="h-4 w-4" />
+                      <Button
+                        variant={joinUrl ? "outline" : "default"}
+                        className={cn(
+                          "w-full h-10 rounded-xl text-xs font-bold gap-2",
+                          joinUrl ? "" : "bg-blue-600 hover:bg-blue-700 text-white"
+                        )}
+                      >
+                        {joinUrl ? "Appointments" : "View schedule"} <ChevronRight className="h-4 w-4" />
                       </Button>
                     </Link>
                   </div>
@@ -281,9 +355,11 @@ export function PatientOrderTrackingPage() {
 
       <div className="space-y-3">
         {orders.map(order => {
-          const currentIdx = getStepIndex(order.status);
-          const step = statusSteps[currentIdx];
-          const progress = Math.round(((currentIdx + 1) / statusSteps.length) * 100);
+          const vSteps = buildOrderTrackingVerticalSteps(order);
+          const vIdx = getOrderTrackingVerticalIndex(order);
+          const cur = vSteps[vIdx];
+          const Icon = cur ? trackingRowIcon(cur) : Package;
+          const progress = vSteps.length ? Math.round(((vIdx + 1) / vSteps.length) * 100) : 0;
           return (
             <Card key={order.id} className="hover:border-primary/40 transition-colors cursor-pointer"
               onClick={() => setSelected(order)}>
@@ -304,8 +380,8 @@ export function PatientOrderTrackingPage() {
                     <div className="mt-2 space-y-1.5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
-                          {step && <step.icon className="h-3.5 w-3.5 text-primary" />}
-                          <span className="text-xs font-semibold text-primary">{step?.label}</span>
+                          <Icon className="h-3.5 w-3.5 text-primary" />
+                          <span className="text-xs font-semibold text-primary">{cur?.label ?? "Processing"}</span>
                         </div>
                         <span className="text-[10px] text-muted-foreground">{progress}%</span>
                       </div>

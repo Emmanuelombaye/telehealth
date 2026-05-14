@@ -10,7 +10,12 @@ import {
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, cn } from "../../components/ui/shared.tsx";
 import {
   useI18n,
-  ORDER_STEPS, getStepIndex, usePatientStore, useAuthStore
+  ORDER_STEPS,
+  getStepIndex,
+  usePatientStore,
+  useAuthStore,
+  buildOrderFulfillmentRail,
+  getOrderFulfillmentRailIndex,
 } from "../../../lib";
 import { supabase } from "../../../lib/supabaseClient";
 
@@ -20,6 +25,7 @@ const stepIcon: Record<string, any> = {
   id_verified: ShieldCheck,
   intake_completed: Activity,
   medical_review: Stethoscope,
+  consultation: Video,
   rx_sent: Pill,
   shipped: Package,
   delivered: Truck,
@@ -174,6 +180,8 @@ export function PatientDashboard() {
 
           {orders.map(order => {
             const currentIdx = getStepIndex(order.status);
+            const railSteps = buildOrderFulfillmentRail(order);
+            const railIdx = getOrderFulfillmentRailIndex(order);
             const tint = subBrandTint[order.subBrand] ?? subBrandTint.PeakHealth;
             const statusLabel = ORDER_STEPS[currentIdx]?.label ?? "Processing";
 
@@ -229,38 +237,47 @@ export function PatientDashboard() {
                       <p className="text-base text-amber-800 font-medium leading-relaxed mb-8 italic opacity-90">
                         "{order.zoom_doctor_message || 'Your doctor would like to speak with you regarding your intake form before finalizing your prescription.'}"
                       </p>
-                      <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-[1.5rem] h-16 font-black uppercase tracking-[0.2em] gap-3 shadow-xl shadow-amber-600/10" onClick={() => window.open(`https://peakhealth.com/book/${order.doctor?.toLowerCase().replace('dr. ', '').replace(/ /g, '-')}`, '_blank')}>
+                      <Button
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-[1.5rem] h-16 font-black uppercase tracking-[0.2em] gap-3 shadow-xl shadow-amber-600/10"
+                        onClick={() => navigate("/patient/appointments")}
+                      >
                         Secure Calendar Booking <Calendar className="h-5 w-5" />
                       </Button>
                     </div>
                   )}
 
-                  {/* High-Fidelity 5-step pipeline */}
-                  <div className="relative pt-6 px-2">
-                    <div className="absolute top-11 left-[8%] right-[8%] h-1.5 bg-slate-50 rounded-full overflow-hidden shadow-inner">
-                      <div 
-                        className="h-full bg-[#0A2E1F] transition-all duration-1000 ease-out" 
-                        style={{ width: `${(currentIdx / (ORDER_STEPS.length - 1)) * 100}%` }}
+                  {/* Fulfillment rail — matches journey map; inserts Consultation when video is in scope */}
+                  <div className="relative pt-6 px-1">
+                    <div className="absolute top-11 left-[5%] right-[5%] h-1.5 bg-slate-50 rounded-full overflow-hidden shadow-inner">
+                      <div
+                        className="h-full bg-[#0A2E1F] transition-all duration-1000 ease-out"
+                        style={{
+                          width: `${railSteps.length > 1 ? (railIdx / (railSteps.length - 1)) * 100 : 100}%`,
+                        }}
                       />
                     </div>
-                    <div className="flex items-start justify-between relative z-10">
-                      {ORDER_STEPS.slice(0, 5).map((step, i) => {
-                        const Icon = stepIcon[step.key];
-                        const done = i <= currentIdx;
-                        const active = i === currentIdx;
+                    <div className="flex items-start justify-between gap-1 relative z-10 overflow-x-auto pb-1">
+                      {railSteps.map((step, i) => {
+                        const Icon = stepIcon[step.key] ?? FileText;
+                        const done = i <= railIdx;
+                        const active = i === railIdx;
                         return (
-                          <div key={step.key} className="flex flex-col items-center gap-4 w-24">
-                            <div className={cn(
-                              "h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-700 shadow-2xl",
-                              done ? "bg-[#0A2E1F] text-white scale-110 rotate-0" : "bg-white text-slate-200 border border-slate-50 scale-100",
-                              active && "ring-8 ring-emerald-500/10"
-                            )}>
-                              <Icon className="h-6 w-6" />
+                          <div key={step.key} className="flex flex-col items-center gap-3 min-w-[52px] flex-1 max-w-[92px]">
+                            <div
+                              className={cn(
+                                "h-11 w-11 rounded-2xl flex items-center justify-center transition-all duration-700 shadow-xl shrink-0",
+                                done ? "bg-[#0A2E1F] text-white scale-105" : "bg-white text-slate-200 border border-slate-50",
+                                active && "ring-4 ring-emerald-500/15"
+                              )}
+                            >
+                              <Icon className="h-5 w-5" />
                             </div>
-                            <p className={cn(
-                              "text-[8px] font-black uppercase tracking-[0.2em] text-center leading-tight transition-all duration-500 w-full truncate px-1",
-                              active ? "text-[#0A2E1F] opacity-100" : done ? "text-slate-400 opacity-80" : "text-slate-200 opacity-60"
-                            )}>
+                            <p
+                              className={cn(
+                                "text-[7px] font-black uppercase tracking-[0.12em] text-center leading-tight transition-all duration-500 w-full line-clamp-2",
+                                active ? "text-[#0A2E1F] opacity-100" : done ? "text-slate-400 opacity-85" : "text-slate-200 opacity-60"
+                              )}
+                            >
                               {step.label}
                             </p>
                           </div>

@@ -764,9 +764,15 @@ export function PatientShopPage() {
       // ── Capture Referral Code ────────────────────────────────────────────────
       const referralCode = localStorage.getItem('peak_health_referral_code');
 
+      const orderedDateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const intakeTimeline = [
+        { status: "order_submitted", date: orderedDateStr },
+        { status: "intake_completed", date: orderedDateStr },
+      ];
+
       // ── Insert order into Supabase ────────────────────────────────────────────
       const assigned = !!assignedDoctorForScheduling;
-      const { error: insertError } = await supabase.from('orders').insert([{
+      const { data: insertedRow, error: insertError } = await supabase.from('orders').insert([{
         order_number:      freshOrderRef,
         mrn:               generateMRN(),
         doctor_id:         assignedDoctorForScheduling?.id || null,
@@ -782,7 +788,7 @@ export function PatientShopPage() {
         medication:        selected.name,
         dosage_instructions: selected.tagline,
         category:          selected.category,
-        ordered_date:      new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        ordered_date:      orderedDateStr,
         amount:            selected.priceUSD,
         user_id:           userId,
         intake_complete:   true,
@@ -801,12 +807,20 @@ export function PatientShopPage() {
         referral_code:     referralCode,
         stripe_payment_intent_id: stripePaymentIntentId || null,
         payment_status:    stripePaymentIntentId ? "paid" : "pending",
-        timeline: [{ status: "order_submitted", date: new Date().toLocaleDateString() }],
+        timeline: intakeTimeline,
         scheduling_ref: needsVideo && schedulingRef ? schedulingRef : null,
-      }]);
+      }]).select("id").maybeSingle();
 
 
       if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
+
+      const newOrderUuid = insertedRow?.id as string | undefined;
+      if (!assigned && newOrderUuid && (state || "").trim()) {
+        const { error: routeErr } = await supabase.functions.invoke("assign-doctor", {
+          body: { order_id: newOrderUuid, patient_state: (state || "").trim().toUpperCase() },
+        });
+        if (routeErr) console.warn("[Shop] assign-doctor:", routeErr.message);
+      }
 
       if (needsVideo && schedulingRef) {
         const { error: mergeErr } = await supabase.functions.invoke("merge-scheduling-pending", {

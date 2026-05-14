@@ -57,20 +57,39 @@ serve(async (req: Request) => {
     });
   }
 
-  const { order_id, dosage_instructions, doctor_note, pharmacy = "truepill" } = body;
+  const { order_id: rawOrderId, dosage_instructions, doctor_note, pharmacy = "truepill" } = body;
 
-  if (!order_id) {
+  if (!rawOrderId) {
     return new Response(JSON.stringify({ error: "order_id is required" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
+  const looksLikeUuid = (s: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
+
   // --------------- Init Supabase (service role — bypass RLS) ---------------
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
+
+  let orderUuid = String(rawOrderId).trim();
+  if (!looksLikeUuid(orderUuid)) {
+    const { data: row, error: lookupErr } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("order_number", orderUuid)
+      .maybeSingle();
+    if (lookupErr || !row?.id) {
+      return new Response(JSON.stringify({ error: "Order not found for order_id / order_number" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    orderUuid = row.id;
+  }
 
   // --------------- Fetch the full order ---------------
   const { data: order, error: fetchErr } = await supabase
@@ -83,7 +102,7 @@ serve(async (req: Request) => {
         date_of_birth
       )
     `)
-    .eq("id", order_id)
+    .eq("id", orderUuid)
     .single();
 
   if (fetchErr || !order) {
@@ -172,7 +191,7 @@ serve(async (req: Request) => {
       pharmacy_dispatched_at:    new Date().toISOString(),
       rx_dispatched:             pharmacyDispatchSuccess,
     })
-    .eq("id", order_id);
+    .eq("id", orderUuid);
 
   if (updateErr) {
     console.error("dispatch-prescription: DB update error", updateErr);

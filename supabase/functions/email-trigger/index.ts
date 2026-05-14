@@ -145,7 +145,8 @@ serve(async (req) => {
         ? record.patient_email
         : "patient@example.com";
 
-    // ── INSERT: new enrollment / order with video required ───────────────────
+    // ── INSERT: new enrollment / order that required sync video (see Shop.tsx zoom_status) ──
+    if (pType === "INSERT" && record.zoom_status === "requested") {
       await sendVideoBookingRequested(supabase, resendApiKey, record, { isInsert: true });
       return new Response(JSON.stringify({ success: true, event: "video_booking_insert" }), { status: 200 });
     }

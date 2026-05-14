@@ -68,6 +68,8 @@ export type Order = {
   patient_age?: number;
   patient_country?: string;
   zoom_status?: 'requested' | 'not_requested' | 'confirmed' | 'rescheduled' | 'canceled';
+  /** Meet / Zoom link from scheduler or clinician (when confirmed). */
+  zoom_join_url?: string | null;
   zoom_doctor_message?: string | null;
   zoom_rescheduled_time?: string | null;
   consultation_time?: string | null;
@@ -78,6 +80,9 @@ export type Order = {
   userId?: string;
   user_id?: string;
   doctor_id?: string;
+  /** Primary key UUID in public.orders — use for .eq('id', ...) and Edge Functions that expect UUID. */
+  dbId?: string;
+  stripe_payment_intent_id?: string | null;
   // DB column aliases (snake_case from Supabase)
   created_at?: string;
   sub_brand?: string;
@@ -338,6 +343,7 @@ export const usePatientStore = create<AppState>()(
           
           const mappedOrders: Order[] = (data || []).map(d => ({
             id: d.order_number,
+            dbId: d.id,
             userId: d.user_id,
             user_id: d.user_id,
             patientName: d.patient_name,
@@ -365,6 +371,8 @@ export const usePatientStore = create<AppState>()(
             intakeNotes: mode === 'admin' ? undefined : d.intake_notes,
             intakeAnswers: mode === 'admin' ? undefined : d.intake_answers,
             patientVitals: mode === 'admin' ? undefined : d.patient_vitals,
+            zoom_status: d.zoom_status,
+            zoom_join_url: d.zoom_join_url ?? null,
             zoomStatus: d.zoom_status,
             zoomDoctorMessage: mode === 'admin' ? null : d.zoom_doctor_message,
             zoomRescheduledTime: d.zoom_rescheduled_time,
@@ -376,6 +384,7 @@ export const usePatientStore = create<AppState>()(
             nextRefillAt: d.next_refill_at,
             refillIntervalDays: d.refill_interval_days,
             doctor_id: d.doctor_id,
+            stripe_payment_intent_id: d.stripe_payment_intent_id ?? null,
             created_at: d.created_at
           }));
           set({ orders: mappedOrders });

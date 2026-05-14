@@ -11,5 +11,13 @@ export {
   usePatientStore,
 } from "./patient-store";
 export type { Order, OrderStatus, DoctorAvailability } from "./patient-store";
+export {
+  buildOrderFulfillmentRail,
+  getOrderFulfillmentRailIndex,
+  getOrderTrackingVerticalIndex,
+  buildOrderTrackingVerticalSteps,
+  orderHasConsultationRail,
+} from "./orderFulfillmentRail";
+export type { FulfillmentRailStep } from "./orderFulfillmentRail";
 export { useAuthStore } from "./auth-store";
 export type { Role } from "./auth-store";
