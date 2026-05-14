@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { Truck, CheckCircle, Edit2, Search, Printer, ArrowDownUp, CloudDownload, RefreshCw, ChevronDown, Columns, Filter, MoreHorizontal, ArrowUpRight, Package, ShieldCheck, Activity } from "lucide-react";
+import { Truck, CheckCircle, Edit2, Search, Printer, ArrowDownUp, CloudDownload, RefreshCw, ChevronDown, Columns, Filter, MoreHorizontal, ArrowUpRight, Package, ShieldCheck, Activity, Zap } from "lucide-react";
 import { Card, Button, Badge } from "../../../components/ui/shared.tsx";
 import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminDataTable";
 import { OrderStatus } from "../../../../lib/patient-store";
 import { useAuthStore } from "../../../../lib/auth-store";
 import { supabase } from "../../../../lib/supabaseClient";
+import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope } from "../../../../lib/adminScope";
+import { logAdminAudit } from "../../../../lib/adminAudit";
 import { cn } from "../../../components/ui/utils";
 import { toast } from "sonner";
 
@@ -48,12 +50,10 @@ export function AdminOrdersPage() {
       setLoadingOrders(true);
       let query = supabase
         .from('orders')
-        .select('*')
+        .select(ORDERS_ADMIN_NON_CLINICAL_SELECT)
         .order('created_at', { ascending: false });
 
-      if (role === 'brand_admin' && brandId) {
-        query = query.or(`sub_brand.eq."${brandId}",sub_brand.eq."Peak Health"`);
-      }
+      query = applyOrdersBrandScope(query, role, brandId);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -80,6 +80,12 @@ export function AdminOrdersPage() {
         timeline: [{ status: "order_submitted", date: new Date().toLocaleString() }]
       }]);
       if (error) throw error;
+      await logAdminAudit({
+        action: "order.manual_create",
+        targetType: "order",
+        targetId: orderRef,
+        detail: { patient: newOrder.patientName, medication: newOrder.medication },
+      });
       toast.success("Order Synced to Matrix", {
         description: `Reference ${orderRef} has been added to dispatch queue.`,
       });
@@ -91,7 +97,7 @@ export function AdminOrdersPage() {
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     const headers = "Order #,Patient,Medication,Status,Amount\n";
     const rows = orders.map(o => `${o.order_number},${o.patient_name},${o.medication},${o.status},${o.amount}`).join("\n");
     const blob = new Blob([headers + rows], { type: 'text/csv' });
@@ -100,7 +106,12 @@ export function AdminOrdersPage() {
     a.href = url;
     a.download = `orders-export-${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
-    toast.info("Exporting Clinical Ledger", {
+    await logAdminAudit({
+      action: "order.export_csv",
+      targetType: "orders",
+      detail: { row_count: orders.length },
+    });
+    toast.info("Exporting operations ledger", {
       description: "Your CSV file is being prepared for download.",
     });
   };
@@ -131,6 +142,13 @@ export function AdminOrdersPage() {
           timeline: newTimeline
         })
         .eq('id', orderId);
+
+      await logAdminAudit({
+        action: "order.mark_shipped",
+        targetType: "order",
+        targetId: order?.order_number || String(orderId),
+        detail: { carrier, tracking: trackingNumber },
+      });
       
       setEditingOrder(null);
       setTrackingNumber("");
@@ -144,6 +162,12 @@ export function AdminOrdersPage() {
   const handleUpdateNote = async (orderId: string, note: string) => {
     try {
        await supabase.from('orders').update({ pharmacy_note: note }).eq('id', orderId);
+       await logAdminAudit({
+         action: "order.pharmacy_note_update",
+         targetType: "order",
+         targetId: String(orderId),
+         detail: { note_len: note.length },
+       });
        fetchOrders();
     } catch (err) {
        console.error(err);
@@ -164,6 +188,12 @@ export function AdminOrdersPage() {
           timeline: newTimeline 
         })
         .eq('id', orderId);
+
+      await logAdminAudit({
+        action: "order.mark_delivered",
+        targetType: "order",
+        targetId: order?.order_number || String(orderId),
+      });
       
       fetchOrders();
     } catch(err) {
@@ -472,25 +502,6 @@ function Plus(props: any) {
     >
       <path d="M5 12h14" />
       <path d="M12 5v14" />
-    </svg>
-  );
-}
-
-function Zap(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M4 14.71 10.15 4h1.34l-3.32 8.71h5.83L7.85 20h-1.34l3.32-8.71H4z" />
     </svg>
   );
 }

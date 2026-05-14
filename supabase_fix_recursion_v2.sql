@@ -22,7 +22,8 @@ USING (auth.uid() = id);
 CREATE POLICY "profiles_staff_select" 
 ON profiles FOR SELECT 
 USING (
-  (auth.jwt() -> 'user_metadata' ->> 'role') IN ('admin', 'superadmin', 'doctor', 'brand_admin')
+  (auth.jwt() -> 'user_metadata' ->> 'role') IN ('admin', 'superadmin', 'super_admin', 'doctor', 'brand_admin')
+  OR (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'superadmin', 'super_admin', 'doctor', 'brand_admin')
 );
 
 -- Users can update their own profile
@@ -35,7 +36,8 @@ DROP POLICY IF EXISTS "Staff can view all orders" ON orders;
 CREATE POLICY "orders_staff_select" 
 ON orders FOR SELECT 
 USING (
-  (auth.jwt() -> 'user_metadata' ->> 'role') IN ('admin', 'superadmin', 'doctor', 'brand_admin')
+  (auth.jwt() -> 'user_metadata' ->> 'role') IN ('admin', 'superadmin', 'super_admin', 'doctor', 'brand_admin')
+  OR (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'superadmin', 'super_admin', 'doctor', 'brand_admin')
   OR auth.uid() = user_id
 );
 

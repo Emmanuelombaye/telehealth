@@ -7,7 +7,7 @@ import {
   HelpCircle, Tag, Share2, BarChart3, Layers, Home,
   Bell, User, Heart, FolderOpen, Pill, TestTube, UserCheck,
   FileCheck, Receipt, BookOpen, Building2, Truck,
-  Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse
+  Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse, ScrollText
 } from "lucide-react";
 import { cn } from "./ui/shared.tsx";
 import { useI18n } from "../../lib/i18n.tsx";
@@ -64,6 +64,7 @@ const menuConfig: Record<Role, any[]> = {
     { group: "MANAGEMENT", icon: Package, label: "Orders", href: "/admin/orders" },
     { group: "MANAGEMENT", icon: MessageSquare, label: "Messenger", href: "/admin/messages" },
     { group: "MANAGEMENT", icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
+    { group: "MANAGEMENT", icon: ScrollText, label: "Audit Logs", href: "/admin/audit" },
     { group: "TOOLS & SERVICES", icon: FileText, label: "Questionnaires", href: "/admin/questionnaires" },
     { group: "TOOLS & SERVICES", icon: Layers, label: "Products", href: "/admin/products" },
     { group: "TOOLS & SERVICES", icon: Wrench, label: "Builders", href: "/admin/builders" },
@@ -81,6 +82,7 @@ const menuConfig: Record<Role, any[]> = {
     { icon: Users, label: "All Users", href: "/superadmin/users" },
     { icon: BarChart3, label: "Analytics", href: "/superadmin/analytics" },
     { icon: CreditCard, label: "Finance", href: "/superadmin/finance" },
+    { icon: ScrollText, label: "Audit Logs", href: "/superadmin/audit" },
     { icon: ShieldCheck, label: "Security", href: "/superadmin/security" },
     { icon: Settings, label: "Platform Settings", href: "/superadmin/settings" },
   ],

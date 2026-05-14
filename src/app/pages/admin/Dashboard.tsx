@@ -10,10 +10,13 @@ import { Card, CardContent, Button, Badge, cn } from "../../components/ui/shared
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuthStore } from "../../../lib";
 import { supabase } from "../../../lib/supabaseClient";
+import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope } from "../../../lib/adminScope";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function AdminDashboard() {
   const user = useAuthStore(state => state.user);
+  const role = useAuthStore(state => state.role);
+  const brandId = useAuthStore(state => state.brandId);
   const adminName = user?.user_metadata?.first_name || "Admin";
   
   const [orders, setOrders] = useState<any[]>([]);
@@ -22,7 +25,12 @@ export function AdminDashboard() {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+        let q = supabase
+          .from('orders')
+          .select(ORDERS_ADMIN_NON_CLINICAL_SELECT)
+          .order('created_at', { ascending: false });
+        q = applyOrdersBrandScope(q, role, brandId);
+        const { data, error } = await q;
         if (error) throw error;
         setOrders(data || []);
       } catch (err) {
@@ -41,7 +49,7 @@ export function AdminDashboard() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [role, brandId]);
 
   const totalRevenue = (orders || []).reduce((sum, order) => {
     if (!order) return sum;

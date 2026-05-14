@@ -1,16 +1,22 @@
-import { ShieldCheck, Download, Filter, Search, AlertTriangle, Info, AlertCircle, Lock } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Download, Filter, Search, AlertTriangle, Info, AlertCircle, Lock, Loader2,
+} from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { supabase } from "../../../../lib/supabaseClient";
+import { useAuthStore } from "../../../../lib/auth-store";
 
-const logs = [
-  { id: 1, user: "Dr. Sarah Johnson", action: "Record Access", target: "Patient #8492 — Alice Thompson", ip: "192.168.1.10", time: "2026-05-19 10:02:14 UTC", severity: "info", category: "PHI Access" },
-  { id: 2, user: "Admin", action: "Security Policy Update", target: "Firewall Rules — Rule #44", ip: "10.0.0.1", time: "2026-05-19 09:47:33 UTC", severity: "high", category: "Security" },
-  { id: 3, user: "System", action: "Automated Backup", target: "Vault-Alpha — 2.4GB", ip: "internal", time: "2026-05-19 03:00:00 UTC", severity: "info", category: "System" },
-  { id: 4, user: "Nurse Maria Lopez", action: "Prescription Created", target: "Patient #2210 — Robert Wilson", ip: "192.168.1.22", time: "2026-05-18 14:30:55 UTC", severity: "medium", category: "Clinical" },
-  { id: 5, user: "Unknown", action: "Failed Login Attempt (x50)", target: "Admin Portal", ip: "203.0.113.42", time: "2026-05-18 14:02:11 UTC", severity: "critical", category: "Security" },
-  { id: 6, user: "Dr. Michael Chen", action: "Lab Order Created", target: "Patient #3301 — Maria Garcia", ip: "192.168.1.15", time: "2026-05-18 11:20:44 UTC", severity: "info", category: "Clinical" },
-  { id: 7, user: "Alice Thompson", action: "Patient Login", target: "Patient Portal", ip: "98.12.44.201", time: "2026-05-18 09:15:02 UTC", severity: "info", category: "Auth" },
-  { id: 8, user: "Admin", action: "User Account Suspended", target: "James Brown — Patient #1102", ip: "10.0.0.1", time: "2026-05-17 16:44:18 UTC", severity: "high", category: "User Management" },
-];
+type AuditRow = {
+  id: string;
+  created_at: string;
+  actor_email: string | null;
+  role: string;
+  brand_scope: string | null;
+  action: string;
+  target_type: string | null;
+  target_id: string | null;
+  detail: Record<string, unknown> | null;
+};
 
 const severityConfig = {
   info: { color: "text-violet-600", bg: "bg-violet-100 dark:bg-violet-950/40", dot: "bg-violet-500", icon: Info },
@@ -19,26 +25,145 @@ const severityConfig = {
   critical: { color: "text-red-600", bg: "bg-red-100 dark:bg-red-950/40", dot: "bg-red-500 animate-pulse", icon: AlertTriangle },
 };
 
+function inferSeverity(action: string): keyof typeof severityConfig {
+  const a = action.toLowerCase();
+  if (a.includes("suspend") || a.includes("delete") || a.includes("security")) return "critical";
+  if (a.includes("refund") || a.includes("export")) return "high";
+  if (a.includes("update") || a.includes("note")) return "medium";
+  return "info";
+}
+
 export function AdminAuditPage() {
+  const role = useAuthStore((s) => s.role);
+  const brandId = useAuthStore((s) => s.brandId);
+  const [logs, setLogs] = useState<AuditRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tableMissing, setTableMissing] = useState(false);
+  const [q, setQ] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from("admin_audit_logs")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(400);
+
+        if (error?.code === "42P01" || error?.message?.toLowerCase().includes("does not exist")) {
+          if (!cancelled) {
+            setTableMissing(true);
+            setLogs([]);
+          }
+          return;
+        }
+        if (error) throw error;
+
+        let rows = (data || []) as AuditRow[];
+        if (role === "brand_admin" && brandId) {
+          rows = rows.filter((r) => !r.brand_scope || r.brand_scope === brandId);
+        }
+        if (!cancelled) setLogs(rows);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) setLogs([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [role, brandId]);
+
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return logs;
+    return logs.filter(
+      (r) =>
+        (r.action || "").toLowerCase().includes(s) ||
+        (r.actor_email || "").toLowerCase().includes(s) ||
+        (r.target_id || "").toLowerCase().includes(s) ||
+        (r.role || "").toLowerCase().includes(s)
+    );
+  }, [logs, q]);
+
+  const exportCsv = () => {
+    const headers = "time,role,actor,action,target_type,target_id,brand\n";
+    const body = filtered
+      .map((r) =>
+        [
+          r.created_at,
+          r.role,
+          r.actor_email || "",
+          r.action,
+          r.target_type || "",
+          r.target_id || "",
+          r.brand_scope || "",
+        ]
+          .map((c) => `"${String(c).replace(/"/g, '""')}"`)
+          .join(",")
+      )
+      .join("\n");
+    const blob = new Blob([headers + body], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `admin-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const counts = useMemo(() => {
+    return {
+      total: filtered.length,
+      critical: filtered.filter((r) => inferSeverity(r.action) === "critical").length,
+      high: filtered.filter((r) => inferSeverity(r.action) === "high").length,
+    };
+  }, [filtered]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[320px] flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-xs text-muted-foreground">Loading audit trail…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold">Audit Logs</h1>
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="mt-0.5 flex items-center gap-1.5">
             <Lock className="h-3 w-3 text-emerald-500" />
-            <span className="text-xs text-emerald-600 font-medium">HIPAA Compliant · Tamper-proof</span>
+            <span className="text-xs font-medium text-emerald-600">Non-clinical admin actions</span>
           </div>
         </div>
-        <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs"><Download className="h-3.5 w-3.5" /> Export</Button>
+        <Button size="sm" variant="outline" className="gap-1.5 rounded-xl text-xs" onClick={exportCsv} disabled={!filtered.length}>
+          <Download className="h-3.5 w-3.5" /> Export
+        </Button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {tableMissing && (
+        <Card className="border-amber-200 bg-amber-50/60">
+          <CardContent className="p-4 text-sm text-amber-900">
+            The <code className="rounded bg-white/80 px-1">admin_audit_logs</code> table is not installed. Run{" "}
+            <code className="rounded bg-white/80 px-1">supabase_admin_audit_and_scope.sql</code> in the Supabase SQL editor to
+            enable persistent logging.
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          { label: "Total Events", value: "12,840", color: "text-primary" },
-          { label: "Critical", value: "3", color: "text-red-600" },
-          { label: "High", value: "18", color: "text-orange-600" },
-          { label: "PHI Accesses", value: "2,340", color: "text-violet-600" },
+          { label: "Total Events", value: String(counts.total), color: "text-primary" },
+          { label: "Critical", value: String(counts.critical), color: "text-red-600" },
+          { label: "High", value: String(counts.high), color: "text-orange-600" },
+          { label: "Filtered", value: String(filtered.length), color: "text-violet-600" },
         ].map((s, i) => (
           <Card key={i} className="border-none bg-muted/50">
             <CardContent className="p-3 text-center">
@@ -51,37 +176,58 @@ export function AdminAuditPage() {
 
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input className="w-full pl-9 pr-4 py-2.5 bg-muted rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search logs..." />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            className="w-full rounded-xl bg-muted py-2.5 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Search actions, actors, targets…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
         </div>
-        <Button variant="outline" size="sm" className="rounded-xl gap-1.5"><Filter className="h-4 w-4" /> Filter</Button>
+        <Button variant="outline" size="sm" className="gap-1.5 rounded-xl">
+          <Filter className="h-4 w-4" /> Filter
+        </Button>
       </div>
 
       <div className="space-y-2">
-        {logs.map(log => {
-          const cfg = severityConfig[log.severity as keyof typeof severityConfig];
+        {!filtered.length && !tableMissing && (
+          <p className="py-10 text-center text-sm text-muted-foreground">No audit events recorded yet.</p>
+        )}
+        {filtered.map((log) => {
+          const sev = inferSeverity(log.action);
+          const cfg = severityConfig[sev];
           const Icon = cfg.icon;
+          const target = [log.target_type, log.target_id].filter(Boolean).join(" · ");
+          const time = new Date(log.created_at).toISOString().replace("T", " ").slice(0, 19) + " UTC";
           return (
-            <Card key={log.id} className={cn("hover:border-primary/30 transition-colors", log.severity === "critical" && "border-red-300 dark:border-red-800")}>
+            <Card key={log.id} className="hover:border-primary/30 transition-colors">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5", cfg.bg)}>
+                  <div className={cn("mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", cfg.bg)}>
                     <Icon className={cn("h-4 w-4", cfg.color)} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-bold">{log.user}</p>
-                        <Badge variant="outline" className="text-[10px]">{log.category}</Badge>
-                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full capitalize", cfg.bg, cfg.color)}>{log.severity}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-bold">{log.actor_email || "unknown actor"}</p>
+                        <Badge variant="outline" className="text-[10px]">
+                          {log.role}
+                        </Badge>
+                        {log.brand_scope && (
+                          <Badge variant="outline" className="text-[10px]">
+                            {log.brand_scope}
+                          </Badge>
+                        )}
+                        <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold capitalize", cfg.bg, cfg.color)}>
+                          {sev}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground shrink-0 font-mono">{log.time.split(" ")[1]}</span>
+                      <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{time}</span>
                     </div>
-                    <p className="text-xs mt-0.5">
-                      <span className="font-semibold">{log.action}:</span>{" "}
-                      <span className="text-muted-foreground">{log.target}</span>
+                    <p className="mt-0.5 text-xs">
+                      <span className="font-semibold">{log.action}</span>
+                      {target ? <span className="text-muted-foreground"> — {target}</span> : null}
                     </p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">IP: {log.ip} · {log.time}</p>
                   </div>
                 </div>
               </CardContent>

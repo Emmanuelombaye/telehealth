@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { supabase } from './supabaseClient';
 import { useAuthStore } from './auth-store';
+import { applyOrdersBrandScope, ordersSelectForMode, resolveOrdersFetchMode } from './adminScope';
 
 // Centralized reactive Zustand store for the global state (Patient/Doctor/Admin).
 // Source of truth for: brand config, active order pipeline, doctor availability.
@@ -314,14 +315,16 @@ export const usePatientStore = create<AppState>()(
       fetchOrders: async () => {
         try {
           const { role, brandId, user } = useAuthStore.getState();
-          let query = supabase.from('orders').select('*').order('created_at', { ascending: false });
-          
+          const mode = resolveOrdersFetchMode(role);
+          const selectCols = ordersSelectForMode(mode);
+
+          let query = supabase.from('orders').select(selectCols).order('created_at', { ascending: false });
+
           if (role === 'patient' && user) {
             query = query.eq('user_id', user.id);
-          } else if (role === 'brand_admin' && brandId) {
-            query = query.eq('sub_brand', brandId);
+          } else {
+            query = applyOrdersBrandScope(query, role, brandId);
           }
-          // Doctors and super_admins see all (doctors filter locally in the UI to order_submitted)
 
           const { data, error } = await query;
           if (error) {
@@ -351,7 +354,7 @@ export const usePatientStore = create<AppState>()(
             pharmacy: d.pharmacy,
             amount: d.amount,
             doctor: d.doctor,
-            doctorNote: d.doctor_note,
+            doctorNote: mode === 'admin' ? null : d.doctor_note,
             tracking: d.tracking,
             carrier: d.carrier,
             trackingUrl: d.tracking_url,
@@ -359,11 +362,11 @@ export const usePatientStore = create<AppState>()(
             timeline: d.timeline || [],
             urgent: d.urgent,
             intakeComplete: d.intake_complete,
-            intakeNotes: d.intake_notes,
-            intakeAnswers: d.intake_answers,
-            patientVitals: d.patient_vitals,
+            intakeNotes: mode === 'admin' ? undefined : d.intake_notes,
+            intakeAnswers: mode === 'admin' ? undefined : d.intake_answers,
+            patientVitals: mode === 'admin' ? undefined : d.patient_vitals,
             zoomStatus: d.zoom_status,
-            zoomDoctorMessage: d.zoom_doctor_message,
+            zoomDoctorMessage: mode === 'admin' ? null : d.zoom_doctor_message,
             zoomRescheduledTime: d.zoom_rescheduled_time,
             consultationTime: d.consultation_time,
             waitMins: d.wait_mins,
