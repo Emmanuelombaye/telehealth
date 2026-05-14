@@ -451,7 +451,7 @@ export function AdminProductsPage() {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Scheduling embed URL (https)</label>
                   <Input
-                    placeholder="https://calendly.com/... or Cal.com embed"
+                    placeholder="https://calendly.com/… or https://cal.com/your-org/visit"
                     value={routeForm.scheduling_embed_url}
                     onChange={(e) => setRouteForm((f) => ({ ...f, scheduling_embed_url: e.target.value }))}
                     className="rounded-xl text-xs"

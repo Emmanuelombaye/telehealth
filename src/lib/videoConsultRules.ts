@@ -4,7 +4,7 @@
  * Product `features` JSON (Supabase):
  *   requires_video_consult?: boolean
  *   video_required_states?: string[]   // 2-letter states; video if patient ships to one of these
- *   scheduling_embed_url?: string     // https embed for this protocol
+ *   scheduling_embed_url?: string     // https embed for this protocol (aliases: scheduling_url, cal_booking_url)
  *   video_clinical_rules?: {
  *     bmiMin?: number;
  *     ageMin?: number;
@@ -110,11 +110,17 @@ export function parseProductVideoRules(features: unknown): ProductVideoRules {
         .map((s) => (s.length >= 2 ? s.slice(-2) : s))
         .filter((s): s is string => STATE_RE.test(s))
     : [];
-  const url = f.scheduling_embed_url;
+  const rawUrl = f.scheduling_embed_url ?? f.scheduling_url ?? f.cal_booking_url;
+  const url =
+    typeof rawUrl === "string" && rawUrl.trim().startsWith("http://")
+      ? `https://${rawUrl.trim().slice(7)}`
+      : typeof rawUrl === "string"
+        ? rawUrl.trim()
+        : "";
   return {
     requiresVideoConsult: f.requires_video_consult === true || f.requires_sync_visit === true,
     videoRequiredStates,
-    schedulingEmbedUrl: typeof url === "string" && url.startsWith("https://") ? url : undefined,
+    schedulingEmbedUrl: url.startsWith("https://") ? url : undefined,
     clinical: parseVideoClinicalRules(f.video_clinical_rules),
   };
 }

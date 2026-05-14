@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router";
 import {
   ChevronRight, CheckCircle2, CreditCard,
   Star, Shield, ShieldCheck, Clock, Package, ArrowLeft, Globe, Zap, Loader2,
-  Calendar,
   Wallet,
   WalletCards,
   Smartphone,
@@ -12,6 +11,7 @@ import {
   Upload,
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { PatientSchedulingPanel } from "../../../components/patient/PatientSchedulingPanel.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
 import { 
@@ -21,7 +21,6 @@ import {
 import {
   parseProductVideoRules,
   parseGlobalVideoStatesFromEnv,
-  defaultSchedulingEmbedUrl,
   requiresSyncVideoVisit,
   computeNumericBmi,
   computeAgeYears,
@@ -29,7 +28,7 @@ import {
   type ClinicalContext,
 } from "../../../../lib/videoConsultRules";
 import { effectiveProductGateways, GATEWAY_DISPLAY } from "../../../../lib/productGateways";
-import { toSchedulingIframeSrc } from "../../../../lib/calendlyEmbed";
+import { defaultCalendlyBookingPageUrl, toSchedulingIframeSrc } from "../../../../lib/calendlyEmbed";
 import {
   ENROLLMENT_DRAFT_KEY,
   DRAFT_MAX_AGE_MS,
@@ -405,6 +404,7 @@ export function PatientShopPage() {
   const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [assignedDoctorForScheduling, setAssignedDoctorForScheduling] = useState<any>(null);
+  const [schedulingDoctorLoading, setSchedulingDoctorLoading] = useState(false);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -771,46 +771,86 @@ export function PatientShopPage() {
   const totalQ = selected?.questionnaire?.length ?? 0;
   const currentQ = totalQ > 0 ? selected?.questionnaire?.[qStep] : undefined;
 
-  // Step 7/10: Resolve Dynamic Doctor Link for Embed
-  const fetchEligibleDoctor = async () => {
-    try {
-      const { data: doctors } = await supabase
-        .from('profiles')
-        .select('id, full_name, calendly_url, licensed_states')
-        .eq('role', 'doctor')
-        .eq('status', 'active');
-      
-      const eligible = (doctors || []).find(d => 
-        d.licensed_states?.split(',').map((s: string) => s.trim().toUpperCase())
-          .includes(state.toUpperCase())
-      );
-      
-      if (eligible) setAssignedDoctorForScheduling(eligible);
-    } catch (err) {
-      console.error("Error fetching doctor for scheduling:", err);
-    }
-  };
+  /** Reset clinician match when ship-to state or product changes (avoid stale embed). */
+  useEffect(() => {
+    setAssignedDoctorForScheduling(null);
+  }, [state, selected?.id]);
 
   useEffect(() => {
     if (stage !== "questionnaire" || !needsScheduledVideo || !selected) return;
     if (totalQ > 0 && qStep !== totalQ - 1) return;
-    if (!assignedDoctorForScheduling) fetchEligibleDoctor();
-  }, [stage, needsScheduledVideo, selected, qStep, totalQ, state, assignedDoctorForScheduling]);
+    let cancelled = false;
+    (async () => {
+      setSchedulingDoctorLoading(true);
+      try {
+        const { data: doctors, error } = await supabase
+          .from("profiles")
+          .select("id, full_name, calendly_url, licensed_states, patients_count")
+          .eq("role", "doctor")
+          .eq("status", "active")
+          .order("patients_count", { ascending: true });
+        if (cancelled) return;
+        if (error) {
+          console.error("[Shop] scheduling doctors:", error);
+          setAssignedDoctorForScheduling(null);
+          return;
+        }
+        const st = (state || "").trim().toUpperCase();
+        const pool = doctors || [];
+        const inState = (d: { licensed_states?: string | null }) =>
+          (d.licensed_states || "")
+            .split(",")
+            .map((s: string) => s.trim().toUpperCase())
+            .filter(Boolean)
+            .includes(st);
+        const withCal = (d: { calendly_url?: string | null }) =>
+          typeof d.calendly_url === "string" && /^https?:\/\//i.test(d.calendly_url.trim());
+        const pick =
+          pool.find((d) => inState(d) && withCal(d)) ||
+          pool.find((d) => inState(d)) ||
+          pool.find((d) => withCal(d)) ||
+          null;
+        setAssignedDoctorForScheduling(pick);
+      } finally {
+        if (!cancelled) setSchedulingDoctorLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [stage, needsScheduledVideo, selected?.id, qStep, totalQ, state]);
+
+  const rawSchedulingBase = useMemo(() => {
+    const docUrl = assignedDoctorForScheduling?.calendly_url?.trim();
+    const productUrl = videoRules?.schedulingEmbedUrl;
+    const envUrl = (import.meta.env.VITE_SCHEDULING_EMBED_URL as string | undefined)?.trim();
+    if (docUrl && /^https?:\/\//i.test(docUrl)) return docUrl;
+    if (productUrl) return productUrl;
+    if (envUrl && envUrl.startsWith("https://")) return envUrl;
+    return defaultCalendlyBookingPageUrl();
+  }, [assignedDoctorForScheduling?.calendly_url, videoRules?.schedulingEmbedUrl]);
 
   const schedulingEmbedSrc = useMemo(() => {
-    const raw =
-      assignedDoctorForScheduling?.calendly_url ||
-      videoRules?.schedulingEmbedUrl ||
-      defaultSchedulingEmbedUrl();
     return (
-      toSchedulingIframeSrc(raw, {
+      toSchedulingIframeSrc(rawSchedulingBase, {
         email: email || undefined,
         name: `${firstName} ${lastName}`.trim() || undefined,
         utmContent: schedulingRef ?? undefined,
         utmCampaign: "peak_enrollment",
-      }) || raw
+      }) || rawSchedulingBase
     );
-  }, [assignedDoctorForScheduling, videoRules, email, firstName, lastName, schedulingRef]);
+  }, [rawSchedulingBase, email, firstName, lastName, schedulingRef]);
+
+  const schedulingDoctorHint = useMemo(() => {
+    if (!assignedDoctorForScheduling) return null;
+    const st = (state || "").trim().toUpperCase();
+    const licensed = (assignedDoctorForScheduling.licensed_states || "")
+      .split(",")
+      .map((s: string) => s.trim().toUpperCase())
+      .filter(Boolean);
+    if (st && licensed.includes(st)) return `Licensed in ${st}`;
+    return "Clinical video pool";
+  }, [assignedDoctorForScheduling, state]);
 
   useEffect(() => {
     if (stage === "catalog" || stage === "confirmed" || !selected) return;
@@ -2195,33 +2235,28 @@ export function PatientShopPage() {
         )}
         {showScheduler && (
           <>
-            <div>
-              <h2 className="text-base font-bold">Required clinician visit</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Based on your treatment and shipping state, a brief video visit is required. Use the scheduler below — your meeting link (Zoom or Google Meet) comes from the calendar tool once you pick a time.
-              </p>
-            </div>
-            <Card className="border-primary/25 overflow-hidden">
-              <CardContent className="p-0">
-                <div className="flex items-center gap-2 px-4 py-2 bg-muted/40 border-b border-border text-xs font-semibold text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5" /> Book with our clinical team
-                </div>
-                <iframe
-                  title="Schedule your video visit"
-                  src={schedulingEmbedSrc}
-                  className="w-full min-h-[620px] border-0 bg-white"
-                />
-              </CardContent>
-            </Card>
-            <label className="flex items-start gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50/80 cursor-pointer">
+            <PatientSchedulingPanel
+              embedSrc={schedulingEmbedSrc}
+              rawBookingUrl={rawSchedulingBase}
+              doctorName={assignedDoctorForScheduling?.full_name ?? null}
+              doctorHint={schedulingDoctorHint}
+              doctorMatchPending={schedulingDoctorLoading}
+              schedulingRefTail={
+                schedulingRef && schedulingRef.length > 8 ? schedulingRef.slice(-10) : schedulingRef ?? null
+              }
+              onCalendlyBookingConfirmed={() => setBookingAttestation(true)}
+            />
+            <label className="flex items-start gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50/80 cursor-pointer dark:border-amber-900/50 dark:bg-amber-950/30">
               <input
                 type="checkbox"
                 className="mt-1 h-4 w-4 accent-primary shrink-0"
                 checked={bookingAttestation}
                 onChange={(e) => setBookingAttestation(e.target.checked)}
               />
-              <span className="text-sm text-amber-950">
-                I selected a time in the calendar above. I understand the video link will be sent by the scheduler (email/SMS) and may also appear in my Peak Health appointments.
+              <span className="text-sm text-amber-950 dark:text-amber-100">
+                I booked a time using the calendar above (or opened it in my browser). I understand my video link
+                (Zoom or Google Meet) will come from the scheduler by email or text. With Calendly, this box may check
+                automatically when your booking completes.
               </span>
             </label>
           </>

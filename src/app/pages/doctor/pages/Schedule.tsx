@@ -4,7 +4,7 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
 import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
-import { toCalendlyInlineEmbedUrl, defaultCalendlySchedulingUrl } from "../../../../lib/calendlyEmbed";
+import { toSchedulingIframeSrc, defaultCalendlySchedulingUrl } from "../../../../lib/calendlyEmbed";
 import { useNavigate } from "react-router";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
@@ -33,7 +33,7 @@ export function DoctorSchedulePage() {
       const u = data?.calendly_url?.trim();
       if (u && u.startsWith("http")) {
         setSchedulingEmbedUrl(
-          toCalendlyInlineEmbedUrl(u, { primaryColor: "0a2e1f" }) || u
+          toSchedulingIframeSrc(u, { primaryColor: "0a2e1f" }) || u
         );
       } else {
         setSchedulingEmbedUrl(defaultCalendlySchedulingUrl());
