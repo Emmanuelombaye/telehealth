@@ -95,7 +95,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const devRole = typeof window !== 'undefined' ? localStorage.getItem('peak_health_dev_role') : null;
         if (devRole) {
           const fakeUser = {
-            id: 'dev-override-id',
+            id: '00000000-0000-0000-0000-000000000000',
             email: `${devRole.replace('_', '')}@peakbodyco.com`,
             user_metadata: { first_name: devRole.split('_').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') }
           } as unknown as User;
