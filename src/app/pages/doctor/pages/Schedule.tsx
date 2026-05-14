@@ -20,6 +20,7 @@ export function DoctorSchedulePage() {
   const [schedulingEmbedUrl, setSchedulingEmbedUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const doctorBase = useDoctorPortalBase();
+  const availabilityRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
