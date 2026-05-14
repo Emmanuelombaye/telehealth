@@ -1,7 +1,7 @@
 import { Outlet, useLocation, Link, useNavigate } from "react-router";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
-import { Activity, Bell, Search, User, Menu, ChevronLeft, LogOut, Home } from "lucide-react";
+import { Activity, Bell, Menu, LogOut } from "lucide-react";
 import { Button } from "./ui/shared.tsx";
 import { useAuthStore } from "../../lib/auth-store";
 import { usePatientStore } from "../../lib/patient-store";
@@ -95,21 +95,22 @@ export function AppLayout() {
             : "bg-white",
       )}
     >
-      {/* PROFESSIONAL END-TO-END HEADER (Executive Scale) */}
-      <header className={cn(
-        "sticky top-0 z-50 flex w-full h-32 items-center border-b px-8 md:px-12 shadow-sm backdrop-blur-md transition-all duration-300 shrink-0",
-        isPatientPortal
-          ? "border-emerald-100/60 bg-white/90 shadow-emerald-950/[0.03]"
-          : "border-slate-100 bg-white/95",
-        "text-[#0A0D14]",
-        scrolled && "h-20 shadow-md shadow-emerald-950/5"
-      )}>
-        {/* Left Section: Context & Navigation */}
-        <div className="flex items-center gap-8 flex-1 relative z-10">
+      {/* Header: grid keeps the mark optically centered without overlapping side controls */}
+      <header
+        className={cn(
+          "sticky top-0 z-50 grid w-full shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b px-3 py-3 shadow-sm backdrop-blur-xl transition-[box-shadow,min-height] duration-300 sm:gap-3 sm:px-5 md:px-8",
+          scrolled ? "min-h-[4.25rem] shadow-md md:min-h-[4.5rem]" : "min-h-[4.75rem] md:min-h-[5.25rem]",
+          isPatientPortal
+            ? "border-emerald-100/70 bg-white/88 shadow-emerald-950/[0.035]"
+            : "border-slate-100 bg-white/95",
+          "text-[#0A0D14]",
+        )}
+      >
+        <div className="flex min-w-0 items-center justify-start gap-2 md:gap-4">
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden h-12 w-12 rounded-xl hover:bg-slate-50 transition-all">
-                <Menu className="h-8 w-8 text-slate-600" />
+              <Button variant="ghost" size="icon" className="md:hidden h-11 w-11 shrink-0 rounded-xl hover:bg-slate-100/80 transition-colors">
+                <Menu className="h-6 w-6 text-slate-600" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-80 border-r-0 shadow-2xl bg-white">
@@ -120,47 +121,53 @@ export function AppLayout() {
               <Sidebar role={sidebarRole} onMobileClose={() => setIsMobileMenuOpen(false)} />
             </SheetContent>
           </Sheet>
-          
-          <div className="hidden lg:flex items-center gap-4">
-             <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100/50">
-               <Activity className="h-5 w-5 text-emerald-700" />
-             </div>
-             <div className="flex flex-col">
-               <span className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-600/60 leading-tight">
-                 {path.startsWith("/doctor") || path.startsWith("/providers")
-                   ? "Clinical command"
-                   : isPatientPortal
-                     ? "Your care"
-                     : isSuperAdminPortal
-                       ? "Control plane"
-                       : "Clinical operations"}
-               </span>
-               <span className="text-[15px] font-bold text-slate-400">
-                 {isPatientPortal ? "Peak Health" : isSuperAdminPortal ? "Superadmin" : "Peak Health Center"}
-               </span>
-             </div>
+
+          <div className="hidden min-w-0 lg:flex items-center gap-3">
+            <div
+              className={cn(
+                "shrink-0 rounded-xl border p-2.5",
+                isPatientPortal ? "border-emerald-100/80 bg-emerald-50/60" : "border-slate-100 bg-slate-50/80",
+              )}
+            >
+              <Activity className={cn("h-5 w-5", isPatientPortal ? "text-emerald-700" : "text-slate-600")} />
+            </div>
+            <div className="min-w-0 flex flex-col">
+              <span className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700/65 md:text-[11px]">
+                {path.startsWith("/doctor") || path.startsWith("/providers")
+                  ? "Clinical command"
+                  : isPatientPortal
+                    ? "Your care"
+                    : isSuperAdminPortal
+                      ? "Control plane"
+                      : "Clinical operations"}
+              </span>
+              <span className="truncate text-sm font-semibold text-slate-500 md:text-[15px]">
+                {isPatientPortal ? "Peak Health" : isSuperAdminPortal ? "Superadmin" : "Peak Health Center"}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Center Section: BRAND IDENTITY (Bold High-Luxe Scale) */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="flex shrink-0 justify-center px-1">
           {isPatientPortal ? (
             <motion.div
-              className="pointer-events-auto"
-              initial={{ opacity: 0, y: 6 }}
+              initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
               <Link
-                to={`/${sidebarRole}`}
-                className="flex items-center rounded-2xl px-2 py-1 ring-1 ring-emerald-600/10 shadow-md shadow-emerald-900/[0.06] bg-white/90 backdrop-blur-sm hover:opacity-90 transition-all duration-300"
+                to="/patient"
+                className="group flex items-center rounded-2xl border border-emerald-100/80 bg-white/95 px-2 py-1.5 shadow-sm shadow-emerald-900/[0.06] ring-1 ring-emerald-900/[0.04] transition hover:border-emerald-200/90 hover:shadow-md"
               >
                 <img
                   src="/PeakHealthLogo.png"
                   alt="Peak Health"
+                  width={200}
+                  height={72}
+                  decoding="async"
                   className={cn(
-                    "h-20 md:h-24 w-auto object-contain transition-all duration-300",
-                    scrolled && "h-14 md:h-16",
+                    "block h-9 w-auto max-w-[min(46vw,11.5rem)] object-contain object-center transition-[height,max-width] duration-300 sm:h-10 sm:max-w-[13rem] md:h-11",
+                    scrolled && "h-8 max-w-[min(42vw,10rem)] sm:h-9 sm:max-w-[11.5rem] md:h-10",
                   )}
                 />
               </Link>
@@ -168,22 +175,24 @@ export function AppLayout() {
           ) : (
             <Link
               to={`/${sidebarRole}`}
-              className="flex items-center pointer-events-auto hover:opacity-80 transition-all duration-300"
+              className="flex items-center rounded-2xl border border-transparent px-2 py-1 transition hover:border-slate-200/80 hover:bg-slate-50/60"
             >
               <img
                 src="/PeakHealthLogo.png"
                 alt="Peak Health"
+                width={200}
+                height={72}
+                decoding="async"
                 className={cn(
-                  "h-20 md:h-24 w-auto object-contain transition-all duration-300",
-                  scrolled && "h-14",
+                  "block h-9 w-auto max-w-[min(48vw,12rem)] object-contain object-center transition-[height,max-width] duration-300 sm:h-10 sm:max-w-[13.5rem] md:h-12",
+                  scrolled && "h-8 max-w-[min(44vw,11rem)] sm:h-9 md:h-10",
                 )}
               />
             </Link>
           )}
         </div>
 
-        {/* Right Section: Telemetry & Identity */}
-        <div className="flex items-center gap-3 flex-1 justify-end relative z-10">
+        <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
           <div className="flex items-center gap-2 pr-2">
             <Button 
               variant="ghost" 
@@ -206,7 +215,17 @@ export function AppLayout() {
             <div className="hidden sm:flex flex-col text-right">
               <span className="text-[14px] font-bold tracking-tight text-slate-900 leading-tight">{fullName}</span>
               <span className="text-[9px] uppercase font-black tracking-[0.2em] text-emerald-600/70">
-                {sidebarRole === 'doctor' ? 'Licensed Provider' : sidebarRole === 'admin' ? 'System Operator' : sidebarRole === 'superadmin' ? 'Super administrator' : 'Verified User'}
+                {sidebarRole === "doctor"
+                  ? "Licensed provider"
+                  : sidebarRole === "admin"
+                    ? "System operator"
+                    : sidebarRole === "superadmin"
+                      ? "Super administrator"
+                      : sidebarRole === "affiliate"
+                        ? "Affiliate partner"
+                        : sidebarRole === "patient"
+                          ? "Patient account"
+                          : "Verified user"}
               </span>
             </div>
             
@@ -232,7 +251,8 @@ export function AppLayout() {
         <main
           onScroll={onScroll}
           className={cn(
-            "flex-1 overflow-y-auto overflow-x-hidden scroll-smooth pb-12",
+            "flex-1 overflow-y-auto overflow-x-hidden scroll-smooth",
+            isPatientPortal ? "pb-[calc(5.25rem+env(safe-area-inset-bottom,0px))] md:pb-12" : "pb-12",
             isPatientPortal
               ? "bg-gradient-to-b from-transparent via-[#FBFBFC] to-emerald-50/20"
               : isSuperAdminPortal
@@ -244,7 +264,9 @@ export function AppLayout() {
             <div
               className={cn(
                 "mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700",
-                isSuperAdminPortal ? "max-w-6xl px-3 py-4 md:px-6 md:py-6" : "max-w-[1600px] p-6 md:p-10",
+                isSuperAdminPortal ? "max-w-6xl px-3 py-4 md:px-6 md:py-6" : isPatientPortal
+                  ? "max-w-[1240px] px-4 py-6 sm:px-6 md:px-10 md:py-10"
+                  : "max-w-[1600px] p-6 md:p-10",
               )}
             >
               <Outlet />
