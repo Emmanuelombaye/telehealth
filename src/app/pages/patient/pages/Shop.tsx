@@ -56,6 +56,8 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+/** Until Twilio Verify is live: any 6-digit code passes. Set VITE_BYPASS_OTP_VERIFY=false to enforce SMS. */
+const bypassOtpVerify = import.meta.env.VITE_BYPASS_OTP_VERIFY !== "false";
 if (!stripeKey && import.meta.env.DEV) {
   console.warn("⚠️ VITE_STRIPE_PUBLISHABLE_KEY is missing. Stripe Elements will not load.");
 }
@@ -458,6 +460,7 @@ export function PatientShopPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [dob, setDob] = useState("");
   const [sex, setSex] = useState("");
   const [heightFt, setHeightFt] = useState("");
@@ -596,12 +599,12 @@ export function PatientShopPage() {
     }
   }, [gateway, paymentQualifiersPassed, stage]);
 
-  // ── Send real OTP when 2FA stage begins ─────────────────────────────────────
+  // ── Send OTP when 2FA stage begins (skipped when bypassing until API is live) ──
   useEffect(() => {
-    if (stage !== '2fa' || !phone) return;
-    const e164 = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g, '')}`;
-    supabase.functions.invoke('send-otp', { body: { phone: e164 } }).catch(console.warn);
-  }, [stage]);
+    if (bypassOtpVerify || stage !== "2fa" || !phone) return;
+    const e164 = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
+    supabase.functions.invoke("send-otp", { body: { phone: e164 } }).catch(console.warn);
+  }, [stage, phone]);
 
   const goToStage = useCallback(
     (next: ShopFlowStage, opts?: { replace?: boolean }) => {
@@ -1292,6 +1295,23 @@ export function PatientShopPage() {
               <p className="text-xs text-emerald-600 font-semibold">✓ Password strength OK</p>
             )}
           </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
+              placeholder="Re-enter your password"
+              autoComplete="new-password"
+            />
+            {confirmPassword.length > 0 && password !== confirmPassword && (
+              <p className="text-xs font-semibold text-red-600">Passwords do not match</p>
+            )}
+            {confirmPassword.length > 0 && password === confirmPassword && password.length >= 6 && (
+              <p className="text-xs font-semibold text-emerald-600">✓ Passwords match</p>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Date of Birth</label>
@@ -1415,6 +1435,7 @@ export function PatientShopPage() {
           if (!firstName || !lastName) missing.push("Full name");
           if (!email || !email.includes('@')) missing.push("Valid email address");
           if (!password || password.length < 6) missing.push("Password (min 6 characters)");
+          if (!confirmPassword || password !== confirmPassword) missing.push("Matching password confirmation");
           if (!agreedToTerms) missing.push("Agreement to Terms of Service");
           return missing.length > 0 ? (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 space-y-1">
@@ -1425,7 +1446,15 @@ export function PatientShopPage() {
         })()}
 
         <Button className="w-full rounded-xl h-12 text-base font-bold bg-primary hover:bg-primary/90 text-white"
-          disabled={!dob || !sex || !password || password.length < 6 || !agreedToTerms}
+          disabled={
+            !dob ||
+            !sex ||
+            !password ||
+            password.length < 6 ||
+            !confirmPassword ||
+            password !== confirmPassword ||
+            !agreedToTerms
+          }
           onClick={() => {
             const currentUser = useAuthStore.getState().user;
             if (currentUser) {
@@ -1458,11 +1487,17 @@ export function PatientShopPage() {
           <p className="text-sm text-muted-foreground mt-2">
             {getClientFlowRowByDiagramStep(6)?.subtitle ?? "SMS / email authentication to protect your account."}
           </p>
-          <p className="text-sm text-muted-foreground mt-3">
-            We sent a 6-digit code to
-            <br />
-            <span className="font-bold text-foreground">{phone || "(555) 000-0000"}</span>
-          </p>
+          {bypassOtpVerify ? (
+            <p className="text-sm text-muted-foreground mt-3">
+              Enter any 6-digit code to continue. SMS verification will be enabled once our provider is connected.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground mt-3">
+              We sent a 6-digit code to
+              <br />
+              <span className="font-bold text-foreground">{phone || "(555) 000-0000"}</span>
+            </p>
+          )}
         </div>
 
         <div className="space-y-4 pt-4">
@@ -1474,7 +1509,7 @@ export function PatientShopPage() {
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
-                className="w-12 h-14 text-center text-xl font-bold border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white shadow-sm"
+                className="w-12 h-14 text-center text-xl font-bold text-gray-900 border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white shadow-sm"
                 value={otp[i] || ""}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, "").slice(0,1);
@@ -1496,18 +1531,25 @@ export function PatientShopPage() {
               setIsVerifyingOtp(true);
               setError(null);
               try {
-                // Format phone to E.164
-                const e164 = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g,'')}`;
-                const res = await supabase.functions.invoke('verify-otp', {
+                if (bypassOtpVerify) {
+                  if (/^\d{6}$/.test(otp)) {
+                    goToStage("identity");
+                  } else {
+                    setError("Enter a 6-digit code to continue.");
+                  }
+                  return;
+                }
+                const e164 = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
+                const res = await supabase.functions.invoke("verify-otp", {
                   body: { phone: e164, code: otp },
                 });
                 if (res.error || !res.data?.verified) {
-                  setError(res.data?.error || 'Invalid code. Please try again.');
+                  setError(res.data?.error || "Invalid code. Please try again.");
                 } else {
-                  goToStage('identity');
+                  goToStage("identity");
                 }
-              } catch (e: any) {
-                setError(e.message);
+              } catch (e: unknown) {
+                setError(e instanceof Error ? e.message : "Verification failed.");
               } finally {
                 setIsVerifyingOtp(false);
               }
@@ -1515,18 +1557,21 @@ export function PatientShopPage() {
           >
             {isVerifyingOtp ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify & Continue"}
           </Button>
-          <p className="text-xs text-center text-muted-foreground mt-4">
-            Didn't receive the code?{" "}
-            <button
-              className="font-bold text-primary hover:underline"
-              onClick={async () => {
-                const e164 = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g,'')}`;
-                await supabase.functions.invoke('send-otp', { body: { phone: e164 } });
-              }}
-            >
-              Resend SMS
-            </button>
-          </p>
+          {!bypassOtpVerify && (
+            <p className="text-xs text-center text-muted-foreground mt-4">
+              Didn&apos;t receive the code?{" "}
+              <button
+                type="button"
+                className="font-bold text-primary hover:underline"
+                onClick={async () => {
+                  const e164 = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
+                  await supabase.functions.invoke("send-otp", { body: { phone: e164 } });
+                }}
+              >
+                Resend SMS
+              </button>
+            </p>
+          )}
         </div>
       </div>
     );
@@ -2017,7 +2062,7 @@ export function PatientShopPage() {
                         setCardExpiry(v);
                       }}
                       placeholder="MM / YY"
-                      className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background"
+                      className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono text-gray-900 focus:outline-none focus:border-primary bg-white"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -2028,7 +2073,7 @@ export function PatientShopPage() {
                       value={cardCvc}
                       onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 3))}
                       placeholder="3 digits"
-                      className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background"
+                      className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary bg-white"
                     />
                   </div>
                 </div>
