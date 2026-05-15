@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FileText, Download, Upload, Search, FolderOpen, Loader2 } from "lucide-react";
 import { Card, CardContent, Button } from "../../../components/ui/shared.tsx";
+import { cn } from "../../../components/ui/utils";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
 
@@ -69,15 +70,13 @@ export function DocumentsPage() {
 
   const filtered = docs.filter(d => d.name?.toLowerCase().includes(search.toLowerCase()));
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
-
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Documents</h1>
-        <label className="cursor-pointer">
-          <input type="file" className="hidden" onChange={handleUpload} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
-          <Button size="sm" className="rounded-full gap-1.5 text-xs pointer-events-none" disabled={uploading}>
+        <label className={cn("cursor-pointer", loading && "pointer-events-none opacity-60")}>
+          <input type="file" className="hidden" onChange={handleUpload} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" disabled={loading} />
+          <Button size="sm" className="rounded-full gap-1.5 text-xs pointer-events-none" disabled={uploading || loading}>
             {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
             {uploading ? 'Uploading...' : 'Upload'}
           </Button>
@@ -92,12 +91,18 @@ export function DocumentsPage() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400"
+          disabled={loading}
+          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400"
           placeholder="Search documents..."
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground" aria-live="polite">
+          <Loader2 className="h-8 w-8 animate-spin mb-3 text-primary" />
+          <p className="text-sm font-medium">Loading documents…</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <Card className="border-2 border-dashed border-slate-200 bg-slate-50/80 dark:border-slate-600 dark:bg-slate-900/40">
           <CardContent className="p-10 text-center">
             <FolderOpen

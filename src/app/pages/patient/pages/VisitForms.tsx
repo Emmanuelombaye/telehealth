@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export function VisitFormsPage() {
   const visitForms = usePatientStore(state => state.visitForms);
+  const visitFormsLoading = usePatientStore(state => state.visitFormsLoading);
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
 
   const filteredForms = visitForms.filter(f => {
@@ -42,10 +43,18 @@ export function VisitFormsPage() {
            </p>
         </div>
         
-        <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100">
+        <div
+          className={cn(
+            "flex bg-slate-50 p-1 rounded-2xl border border-slate-100 transition-opacity",
+            visitFormsLoading && "pointer-events-none opacity-50",
+          )}
+          aria-busy={visitFormsLoading}
+        >
            {(["all", "pending", "completed"] as const).map(f => (
              <button 
                key={f} 
+               type="button"
+               disabled={visitFormsLoading}
                onClick={() => setFilter(f)}
                className={cn(
                  "px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
@@ -60,6 +69,12 @@ export function VisitFormsPage() {
 
       {/* ── HIGH-DENSITY GRID ── */}
       <div className="space-y-4">
+        {visitFormsLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 text-muted-foreground" aria-live="polite">
+            <Loader2 className="h-8 w-8 animate-spin mb-3 text-primary" />
+            <p className="text-xs font-semibold uppercase tracking-widest">Loading visit forms…</p>
+          </div>
+        ) : (
         <AnimatePresence mode="popLayout">
           {filteredForms.length === 0 ? (
             <motion.div
@@ -132,6 +147,7 @@ export function VisitFormsPage() {
             </div>
           )}
         </AnimatePresence>
+        )}
       </div>
 
       {/* ── SECURITY FOOTER ── */}

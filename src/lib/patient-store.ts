@@ -144,15 +144,24 @@ export const brand = {
 };
 
 interface AppState {
+  orders: Order[];
   prescriptions: any[];
+  /** True only until the first successful prescriptions fetch for this session (refetches stay quiet). */
+  prescriptionsLoading: boolean;
+  prescriptionsFetchedOnce: boolean;
   visitForms: any[];
+  /** True only until the first successful visit_forms fetch for this session. */
+  visitFormsLoading: boolean;
+  visitFormsFetchedOnce: boolean;
   notifications: any[];
+  unreadMessagesCount: number;
+  doctorAvailability: DoctorAvailability[];
+  intakeFormData: Record<string, any>;
   fetchOrders: () => Promise<void>;
   fetchPrescriptions: () => Promise<void>;
   fetchVisitForms: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
   fetchUnreadMessages: () => Promise<void>;
-  unreadMessagesCount: number;
   fetchDoctorAvailability: () => Promise<void>;
   addOrder: (order: Order) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus, tracking?: string, carrier?: string, trackingUrl?: string, estimatedDelivery?: string) => Promise<void>;
@@ -169,7 +178,11 @@ export const usePatientStore = create<AppState>()(
     (set, get) => ({
       orders: [],
       prescriptions: [],
+      prescriptionsLoading: true,
+      prescriptionsFetchedOnce: false,
       visitForms: [],
+      visitFormsLoading: true,
+      visitFormsFetchedOnce: false,
       notifications: [],
       unreadMessagesCount: 0,
       doctorAvailability: [],
@@ -241,9 +254,14 @@ export const usePatientStore = create<AppState>()(
       },
 
       fetchPrescriptions: async () => {
+        const { user } = useAuthStore.getState();
+        if (!user) {
+          set({ prescriptionsLoading: false, prescriptionsFetchedOnce: true, prescriptions: [] });
+          return;
+        }
+        const first = !get().prescriptionsFetchedOnce;
+        if (first) set({ prescriptionsLoading: true });
         try {
-          const { user } = useAuthStore.getState();
-          if (!user) return;
           const { data, error } = await supabase
             .from('prescriptions')
             .select('*')
@@ -256,13 +274,20 @@ export const usePatientStore = create<AppState>()(
           set({ prescriptions: data || [] });
         } catch (error) {
           console.error('Error fetching prescriptions:', error);
+        } finally {
+          set({ prescriptionsLoading: false, prescriptionsFetchedOnce: true });
         }
       },
 
       fetchVisitForms: async () => {
+        const { user } = useAuthStore.getState();
+        if (!user) {
+          set({ visitFormsLoading: false, visitFormsFetchedOnce: true, visitForms: [] });
+          return;
+        }
+        const first = !get().visitFormsFetchedOnce;
+        if (first) set({ visitFormsLoading: true });
         try {
-          const { user } = useAuthStore.getState();
-          if (!user) return;
           const { data, error } = await supabase
             .from('visit_forms')
             .select('*')
@@ -275,6 +300,8 @@ export const usePatientStore = create<AppState>()(
           set({ visitForms: data || [] });
         } catch (error) {
           console.error('Error fetching visit forms:', error);
+        } finally {
+          set({ visitFormsLoading: false, visitFormsFetchedOnce: true });
         }
       },
 
@@ -496,7 +523,20 @@ export const usePatientStore = create<AppState>()(
         }
       },
 
-      resetStore: () => set({ orders: [], intakeFormData: {} }),
+      resetStore: () =>
+        set({
+          orders: [],
+          prescriptions: [],
+          visitForms: [],
+          notifications: [],
+          unreadMessagesCount: 0,
+          doctorAvailability: [],
+          intakeFormData: {},
+          prescriptionsLoading: true,
+          prescriptionsFetchedOnce: false,
+          visitFormsLoading: true,
+          visitFormsFetchedOnce: false,
+        }),
     })
   )
 );

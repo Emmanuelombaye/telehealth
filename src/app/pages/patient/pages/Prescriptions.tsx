@@ -14,7 +14,7 @@ import { useNavigate } from "react-router";
 export function PrescriptionsPage() {
   const navigate = useNavigate();
   const prescriptions = usePatientStore(state => state.prescriptions);
-  const fetchPrescriptions = usePatientStore(state => state.fetchPrescriptions);
+  const prescriptionsLoading = usePatientStore(state => state.prescriptionsLoading);
   const [filter, setFilter] = useState<"all" | "active" | "history">("active");
 
   const activePrescriptions = prescriptions.filter(p => p.status === 'active');
@@ -51,10 +51,18 @@ export function PrescriptionsPage() {
            </p>
         </div>
         
-        <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100">
+        <div
+          className={cn(
+            "flex bg-slate-50 p-1 rounded-2xl border border-slate-100 transition-opacity",
+            prescriptionsLoading && "pointer-events-none opacity-50",
+          )}
+          aria-busy={prescriptionsLoading}
+        >
            {(["active", "history", "all"] as const).map(f => (
              <button 
                key={f} 
+               type="button"
+               disabled={prescriptionsLoading}
                onClick={() => setFilter(f)}
                className={cn(
                  "px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
@@ -69,6 +77,12 @@ export function PrescriptionsPage() {
 
       {/* ── LISTING SECTION ── */}
       <div className="space-y-4">
+        {prescriptionsLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 text-muted-foreground" aria-live="polite">
+            <Loader2 className="h-8 w-8 animate-spin mb-3 text-primary" />
+            <p className="text-xs font-semibold uppercase tracking-widest">Loading prescriptions…</p>
+          </div>
+        ) : (
         <AnimatePresence mode="popLayout">
           {(filter === "active" ? activePrescriptions : filter === "history" ? pastPrescriptions : prescriptions).length === 0 ? (
             <motion.div
@@ -135,6 +149,7 @@ export function PrescriptionsPage() {
             </div>
           )}
         </AnimatePresence>
+        )}
       </div>
 
       {/* ── CONCIERGE BAR ── */}

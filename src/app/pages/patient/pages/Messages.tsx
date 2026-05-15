@@ -13,6 +13,7 @@ export function MessagesPage() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [threadQuery, setThreadQuery] = useState("");
   const [searchParams] = useSearchParams();
   const targetUserId = searchParams.get('userId');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -60,6 +61,17 @@ export function MessagesPage() {
       setLoading(false);
     }
   }
+
+  const q = threadQuery.trim().toLowerCase();
+  const filteredThreads = q
+    ? threads.filter((t) => {
+        return (
+          t.name.toLowerCase().includes(q) ||
+          (t.lastMsg && String(t.lastMsg).toLowerCase().includes(q)) ||
+          (t.role && String(t.role).toLowerCase().replace(/_/g, " ").includes(q))
+        );
+      })
+    : threads;
 
   // Step 2: If targetUserId in URL, open that thread immediately — don't wait for threads
   useEffect(() => {
@@ -260,8 +272,12 @@ export function MessagesPage() {
       <div className="relative mb-4 shrink-0">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
-          className="w-full pl-9 pr-4 py-2.5 bg-muted rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+          value={threadQuery}
+          onChange={(e) => setThreadQuery(e.target.value)}
+          className="w-full pl-9 pr-4 py-2.5 bg-muted rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all disabled:opacity-50"
           placeholder="Search conversations..."
+          disabled={loading}
+          aria-busy={loading}
         />
       </div>
 
@@ -270,37 +286,45 @@ export function MessagesPage() {
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
-        ) : threads.length === 0 ? (
+        ) : filteredThreads.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-20" />
-            <p className="text-sm font-medium">No messages yet</p>
-            <p className="text-xs mt-1 opacity-70">Your doctor will message you here after your consultation.</p>
+            <p className="text-sm font-medium">{threadQuery.trim() ? "No matching conversations" : "No messages yet"}</p>
+            <p className="text-xs mt-1 opacity-70">
+              {threadQuery.trim()
+                ? "Try a different search."
+                : "Your doctor will message you here after your consultation."}
+            </p>
           </div>
-        ) : threads.map(thread => (
-          <button
-            key={thread.id}
-            onClick={() => setActiveThread(thread)}
-            className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-accent transition-colors text-left group"
-          >
-            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shrink-0 group-hover:scale-105 transition-transform">
-              {initials(thread.name)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-bold truncate">{thread.name}</p>
-                <span className="text-[10px] text-muted-foreground shrink-0">{thread.time}</span>
-              </div>
-              <p className="text-xs text-muted-foreground truncate capitalize mt-0.5">
-                {thread.role?.replace('_', ' ')} · {thread.lastMsg}
-              </p>
-            </div>
-            {thread.unread > 0 && (
-              <span className="h-5 w-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                {thread.unread}
-              </span>
-            )}
-          </button>
-        ))}
+        ) : (
+          <>
+            {filteredThreads.map((thread) => (
+              <button
+                key={thread.id}
+                onClick={() => setActiveThread(thread)}
+                className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-accent transition-colors text-left group"
+              >
+                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shrink-0 group-hover:scale-105 transition-transform">
+                  {initials(thread.name)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-bold truncate">{thread.name}</p>
+                    <span className="text-[10px] text-muted-foreground shrink-0">{thread.time}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate capitalize mt-0.5">
+                    {thread.role?.replace('_', ' ')} · {thread.lastMsg}
+                  </p>
+                </div>
+                {thread.unread > 0 && (
+                  <span className="h-5 w-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {thread.unread}
+                  </span>
+                )}
+              </button>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );

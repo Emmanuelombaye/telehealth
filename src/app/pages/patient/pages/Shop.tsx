@@ -2423,11 +2423,19 @@ export function PatientShopPage() {
       {/* Category filter */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
         {catalogCategories.map(cat => (
-          <button key={cat} onClick={() => setActiveCat(cat)}
-            className={cn("shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all",
+          <button
+            key={cat}
+            type="button"
+            disabled={isLoadingProducts}
+            onClick={() => setActiveCat(cat)}
+            className={cn(
+              "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all",
+              isLoadingProducts && "cursor-wait opacity-60",
               activeCat === cat
                 ? "bg-primary text-white border-primary shadow-sm"
-                : "bg-card border-border text-muted-foreground hover:border-primary/40")}>
+                : "bg-card border-border text-muted-foreground hover:border-primary/40",
+            )}
+          >
             {cat}
           </button>
         ))}
