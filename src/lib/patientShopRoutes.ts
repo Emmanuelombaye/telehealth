@@ -1,6 +1,7 @@
 /**
  * URL segments for the patient enrollment shop (/patient/shop/...).
- * Maps the infographic journey to shareable, bookmarkable routes.
+ * Canonical mapping: **Client / Patient Flow Architecture — 9 steps** (journey diagram).
+ * Step 1 is the marketing site; steps 2–9 are implemented under /patient/shop (shareable segments).
  */
 
 export type ShopFlowStage =
@@ -31,7 +32,7 @@ const STAGE_TO_SEGMENT: Record<ShopFlowStage, string> = {
 const SEGMENT_TO_STAGE: Record<string, ShopFlowStage> = Object.fromEntries(
   (Object.entries(STAGE_TO_SEGMENT) as [ShopFlowStage, string][])
     .filter(([, seg]) => seg !== "")
-    .map(([st, seg]) => [seg, st])
+    .map(([st, seg]) => [seg, st]),
 ) as Record<string, ShopFlowStage>;
 // If duplicate segment keys existed, last wins — both questionnaire & scheduling use "medical-intake".
 // Force questionnaire for that segment (scheduling is never navigated via its own URL).
@@ -51,30 +52,120 @@ export function shopStageFromStepParam(step: string | undefined): ShopFlowStage 
   return SEGMENT_TO_STAGE[step] ?? null;
 }
 
-/** Infographic-aligned labels (steps 2–9 of client journey; step 1 is public landing). */
-export const ENROLLMENT_JOURNEY_STEPS: {
-  stage: ShopFlowStage;
-  infographicStep: number;
+/** Total steps in the published client journey diagram (1 = website, 9 = portal). */
+export const CLIENT_FLOW_DIAGRAM_STEP_COUNT = 9;
+
+/** Key notes from the client / patient flow architecture diagram (footer strip). */
+export const CLIENT_FLOW_KEY_NOTES_FOOTER =
+  "Secure & compliant · Save & resume · Auto-progress between steps · Privacy first · Feedback loop";
+
+export type ClientFlowNineJourneyRow = {
+  /** 1-based index as printed on the architecture diagram */
+  diagramStep: number;
+  /** Exact diagram step title (sentence case for UI readability) */
   title: string;
+  /** Phase summary / goal aligned with the diagram */
   subtitle: string;
-}[] = [
-  { stage: "catalog", infographicStep: 2, title: "Choose your program", subtitle: "Explore GLP-1 and other treatments" },
-  { stage: "payment", infographicStep: 3, title: "Checkout", subtitle: "Payer info, shipping & eligibility (incl. BMI)" },
-  { stage: "payment_confirmation", infographicStep: 4, title: "Order confirmation", subtitle: "Payment received — next: your account" },
-  { stage: "account_setup", infographicStep: 5, title: "Patient registration", subtitle: "Secure portal — create your credentials" },
-  { stage: "2fa", infographicStep: 6, title: "Two-factor authentication", subtitle: "Verify your phone (SMS code)" },
-  { stage: "identity", infographicStep: 7, title: "Identity verification", subtitle: "Government ID — Stripe Identity / compliant providers" },
+  /**
+   * Which shop stage highlights this step in the progress UI.
+   * `null` = step 1 (website / brand — outside deep-linked shop URLs; always “complete” once the user is in /patient/shop).
+   */
+  shopStage: ShopFlowStage | null;
+};
+
+/**
+ * **Client / patient flow architecture — 9 steps** (end-to-end journey map).
+ * Technical routes (e.g. split registration vs 2FA) still map to the same diagram intent.
+ */
+export const CLIENT_PATIENT_FLOW_NINE_STEPS: ClientFlowNineJourneyRow[] = [
   {
-    stage: "questionnaire",
-    infographicStep: 8,
-    title: "Medical intake & scheduling",
-    subtitle: "Clinical questionnaire — when required, book your video visit on the same step",
+    diagramStep: 1,
+    title: "Website / brand landing page",
+    subtitle:
+      "Patient lands on the medication homepage from search, ads, or direct links. Goal: educate and drive interest in treatment programs.",
+    shopStage: null,
   },
-  { stage: "confirmed", infographicStep: 9, title: "Patient portal", subtitle: "Track progress — dashboard & orders" },
+  {
+    diagramStep: 2,
+    title: "Product page (GLP-1)",
+    subtitle:
+      "Patient explores product details, benefits, pricing, and program information. Goal: build trust and convert interest into action.",
+    shopStage: "catalog",
+  },
+  {
+    diagramStep: 3,
+    title: "Checkout page",
+    subtitle:
+      "Patient information, shipping address, and health qualifier (including BMI and eligibility) with conditional logic before order submission.",
+    shopStage: "payment",
+  },
+  {
+    diagramStep: 4,
+    title: "Confirmation page",
+    subtitle:
+      "Order submission — acknowledge the order and move into secure patient registration. Goal: transition to the locked portal.",
+    shopStage: "payment_confirmation",
+  },
+  {
+    diagramStep: 5,
+    title: "Redirect to patient registration portal",
+    subtitle:
+      "Patient is redirected to a secure portal to create an account or sign in. Goal: establish a secure patient account.",
+    shopStage: "account_setup",
+  },
+  {
+    diagramStep: 6,
+    title: "Account creation + 2FA",
+    subtitle:
+      "First-time registration with SMS or email authentication (two-factor). Goal: protect patient data and keep the account secure.",
+    shopStage: "2fa",
+  },
+  {
+    diagramStep: 7,
+    title: "Identity verification (3rd party)",
+    subtitle:
+      "Government ID and KYC through an integrated provider (e.g. Stripe Identity — same compliance role as Vouched, ID.me, or Persona). Goal: verify identity and stay compliant.",
+    shopStage: "identity",
+  },
+  {
+    diagramStep: 8,
+    title: "Intake form (questionnaire)",
+    subtitle:
+      "Medication-specific medical and health information for provider review. When a live visit is required, Cal.com / Calendly scheduling and Zoom / Google Meet join links are completed in this same step — not as a separate journey.",
+    shopStage: "questionnaire",
+  },
+  {
+    diagramStep: 9,
+    title: "Patient portal (dashboard)",
+    subtitle:
+      "Progress tracking in one place — order status, messages, appointments, and refills in real time (same nine-step model after enrollment).",
+    shopStage: "confirmed",
+  },
 ];
 
+export function getClientFlowRowByDiagramStep(diagramStep: number): ClientFlowNineJourneyRow | undefined {
+  return CLIENT_PATIENT_FLOW_NINE_STEPS.find((r) => r.diagramStep === diagramStep);
+}
+
+/**
+ * 0-based index into `CLIENT_PATIENT_FLOW_NINE_STEPS` for the active diagram step
+ * (0 = website, 1 = product page, …, 8 = portal handoff).
+ */
 export function journeyIndexForStage(stage: ShopFlowStage): number {
   const normalized = stage === "scheduling" ? "questionnaire" : stage;
-  const i = ENROLLMENT_JOURNEY_STEPS.findIndex((s) => s.stage === normalized);
-  return i >= 0 ? i : 0;
+  const idx = CLIENT_PATIENT_FLOW_NINE_STEPS.findIndex((row) => row.shopStage === normalized);
+  if (idx >= 0) return idx;
+  return 1;
 }
+
+/**
+ * @deprecated Prefer `CLIENT_PATIENT_FLOW_NINE_STEPS` — shop-backed rows only (steps 2–9), shaped for legacy callers.
+ */
+export const ENROLLMENT_JOURNEY_STEPS = CLIENT_PATIENT_FLOW_NINE_STEPS.filter(
+  (r): r is ClientFlowNineJourneyRow & { shopStage: ShopFlowStage } => r.shopStage !== null,
+).map((r) => ({
+  stage: r.shopStage,
+  infographicStep: r.diagramStep,
+  title: r.title,
+  subtitle: r.subtitle,
+}));

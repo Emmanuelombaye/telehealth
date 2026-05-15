@@ -169,7 +169,7 @@ export function PatientDashboard() {
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="mx-auto max-w-xl space-y-3 text-center sm:mx-0 sm:text-left">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-800/70">
-              Peak Health · Patient
+              Peak Health · Patient · Step 9 of 9 (dashboard)
             </p>
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl md:text-[2.65rem] md:leading-[1.08]">
               Welcome back,{" "}
@@ -178,7 +178,8 @@ export function PatientDashboard() {
               </span>
             </h1>
             <p className="text-pretty text-sm leading-relaxed text-slate-600 sm:text-[0.9375rem]">
-              Visits, prescriptions, and clinician messages stay in one encrypted place—so you always know what happens next.
+              Same nine-step care model after checkout: messages, visits (Cal.com / Calendly + Zoom / Meet), orders, and
+              refills stay in this encrypted hub so you always know what happens next.
             </p>
           </div>
           <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center lg:w-auto lg:flex-col lg:items-stretch">
@@ -283,23 +284,23 @@ export function PatientDashboard() {
                           <Video className="h-8 w-8 text-amber-600" />
                         </div>
                         <div>
-                          <p className="text-[10px] font-black text-amber-800 uppercase tracking-[0.3em]">Clinical Action Required</p>
-                          <p className="text-2xl font-black text-amber-900 tracking-tight">Video Consultation Requested</p>
+                          <p className="text-[10px] font-black text-amber-800 uppercase tracking-[0.3em]">Step 8–9 path</p>
+                          <p className="text-2xl font-black text-amber-900 tracking-tight">Live visit — book & join from the portal</p>
                         </div>
                       </div>
                       <p className="text-base text-amber-800 font-medium leading-relaxed mb-8 italic opacity-90">
-                        "{order.zoom_doctor_message || 'Your doctor would like to speak with you regarding your intake form before finalizing your prescription.'}"
+                        "{order.zoom_doctor_message || 'Your clinician would like a brief live visit after your step 8 intake. Book a time (Cal.com / Calendly); your Zoom or Meet link arrives after you confirm.'}"
                       </p>
                       <Button
                         className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-[1.5rem] h-16 font-black uppercase tracking-[0.2em] gap-3 shadow-xl shadow-amber-600/10"
                         onClick={() => navigate("/patient/appointments")}
                       >
-                        Secure Calendar Booking <Calendar className="h-5 w-5" />
+                        Book visit (step 8 follow-up) <Calendar className="h-5 w-5" />
                       </Button>
                     </div>
                   )}
 
-                  {/* Fulfillment rail — matches journey map; inserts Consultation when video is in scope */}
+                  {/* Fulfillment rail — step 9 “progress tracking” from the journey map */}
                   <div className="relative pt-6 px-1">
                     <div className="absolute top-11 left-[5%] right-[5%] h-1.5 bg-slate-50 rounded-full overflow-hidden shadow-inner">
                       <div

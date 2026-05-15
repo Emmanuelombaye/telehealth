@@ -8,31 +8,31 @@ import { defaultCalendlyBookingPageUrl, toSchedulingOpenTabUrl } from "../../../
 // Real-time zoom status config
 const zoomStatusConfig: Record<string, { label: string; icon: ReactNode; card: string; badge: string }> = {
   not_requested: {
-    label: "No Zoom Scheduled",
+    label: "No live visit on calendar",
     icon: <MessageSquare className="h-5 w-5 text-slate-400" />,
     card: "bg-slate-50 border-slate-200",
     badge: "bg-slate-100 text-slate-500",
   },
   requested: {
-    label: "Zoom Requested — Awaiting Confirmation",
+    label: "Visit requested — book time (Cal.com / Calendly)",
     icon: <Clock className="h-5 w-5 text-amber-500 animate-pulse" />,
     card: "bg-amber-50 border-amber-200",
     badge: "bg-amber-100 text-amber-700",
   },
   confirmed: {
-    label: "Zoom Confirmed ✓",
+    label: "Live visit confirmed — Zoom / Meet ready",
     icon: <CheckCircle2 className="h-5 w-5 text-emerald-600" />,
     card: "bg-emerald-50 border-emerald-200",
     badge: "bg-emerald-100 text-emerald-700",
   },
   rescheduled: {
-    label: "Zoom Rescheduled by Doctor",
+    label: "Visit rescheduled by clinician",
     icon: <RefreshCw className="h-5 w-5 text-blue-600" />,
     card: "bg-blue-50 border-blue-200",
     badge: "bg-blue-100 text-blue-700",
   },
   cancelled: {
-    label: "Zoom Cancelled",
+    label: "Live visit cancelled",
     icon: <XCircle className="h-5 w-5 text-red-500" />,
     card: "bg-red-50 border-red-200",
     badge: "bg-red-100 text-red-600",
@@ -146,8 +146,13 @@ export function AppointmentsPage() {
     <div className="max-w-2xl mx-auto space-y-5 px-4 py-6 text-foreground min-h-[50vh]">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Appointments</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Step 9 of 9 · Patient portal</p>
+          <h1 className="text-xl font-bold text-foreground">Appointments & live visits</h1>
+          <p className="text-xs text-muted-foreground mt-0.5 max-w-md">
+            Scheduling (Cal.com / Calendly) and video (Zoom / Google Meet) stay inside the same nine-step journey: booking
+            completes step 8 intake when required; this page is your hub in step 9.
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
             {lastUpdated ? `Live · Updated ${lastUpdated.toLocaleTimeString()}` : "Syncing…"}
             <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse ml-1.5" />
           </p>
@@ -167,10 +172,10 @@ export function AppointmentsPage() {
         </div>
       )}
 
-      {/* Live zoom consultations */}
+      {/* Live telehealth — same stack as step 8 (intake), surfaced in step 9 */}
       {zoomOrders.length > 0 && (
         <div className="space-y-3">
-          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Video Consultations</p>
+          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Live telehealth (Zoom / Meet)</p>
           {zoomOrders.map(order => {
             const status = order.zoom_status || 'not_requested';
             const cfg = zoomStatusConfig[status] || zoomStatusConfig.not_requested;
@@ -293,7 +298,7 @@ export function AppointmentsPage() {
                   {status === 'cancelled' && (
                     <p className="text-xs text-red-600 flex items-center gap-1.5">
                       <AlertCircle className="h-3 w-3" />
-                      Zoom was cancelled. Your doctor will complete the review asynchronously.
+                      Live visit was cancelled. Your clinician may complete the review asynchronously.
                     </p>
                   )}
                   {status === 'rescheduled' && (
@@ -331,7 +336,7 @@ export function AppointmentsPage() {
       {/* Async orders (no zoom) */}
       {noZoomOrders.length > 0 && (
         <div className="space-y-3">
-          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Async Reviews (No Video Needed)</p>
+          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Async review (no live visit)</p>
           {noZoomOrders.map(order => (
             <Card key={order.id} className="border-border">
               <CardContent className="p-4 flex items-center gap-3">

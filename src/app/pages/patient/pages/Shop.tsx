@@ -44,6 +44,7 @@ import {
 import {
   shopPathForStage,
   shopStageFromStepParam,
+  getClientFlowRowByDiagramStep,
   type ShopFlowStage,
 } from "../../../../lib/patientShopRoutes";
 import { PatientEnrollmentStepper } from "../../../components/PatientEnrollmentStepper.tsx";
@@ -1205,8 +1206,13 @@ export function PatientShopPage() {
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
         <div>
-          <h2 className="text-xl font-bold">Welcome to Peak Health, {firstName}!</h2>
-          <p className="text-sm text-muted-foreground mt-1">Your account is created and intake is under review.</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-800/80">
+            Step 9 · {getClientFlowRowByDiagramStep(9)?.title ?? "Patient portal (dashboard)"}
+          </p>
+          <h2 className="text-xl font-bold mt-1">Welcome to Peak Health, {firstName}!</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {getClientFlowRowByDiagramStep(9)?.subtitle ?? "Track your order and care from your dashboard."}
+          </p>
         </div>
         <Card className="text-left">
           <CardContent className="p-4 space-y-2">
@@ -1217,11 +1223,11 @@ export function PatientShopPage() {
           </CardContent>
         </Card>
         <div className="bg-secondary/40 border border-secondary rounded-2xl p-4 text-sm text-secondary-foreground text-left">
-          <p className="font-semibold mb-1">⏱ What happens next?</p>
+          <p className="font-semibold mb-1">What happens next (step 9 dashboard)</p>
           <ol className="space-y-1 text-xs list-decimal list-inside opacity-90">
-            <li>A licensed doctor reviews your intake (usually within 2–4 hrs).</li>
-            <li>If approved, your prescription is sent to our pharmacy.</li>
-            <li>Medication ships within 1–2 business days with tracking.</li>
+            <li>In review — a licensed clinician evaluates your step 8 intake (often within a few hours).</li>
+            <li>Order approved — if cleared, your prescription is sent to the pharmacy.</li>
+            <li>Order shipped — medication dispatches with tracking; refills stay in the same portal.</li>
           </ol>
         </div>
         <Button
@@ -1252,9 +1258,15 @@ export function PatientShopPage() {
           <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-100 mb-4">
             <CheckCircle2 className="h-3.5 w-3.5" /> Payment Successful
           </div>
-          <h1 className="text-2xl font-bold">Create your account</h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-800/80">
+            Step 5 · {getClientFlowRowByDiagramStep(5)?.title ?? "Patient registration portal"}
+          </p>
+          <h1 className="text-2xl font-bold mt-1">Create your patient portal login</h1>
           <p className="text-sm text-muted-foreground mt-2">
-            Your payment is secured. Let's finish creating your account so you can track your prescription and message your doctor.
+            {getClientFlowRowByDiagramStep(5)?.subtitle ??
+              "Create your secure credentials and profile so we can continue to clinical intake."}{" "}
+            Your payment is secured; next steps are identity verification and the medication-specific questionnaire (step
+            8).
           </p>
           {stripePaymentIntentId && (
             <button
@@ -1439,9 +1451,16 @@ export function PatientShopPage() {
           <div className="h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
              <ShieldCheck className="h-8 w-8 text-blue-500" />
           </div>
-          <h1 className="text-2xl font-bold">Verify your phone</h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-800/80">
+            Step 6 · {getClientFlowRowByDiagramStep(6)?.title ?? "Account creation + 2FA"}
+          </p>
+          <h1 className="text-2xl font-bold mt-1">Account creation + 2FA</h1>
           <p className="text-sm text-muted-foreground mt-2">
-            We sent a 6-digit code to<br />
+            {getClientFlowRowByDiagramStep(6)?.subtitle ?? "SMS / email authentication to protect your account."}
+          </p>
+          <p className="text-sm text-muted-foreground mt-3">
+            We sent a 6-digit code to
+            <br />
             <span className="font-bold text-foreground">{phone || "(555) 000-0000"}</span>
           </p>
         </div>
@@ -1531,9 +1550,15 @@ export function PatientShopPage() {
                Powered by Stripe Identity™
              </Badge>
            </div>
-           <h1 className="text-2xl font-bold mt-4">Identity Verification</h1>
+           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-800/80">
+             Step 7 · {getClientFlowRowByDiagramStep(7)?.title ?? "Identity verification (3rd party)"}
+           </p>
+           <h1 className="text-2xl font-bold mt-2">Identity verification (3rd party)</h1>
            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-             To comply with KYC and telemedicine regulations, we need to quickly verify your identity using a government-issued ID. This usually takes less than 60 seconds.
+             {getClientFlowRowByDiagramStep(7)?.subtitle ??
+               "Government ID verification for KYC — typically under one minute."}{" "}
+             To comply with KYC and telemedicine regulations, we use a government-issued ID. This usually takes less than
+             60 seconds.
            </p>
 
            {error && (
@@ -1636,7 +1661,7 @@ export function PatientShopPage() {
             brandSize="md"
             onBack={() => goToStage("catalog")}
             backLabel="Back to catalog"
-            badgeLabel="Secure checkout"
+            badgeLabel="Step 3 · Checkout page"
           />
           <Card>
             <CardContent className="p-4 flex items-center justify-between">
@@ -1649,10 +1674,12 @@ export function PatientShopPage() {
           </Card>
 
           <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-            Before checkout
+            Step 3 · Health qualifier & shipping (before payment)
           </p>
           <p className="text-sm text-muted-foreground">
-            Quick eligibility and shipping confirmation. You will enter payment on the next screen.
+            {getClientFlowRowByDiagramStep(3)?.subtitle ??
+              "Basic info, shipping, health qualifier, and conditional eligibility."}{" "}
+            You will enter payment on the next screen.
           </p>
 
           <div className="space-y-4">
@@ -1788,7 +1815,7 @@ export function PatientShopPage() {
           brandSize="md"
           onBack={() => goToStage("catalog")}
           backLabel="Back to catalog"
-          badgeLabel="Secure checkout"
+          badgeLabel="Step 3 · Checkout page"
         />
 
         <button
@@ -1802,7 +1829,7 @@ export function PatientShopPage() {
             setError(null);
           }}
         >
-          ← Edit eligibility & contact
+          ← Edit step 3 (eligibility & contact)
         </button>
 
         <Card>
@@ -1820,7 +1847,7 @@ export function PatientShopPage() {
         <motion.div layout className="space-y-3">
           <div className="flex items-end justify-between gap-2">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Checkout</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Checkout page</p>
               <p className="text-base font-bold text-foreground tracking-tight">Choose how you pay</p>
             </div>
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-700/70">PCI-aware</span>
@@ -2077,9 +2104,15 @@ export function PatientShopPage() {
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Payment received</h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-800/80">
+            Step 4 · {getClientFlowRowByDiagramStep(4)?.title ?? "Confirmation page"}
+          </p>
+          <h1 className="text-2xl font-bold mt-1">Confirmation page</h1>
           <p className="text-sm text-muted-foreground mt-2">
-            Thank you{firstName ? `, ${firstName}` : ""}. Your subscription payment for{" "}
+            {getClientFlowRowByDiagramStep(4)?.subtitle ?? "Order submitted — next: secure patient registration."}
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Thank you{firstName ? `, ${firstName}` : ""}. Your payment for{" "}
             <span className="font-semibold text-foreground">{selected.name}</span> was processed
             {stripePaymentIntentId ? " securely" : " (demo mode)"}.
           </p>
@@ -2140,13 +2173,16 @@ export function PatientShopPage() {
         <div className="flex justify-center mb-6">
            <PatientBrandMark size="md" />
         </div>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-800/80">
+          Step 8 · {getClientFlowRowByDiagramStep(8)?.title ?? "Intake form (questionnaire)"}
+        </p>
         <button
           type="button"
           onClick={() => {
             if (totalQ > 0 && qStep > 0) setQStep((q) => q - 1);
             else goToStage("identity");
           }}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mt-2"
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
@@ -2265,9 +2301,10 @@ export function PatientShopPage() {
                 onChange={(e) => setBookingAttestation(e.target.checked)}
               />
               <span className="text-sm text-amber-950 dark:text-amber-100">
-                I booked a time using the calendar above (or opened it in my browser). I understand my video link
-                (Zoom or Google Meet) will come from the scheduler by email or text. With Calendly, this box may check
-                automatically when your booking completes.
+                I booked a time using the calendar above (or opened it in my browser), as part of{" "}
+                <strong className="font-semibold">step 8 — intake</strong>. I understand my video link (Zoom or Google
+                Meet) will come from the scheduler by email or text. With Calendly, this box may check automatically when
+                your booking completes.
               </span>
             </label>
           </>
@@ -2327,7 +2364,12 @@ export function PatientShopPage() {
       {/* Yucca-style hero */}
       <div className="relative overflow-hidden rounded-2xl p-6 md:p-8" style={{ background: "var(--brand-hero)" }}>
         <div className="relative z-10">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--brand-lavender-900)]">Treatment Programs</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-900/85">
+            Step 2 · {getClientFlowRowByDiagramStep(2)?.title ?? "Product page (GLP-1)"}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--brand-lavender-900)] mt-2">
+            Treatment Programs
+          </p>
           <h1 className="text-2xl md:text-3xl font-extrabold mt-1 text-foreground">
             Care that actually works.<br />
             <span className="text-[var(--brand-lavender-700)]">Shipped to your door.</span>

@@ -100,6 +100,9 @@ export function PatientOrderTrackingPage() {
         <button onClick={() => setSelected(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           ← Back to Orders
         </button>
+        <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+          Step 9 of 9 · Patient portal — real-time order progress
+        </p>
 
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

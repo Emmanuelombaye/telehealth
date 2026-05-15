@@ -35,8 +35,8 @@ export function buildOrderFulfillmentRail(
     ...head,
     {
       key: "consultation",
-      label: "Consultation",
-      desc: "Video or phone visit with your clinician when required",
+      label: "Live visit (Zoom / Meet)",
+      desc: "Part of step 8 when required — book in Cal.com or Calendly; join link follows by email or text",
     },
     ...post,
   ];

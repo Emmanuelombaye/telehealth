@@ -71,6 +71,7 @@ export function PatientSchedulingPanel({
     <div className={cn("space-y-4", className)}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Step 8 of 9 · Intake</p>
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base font-bold tracking-tight">Schedule your video visit</h2>
             <Badge variant="outline" className="text-[10px] font-semibold uppercase tracking-wide">

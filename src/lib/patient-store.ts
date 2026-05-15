@@ -21,16 +21,16 @@ export type OrderStatus =
   | "refill_eligible";
 
 export const ORDER_STEPS: { key: OrderStatus; label: string; desc: string }[] = [
-  { key: "order_submitted", label: "Order Submitted", desc: "Treatment selection and payment received" },
-  { key: "account_created", label: "Account Created", desc: "Patient portal account successfully registered" },
-  { key: "id_verified", label: "ID Verified", desc: "Identity and age verification successful" },
-  { key: "intake_completed", label: "Intake Completed", desc: "Health questionnaire and medical history received" },
-  { key: "medical_review", label: "Medical Review", desc: "A licensed physician is evaluating your profile" },
-  { key: "rx_sent", label: "Prescribed", desc: "Approval granted and prescription sent to pharmacy" },
-  { key: "shipped", label: "Shipped", desc: "Medication is in transit to your address" },
-  { key: "delivered", label: "Delivered", desc: "Package has been successfully delivered" },
-  { key: "follow_up", label: "Follow-Up Required", desc: "Your physician needs additional information to proceed" },
-  { key: "refill_eligible", label: "Refill Eligible", desc: "You are now eligible to request a treatment refill" },
+  { key: "order_submitted", label: "Order submitted", desc: "Checkout complete — same nine-step journey, now in the portal" },
+  { key: "account_created", label: "Portal registration", desc: "Secure credentials from steps 5–6 are on file" },
+  { key: "id_verified", label: "Identity verified", desc: "Step 7 KYC complete" },
+  { key: "intake_completed", label: "Intake completed", desc: "Step 8 questionnaire (and any required Cal / Zoom booking) received" },
+  { key: "medical_review", label: "In review", desc: "A licensed clinician is evaluating your case" },
+  { key: "rx_sent", label: "Order approved", desc: "Prescription authorized and sent to pharmacy" },
+  { key: "shipped", label: "Order shipped", desc: "Medication is in transit to your address" },
+  { key: "delivered", label: "Delivered", desc: "Package delivered — welcome to ongoing care" },
+  { key: "follow_up", label: "In review · follow-up", desc: "Your clinician needs a quick update before proceeding" },
+  { key: "refill_eligible", label: "Prescription refills", desc: "You are eligible to request the next fill" },
 ];
 
 export type Order = {

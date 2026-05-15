@@ -122,6 +122,9 @@ export function PatientConsultPage() {
             <h1 className="text-xl font-bold text-[#0A2E1F] leading-tight">
               Live Consultation
             </h1>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-0.5">
+              Step 9 of 9 · Patient portal — secure live session
+            </p>
             <div className="flex items-center gap-2 mt-1">
               <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
