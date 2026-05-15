@@ -100,7 +100,7 @@ export function MessagesPage() {
     async function fetchMessages() {
       const { data, error } = await supabase
         .from('messages')
-        .select('id, content, created_at, sender_id, read')
+        .select('id, content, created_at, sender_id, receiver_id, is_read')
         .or(
           `and(sender_id.eq.${user!.id},receiver_id.eq.${activeThread.id}),and(sender_id.eq.${activeThread.id},receiver_id.eq.${user!.id})`
         )
@@ -138,7 +138,7 @@ export function MessagesPage() {
         sender_id: user.id,
         receiver_id: activeThread.id,
         content,
-        read: false,
+        is_read: false,
       });
       if (error) throw error;
       // Refresh thread list so it shows the latest message

@@ -7,8 +7,8 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "vite build",
-    "dev": "vite",
+    "build": "node init && vite build",
+    "dev": "node init && vite",
     "preview": "vite preview",
     "check:patient-e2e": "node scripts/patient-e2e-check.mjs",
     "check:engineering": "node scripts/engineering-check.mjs",
