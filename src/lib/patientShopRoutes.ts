@@ -122,16 +122,16 @@ export const CLIENT_PATIENT_FLOW_NINE_STEPS: ClientFlowNineJourneyRow[] = [
   },
   {
     diagramStep: 7,
-    title: "Identity verification (3rd party)",
+    title: "Identity verification",
     subtitle:
-      "Government ID and KYC through an integrated provider (e.g. Stripe Identity — same compliance role as Vouched, ID.me, or Persona). Goal: verify identity and stay compliant.",
+      "Upload a government-issued ID so your clinician can confirm who you are. Automated verification will be added when our provider is connected.",
     shopStage: "identity",
   },
   {
     diagramStep: 8,
-    title: "Intake form (questionnaire)",
+    title: "Medical intake",
     subtitle:
-      "Medication-specific medical and health information for provider review. When a live visit is required, Cal.com / Calendly scheduling and Zoom / Google Meet join links are completed in this same step — not as a separate journey.",
+      "Answer a few clinical questions and confirm your ID type. Scheduling for a live visit (when required) is completed in this same step.",
     shopStage: "questionnaire",
   },
   {

@@ -9,6 +9,7 @@ import {
   Lock,
   Sparkles,
   Upload,
+  IdCard,
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { PatientSchedulingPanel } from "../../../components/patient/PatientSchedulingPanel.tsx";
@@ -58,10 +59,84 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 /** Until Twilio Verify is live: any 6-digit code passes. Set VITE_BYPASS_OTP_VERIFY=false to enforce SMS. */
 const bypassOtpVerify = import.meta.env.VITE_BYPASS_OTP_VERIFY !== "false";
+/** Until ID verification API is live: upload or attestation passes step 7. Set VITE_BYPASS_IDENTITY_VERIFY=false to enforce. */
+const bypassIdentityVerify = import.meta.env.VITE_BYPASS_IDENTITY_VERIFY !== "false";
 if (!stripeKey && import.meta.env.DEV) {
   console.warn("⚠️ VITE_STRIPE_PUBLISHABLE_KEY is missing. Stripe Elements will not load.");
 }
 const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
+
+const ID_DOCUMENT_TYPES = [
+  "Driver's license",
+  "State ID",
+  "Passport",
+  "Visa",
+  "Military ID",
+  "Other government ID",
+] as const;
+
+function friendlyEnrollmentError(raw: unknown): string {
+  const msg = raw instanceof Error ? raw.message : String(raw ?? "");
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes("patient_state") ||
+    lower.includes("schema cache") ||
+    lower.includes("could not find") ||
+    lower.includes("column")
+  ) {
+    return "We couldn't sync your enrollment just now. Please tap Submit enrollment again in a moment.";
+  }
+  if (lower.includes("already registered") || lower.includes("already exists")) {
+    return "This email already has an account. Sign in at the patient portal, or use a different email.";
+  }
+  if (lower.includes("password")) return msg;
+  if (lower.includes("valid email")) return "Please enter a valid email address.";
+  if (lower.includes("identity verification") || lower.includes("government id")) return msg;
+  if (lower.includes("book a time")) return msg;
+  return "We couldn't complete enrollment right now. Please check your connection and try again.";
+}
+
+function IdDocumentTypePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (label: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+          <IdCard className="h-5 w-5" aria-hidden />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-[#0A0D14]">Government ID type</p>
+          <p className="text-xs text-slate-500">Select the document you uploaded or will provide to your clinician.</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {ID_DOCUMENT_TYPES.map((label) => {
+          const selected = value === label;
+          return (
+            <button
+              key={label}
+              type="button"
+              onClick={() => onChange(label)}
+              className={cn(
+                "rounded-xl border-2 px-3 py-2.5 text-left text-[11px] font-bold leading-snug transition-all sm:text-xs",
+                selected
+                  ? "border-emerald-500 bg-emerald-50 text-emerald-900 shadow-sm ring-1 ring-emerald-500/20"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50/40",
+              )}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </motion.div>
+    </div>
+  );
+}
 
 // ── Stripe PaymentElement inner form ─────────────────────────────────────────
 function StripePaymentForm({
@@ -231,7 +306,6 @@ function EnrollmentIdUploadPanel({
   identityStripeCompleted,
   setError,
   idUploadInputRef,
-  onOpenStripeIdentity,
   embedded,
 }: {
   idAccept: string;
@@ -240,7 +314,6 @@ function EnrollmentIdUploadPanel({
   identityStripeCompleted: boolean;
   setError: (msg: string | null) => void;
   idUploadInputRef: RefObject<HTMLInputElement | null>;
-  onOpenStripeIdentity: () => void;
   /** When true, panel sits inside the last question card (divider + compact header). */
   embedded?: boolean;
 }) {
@@ -257,8 +330,8 @@ function EnrollmentIdUploadPanel({
             <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-300" aria-hidden />
           </div>
           <div>
-            <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Identity verified</p>
-            <p className="text-xs text-emerald-800/90 dark:text-emerald-200/90">Stripe Identity is complete — you can submit enrollment.</p>
+            <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Identity step complete</p>
+            <p className="text-xs text-emerald-800/90 dark:text-emerald-200/90">You can continue enrollment and submit when ready.</p>
           </div>
         </div>
       </div>
@@ -372,14 +445,6 @@ function EnrollmentIdUploadPanel({
           </Button>
         </div>
       )}
-
-      <button
-        type="button"
-        className="w-full rounded-xl border border-slate-200 bg-slate-50/80 py-3 text-xs font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-        onClick={onOpenStripeIdentity}
-      >
-        Prefer Stripe Identity? Open the identity step instead →
-      </button>
     </div>
   );
 }
@@ -476,6 +541,7 @@ export function PatientShopPage() {
   const [state, setState] = useState("");
   const [zip, setZip] = useState("");
   const [idFile, setIdFile] = useState<File | null>(null);
+  const [idDocumentType, setIdDocumentType] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -489,7 +555,7 @@ export function PatientShopPage() {
   // Verification state
   const [otp, setOtp] = useState("");
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [isVerifyingIdentity, setIsVerifyingIdentity] = useState(false);
+  const [identityAttestation, setIdentityAttestation] = useState(false);
   const [routingRulesFromDb, setRoutingRulesFromDb] = useState<ConsultRoutingRuleRow[]>([]);
   // Stripe state
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
@@ -657,6 +723,7 @@ export function PatientShopPage() {
     setQualifierNoMtcMen2(false);
     setQualifierUsResident(false);
     setIdentityStripeCompleted(false);
+    setIdentityAttestation(false);
     setSchedulingRef(null);
     goToStage("payment");
   };
@@ -984,7 +1051,11 @@ export function PatientShopPage() {
       address: `${address}, ${city}, ${state} ${zip}`,
       phone,
       email: resolvedEmail,
+      idDocumentType: idDocumentType || undefined,
+      shipToState: (state || "").trim().toUpperCase() || undefined,
     };
+
+    const shipState = (state || "").trim().toUpperCase() || null;
 
     try {
       let userId: string | null = null;
@@ -995,12 +1066,18 @@ export function PatientShopPage() {
         userId = existingUser.id;
       } else {
         // ── New patient — validate and create account ─────────────────────────
-        if (!resolvedEmail || !resolvedEmail.includes('@'))
-          throw new Error("A valid email is required.");
-        if (!password || password.length < 6)
-          throw new Error("Password must be at least 6 characters.");
-        if (!resolvedFirstName || resolvedFirstName === 'Patient')
-          throw new Error("First and last name are required.");
+        if (!resolvedEmail || !resolvedEmail.includes("@")) {
+          setError("A valid email is required.");
+          return;
+        }
+        if (!password || password.length < 6) {
+          setError("Password must be at least 6 characters.");
+          return;
+        }
+        if (!resolvedFirstName || resolvedFirstName === "Patient") {
+          setError("First and last name are required.");
+          return;
+        }
 
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: resolvedEmail.trim().toLowerCase(),
@@ -1028,12 +1105,15 @@ export function PatientShopPage() {
               userId = signInData.user.id;
               sessionToSet = signInData.session;
             } else {
-              throw new Error("Account creation failed. Please try again in a moment.");
+              setError("Account creation failed. Please try again in a moment.");
+              return;
             }
-          } else if (msg.includes('already registered') || msg.includes('already exists')) {
-            throw new Error("This email is already registered. Please sign in at /patient/login.");
+          } else if (msg.includes("already registered") || msg.includes("already exists")) {
+            setError("This email is already registered. Please sign in at the patient portal.");
+            return;
           } else {
-            throw authError;
+            setError(friendlyEnrollmentError(authError.message));
+            return;
           }
         } else {
           userId = authData.user?.id || null;
@@ -1041,8 +1121,20 @@ export function PatientShopPage() {
         }
       }
 
-      if (!idFile && !identityStripeCompleted)
-        throw new Error("Please upload a photo of your government ID, or complete Stripe Identity verification.");
+      if (!idDocumentType.trim()) {
+        setError("Please select your government ID type on the intake step.");
+        return;
+      }
+
+      const identityReady = Boolean(idFile) || identityStripeCompleted;
+      if (!identityReady) {
+        setError(
+          bypassIdentityVerify
+            ? "Please complete step 7 (upload an ID or confirm your details) before submitting."
+            : "Please upload a photo of your government ID before submitting.",
+        );
+        return;
+      }
 
       const rules = parseProductVideoRules(selected.rawFeatures);
       const needsVideo = requiresSyncVideoVisit(rules, globalVideoStates, routingRulesFromDb, {
@@ -1054,10 +1146,14 @@ export function PatientShopPage() {
         answers,
       });
       if (needsVideo && !bookingAttestation) {
-        throw new Error("Please book a time in the calendar above and confirm before continuing.");
+        setError("Please book a time in the calendar above and confirm before continuing.");
+        return;
       }
 
-      if (!userId) throw new Error("Could not determine user ID — please try again.");
+      if (!userId) {
+        setError("We couldn't sign you in automatically. Please try again or sign in at the patient portal.");
+        return;
+      }
 
       // ── Auto sign-in for new patients BEFORE order insertion (fixes RLS) ──────
       if (!existingUser) {
@@ -1091,9 +1187,9 @@ export function PatientShopPage() {
         { status: "intake_completed", date: orderedDateStr },
       ];
 
-      // ── Insert order into Supabase ────────────────────────────────────────────
+      // ── Insert order into Supabase (use shipping_state — not legacy patient_state) ──
       const assigned = !!assignedDoctorForScheduling;
-      const { data: insertedRow, error: insertError } = await supabase.from('orders').insert([{
+      const orderRow: Record<string, unknown> = {
         order_number:      freshOrderRef,
         mrn:               generateMRN(),
         doctor_id:         assignedDoctorForScheduling?.id || null,
@@ -1101,7 +1197,10 @@ export function PatientShopPage() {
         status:            assigned ? "medical_review" : "order_submitted",
         patient_name:      `${resolvedFirstName} ${resolvedLastName}`.trim() || "New Patient",
         patient_email:     resolvedEmail,
-        patient_state:     (state || "").trim().toUpperCase() || null,
+        shipping_state:    shipState,
+        shipping_address_line1: address?.trim() || null,
+        shipping_city:     city?.trim() || null,
+        shipping_zip:      zip?.trim() || null,
         patient_avatar:    (resolvedFirstName[0] || "") + (resolvedLastName[0] || ""),
         patient_age:       age,
         patient_country:   "🇺🇸 US",
@@ -1116,6 +1215,11 @@ export function PatientShopPage() {
         intake_notes:      `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Blood: ${bloodType} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
         intake_answers:    {
           ...answers,
+          _identity: {
+            document_type: idDocumentType,
+            has_upload: Boolean(idFile),
+            verified: identityStripeCompleted,
+          },
           ...(needsVideo
             ? { _scheduling: { external_calendar: true, acknowledged_booking: bookingAttestation } }
             : {}),
@@ -1137,10 +1241,29 @@ export function PatientShopPage() {
                 return tab && /^https?:\/\//i.test(tab) ? tab.slice(0, 4000) : null;
               })()
             : null,
-      }]).select("id").maybeSingle();
+      };
 
+      let insertedRow: { id: string } | null = null;
+      let insertError = await supabase.from("orders").insert([orderRow]).select("id").maybeSingle();
+      if (insertError.error && /shipping_|schema cache|could not find/i.test(insertError.error.message)) {
+        const {
+          shipping_state: _ss,
+          shipping_address_line1: _a1,
+          shipping_city: _sc,
+          shipping_zip: _sz,
+          scheduling_ref: _sr,
+          scheduling_booking_url: _sb,
+          ...fallbackRow
+        } = orderRow;
+        insertError = await supabase.from("orders").insert([fallbackRow]).select("id").maybeSingle();
+      }
 
-      if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
+      if (insertError.error) {
+        console.error("[Shop] order insert:", insertError.error.message);
+        setError(friendlyEnrollmentError(insertError.error.message));
+        return;
+      }
+      insertedRow = insertError.data;
 
       const newOrderUuid = insertedRow?.id as string | undefined;
       if (!assigned && newOrderUuid && (state || "").trim()) {
@@ -1190,9 +1313,9 @@ export function PatientShopPage() {
       setResumeDraftAvailable(false);
       goToStage("confirmed");
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[Enrollment error]", err);
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(friendlyEnrollmentError(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -1578,8 +1701,10 @@ export function PatientShopPage() {
   }
 
   if (stage === "identity" && selected) {
+    const canContinueIdentity = Boolean(idFile) || (bypassIdentityVerify && identityAttestation);
+
     return (
-      <div className="max-w-md mx-auto space-y-6 pt-8">
+      <motion.div className="max-w-md mx-auto space-y-6 pt-8">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
            <PatientBrandMark size="md" />
@@ -1590,21 +1715,42 @@ export function PatientShopPage() {
              <ShieldCheck className="h-32 w-32" />
            </div>
 
-           <div className="flex items-center gap-2 mb-2">
-             <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-50 text-[10px] font-black uppercase">
-               Powered by Stripe Identity™
-             </Badge>
-           </div>
            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-800/80">
-             Step 7 · {getClientFlowRowByDiagramStep(7)?.title ?? "Identity verification (3rd party)"}
+             Step 7 · {getClientFlowRowByDiagramStep(7)?.title ?? "Identity verification"}
            </p>
-           <h1 className="text-2xl font-bold mt-2">Identity verification (3rd party)</h1>
+           <h1 className="text-2xl font-bold mt-2">Verify your identity</h1>
            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
              {getClientFlowRowByDiagramStep(7)?.subtitle ??
-               "Government ID verification for KYC — typically under one minute."}{" "}
-             To comply with KYC and telemedicine regulations, we use a government-issued ID. This usually takes less than
-             60 seconds.
+               "Upload a government-issued ID, or confirm below to continue until automated verification is enabled."}
            </p>
+
+           <div className="relative z-10 mt-6">
+             <EnrollmentIdUploadPanel
+               idAccept={ID_ACCEPT}
+               idFile={idFile}
+               setIdFile={setIdFile}
+               identityStripeCompleted={identityStripeCompleted}
+               setError={setError}
+               idUploadInputRef={idUploadInputRef}
+             />
+
+             {bypassIdentityVerify && !idFile && (
+               <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                 <input
+                   type="checkbox"
+                   className="mt-0.5 h-4 w-4 accent-emerald-600"
+                   checked={identityAttestation}
+                   onChange={(e) => {
+                     setIdentityAttestation(e.target.checked);
+                     if (e.target.checked) setError(null);
+                   }}
+                 />
+                 <span className="text-xs leading-relaxed text-slate-600">
+                   I confirm the name and date of birth I provided match my government ID.
+                 </span>
+               </label>
+             )}
+           </div>
 
            {error && (
              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold">
@@ -1612,63 +1758,28 @@ export function PatientShopPage() {
              </div>
            )}
 
-           <div className="space-y-4 mt-8 relative z-10">
+           <div className="relative z-10 mt-6 space-y-4">
               <Button
                 className="w-full rounded-2xl h-14 text-base font-bold bg-[#0A0D14] hover:bg-gray-800 text-white shadow-xl shadow-gray-900/10"
-                disabled={isVerifyingIdentity}
-                onClick={async () => {
-                  setIsVerifyingIdentity(true);
+                disabled={!canContinueIdentity}
+                onClick={() => {
                   setError(null);
-                  try {
-                    // Call our Edge Function to create a Stripe Identity session
-                    const { data, error: fnErr } = await supabase.functions.invoke('verify-identity', {
-                      body: {
-                        userId: useAuthStore.getState().user?.id ?? null,
-                        orderId: null, // order not created yet at this stage
-                      },
-                    });
-                    if (fnErr || !data?.clientSecret) {
-                      throw new Error(fnErr?.message || 'Could not start identity verification.');
-                    }
-                    // Load Stripe Identity SDK dynamically
-                    const stripe = await stripePromise;
-                    if (!stripe) throw new Error('Stripe failed to load.');
-                    const result = await (stripe as any).verifyIdentity(data.clientSecret);
-                    if (result.error) {
-                      setError(result.error.message || 'Verification failed.');
-                    } else {
-                      setIdentityStripeCompleted(true);
-                      goToStage("questionnaire");
-                    }
-                  } catch (e: any) {
-                    setError(e.message);
-                  } finally {
-                    setIsVerifyingIdentity(false);
-                  }
+                  setIdentityStripeCompleted(true);
+                  goToStage("questionnaire");
                 }}
               >
-                {isVerifyingIdentity ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-5 w-5 animate-spin text-emerald-400" /> Launching Verification...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2"><Shield className="h-5 w-5" /> Verify My Identity</span>
-                )}
+                <span className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" /> Continue to intake
+                  <ChevronRight className="h-4 w-4" />
+                </span>
               </Button>
-
-              <button
-                className="w-full text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-                onClick={() => goToStage('questionnaire')}
-              >
-                Skip for now (verification required before prescription is issued)
-              </button>
            </div>
         </div>
 
         <p className="text-xs text-center text-muted-foreground mt-6 flex items-center justify-center gap-1.5">
-           <Shield className="h-3.5 w-3.5 text-emerald-500" /> End-to-end encrypted · HIPAA compliant · Powered by Stripe
+           <Shield className="h-3.5 w-3.5 text-emerald-500" /> End-to-end encrypted · HIPAA compliant
         </p>
-      </div>
+      </motion.div>
     );
   }
 
@@ -2210,30 +2321,39 @@ export function PatientShopPage() {
   if (stage === "questionnaire" && selected && (totalQ === 0 || currentQ)) {
     const onLastIntakeStep = totalQ === 0 || qStep === totalQ - 1;
     const showScheduler = needsScheduledVideo && onLastIntakeStep;
+    const intakeReadyToSubmit =
+      Boolean(idDocumentType) && (Boolean(idFile) || identityStripeCompleted);
 
     return (
-      <div className="min-h-[100dvh] w-full bg-gradient-to-b from-background via-background to-muted/20">
+      <div className="min-h-[100dvh] w-full bg-gradient-to-b from-emerald-50/30 via-background to-muted/20">
         <div className="mx-auto w-full max-w-2xl space-y-6 px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-28">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-6">
            <PatientBrandMark size="md" />
         </div>
-        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-800/80">
-          Step 8 · {getClientFlowRowByDiagramStep(8)?.title ?? "Intake form (questionnaire)"}
-        </p>
+        <div className="space-y-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-800/80">
+            Step 8 · {getClientFlowRowByDiagramStep(8)?.title ?? "Medical intake"}
+          </p>
+          <h1 className="text-2xl font-bold text-[#0A0D14]">Medical intake</h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {getClientFlowRowByDiagramStep(8)?.subtitle ??
+              "Confirm your ID type and answer clinical questions for your care team."}
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => {
             if (totalQ > 0 && qStep > 0) setQStep((q) => q - 1);
             else goToStage("identity");
           }}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mt-2"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
         <div>
           <div className="flex items-center justify-between mb-2 gap-3">
-            <h1 className="text-lg font-bold">{selected.name}</h1>
+            <p className="text-sm font-semibold text-slate-600">{selected.name}</p>
             {totalQ > 0 ? (
               <span className="text-xs text-muted-foreground shrink-0">{qStep + 1} / {totalQ}</span>
             ) : (
@@ -2248,40 +2368,80 @@ export function PatientShopPage() {
             </div>
           )}
         </div>
+
+        <Card className="border-emerald-100/80 shadow-sm">
+          <CardContent className="p-5 sm:p-6">
+            <IdDocumentTypePicker value={idDocumentType} onChange={setIdDocumentType} />
+          </CardContent>
+        </Card>
+
         {currentQ && (
-        <Card>
-          <CardContent className="p-5 space-y-4">
-            <p className="font-semibold text-sm">
+        <Card className="shadow-sm">
+          <CardContent className="p-5 sm:p-6 space-y-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Clinical question</p>
+            <p className="font-semibold text-base text-[#0A0D14]">
               {currentQ.label}
               {currentQ.required && <span className="text-red-500 ml-1">*</span>}
             </p>
             {currentQ.type === "text" && (
-              <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
-                placeholder="Your answer..." onChange={e => handleAnswer(currentQ.id, e.target.value)} />
+              <input
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/15"
+                placeholder="Your answer..."
+                value={(answers[currentQ.id] as string) || ""}
+                onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
+              />
             )}
             {currentQ.type === "number" && (
-              <input type="number" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
-                placeholder="0" onChange={e => handleAnswer(currentQ.id, e.target.value)} />
+              <input
+                type="number"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/15"
+                placeholder="0"
+                value={(answers[currentQ.id] as string) || ""}
+                onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
+              />
             )}
             {currentQ.type === "textarea" && (
-              <textarea rows={4} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary resize-none"
-                placeholder="Describe in detail..." onChange={e => handleAnswer(currentQ.id, e.target.value)} />
+              <textarea
+                rows={4}
+                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/15"
+                placeholder="Describe in detail..."
+                value={(answers[currentQ.id] as string) || ""}
+                onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
+              />
             )}
             {currentQ.type === "select" && (
-              <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
-                onChange={e => handleAnswer(currentQ.id, e.target.value)}>
-                <option value="">Select an option...</option>
-                {currentQ.options?.map(o => <option key={o} value={o}>{o}</option>)}
+              <select
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/15"
+                value={(answers[currentQ.id] as string) || ""}
+                onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
+              >
+                <option value="">Choose one...</option>
+                {currentQ.options?.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
               </select>
             )}
-            {currentQ.type === "radio" && currentQ.options?.map(o => (
-              <label key={o} className={cn("flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all",
-                answers[currentQ.id] === o ? "border-primary bg-primary/5" : "border-border hover:bg-accent")}>
-                <input type="radio" name={currentQ.id} value={o} className="accent-primary"
-                  onChange={() => handleAnswer(currentQ.id, o)} />
-                <span className="text-sm">{o}</span>
-              </label>
-            ))}
+            {currentQ.type === "radio" && (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {currentQ.options?.map((o) => (
+                  <button
+                    key={o}
+                    type="button"
+                    onClick={() => handleAnswer(currentQ.id, o)}
+                    className={cn(
+                      "rounded-xl border-2 px-4 py-3 text-left text-sm font-semibold transition-all",
+                      answers[currentQ.id] === o
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-900"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-emerald-200",
+                    )}
+                  >
+                    {o}
+                  </button>
+                ))}
+              </div>
+            )}
             {currentQ.type === "checkbox" && currentQ.options?.map(o => (
               <label key={o} className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer hover:bg-accent">
                 <input type="checkbox" className="h-4 w-4 accent-primary" />
@@ -2296,7 +2456,6 @@ export function PatientShopPage() {
                 identityStripeCompleted={identityStripeCompleted}
                 setError={setError}
                 idUploadInputRef={idUploadInputRef}
-                onOpenStripeIdentity={() => goToStage("identity")}
                 embedded
               />
             )}
@@ -2320,7 +2479,6 @@ export function PatientShopPage() {
                 identityStripeCompleted={identityStripeCompleted}
                 setError={setError}
                 idUploadInputRef={idUploadInputRef}
-                onOpenStripeIdentity={() => goToStage("identity")}
               />
             </CardContent>
           </Card>
@@ -2354,17 +2512,23 @@ export function PatientShopPage() {
             </label>
           </>
         )}
+        {onLastIntakeStep && !intakeReadyToSubmit && (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-medium text-amber-900">
+            Select your ID type above
+            {!idFile && !identityStripeCompleted ? " and complete step 7 (ID upload or confirmation)" : ""} to submit.
+          </p>
+        )}
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-800 shadow-sm dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-100">
-            <span className="mr-1.5 inline-block" aria-hidden>⚠️</span>
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-950">
             {error}
           </div>
         )}
         <Button
           className="w-full rounded-xl h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2"
-          disabled={isSubmitting}
+          disabled={isSubmitting || (onLastIntakeStep && !intakeReadyToSubmit)}
           onClick={() => {
             if (totalQ > 0 && qStep < totalQ - 1) {
+              setError(null);
               setQStep((s) => s + 1);
               return;
             }
