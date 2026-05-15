@@ -32,6 +32,18 @@ if (!existsSync(migrationsDir)) {
       console.log("✓ Found", name);
     }
   }
+
+  const recommended = [
+    "20260515190000_admin_questionnaires_orders_columns_audit.sql",
+    "20260516120000_scheduling_correlation_and_routing.sql",
+  ];
+  for (const name of recommended) {
+    if (!files.includes(name)) {
+      console.warn("⚠ Recommended migration missing (video / admin tables):", name);
+    } else {
+      console.log("✓ Found (recommended)", name);
+    }
+  }
 }
 
 const legacyReadme = join(root, "supabase", "LEGACY_SQL.md");
@@ -49,5 +61,6 @@ if (existsSync(rollout)) {
 }
 
 console.log("\nNext: follow docs/ENGINEERING_ROLLOUT.md → Step 3 (db push).");
-console.log("Production env gate: CI=true + secrets → npm run check:production\n");
+console.log("Production env gate: CI=true + secrets → npm run check:production");
+console.log("Scheduling / video gate: npm run check:scheduling-gate (after db push + env)\n");
 process.exit(ok ? 0 : 1);

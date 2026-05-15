@@ -34,7 +34,7 @@ Database RLS and migrations: see **`docs/ENGINEERING_ROLLOUT.md`** (apply those 
 ## Phase 4 — Third-party & content
 
 11. **Referly** — set `VITE_REFERLY_SITE_ID` at build time (replaces placeholder in `index.html` via Vite).  
-12. **Scheduling** — set `VITE_SCHEDULING_EMBED_URL` or per-product `scheduling_embed_url` in `products.features`.
+12. **Scheduling** — set `VITE_SCHEDULING_EMBED_URL` or per-product `scheduling_embed_url` in `products.features`. After `db push`, run **`npm run check:scheduling-gate`** (with Supabase URL + anon key in the environment; optional service role for deeper probes — see `docs/ENGINEERING_ROLLOUT.md` Step 3b).
 
 ---
 
