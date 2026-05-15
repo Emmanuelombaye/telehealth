@@ -17,7 +17,7 @@ import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
 import {
   ensurePatientPortalRoleAfterEnrollment,
-  primePatientPortalNavigation,
+  navigateToPatientPortalAfterEnrollment,
 } from "../../../../lib/enrollmentPatientAuth";
 import { 
   usePatientStore, 
@@ -1205,6 +1205,8 @@ export function PatientShopPage() {
           userId,
           resolvedEmail,
           `${resolvedFirstName} ${resolvedLastName}`.trim(),
+          resolvedFirstName,
+          resolvedLastName,
         );
         await initialize(); // Refresh auth store so the rest of the app knows the user is logged in
       } else if (userId) {
@@ -1212,6 +1214,8 @@ export function PatientShopPage() {
           userId,
           resolvedEmail,
           `${resolvedFirstName} ${resolvedLastName}`.trim(),
+          resolvedFirstName,
+          resolvedLastName,
         );
         await initialize();
       }
@@ -1401,9 +1405,7 @@ export function PatientShopPage() {
         <Button
           className="w-full rounded-xl text-base h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
           onClick={() => {
-            primePatientPortalNavigation();
-            // Hard reload ensures the protected route and layout pick up the new session immediately
-            window.location.href = "/patient";
+            navigateToPatientPortalAfterEnrollment();
           }}>
           Enter My Patient Portal →
         </Button>

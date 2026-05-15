@@ -2,6 +2,10 @@ import { useEffect, useRef } from 'react';
 import { useNavigate, Outlet } from 'react-router';
 import { useAuthStore, Role } from '../../lib/auth-store';
 import { doctorPortalBaseFromPath } from '../../lib/doctorPortalBase';
+import {
+  clearForcePatientPortalIntent,
+  hasForcePatientPortalIntent,
+} from '../../lib/enrollmentPatientAuth';
 
 const portalLoginUrl = (path: string) => {
   if (path.startsWith('/doctor')) return '/doctor/login';
@@ -41,9 +45,10 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
   const navigate = useNavigate();
   const redirected = useRef(false);
 
-  // Effective role: real auth role takes priority, dev override as fallback
+  // Dev override only when there is no real Supabase user (staff testing bypass).
   const devRole = getDevRoleOverride();
-  const effectiveRole = role || devRole;
+  const forcePatient = hasForcePatientPortalIntent();
+  const effectiveRole = forcePatient ? 'patient' : user ? role : devRole;
   const isAuthenticated = !!user || !!devRole;
 
   // Memoize allowed roles check to prevent infinite loops from unstable array props
@@ -65,7 +70,12 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
     }
 
     // 4. Handle Role-based Access Control (RBAC)
-    if (allowedRoles && effectiveRole && !allowedRoles.includes(effectiveRole)) {
+    if (
+      allowedRoles &&
+      effectiveRole &&
+      !allowedRoles.includes(effectiveRole) &&
+      !forcePatient
+    ) {
       redirected.current = true;
       
       const doctorBase =
@@ -97,8 +107,18 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
   if (!isAuthenticated) return <AuthLoadingScreen />;
 
   // Logged in but wrong role — show nothing while redirect fires
-  if (allowedRoles && effectiveRole && !allowedRoles.includes(effectiveRole)) return <AuthLoadingScreen />;
+  if (
+    allowedRoles &&
+    effectiveRole &&
+    !allowedRoles.includes(effectiveRole) &&
+    !forcePatient
+  ) {
+    return <AuthLoadingScreen />;
+  }
 
   // ✅ Authenticated + correct role — render the portal
+  if (forcePatient && window.location.pathname.startsWith('/patient')) {
+    clearForcePatientPortalIntent();
+  }
   return <Outlet />;
 }

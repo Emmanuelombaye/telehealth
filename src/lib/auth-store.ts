@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from './supabaseClient';
 import { User, Session } from '@supabase/supabase-js';
+import { hasForcePatientPortalIntent } from './enrollmentPatientAuth';
 
 export type Role =
   | 'patient'
@@ -27,27 +28,24 @@ interface AuthState {
  * then profiles sync. Brand id uses the same precedence.
  */
 function getRoleFromSession(session: Session): { role: Role; brandId: string | null } {
-  // Priority 1: Dev override (Always highest priority for staff/testing bypass)
-  const devRole = typeof window !== 'undefined' ? localStorage.getItem('peak_health_dev_role') : null;
-  
   const meta = session.user.user_metadata || {};
-  const appMeta = (session.user as any).app_metadata || {};
-
+  const appMeta = (session.user as { app_metadata?: { role?: string; brand_id?: string } }).app_metadata || {};
   const brandId = appMeta.brand_id || meta.brand_id || null;
 
-  if (devRole) {
-    return { role: devRole as Role, brandId };
+  // Shop enrollment just completed — must land on patient portal even if staff JWT/dev state exists.
+  if (hasForcePatientPortalIntent()) {
+    return { role: 'patient', brandId };
   }
 
-  // Priority 2: app_metadata (set server-side via admin API)
-  // Priority 3: user_metadata (set at signup)
+  // Dev override applies only without a real session (see initialize fake-user path).
+  // Priority 1: app_metadata (set server-side via admin API)
+  // Priority 2: user_metadata (set at signup / enrollment)
   const sessionRole = (appMeta.role || meta.role) as Role;
 
   if (sessionRole) {
     return { role: sessionRole, brandId };
   }
 
-  // Default
   return { role: 'patient', brandId };
 }
 
@@ -63,6 +61,9 @@ function sessionJwtRole(session: Session): Role | null {
 
 async function syncProfile(session: Session): Promise<{ role: Role; brandId: string | null }> {
   const jwtRB = getRoleFromSession(session);
+  if (hasForcePatientPortalIntent()) {
+    return { role: 'patient', brandId: jwtRB.brandId };
+  }
   try {
     const { data, error } = await supabase
       .from('profiles')
