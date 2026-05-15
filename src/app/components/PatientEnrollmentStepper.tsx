@@ -9,13 +9,21 @@ import {
 export function PatientEnrollmentStepper({
   stage,
   className,
+  intakePath,
 }: {
   stage: ShopFlowStage;
   className?: string;
+  intakePath?: "video" | "async";
 }) {
   const activeIdx = journeyIndexForStage(stage);
   const active = CLIENT_PATIENT_FLOW_NINE_STEPS[activeIdx];
   const n = CLIENT_FLOW_DIAGRAM_STEP_COUNT;
+  const intakeSuffix =
+    stage === "questionnaire" && intakePath === "video"
+      ? " · Video visit"
+      : stage === "questionnaire" && intakePath === "async"
+        ? " · Review only"
+        : "";
 
   return (
     <div className={cn("w-full space-y-2.5", className)} role="navigation" aria-label="Enrollment progress">
@@ -23,7 +31,7 @@ export function PatientEnrollmentStepper({
         <span className="tabular-nums text-emerald-700">Step {active.diagramStep}</span>
         <span className="font-normal text-slate-400"> / {n}</span>
         <span className="font-normal text-slate-400"> · </span>
-        <span>{active.title}</span>
+        <span>{active.title}{intakeSuffix}</span>
       </p>
 
       <div

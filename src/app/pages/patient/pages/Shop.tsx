@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { PatientSchedulingPanel } from "../../../components/patient/PatientSchedulingPanel.tsx";
+import { IntakeRoutingBanner } from "../../../components/patient/IntakeRoutingBanner.tsx";
+import { evaluateEnrollmentVideoRouting } from "../../../../lib/enrollVideoRouting";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
 import {
@@ -26,7 +28,6 @@ import {
 import {
   parseProductVideoRules,
   parseGlobalVideoStatesFromEnv,
-  requiresSyncVideoVisit,
   computeNumericBmi,
   computeAgeYears,
   type ConsultRoutingRuleRow,
@@ -860,10 +861,41 @@ export function PatientShopPage() {
     };
   }, [state, selected, heightFt, heightIn, weight, dob, answers]);
 
-  const needsScheduledVideo = useMemo(() => {
-    if (!videoRules) return false;
-    return requiresSyncVideoVisit(videoRules, globalVideoStates, routingRulesFromDb, clinicalContext);
-  }, [videoRules, globalVideoStates, routingRulesFromDb, clinicalContext]);
+  /** Drug + state + admin rules only — questionnaire answers never control video routing. */
+  const enrollmentVideoRouting = useMemo(() => {
+    if (!selected || !videoRules) {
+      return evaluateEnrollmentVideoRouting(null, globalVideoStates, routingRulesFromDb, {
+        patientState: state,
+        productCategory: "",
+        productId: "",
+        heightFt,
+        heightIn,
+        weight,
+        dob,
+      });
+    }
+    return evaluateEnrollmentVideoRouting(videoRules, globalVideoStates, routingRulesFromDb, {
+      patientState: state,
+      productCategory: selected.category,
+      productId: selected.id,
+      heightFt,
+      heightIn,
+      weight,
+      dob,
+    });
+  }, [
+    selected,
+    videoRules,
+    globalVideoStates,
+    routingRulesFromDb,
+    state,
+    heightFt,
+    heightIn,
+    weight,
+    dob,
+  ]);
+
+  const needsScheduledVideo = enrollmentVideoRouting.requiresSyncVideo;
 
   const [schedulingRef, setSchedulingRef] = useState<string | null>(null);
   useEffect(() => {
@@ -881,7 +913,6 @@ export function PatientShopPage() {
 
   useEffect(() => {
     if (stage !== "questionnaire" || !needsScheduledVideo || !selected) return;
-    if (totalQ > 0 && qStep !== totalQ - 1) return;
     let cancelled = false;
     (async () => {
       setSchedulingDoctorLoading(true);
@@ -921,7 +952,7 @@ export function PatientShopPage() {
     return () => {
       cancelled = true;
     };
-  }, [stage, needsScheduledVideo, selected?.id, qStep, totalQ, state]);
+  }, [stage, needsScheduledVideo, selected?.id, state]);
 
   const rawSchedulingBase = useMemo(() => {
     const docUrl = assignedDoctorForScheduling?.calendly_url?.trim();
@@ -1167,14 +1198,20 @@ export function PatientShopPage() {
       }
 
       const rules = parseProductVideoRules(selected.rawFeatures);
-      const needsVideo = requiresSyncVideoVisit(rules, globalVideoStates, routingRulesFromDb, {
-        patientState: state,
-        productCategory: selected.category,
-        productId: selected.id,
-        bmi: computeNumericBmi(heightFt, heightIn, weight),
-        age: computeAgeYears(dob) ?? (dob ? new Date().getFullYear() - new Date(dob).getFullYear() : null),
-        answers,
-      });
+      const needsVideo = evaluateEnrollmentVideoRouting(
+        rules,
+        globalVideoStates,
+        routingRulesFromDb,
+        {
+          patientState: state,
+          productCategory: selected.category,
+          productId: selected.id,
+          heightFt,
+          heightIn,
+          weight,
+          dob,
+        },
+      ).requiresSyncVideo;
       if (needsVideo && !bookingAttestation) {
         setError("Please book a time in the calendar above and confirm before continuing.");
         return;
@@ -1261,13 +1298,27 @@ export function PatientShopPage() {
         intake_notes:      `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Blood: ${bloodType} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
         intake_answers:    {
           ...answers,
+          _routing: {
+            requires_sync_video: needsVideo,
+            path: needsVideo ? "video" : "async",
+            reasons: enrollmentVideoRouting.reasons,
+            product_id: selected.id,
+            shipping_state: shipState,
+          },
           _identity: {
             document_type: idDocumentType,
             has_upload: Boolean(idFile),
             verified: identityStripeCompleted,
           },
           ...(needsVideo
-            ? { _scheduling: { external_calendar: true, acknowledged_booking: bookingAttestation } }
+            ? {
+                _scheduling: {
+                  external_calendar: true,
+                  acknowledged_booking: bookingAttestation,
+                  scheduling_ref: schedulingRef,
+                  booking_url: rawSchedulingBase,
+                },
+              }
             : {}),
         },
         patient_vitals:    patientVitals,
@@ -1287,11 +1338,13 @@ export function PatientShopPage() {
                 return tab && /^https?:\/\//i.test(tab) ? tab.slice(0, 4000) : null;
               })()
             : null,
+        requires_sync_video: needsVideo,
+        video_routing_reasons: needsVideo ? enrollmentVideoRouting.reasons : [],
       };
 
       let insertedRow: { id: string } | null = null;
       let insertError = await supabase.from("orders").insert([orderRow]).select("id").maybeSingle();
-      if (insertError.error && /shipping_|schema cache|could not find/i.test(insertError.error.message)) {
+      if (insertError.error && /shipping_|schema cache|could not find|requires_sync_video|video_routing/i.test(insertError.error.message)) {
         const {
           shipping_state: _ss,
           shipping_address_line1: _a1,
@@ -1299,6 +1352,8 @@ export function PatientShopPage() {
           shipping_zip: _sz,
           scheduling_ref: _sr,
           scheduling_booking_url: _sb,
+          requires_sync_video: _rsv,
+          video_routing_reasons: _vrr,
           ...fallbackRow
         } = orderRow;
         insertError = await supabase.from("orders").insert([fallbackRow]).select("id").maybeSingle();
@@ -2407,11 +2462,13 @@ export function PatientShopPage() {
     const onLastIntakeStep = totalQ === 0 || qStep === totalQ - 1;
     const showScheduler = needsScheduledVideo && onLastIntakeStep;
     const intakeReadyToSubmit = Boolean(idFile) || identityStripeCompleted;
+    const videoBookingReady = !showScheduler || bookingAttestation;
+    const canSubmitIntake = intakeReadyToSubmit && videoBookingReady;
 
     return (
-      <div className="min-h-[100dvh] w-full bg-gradient-to-b from-emerald-50/30 via-background to-muted/20">
-        <div className="mx-auto w-full max-w-2xl space-y-6 px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-28">
-        <PatientEnrollmentStepper stage={stage} />
+      <motion.div className="min-h-[100dvh] w-full bg-gradient-to-b from-emerald-50/30 via-background to-muted/20">
+        <motion.div className="mx-auto w-full max-w-2xl space-y-6 px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-28">
+        <PatientEnrollmentStepper stage={stage} intakePath={enrollmentVideoRouting.pathLabel} />
         <div className="flex justify-center mb-6">
            <PatientBrandMark size="md" />
         </div>
@@ -2421,10 +2478,14 @@ export function PatientShopPage() {
           </p>
           <h1 className="text-2xl font-bold text-[#0A0D14]">Medical intake</h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            {getClientFlowRowByDiagramStep(8)?.subtitle ??
-              "Answer clinical questions for your care team. Live visit scheduling (when required) is included here."}
+            {needsScheduledVideo
+              ? "Answer clinical questions, then schedule your required video visit with a licensed clinician."
+              : "Answer clinical questions for your care team. No live video call is required for your program."}
           </p>
         </div>
+
+        <IntakeRoutingBanner routing={enrollmentVideoRouting} />
+
         <button
           type="button"
           onClick={() => {
@@ -2570,6 +2631,11 @@ export function PatientShopPage() {
             Complete step 7 (identity verification) before submitting your enrollment.
           </p>
         )}
+        {onLastIntakeStep && intakeReadyToSubmit && showScheduler && !bookingAttestation && (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-medium text-amber-900">
+            Book your video visit in the calendar above (or confirm the checkbox) before submitting.
+          </p>
+        )}
         {error && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-950">
             {error}
@@ -2577,7 +2643,7 @@ export function PatientShopPage() {
         )}
         <Button
           className="w-full rounded-xl h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2"
-          disabled={isSubmitting || (onLastIntakeStep && !intakeReadyToSubmit)}
+          disabled={isSubmitting || (onLastIntakeStep && !canSubmitIntake)}
           onClick={() => {
             if (totalQ > 0 && qStep < totalQ - 1) {
               setError(null);
@@ -2597,13 +2663,17 @@ export function PatientShopPage() {
             </>
           ) : (
             <>
-              {totalQ > 0 && qStep < totalQ - 1 ? "Continue" : "Submit enrollment"}
+              {totalQ > 0 && qStep < totalQ - 1
+                ? "Continue"
+                : needsScheduledVideo
+                  ? "Submit enrollment & video booking"
+                  : "Submit enrollment"}
               <ChevronRight className="h-4 w-4 ml-1" />
             </>
           )}
         </Button>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 

@@ -239,13 +239,24 @@ export function DoctorQueuePage() {
                       <div>
                         <p className="font-semibold text-slate-800 group-hover:text-emerald-50 transition-colors">{order.medication}</p>
                         <p className="text-xs text-slate-500 mt-0.5 group-hover:text-emerald-200/40 transition-colors">{order.category || "General Wellness"}</p>
+                        {(order.zoomStatus ?? order.zoom_status ?? "not_requested") === "not_requested" ? (
+                          <span className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 group-hover:bg-white/20 group-hover:text-emerald-100">
+                            <FileText className="h-3 w-3" aria-hidden />
+                            Async review
+                          </span>
+                        ) : (
+                          <span className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-violet-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-800 group-hover:bg-white/20 group-hover:text-emerald-100">
+                            <Video className="h-3 w-3" aria-hidden />
+                            Video visit
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-slate-600 group-hover:text-emerald-100 transition-colors">
+                      <motion.div className="flex items-center gap-2 text-slate-600 group-hover:text-emerald-100 transition-colors">
                         <Clock className="h-4 w-4 text-slate-400 group-hover:text-emerald-300" />
                         <span className="font-medium text-xs">{new Date(order.orderedDate || (order as any).ordered_date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
-                      </div>
+                      </motion.div>
                     </td>
                     <td className="px-6 py-4">
                        <Badge variant="outline" className={cn(
