@@ -4,6 +4,7 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { usePatientStore } from "../../../../lib/patient-store";
 import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
+import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice.tsx";
 
 export function SuperAdminFinancePage() {
   const { orders } = usePatientStore();
@@ -113,7 +114,7 @@ export function SuperAdminFinancePage() {
     <SuperAdminShell
       eyebrow="Finance"
       title="Platform finance"
-      description="MRR and payouts are derived from orders visible to this session. CSV export uses the same aggregation as before."
+      description="Diagram D: platform revenue, fees, and payouts from non-clinical order data. CSV export matches on-screen aggregates."
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
@@ -142,6 +143,7 @@ export function SuperAdminFinancePage() {
         </div>
       }
     >
+      <AdminScopeNotice variant="platform" />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Platform MRR", value: `$${totalPlatformMRR.toLocaleString()}`, icon: DollarSign, hint: "Sum of order amounts" },

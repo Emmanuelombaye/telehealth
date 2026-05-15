@@ -1,9 +1,5 @@
 import type { Role } from "./auth-store";
 
-type OrdersQuery = {
-  eq: (column: string, value: string) => OrdersQuery;
-};
-
 /**
  * Orders columns safe for brand / platform admin UIs (no intake payloads, vitals, or prescriber free-text).
  * Keep in sync with migrations under `supabase_*.sql`; omit columns your DB does not have if PostgREST errors.
@@ -79,12 +75,12 @@ export function ordersSelectForMode(mode: OrdersFetchMode): string {
   return mode === "admin" ? ORDERS_ADMIN_NON_CLINICAL_SELECT : "*";
 }
 
-/** Brand admins are strictly scoped to their JWT `brand_id` / `sub_brand` string. */
-export function applyOrdersBrandScope(
-  q: OrdersQuery,
+/** Brand-scopes an orders query builder; preserves concrete Supabase/PostgREST chain types. */
+export function applyOrdersBrandScope<Q extends { eq: (column: string, value: string) => Q }>(
+  q: Q,
   role: Role | null,
   brandId: string | null
-): OrdersQuery {
+): Q {
   if (role === "brand_admin" && brandId) {
     return q.eq("sub_brand", brandId);
   }

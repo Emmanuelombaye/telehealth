@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router";
 
 const tabs = ["Weight Loss","Longevity","Muscle Recovery","Hair Loss"];
-const treatments: Record<string, { name:string; price:string; tag:string; tagColor:string; tagBg:string; desc:string; badge:string }> = {
+type TreatmentCard = { name:string; price:string; tag:string; tagColor:string; tagBg:string; desc:string; badge:string };
+const treatments: Record<string, TreatmentCard[]> = {
   "Weight Loss": [
     { name:"Semaglutide+", price:"From $146/mo", tag:"GLP-1", tagColor:"text-violet-600", tagBg:"bg-violet-100", desc:"Weekly injection protocol. Clinically proven appetite suppression and metabolic optimization.", badge:"Most Popular" },
     { name:"Tirzepatide+", price:"From $189/mo", tag:"Dual GIP/GLP-1", tagColor:"text-blue-600", tagBg:"bg-blue-100", desc:"Dual-action receptor agonist. Superior weight loss outcomes with improved insulin sensitivity.", badge:"Best Results" },

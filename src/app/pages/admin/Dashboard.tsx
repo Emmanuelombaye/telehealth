@@ -12,6 +12,16 @@ import { useAuthStore } from "../../../lib";
 import { supabase } from "../../../lib/supabaseClient";
 import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope } from "../../../lib/adminScope";
 import { motion, AnimatePresence } from "framer-motion";
+import { AdminScopeNotice } from "../../components/admin/AdminScopeNotice.tsx";
+
+function countUniquePatients(orderRows: { user_id?: string; patient_email?: string; patient_name?: string }[]) {
+  const seen = new Set<string>();
+  for (const o of orderRows) {
+    const key = String(o?.user_id ?? o?.patient_email ?? o?.patient_name ?? "").trim();
+    if (key) seen.add(key);
+  }
+  return seen.size || 0;
+}
 
 export function AdminDashboard() {
   const user = useAuthStore(state => state.user);
@@ -78,7 +88,10 @@ export function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-white p-6 lg:p-10 font-sans text-[#0A0D14] animate-in fade-in duration-700">
-      
+      <div className="max-w-[1600px] mx-auto mb-8">
+        <AdminScopeNotice variant="brand" />
+      </div>
+
       {/* EXECUTIVE HEADER */}
       <div className="flex flex-col lg:flex-row items-center justify-between mb-16 gap-8 animate-slide-in-right">
         <div className="flex items-center gap-8">
@@ -90,9 +103,9 @@ export function AdminDashboard() {
                 Welcome, <span className="text-emerald-600 font-serif italic">{adminName}</span>
               </h1>
               <div className="flex items-center gap-4 mt-1">
-                 <Badge className="bg-emerald-50 text-emerald-700 border-none px-4 py-1 font-black uppercase tracking-widest text-[9px] rounded-full">BRAND OPERATOR</Badge>
+                 <Badge className="bg-emerald-50 text-emerald-700 border-none px-4 py-1 font-black uppercase tracking-widest text-[9px] rounded-full">BRAND EXECUTIVE</Badge>
                  <div className="flex items-center gap-2 text-slate-400 font-bold text-sm">
-                    <Activity size={16} className="text-emerald-500 animate-pulse" /> Live Brand Synchronization
+                    <Activity size={16} className="text-emerald-500 animate-pulse" /> Tenant-scoped operations (non-clinical)
                  </div>
               </div>
            </div>
@@ -109,7 +122,7 @@ export function AdminDashboard() {
            </div>
            <Link to="/admin/orders">
              <Button className="h-14 rounded-2xl bg-[#0A2E1F] text-white hover:bg-emerald-950 px-8 font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-emerald-900/10">
-                New Order <Plus className="ml-2 h-4 w-4" />
+                Manage orders <ChevronRight className="ml-2 h-4 w-4" />
              </Button>
            </Link>
         </div>
@@ -188,7 +201,7 @@ export function AdminDashboard() {
                  </div>
                  <div className="space-y-6">
                     {[
-                      { label: "Active Patients", val: uniquePatientsCount(orders), icon: Users },
+                      { label: "Active Patients", val: countUniquePatients(orders), icon: Users },
                       { label: "Fulfillment Rate", val: "99.2%", icon: Zap },
                       { label: "Average AOV", val: `$${(totalRevenue / (orders.length || 1)).toFixed(0)}`, icon: DollarSign },
                     ].map((m, i) => (
@@ -245,14 +258,3 @@ export function AdminDashboard() {
     </div>
   );
 }
-
-function uniquePatientsCount(orders: any[]) {
-  return new Set(orders.map(o => o.patient_name)).size.toString();
-}
-
-const Plus = ({ className }: { className?: string }) => (
-  <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="5" x2="12" y2="19"></line>
-    <line x1="5" y1="12" x2="19" y2="12"></line>
-  </svg>
-);

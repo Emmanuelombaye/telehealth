@@ -163,8 +163,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
             }
             if (
               portal === 'affiliate' &&
-              role !== 'affiliate' &&
-              role !== 'super_admin'
+              role !== 'affiliate'
             ) {
               setError("Access denied. Affiliate portal only.");
               await supabase.auth.signOut();

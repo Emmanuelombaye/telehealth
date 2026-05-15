@@ -43,6 +43,8 @@ export type ClinicalContext = {
 
 export type ConsultRoutingRuleRow = {
   id: string;
+  /** Display label when present (UI / admin tooling). */
+  label?: string | null;
   priority: number;
   active: boolean;
   match_states: string[] | null;

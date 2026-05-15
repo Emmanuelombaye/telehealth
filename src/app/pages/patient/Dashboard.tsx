@@ -44,7 +44,10 @@ export function PatientDashboard() {
   const user = useAuthStore(state => state.user);
   const firstName = user?.user_metadata?.first_name || 'Patient';
   const [activeConsult, setActiveConsult] = useState<any>(null);
-  
+  const orders = usePatientStore((state) => state.orders);
+  const fetchOrders = usePatientStore((state) => state.fetchOrders);
+  const subscribeToOrders = usePatientStore((state) => state.subscribeToOrders);
+
   useEffect(() => {
     if (user?.id) {
       fetchOrders();

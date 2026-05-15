@@ -74,14 +74,17 @@ export function AppointmentsPage() {
         .select(`${APPOINTMENTS_ORDER_SELECT_BASE}, scheduling_booking_url`)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      let { data, error } = await q;
+      const first = await q;
+      /** Widen rows so fallback select (without scheduling_booking_url) stays assignable. */
+      let data: Record<string, any>[] | null = first.data ?? null;
+      let error = first.error;
       if (error && isMissingSchedulingBookingColumnError(error)) {
         const retry = await supabase
           .from("orders")
           .select(APPOINTMENTS_ORDER_SELECT_BASE)
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
-        data = retry.data;
+        data = retry.data ?? null;
         error = retry.error;
       }
       if (error) throw error;

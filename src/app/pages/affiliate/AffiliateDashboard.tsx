@@ -339,7 +339,7 @@ export function AffiliateDashboard() {
                  <Card className="p-10 border-none shadow-xl shadow-slate-200/40 rounded-[3rem] bg-emerald-50/50 border border-emerald-100">
                     <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">Payment Method</p>
                     <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight truncate">Stripe •••• 4242</h3>
-                    <Button variant="link" className="mt-4 p-0 h-auto text-[9px] font-black text-emerald-600 uppercase tracking-widest">Update Details →</Button>
+                    <Button variant="ghost" className="mt-4 p-0 h-auto text-[9px] font-black text-emerald-600 uppercase tracking-widest">Update Details →</Button>
                  </Card>
               </div>
 

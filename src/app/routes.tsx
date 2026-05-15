@@ -259,7 +259,8 @@ export const router = createBrowserRouter([
               { path: "finance", Component: SuperAdminFinancePage },
               { path: "audit", Component: AdminAuditPage },
               { path: "security", Component: SuperAdminSecurityPage },
-              { path: "orders", Component: AdminOrdersPage }, // Reusing the high-fidelity orders view for SuperAdmin
+              { path: "orders", Component: AdminOrdersPage },
+              { path: "patients", Component: AdminPatientsPage },
               { path: "products", Component: AdminProductsPage },
               { path: "settings", Component: AdminSettingsPage },
               { path: "notifications", Component: DoctorNotificationsPage },

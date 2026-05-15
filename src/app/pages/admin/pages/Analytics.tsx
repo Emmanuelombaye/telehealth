@@ -64,7 +64,7 @@ export function AdminAnalyticsPage() {
 
     const totalRevenue = filteredOrders.reduce((sum, o) => sum + parseFloat(o.amount?.replace(/[$,]/g, '') || "0"), 0);
     const prevRevenue = prevOrders.reduce((sum, o) => sum + parseFloat(o.amount?.replace(/[$,]/g, '') || "0"), 0);
-    const revTrend = prevRevenue ? ((totalRevenue - prevRevenue) / prevRevenue * 100).toFixed(1) : "+100";
+    const revTrendPct = prevRevenue ? ((totalRevenue - prevRevenue) / prevRevenue * 100) : 100;
 
     const totalConsults = filteredOrders.filter(o => 
       ["medical_review", "rx_sent", "shipped", "delivered"].includes(o.status)
@@ -141,7 +141,7 @@ export function AdminAnalyticsPage() {
 
     return {
       revenue: `$${totalRevenue.toLocaleString()}`,
-      revenueTrend: `${revTrend > 0 ? '+' : ''}${revTrend}%`,
+      revenueTrend: `${revTrendPct > 0 ? '+' : ''}${revTrendPct.toFixed(1)}%`,
       patients: filteredOrders.length.toString(),
       patientTrend: `+${filteredOrders.length - prevOrders.length}`,
       consults: totalConsults.toLocaleString(),

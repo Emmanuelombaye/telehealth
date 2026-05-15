@@ -340,10 +340,7 @@ export function AdminProductsPage() {
           {metricCards.map((m, i) => (
             <Card
               key={i}
-              className={cn(
-                "group relative overflow-hidden border border-slate-200/80 bg-white/90 p-7 shadow-lg shadow-slate-200/40 ring-1 ring-slate-900/[0.03] backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-xl",
-                m.wide && "md:col-span-1",
-              )}
+              className="group relative overflow-hidden border border-slate-200/80 bg-white/90 p-7 shadow-lg shadow-slate-200/40 ring-1 ring-slate-900/[0.03] backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-xl"
             >
               <div
                 className={cn(

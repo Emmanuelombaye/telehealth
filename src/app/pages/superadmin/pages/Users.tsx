@@ -6,6 +6,7 @@ import {
   ShieldAlert, Fingerprint, Activity, Clock, CheckCircle2
 } from "lucide-react";
 import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
+import { Button, Card, CardContent, Badge, Input, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;

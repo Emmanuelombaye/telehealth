@@ -15,6 +15,7 @@ import { supabase } from "../../../lib/supabaseClient";
 import { ORDERS_ADMIN_NON_CLINICAL_SELECT } from "../../../lib/adminScope";
 import { cn } from "../../components/ui/utils";
 import * as FramerMotion from "framer-motion";
+import { AdminScopeNotice } from "../../components/admin/AdminScopeNotice.tsx";
 const { motion, AnimatePresence } = FramerMotion;
 
 export function SuperAdminDashboard() {
@@ -79,6 +80,9 @@ export function SuperAdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] p-6 lg:p-10 font-sans text-[#0A0D14] animate-in fade-in duration-700">
+      <div className="max-w-[1600px] mx-auto mb-8">
+        <AdminScopeNotice variant="platform" />
+      </div>
       
       {/* ELITE COCKPIT HEADER */}
       <div className="bg-white p-8 lg:p-12 rounded-[56px] shadow-2xl shadow-slate-200/50 border border-slate-50 mb-16 relative overflow-hidden group">
@@ -91,13 +95,13 @@ export function SuperAdminDashboard() {
               </div>
               <div>
                  <div className="flex items-center gap-4 mb-3">
-                    <Badge className="bg-emerald-50 text-emerald-700 border-none px-4 py-1.5 font-black uppercase tracking-[0.3em] text-[9px] rounded-full">SUPREME AUTHORITY</Badge>
+                    <Badge className="bg-emerald-50 text-emerald-700 border-none px-4 py-1.5 font-black uppercase tracking-[0.3em] text-[9px] rounded-full">PLATFORM SUPER ADMIN</Badge>
                     <div className="flex items-center gap-2">
                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                       <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Infrastructure: Live</span>
+                       <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Non-clinical governance only</span>
                     </div>
                  </div>
-                 <h1 className="text-6xl font-black tracking-tight text-[#0A2E1F] leading-none mb-6">Command Hub</h1>
+                 <h1 className="text-6xl font-black tracking-tight text-[#0A2E1F] leading-none mb-6">Global dashboard</h1>
                  
                  <div className="flex flex-wrap items-center gap-10 pt-6 border-t border-slate-50">
                     <div className="space-y-1">
@@ -141,9 +145,9 @@ export function SuperAdminDashboard() {
            {/* LUXURY KPI CARDS */}
            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
-                { label: "Aggregate MRR", value: `$${totalMRR.toLocaleString()}`, icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50" },
-                { label: "Enterprise Entities", value: activeBrandsCount.toString(), icon: Building2, color: "text-[#0A2E1F]", bg: "bg-slate-50" },
-                { label: "Global Network Scale", value: uniquePatients.toLocaleString(), icon: Users, color: "text-emerald-700", bg: "bg-emerald-50/50" }
+                { label: "Platform sales (orders)", value: `$${totalMRR.toLocaleString()}`, icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50" },
+                { label: "Active brands", value: activeBrandsCount.toString(), icon: Building2, color: "text-[#0A2E1F]", bg: "bg-slate-50" },
+                { label: "Operational patient touchpoints", value: uniquePatients.toLocaleString(), icon: Users, color: "text-emerald-700", bg: "bg-emerald-50/50" }
               ].map((s, i) => (
                 <Card key={i} className="border-none shadow-2xl shadow-slate-100/50 rounded-[48px] overflow-hidden bg-white p-10 flex flex-col items-center text-center group hover:shadow-emerald-900/5 transition-all duration-500">
                    <div className={cn("h-20 w-20 rounded-[32px] mb-8 flex items-center justify-center group-hover:scale-110 transition-transform", s.bg, s.color)}>
@@ -160,8 +164,8 @@ export function SuperAdminDashboard() {
               <div className="p-16">
                  <div className="flex items-center justify-between mb-16">
                     <div>
-                       <h3 className="text-4xl font-black text-[#0A2E1F] tracking-tighter">Global Liquidity Matrix</h3>
-                       <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[11px] mt-2">Real-time Financial Flow Architecture</p>
+                       <h3 className="text-4xl font-black text-[#0A2E1F] tracking-tighter">Revenue by period</h3>
+                       <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[11px] mt-2">All-brand aggregate · non-clinical visibility</p>
                     </div>
                     <div className="h-16 w-16 rounded-[28px] bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-inner">
                        <Zap size={28} className="animate-pulse" />

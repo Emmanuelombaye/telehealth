@@ -156,11 +156,21 @@ export function AppLayout() {
                   : isPatientPortal
                     ? "Your care"
                     : isSuperAdminPortal
-                      ? "Control plane"
-                      : "Clinical operations"}
+                      ? "Platform governance"
+                      : path.startsWith("/admin")
+                        ? authRole === "super_admin"
+                          ? "Brand workspace · elevated"
+                          : "Brand administration"
+                        : "Operations"}
               </span>
               <span className="truncate text-sm font-semibold text-slate-500 md:text-[15px]">
-                {isPatientPortal ? "Peak Health" : isSuperAdminPortal ? "Superadmin" : "Peak Health Center"}
+                {isPatientPortal
+                  ? "Peak Health"
+                  : isSuperAdminPortal
+                    ? "Super Admin portal"
+                    : path.startsWith("/admin")
+                      ? "Non-clinical operations"
+                      : "Peak Health Center"}
               </span>
             </div>
           </div>

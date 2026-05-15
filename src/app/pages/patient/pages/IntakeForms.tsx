@@ -20,6 +20,21 @@ export function IntakeFormsPage() {
   const intakeFormData = usePatientStore(state => state.intakeFormData);
   const setIntakeFormData = usePatientStore(state => state.setIntakeFormData);
 
+  type IntakeDraft = {
+    fullName?: string;
+    dob?: string;
+    sex?: string;
+    country?: string;
+    conditions?: string[];
+    symptoms?: string;
+    painLevel?: number;
+    duration?: string;
+    medName?: string;
+    medDosage?: string;
+    medFrequency?: string;
+  };
+  const fd = intakeFormData as IntakeDraft;
+
   // Read-only view for completed forms
   useEffect(() => {
     if (!user) return;
@@ -240,7 +255,7 @@ export function IntakeFormsPage() {
                   <input 
                     className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" 
                     placeholder="John Doe" 
-                    value={intakeFormData.fullName || ""}
+                    value={fd.fullName || ""}
                     onChange={e => setIntakeFormData({ ...intakeFormData, fullName: e.target.value })}
                   />
                 </div>
@@ -250,7 +265,7 @@ export function IntakeFormsPage() {
                     <input 
                       type="date" 
                       className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" 
-                      value={intakeFormData.dob || ""}
+                      value={fd.dob || ""}
                       onChange={e => setIntakeFormData({ ...intakeFormData, dob: e.target.value })}
                     />
                   </div>
@@ -258,7 +273,7 @@ export function IntakeFormsPage() {
                     <label className="text-sm font-semibold">Biological Sex</label>
                     <select 
                       className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary"
-                      value={intakeFormData.sex || ""}
+                      value={fd.sex || ""}
                       onChange={e => setIntakeFormData({ ...intakeFormData, sex: e.target.value })}
                     >
                       <option value="">Select...</option>
@@ -270,7 +285,7 @@ export function IntakeFormsPage() {
                   <label className="text-sm font-semibold">Country of Residence</label>
                   <select 
                     className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary"
-                    value={intakeFormData.country || ""}
+                    value={fd.country || ""}
                     onChange={e => setIntakeFormData({ ...intakeFormData, country: e.target.value })}
                   >
                     <option value="">Select...</option>
@@ -288,9 +303,9 @@ export function IntakeFormsPage() {
                     <input 
                       type="checkbox" 
                       className="h-4 w-4 accent-primary" 
-                      checked={(intakeFormData.conditions || []).includes(c)}
+                      checked={(fd.conditions || []).includes(c)}
                       onChange={e => {
-                        const conditions = intakeFormData.conditions || [];
+                        const conditions = fd.conditions || [];
                         if (e.target.checked) {
                           setIntakeFormData({ ...intakeFormData, conditions: [...conditions, c] });
                         } else {
@@ -311,16 +326,16 @@ export function IntakeFormsPage() {
                     rows={4} 
                     className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary resize-none" 
                     placeholder="Describe what you're experiencing..." 
-                    value={intakeFormData.symptoms || ""}
+                    value={fd.symptoms || ""}
                     onChange={e => setIntakeFormData({ ...intakeFormData, symptoms: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold">Pain level ({intakeFormData.painLevel || 0} / 10)</label>
+                  <label className="text-sm font-semibold">Pain level ({fd.painLevel || 0} / 10)</label>
                   <input 
                     type="range" min={0} max={10} 
                     className="w-full accent-primary" 
-                    value={intakeFormData.painLevel || 0}
+                    value={fd.painLevel || 0}
                     onChange={e => setIntakeFormData({ ...intakeFormData, painLevel: parseInt(e.target.value) })}
                   />
                 </div>
@@ -328,7 +343,7 @@ export function IntakeFormsPage() {
                   <label className="text-sm font-semibold">Duration of symptoms</label>
                   <select 
                     className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary"
-                    value={intakeFormData.duration || ""}
+                    value={fd.duration || ""}
                     onChange={e => setIntakeFormData({ ...intakeFormData, duration: e.target.value })}
                   >
                     <option value="">Select...</option>
@@ -344,19 +359,19 @@ export function IntakeFormsPage() {
                   <input 
                     className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" 
                     placeholder="Medication name" 
-                    value={intakeFormData.medName || ""}
+                    value={fd.medName || ""}
                     onChange={e => setIntakeFormData({ ...intakeFormData, medName: e.target.value })}
                   />
                   <input 
                     className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" 
                     placeholder="Dosage (e.g. 10mg)" 
-                    value={intakeFormData.medDosage || ""}
+                    value={fd.medDosage || ""}
                     onChange={e => setIntakeFormData({ ...intakeFormData, medDosage: e.target.value })}
                   />
                   <input 
                     className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:border-primary" 
                     placeholder="Frequency (e.g. Daily)" 
-                    value={intakeFormData.medFrequency || ""}
+                    value={fd.medFrequency || ""}
                     onChange={e => setIntakeFormData({ ...intakeFormData, medFrequency: e.target.value })}
                   />
                 </div>

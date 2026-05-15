@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router";
 import { Truck, CheckCircle, Edit2, Search, Printer, ArrowDownUp, CloudDownload, RefreshCw, ChevronDown, Columns, Filter, MoreHorizontal, ArrowUpRight, Package, ShieldCheck, Activity, Zap } from "lucide-react";
 import { Card, Button, Badge } from "../../../components/ui/shared.tsx";
 import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminDataTable";
@@ -9,6 +10,7 @@ import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope } from "../../.
 import { logAdminAudit } from "../../../../lib/adminAudit";
 import { cn } from "../../../components/ui/utils";
 import { toast } from "sonner";
+import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice.tsx";
 
 const statusStyles: Record<OrderStatus, string> = {
   "order_submitted": "bg-emerald-50 text-emerald-700 border-emerald-100",
@@ -17,6 +19,7 @@ const statusStyles: Record<OrderStatus, string> = {
   "intake_completed": "bg-emerald-100 text-emerald-800 border-emerald-200",
   "medical_review": "bg-amber-50 text-amber-700 border-amber-100",
   "rx_sent": "bg-[#0A2E1F] text-white border-[#0A2E1F]/10",
+  "follow_up": "bg-rose-50 text-rose-800 border-rose-200",
   "shipped": "bg-emerald-50 text-emerald-700 border-emerald-100",
   "delivered": "bg-slate-50 text-slate-400 border-slate-100",
   "refill_eligible": "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -27,14 +30,17 @@ const statusLabels: Record<OrderStatus, string> = {
   "account_created": "Registered",
   "id_verified": "Verified",
   "intake_completed": "Intake",
-  "medical_review": "Clinical",
+  "medical_review": "Clinical review",
   "rx_sent": "Prescribed",
+  "follow_up": "Follow-up",
   "shipped": "Dispatched",
   "delivered": "Delivered",
   "refill_eligible": "Refill",
 };
 
 export function AdminOrdersPage() {
+  const location = useLocation();
+  const scopeVariant = location.pathname.startsWith("/superadmin") ? "platform" : "brand";
   const { role, brandId } = useAuthStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -202,7 +208,9 @@ export function AdminOrdersPage() {
   };
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-8 pb-10 relative animate-in fade-in duration-1000">
+      <div className="max-w-[1600px] mx-auto space-y-6 pb-10 relative animate-in fade-in duration-1000">
+      <AdminScopeNotice variant={scopeVariant} />
+
       {/* Manual Entry Modal */}
       {isManualModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0A2E1F]/60 backdrop-blur-md p-4">
@@ -213,7 +221,7 @@ export function AdminOrdersPage() {
               </div>
               <div>
                 <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#0A2E1F]">Manual Dispatch</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-1">Clinical Fulfillment Override</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-1">Operational fulfillment · admin record</p>
               </div>
             </div>
             
@@ -228,7 +236,7 @@ export function AdminOrdersPage() {
                 />
               </div>
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Clinical Compound</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Medication label (SKU / display)</label>
                 <input 
                   className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-5 text-sm font-bold text-[#0A2E1F] outline-none focus:border-emerald-500/30 transition-all placeholder:text-slate-200"
                   placeholder="e.g. Tirzepatide 2.5mg"
@@ -273,9 +281,9 @@ export function AdminOrdersPage() {
               <Package size={28} className="text-[#22c55e]" />
            </div>
            <div>
-              <h1 className="text-4xl font-black italic uppercase tracking-tighter text-[#0A2E1F]">Order Logistics</h1>
+              <h1 className="text-4xl font-black italic uppercase tracking-tighter text-[#0A2E1F]">Manage orders</h1>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">
-                 Global Pharmacy Bridge & Fulfillment Matrix
+                 Fulfillment, refunds, and logistics — non-clinical fields only
               </p>
            </div>
         </div>

@@ -4,12 +4,17 @@ import { Card, Button, Badge } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib/auth-store";
 import { motion } from "framer-motion";
+import { applyOrdersBrandScope } from "../../../../lib/adminScope";
+import { useLocation } from "react-router";
+import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice.tsx";
 
 const tabs = ["Overview", "Invoices", "Contracts"];
 const invoiceFilters = ["All", "Paid", "Open", "Failed", "Processing", "Canceled"];
 
 export function AdminFinancePage() {
-  const { role } = useAuthStore();
+  const location = useLocation();
+  const scopeVariant = location.pathname.startsWith("/superadmin") ? "platform" : "brand";
+  const { role, brandId } = useAuthStore();
   const [activeTab, setActiveTab] = useState("Overview");
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,13 +22,15 @@ export function AdminFinancePage() {
   useEffect(() => {
     async function fetchInvoices() {
       try {
-        const { data, error } = await supabase
+        let q = supabase
           .from('orders')
           .select('id, amount, status, created_at, category')
           .order('created_at', { ascending: false });
+        q = applyOrdersBrandScope(q, role, brandId);
 
+        const { data, error } = await q;
         if (error) throw error;
-        
+
         const mapped = (data || []).map(o => ({
           id: o.id.substring(0,8).toUpperCase(),
           plan: o.category || "Consultation",
@@ -41,11 +48,12 @@ export function AdminFinancePage() {
       }
     }
     fetchInvoices();
-  }, []);
+  }, [role, brandId]);
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-10 pb-10 animate-in fade-in duration-1000">
-      
+    <div className="max-w-[1600px] mx-auto space-y-8 pb-10 animate-in fade-in duration-1000">
+      <AdminScopeNotice variant={scopeVariant} />
+
       {/* LUXURY HEADER */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-8 pb-8 border-b border-slate-50">
         <div>
@@ -58,10 +66,10 @@ export function AdminFinancePage() {
               </span>
            </div>
            <h1 className="text-4xl font-black text-[#0A2E1F] tracking-tighter uppercase italic">
-             Financial <span className="text-emerald-600 font-serif italic font-normal">Ledger</span>
+             Financial <span className="text-emerald-600 font-serif italic font-normal">insights</span>
            </h1>
            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] mt-2">
-             Authorized Personnel Only • Real-time Revenue Matrix
+             Revenue alignment · drug & fulfillment economics (diagram D) • Non-clinical admin view
            </p>
         </div>
         <div className="flex items-center gap-4">
@@ -98,8 +106,12 @@ export function AdminFinancePage() {
         <div className="grid lg:grid-cols-12 gap-10">
           
           <div className="lg:col-span-8 space-y-10">
-            {/* Main Stats */}
-            <div className="grid md:grid-cols-2 gap-8">
+              <div className="p-6 rounded-3xl bg-emerald-50/70 border border-emerald-100/80 mb-10">
+                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800/80 mb-2">Profitability lens (overview)</p>
+                <p className="text-sm text-emerald-950/85 leading-relaxed">
+                  Profit ≈ gross sales − drug & pharmacy costs − platform fees − refunds. Detailed COGS/feeds integrate as your ERP and dispensing partners expose line items.
+                </p>
+              </div>
               <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[2.5rem] p-10 bg-white group overflow-hidden relative">
                 <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 transition-opacity">
                   <TrendingUp className="h-32 w-32" />
@@ -122,7 +134,6 @@ export function AdminFinancePage() {
                 </div>
                 <p className="text-[10px] font-bold text-emerald-100/30 uppercase tracking-[0.2em] mt-10">Next Settlement: May 19, 2026</p>
               </Card>
-            </div>
 
             {/* Invoices Preview */}
             <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white overflow-hidden">
@@ -178,7 +189,7 @@ export function AdminFinancePage() {
                 {[
                   { label: "Platform Fees", val: "$0.00", icon: ShieldCheck },
                   { label: "Shipping Costs", val: "$0.00", icon: Truck },
-                  { label: "Clinical Costs", val: "$0.00", icon: Stethoscope },
+                  { label: "Drug & pharmacy COGS*", val: "$0.00", icon: Stethoscope },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 border border-slate-100">
                     <div className="flex items-center gap-3">
