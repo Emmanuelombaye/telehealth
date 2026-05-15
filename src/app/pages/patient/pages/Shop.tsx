@@ -15,6 +15,10 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 import { PatientSchedulingPanel } from "../../../components/patient/PatientSchedulingPanel.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
+import {
+  ensurePatientPortalRoleAfterEnrollment,
+  primePatientPortalNavigation,
+} from "../../../../lib/enrollmentPatientAuth";
 import { 
   usePatientStore, 
   generateMRN 
@@ -1197,7 +1201,19 @@ export function PatientShopPage() {
              await supabase.auth.setSession(signInData.session);
           }
         }
+        await ensurePatientPortalRoleAfterEnrollment(
+          userId,
+          resolvedEmail,
+          `${resolvedFirstName} ${resolvedLastName}`.trim(),
+        );
         await initialize(); // Refresh auth store so the rest of the app knows the user is logged in
+      } else if (userId) {
+        await ensurePatientPortalRoleAfterEnrollment(
+          userId,
+          resolvedEmail,
+          `${resolvedFirstName} ${resolvedLastName}`.trim(),
+        );
+        await initialize();
       }
 
       // ── Generate a fresh unique order number (prevents 409 on retry) ─────────
@@ -1385,8 +1401,9 @@ export function PatientShopPage() {
         <Button
           className="w-full rounded-xl text-base h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
           onClick={() => {
+            primePatientPortalNavigation();
             // Hard reload ensures the protected route and layout pick up the new session immediately
-            window.location.href = '/patient';
+            window.location.href = "/patient";
           }}>
           Enter My Patient Portal →
         </Button>

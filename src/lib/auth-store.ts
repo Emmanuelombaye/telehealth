@@ -55,7 +55,14 @@ function getRoleFromSession(session: Session): { role: Role; brandId: string | n
  * Background sync: try to read/create the profile row.
  * We do this silently — it NEVER blocks or throws.
  */
+function sessionJwtRole(session: Session): Role | null {
+  const meta = session.user.user_metadata || {};
+  const appMeta = (session.user as { app_metadata?: { role?: string } }).app_metadata || {};
+  return (appMeta.role || meta.role) as Role | null;
+}
+
 async function syncProfile(session: Session): Promise<{ role: Role; brandId: string | null }> {
+  const jwtRB = getRoleFromSession(session);
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -64,8 +71,12 @@ async function syncProfile(session: Session): Promise<{ role: Role; brandId: str
       .maybeSingle();
 
     if (!error && data) {
-      // Profile table has an override (e.g. promoted to doctor)
-      return { role: (data.role as Role) || 'patient', brandId: data.brand_id || null };
+      const profileRole = (data.role as Role) || 'patient';
+      // Patient signup metadata must win over a stale profiles.role (e.g. doctor from testing).
+      if (sessionJwtRole(session) === 'patient' && profileRole !== 'patient') {
+        return { role: 'patient', brandId: data.brand_id || jwtRB.brandId };
+      }
+      return { role: profileRole, brandId: data.brand_id || null };
     }
 
     if (error) {
