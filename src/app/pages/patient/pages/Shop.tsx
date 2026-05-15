@@ -1967,7 +1967,6 @@ export function PatientShopPage() {
       <div className="max-w-md mx-auto space-y-5 pb-10">
         <PatientShopTopChrome
           stage={stage}
-          brandSize="md"
           onBack={() => goToStage("catalog")}
           backLabel="Back to catalog"
           badgeLabel="Step 3 · Checkout page"
