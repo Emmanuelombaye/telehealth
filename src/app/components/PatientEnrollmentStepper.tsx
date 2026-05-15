@@ -1,7 +1,6 @@
 import { cn } from "./ui/utils";
 import {
   CLIENT_FLOW_DIAGRAM_STEP_COUNT,
-  CLIENT_FLOW_KEY_NOTES_FOOTER,
   CLIENT_PATIENT_FLOW_NINE_STEPS,
   journeyIndexForStage,
   type ShopFlowStage,
@@ -19,16 +18,19 @@ export function PatientEnrollmentStepper({
   const n = CLIENT_FLOW_DIAGRAM_STEP_COUNT;
 
   return (
-    <div className={cn("w-full space-y-3.5", className)}>
-      <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-800/85">
-          Client / patient flow · Step {active.diagramStep} of {n}
-        </p>
-        <p className="text-base font-semibold leading-snug tracking-tight text-slate-900 sm:text-lg">{active.title}</p>
-        <p className="text-sm leading-relaxed text-slate-600">{active.subtitle}</p>
-      </div>
+    <div className={cn("w-full space-y-2.5", className)} role="navigation" aria-label="Enrollment progress">
+      <p className="text-sm font-semibold text-slate-900 leading-snug">
+        <span className="tabular-nums text-emerald-700">Step {active.diagramStep}</span>
+        <span className="font-normal text-slate-400"> / {n}</span>
+        <span className="font-normal text-slate-400"> · </span>
+        <span>{active.title}</span>
+      </p>
 
-      <div className="flex gap-1 overflow-x-auto pb-0.5" role="list" aria-label="Nine-step enrollment progress">
+      <div
+        className="flex gap-1"
+        role="list"
+        aria-label={`Progress: step ${active.diagramStep} of ${n}, ${active.title}`}
+      >
         {CLIENT_PATIENT_FLOW_NINE_STEPS.map((s, i) => {
           const done = i === 0 ? activeIdx >= 1 : i < activeIdx;
           const current = i === activeIdx;
@@ -36,21 +38,18 @@ export function PatientEnrollmentStepper({
             <div
               key={`flow-${s.diagramStep}`}
               role="listitem"
+              aria-current={current ? "step" : undefined}
+              aria-label={`Step ${s.diagramStep}: ${s.title}${current ? " (current)" : done ? " (complete)" : ""}`}
               className={cn(
-                "h-2 min-w-[22px] flex-1 rounded-full transition-colors duration-300 shrink-0 sm:min-w-[26px]",
+                "h-1.5 min-w-[18px] flex-1 rounded-full transition-colors duration-300 shrink-0 sm:h-2 sm:min-w-[22px]",
                 done && "bg-emerald-500",
-                current && "bg-emerald-600 ring-2 ring-emerald-400/35",
-                !done && !current && "bg-slate-200/90",
+                current && "bg-emerald-600 ring-2 ring-emerald-400/30",
+                !done && !current && "bg-slate-200",
               )}
-              title={`${s.diagramStep}. ${s.title}`}
             />
           );
         })}
       </div>
-
-      <p className="text-[11px] leading-relaxed text-slate-500 border-t border-slate-200/70 pt-2.5">
-        {CLIENT_FLOW_KEY_NOTES_FOOTER}
-      </p>
     </div>
   );
 }
