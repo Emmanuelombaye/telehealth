@@ -1714,6 +1714,17 @@ export function PatientShopPage() {
            <PatientBrandMark size="md" />
         </div>
 
+        <button
+          type="button"
+          onClick={() => {
+            setError(null);
+            goToStage("2fa");
+          }}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+
         <div className="bg-white border border-gray-200 rounded-[2rem] p-6 shadow-sm relative overflow-hidden">
            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
              <ShieldCheck className="h-32 w-32" />
