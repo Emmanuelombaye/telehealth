@@ -7,7 +7,7 @@ import {
   Droplets, Heart, ChevronRight, Video, Pill, Stethoscope,
   ShieldCheck, TrendingUp, Truck, CheckCircle2, Package, ShoppingBag, Hourglass, Building2, Copy, RefreshCw
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, cn } from "../../components/ui/shared.tsx";
+import { Card, CardContent, Button, Badge, cn } from "../../components/ui/shared.tsx";
 import {
   useI18n,
   ORDER_STEPS,
@@ -42,11 +42,7 @@ export function PatientDashboard() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
-  const doctorAvailability = usePatientStore(state => state.doctorAvailability);
   const firstName = user?.user_metadata?.first_name || 'Patient';
-  const availableDoctors = doctorAvailability.filter(d => d.available);
-
-  const { orders, fetchOrders, subscribeToOrders } = usePatientStore();
   const [activeConsult, setActiveConsult] = useState<any>(null);
   
   useEffect(() => {
@@ -366,37 +362,6 @@ export function PatientDashboard() {
 
         {/* Sidebar Column */}
         <div className="space-y-10">
-           {/* Doctor Strip */}
-           <Card className="bg-[#0A2E1F] text-white overflow-hidden relative border-none shadow-2xl shadow-emerald-900/20">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 blur-[80px] rounded-full -mr-24 -mt-24 animate-pulse"></div>
-              <CardHeader className="p-8">
-                <div className="flex items-center justify-between mb-1">
-                   <CardTitle className="text-white text-xl font-black tracking-tight">On-Call Staff</CardTitle>
-                   <div className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                </div>
-                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-100/40">Real-time Clinical Availability</p>
-              </CardHeader>
-              <CardContent className="p-8 pt-0 space-y-4">
-                {availableDoctors.slice(0, 4).map(doc => (
-                  <div key={doc.id} className="p-5 rounded-3xl bg-white/5 border border-white/5 flex items-center gap-5 group cursor-pointer hover:bg-white/10 transition-all duration-300">
-                    <div className="h-12 w-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center font-black text-emerald-400 text-xs shadow-inner">
-                      {doc.avatar}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black truncate">{doc.name}</p>
-                      <p className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em] mt-0.5">{doc.specialty}</p>
-                    </div>
-                    <ChevronRight size={18} className="text-white/10 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
-                  </div>
-                ))}
-                <Link to="/patient/appointments" className="block mt-4">
-                   <Button variant="secondary" className="w-full h-14 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] border-none bg-emerald-500 text-white hover:bg-emerald-400">
-                      View Medical Staff
-                   </Button>
-                </Link>
-              </CardContent>
-           </Card>
-
            {/* Security Banner */}
            <Card className="bg-emerald-50/50 border-emerald-100/50 shadow-none rounded-[2.5rem]">
               <CardContent className="p-8 flex items-center gap-5">
