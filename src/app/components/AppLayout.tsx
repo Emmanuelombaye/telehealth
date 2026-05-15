@@ -286,7 +286,9 @@ export function AppLayout() {
         <main
           onScroll={onScroll}
           className={cn(
-            "flex-1 overflow-y-auto overflow-x-hidden scroll-smooth",
+            "flex min-h-0 min-w-0 flex-1 scroll-smooth",
+            /** Staff dashboards use wide grids/tables — allow horizontal scroll; patient keeps clipped horizontal bleed. */
+            isPatientPortal ? "overflow-x-hidden overflow-y-auto" : "overflow-x-auto overflow-y-auto",
             isPatientPortal ? "pb-[calc(5.25rem+env(safe-area-inset-bottom,0px))] md:pb-12" : "pb-12",
             isPatientPortal
               ? "bg-gradient-to-b from-transparent via-[#FBFBFC] to-emerald-50/20"
@@ -302,11 +304,12 @@ export function AppLayout() {
               className={cn(
                 "mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700",
                 isDoctorPortal && "relative isolate",
-                isSuperAdminPortal ? "max-w-6xl px-3 py-4 md:px-6 md:py-6" : isPatientPortal
+                isPatientPortal
                   ? "max-w-[1240px] px-4 py-6 sm:px-6 md:px-10 md:py-10"
                   : isDoctorPortal
                     ? "max-w-[1600px] px-4 py-5 md:px-7 md:py-8"
-                    : "max-w-[1600px] p-6 md:p-10",
+                    : /** Brand admin & superadmin: same usable width — protocol tables span many columns */
+                      "max-w-[1600px] p-6 md:p-10",
               )}
             >
               {isDoctorPortal && (

@@ -32,10 +32,15 @@ import {
   sortGateways,
 } from "../../../../lib/productGateways";
 import { motion, AnimatePresence } from "framer-motion";
+import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice.tsx";
+import { useAuthStore } from "../../../../lib/auth-store";
 
 export function AdminProductsPage() {
   const location = useLocation();
   const isSuperAdminRoute = location.pathname.includes("/superadmin/");
+  const role = useAuthStore((s) => s.role);
+  const scopeNoticeVariant =
+    role === "super_admin" || isSuperAdminRoute ? "platform" : "brand";
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -265,12 +270,13 @@ export function AdminProductsPage() {
   ];
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden font-sans">
+    <div className="relative min-h-[calc(100vh-4rem)] min-w-0 font-sans">
       <div
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(16,185,129,0.12),transparent_50%),radial-gradient(ellipse_80%_50%_at_100%_0%,rgba(139,92,246,0.08),transparent_45%),radial-gradient(ellipse_60%_40%_at_0%_100%,rgba(14,165,233,0.08),transparent_40%)]"
         aria-hidden
       />
       <div className="mx-auto max-w-[1440px] space-y-10 px-4 py-8 md:px-6 md:py-10 animate-fade-in-up">
+        <AdminScopeNotice variant={scopeNoticeVariant} />
         {/* Hero */}
         <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/70 shadow-[0_24px_80px_-24px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 backdrop-blur-xl md:rounded-[2.5rem]">
           <div
@@ -367,8 +373,8 @@ export function AdminProductsPage() {
           ))}
         </div>
 
-        {/* Table shell */}
-        <div className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/95 shadow-[0_28px_100px_-32px_rgba(15,23,42,0.2)] ring-1 ring-slate-900/[0.04] backdrop-blur-md md:rounded-[2.25rem]">
+        {/* Table shell — horizontal scroll so full protocol repo stays visible */}
+        <div className="min-w-0 overflow-x-auto rounded-[2rem] border border-slate-200/80 bg-white/95 shadow-[0_28px_100px_-32px_rgba(15,23,42,0.2)] ring-1 ring-slate-900/[0.04] backdrop-blur-md md:rounded-[2.25rem]">
           <div className="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-r from-slate-50/90 via-white to-emerald-50/30 p-6 md:flex-row md:items-center md:justify-between md:p-8">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-900/25">
