@@ -131,6 +131,30 @@ const categoryTint: Record<string, string> = {
   "Hormone": "from-[var(--brand-sky-50)] to-[var(--brand-lavender-100)]",
 };
 
+/** Drop legacy cosmetic fields from DB-driven intake (often mis-tagged as "questionnaire"). */
+function withoutCosmeticAppearanceQuestions(rows: unknown): unknown[] {
+  if (!Array.isArray(rows)) return [];
+  const labelDrop = new Set(["hair color", "eye color", "blood type"]);
+  const idDrop = new Set([
+    "hair_color", "haircolor", "eye_color", "eyecolor", "blood_type", "bloodtype",
+  ]);
+  return rows.filter((q) => {
+    if (!q || typeof q !== "object") return true;
+    const o = q as { id?: string; label?: string };
+    const id = String(o.id ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "_");
+    const idPacked = id.replace(/_/g, "");
+    const label = String(o.label ?? "")
+      .trim()
+      .toLowerCase();
+    if (labelDrop.has(label)) return false;
+    if (idDrop.has(id) || idDrop.has(idPacked)) return false;
+    return true;
+  });
+}
+
 const gatewayConfig: Record<string, { label: string; icon: string; color: string }> = {
   stripe: { label: "Credit / Debit Card", icon: "💳", color: "border-violet-400 bg-violet-50 dark:bg-violet-950/30" },
   paypal: { label: "PayPal", icon: "🅿️", color: "border-violet-400 bg-violet-50 dark:bg-violet-950/30" },
@@ -172,7 +196,7 @@ export function PatientShopPage() {
           badge: p.features?.badge || null,
           image: p.image_url,
           description: p.description,
-          questionnaire: p.features?.questionnaire || [],
+          questionnaire: withoutCosmeticAppearanceQuestions(p.features?.questionnaire) as any[],
           gateways: p.features?.gateways || ["stripe", "paypal", "apple_pay", "klarna"],
           rawFeatures: p.features,
         }));
