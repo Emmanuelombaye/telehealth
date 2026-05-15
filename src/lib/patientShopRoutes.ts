@@ -52,6 +52,58 @@ export function shopStageFromStepParam(step: string | undefined): ShopFlowStage 
   return SEGMENT_TO_STAGE[step] ?? null;
 }
 
+/** Ordered post-checkout enrollment stages (diagram steps 4–8). */
+export const POST_PAYMENT_ENROLLMENT_STAGES: ShopFlowStage[] = [
+  "payment_confirmation",
+  "account_setup",
+  "2fa",
+  "identity",
+  "questionnaire",
+];
+
+/** Next stage after the current one in the post-payment flow, or null if none. */
+export function nextStageAfter(stage: ShopFlowStage): ShopFlowStage | null {
+  const normalized = stage === "scheduling" ? "questionnaire" : stage;
+  const idx = POST_PAYMENT_ENROLLMENT_STAGES.indexOf(normalized);
+  if (idx < 0 || idx >= POST_PAYMENT_ENROLLMENT_STAGES.length - 1) return null;
+  return POST_PAYMENT_ENROLLMENT_STAGES[idx + 1] ?? null;
+}
+
+export type IdentityStepProgress = {
+  idDocumentType?: string;
+  hasIdFile?: boolean;
+  identityStripeCompleted?: boolean;
+  bypassIdentityVerify?: boolean;
+  identityAttestation?: boolean;
+};
+
+/** Step 7 is complete when ID type is chosen and upload/attestation is done. */
+export function isIdentityStepComplete(progress: IdentityStepProgress): boolean {
+  if (!progress.idDocumentType?.trim()) return false;
+  if (progress.hasIdFile || progress.identityStripeCompleted) return true;
+  return Boolean(progress.bypassIdentityVerify && progress.identityAttestation);
+}
+
+/** Normalize draft `stage` (canonical name or legacy URL segment). */
+export function normalizeEnrollmentDraftStage(raw: string | undefined | null): ShopFlowStage | null {
+  if (!raw) return null;
+  const fromSegment = shopStageFromStepParam(raw);
+  if (fromSegment) return fromSegment === "scheduling" ? "questionnaire" : fromSegment;
+  const allowed: ShopFlowStage[] = [
+    "payment",
+    "payment_confirmation",
+    "account_setup",
+    "2fa",
+    "identity",
+    "questionnaire",
+    "scheduling",
+  ];
+  if (allowed.includes(raw as ShopFlowStage)) {
+    return raw === "scheduling" ? "questionnaire" : (raw as ShopFlowStage);
+  }
+  return null;
+}
+
 /** Total steps in the published client journey diagram (1 = website, 9 = portal). */
 export const CLIENT_FLOW_DIAGRAM_STEP_COUNT = 9;
 

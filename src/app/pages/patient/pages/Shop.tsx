@@ -46,6 +46,9 @@ import {
   shopPathForStage,
   shopStageFromStepParam,
   getClientFlowRowByDiagramStep,
+  isIdentityStepComplete,
+  nextStageAfter,
+  normalizeEnrollmentDraftStage,
   type ShopFlowStage,
 } from "../../../../lib/patientShopRoutes";
 import { PatientEnrollmentStepper } from "../../../components/PatientEnrollmentStepper.tsx";
@@ -674,11 +677,28 @@ export function PatientShopPage() {
 
   const goToStage = useCallback(
     (next: ShopFlowStage, opts?: { replace?: boolean }) => {
-      setStageState(next);
       navigate(shopPathForStage(next), { replace: opts?.replace ?? false });
     },
     [navigate]
   );
+
+  const identityProgress = useMemo(
+    () => ({
+      idDocumentType,
+      hasIdFile: Boolean(idFile),
+      identityStripeCompleted,
+      bypassIdentityVerify,
+      identityAttestation,
+    }),
+    [idDocumentType, idFile, identityStripeCompleted, identityAttestation],
+  );
+
+  /** Never show medical intake (step 8) until identity verification (step 7) is complete. */
+  useEffect(() => {
+    if (stage !== "questionnaire" || !selected) return;
+    if (isIdentityStepComplete(identityProgress)) return;
+    goToStage("identity", { replace: true });
+  }, [stage, selected, identityProgress, goToStage]);
 
   /** Standalone scheduling stage was merged into medical intake; normalize in-memory state. */
   useEffect(() => {
@@ -751,18 +771,21 @@ export function PatientShopPage() {
       setResumeDraftAvailable(false);
       return;
     }
-    const allowed: ShopFlowStage[] = [
-      "payment",
-      "payment_confirmation",
-      "account_setup",
-      "2fa",
-      "identity",
-      "questionnaire",
-      "scheduling",
-    ];
-    let nextStage = (allowed.includes(d.stage as ShopFlowStage) ? d.stage : "payment") as ShopFlowStage;
-    const fromLegacyScheduling = nextStage === "scheduling";
+    let nextStage = normalizeEnrollmentDraftStage(d.stage) ?? "payment";
+    const fromLegacyScheduling = d.stage === "scheduling";
     if (fromLegacyScheduling) nextStage = "questionnaire";
+    if (
+      nextStage === "questionnaire" &&
+      !isIdentityStepComplete({
+        idDocumentType: d.idDocumentType,
+        hasIdFile: false,
+        identityStripeCompleted: d.identityStripeCompleted,
+        bypassIdentityVerify,
+        identityAttestation: false,
+      })
+    ) {
+      nextStage = "identity";
+    }
     setSelected(p);
     setEmail(d.email);
     setPhone(d.phone);
@@ -1582,12 +1605,7 @@ export function PatientShopPage() {
             !agreedToTerms
           }
           onClick={() => {
-            const currentUser = useAuthStore.getState().user;
-            if (currentUser) {
-              goToStage("questionnaire");
-            } else {
-              goToStage("2fa");
-            }
+            goToStage("2fa");
           }}>
           Continue to Phone Verification <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
@@ -1659,7 +1677,8 @@ export function PatientShopPage() {
               try {
                 if (bypassOtpVerify) {
                   if (/^\d{6}$/.test(otp)) {
-                    goToStage("identity");
+                    const next = nextStageAfter("2fa");
+                    if (next) goToStage(next, { replace: true });
                   } else {
                     setError("Enter a 6-digit code to continue.");
                   }
@@ -1672,7 +1691,8 @@ export function PatientShopPage() {
                 if (res.error || !res.data?.verified) {
                   setError(res.data?.error || "Invalid code. Please try again.");
                 } else {
-                  goToStage("identity");
+                  const next = nextStageAfter("2fa");
+                  if (next) goToStage(next, { replace: true });
                 }
               } catch (e: unknown) {
                 setError(e instanceof Error ? e.message : "Verification failed.");
@@ -1811,7 +1831,8 @@ export function PatientShopPage() {
                   }
                   setError(null);
                   setIdentityStripeCompleted(true);
-                  goToStage("questionnaire");
+                  const next = nextStageAfter("identity");
+                  if (next) goToStage(next, { replace: true });
                 }}
               >
                 <span className="flex items-center gap-2">
@@ -2349,10 +2370,11 @@ export function PatientShopPage() {
               setFirstName(currentUser.user_metadata?.first_name || firstName);
               setLastName(currentUser.user_metadata?.last_name || lastName);
               setEmail(currentUser.email || email);
-              goToStage("questionnaire");
-            } else {
-              goToStage("account_setup");
             }
+            const next = isIdentityStepComplete(identityProgress)
+              ? nextStageAfter("identity")
+              : nextStageAfter("payment_confirmation");
+            goToStage(next ?? "account_setup");
           }}
         >
           Continue <ChevronRight className="h-4 w-4 ml-1" />
