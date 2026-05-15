@@ -21,16 +21,16 @@ export type OrderStatus =
   | "refill_eligible";
 
 export const ORDER_STEPS: { key: OrderStatus; label: string; desc: string }[] = [
-  { key: "order_submitted", label: "Order submitted", desc: "Checkout complete — same nine-step journey, now in the portal" },
-  { key: "account_created", label: "Portal registration", desc: "Secure credentials from steps 5–6 are on file" },
-  { key: "id_verified", label: "Identity verified", desc: "Step 7 KYC complete" },
-  { key: "intake_completed", label: "Intake completed", desc: "Step 8 questionnaire (and any required Cal / Zoom booking) received" },
-  { key: "medical_review", label: "In review", desc: "A licensed clinician is evaluating your case" },
-  { key: "rx_sent", label: "Order approved", desc: "Prescription authorized and sent to pharmacy" },
-  { key: "shipped", label: "Order shipped", desc: "Medication is in transit to your address" },
-  { key: "delivered", label: "Delivered", desc: "Package delivered — welcome to ongoing care" },
-  { key: "follow_up", label: "In review · follow-up", desc: "Your clinician needs a quick update before proceeding" },
-  { key: "refill_eligible", label: "Prescription refills", desc: "You are eligible to request the next fill" },
+  { key: "order_submitted", label: "Order Submitted", desc: "Treatment selection and payment received" },
+  { key: "account_created", label: "Account Created", desc: "Patient portal account successfully registered" },
+  { key: "id_verified", label: "ID Verified", desc: "Identity and age verification successful" },
+  { key: "intake_completed", label: "Intake Completed", desc: "Health questionnaire and medical history received" },
+  { key: "medical_review", label: "Medical Review", desc: "A licensed physician is evaluating your profile" },
+  { key: "rx_sent", label: "Prescribed", desc: "Approval granted and prescription sent to pharmacy" },
+  { key: "shipped", label: "Shipped", desc: "Medication is in transit to your address" },
+  { key: "delivered", label: "Delivered", desc: "Package has been successfully delivered" },
+  { key: "follow_up", label: "Follow-Up Required", desc: "Your physician needs additional information to proceed" },
+  { key: "refill_eligible", label: "Refill Eligible", desc: "You are now eligible to request a treatment refill" },
 ];
 
 export type Order = {
@@ -68,8 +68,6 @@ export type Order = {
   patient_age?: number;
   patient_country?: string;
   zoom_status?: 'requested' | 'not_requested' | 'confirmed' | 'rescheduled' | 'canceled';
-  /** Meet / Zoom link from scheduler or clinician (when confirmed). */
-  zoom_join_url?: string | null;
   zoom_doctor_message?: string | null;
   zoom_rescheduled_time?: string | null;
   consultation_time?: string | null;
@@ -80,10 +78,6 @@ export type Order = {
   userId?: string;
   user_id?: string;
   doctor_id?: string;
-  /** Primary key UUID in public.orders — use for .eq('id', ...) and Edge Functions that expect UUID. */
-  dbId?: string;
-  stripe_payment_intent_id?: string | null;
-  scheduling_booking_url?: string | null;
   // DB column aliases (snake_case from Supabase)
   created_at?: string;
   sub_brand?: string;
@@ -144,27 +138,19 @@ export const brand = {
 };
 
 interface AppState {
-  orders: Order[];
   prescriptions: any[];
-  /** True only until the first successful prescriptions fetch for this session (refetches stay quiet). */
-  prescriptionsLoading: boolean;
-  prescriptionsFetchedOnce: boolean;
   visitForms: any[];
-  /** True only until the first successful visit_forms fetch for this session. */
-  visitFormsLoading: boolean;
-  visitFormsFetchedOnce: boolean;
   notifications: any[];
-  unreadMessagesCount: number;
-  doctorAvailability: DoctorAvailability[];
-  intakeFormData: Record<string, any>;
   fetchOrders: () => Promise<void>;
   fetchPrescriptions: () => Promise<void>;
   fetchVisitForms: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
   fetchUnreadMessages: () => Promise<void>;
+  unreadMessagesCount: number;
   fetchDoctorAvailability: () => Promise<void>;
   addOrder: (order: Order) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus, tracking?: string, carrier?: string, trackingUrl?: string, estimatedDelivery?: string) => Promise<void>;
+  updateOrderRx: (orderId: string, medication: string, dosage: string, note: string) => Promise<void>;
   subscribeToOrders: () => (() => void);
   setIntakeFormData: (data: Record<string, any>) => void;
   updateDoctorAvailability: (doctorId: number, available: boolean) => Promise<void>;
@@ -178,11 +164,7 @@ export const usePatientStore = create<AppState>()(
     (set, get) => ({
       orders: [],
       prescriptions: [],
-      prescriptionsLoading: true,
-      prescriptionsFetchedOnce: false,
       visitForms: [],
-      visitFormsLoading: true,
-      visitFormsFetchedOnce: false,
       notifications: [],
       unreadMessagesCount: 0,
       doctorAvailability: [],
@@ -254,14 +236,9 @@ export const usePatientStore = create<AppState>()(
       },
 
       fetchPrescriptions: async () => {
-        const { user } = useAuthStore.getState();
-        if (!user) {
-          set({ prescriptionsLoading: false, prescriptionsFetchedOnce: true, prescriptions: [] });
-          return;
-        }
-        const first = !get().prescriptionsFetchedOnce;
-        if (first) set({ prescriptionsLoading: true });
         try {
+          const { user } = useAuthStore.getState();
+          if (!user) return;
           const { data, error } = await supabase
             .from('prescriptions')
             .select('*')
@@ -274,20 +251,13 @@ export const usePatientStore = create<AppState>()(
           set({ prescriptions: data || [] });
         } catch (error) {
           console.error('Error fetching prescriptions:', error);
-        } finally {
-          set({ prescriptionsLoading: false, prescriptionsFetchedOnce: true });
         }
       },
 
       fetchVisitForms: async () => {
-        const { user } = useAuthStore.getState();
-        if (!user) {
-          set({ visitFormsLoading: false, visitFormsFetchedOnce: true, visitForms: [] });
-          return;
-        }
-        const first = !get().visitFormsFetchedOnce;
-        if (first) set({ visitFormsLoading: true });
         try {
+          const { user } = useAuthStore.getState();
+          if (!user) return;
           const { data, error } = await supabase
             .from('visit_forms')
             .select('*')
@@ -300,8 +270,6 @@ export const usePatientStore = create<AppState>()(
           set({ visitForms: data || [] });
         } catch (error) {
           console.error('Error fetching visit forms:', error);
-        } finally {
-          set({ visitFormsLoading: false, visitFormsFetchedOnce: true });
         }
       },
 
@@ -370,7 +338,6 @@ export const usePatientStore = create<AppState>()(
           
           const mappedOrders: Order[] = (data || []).map(d => ({
             id: d.order_number,
-            dbId: d.id,
             userId: d.user_id,
             user_id: d.user_id,
             patientName: d.patient_name,
@@ -398,8 +365,6 @@ export const usePatientStore = create<AppState>()(
             intakeNotes: mode === 'admin' ? undefined : d.intake_notes,
             intakeAnswers: mode === 'admin' ? undefined : d.intake_answers,
             patientVitals: mode === 'admin' ? undefined : d.patient_vitals,
-            zoom_status: d.zoom_status,
-            zoom_join_url: d.zoom_join_url ?? null,
             zoomStatus: d.zoom_status,
             zoomDoctorMessage: mode === 'admin' ? null : d.zoom_doctor_message,
             zoomRescheduledTime: d.zoom_rescheduled_time,
@@ -411,8 +376,6 @@ export const usePatientStore = create<AppState>()(
             nextRefillAt: d.next_refill_at,
             refillIntervalDays: d.refill_interval_days,
             doctor_id: d.doctor_id,
-            stripe_payment_intent_id: d.stripe_payment_intent_id ?? null,
-            scheduling_booking_url: d.scheduling_booking_url ?? null,
             created_at: d.created_at
           }));
           set({ orders: mappedOrders });
@@ -490,6 +453,52 @@ export const usePatientStore = create<AppState>()(
           console.error('Error updating order status in Supabase:', error);
         }
       },
+        
+      updateOrderRx: async (orderId: string, medication: string, dosage: string, note: string) => {
+        try {
+          const orderToUpdate = get().orders.find(o => o.id === orderId);
+          const newTimeline = orderToUpdate ? [...orderToUpdate.timeline, { status: 'rx_sent', date: new Date().toLocaleString() }] : undefined;
+          const currentUser = useAuthStore.getState().user;
+          const doctorName = currentUser?.user_metadata?.first_name
+            ? `Dr. ${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}`
+            : "Attending Physician";
+
+          // 1. Update Order status
+          const { error: orderError } = await supabase
+            .from('orders')
+            .update({
+              status: 'rx_sent',
+              medication: medication,
+              dosage_instructions: dosage,
+              doctor_note: note,
+              doctor: doctorName,
+              doctor_id: currentUser?.id,
+              last_approved_at: new Date().toISOString(),
+              ...(newTimeline && { timeline: newTimeline })
+            })
+            .eq('order_number', orderId);
+            
+          if (orderError) throw orderError;
+
+          // 2. Create Prescription entry for Patient Portal
+          if (orderToUpdate) {
+            await supabase.from('prescriptions').insert([{
+              patient_id: orderToUpdate.userId || orderToUpdate.user_id,
+              doctor_id: currentUser?.id,
+              medication: medication,
+              dosage: dosage,
+              frequency: note,
+              status: 'active',
+              refills_remaining: 5,
+              pharmacy_name: orderToUpdate.pharmacy || "VIALSRX EXPRESS"
+            }]);
+          }
+
+          await get().fetchOrders();
+        } catch (error) {
+          console.error("Failed to update rx:", error);
+        }
+      },
 
       approveRefill: async (orderId: string) => {
         try {
@@ -523,20 +532,7 @@ export const usePatientStore = create<AppState>()(
         }
       },
 
-      resetStore: () =>
-        set({
-          orders: [],
-          prescriptions: [],
-          visitForms: [],
-          notifications: [],
-          unreadMessagesCount: 0,
-          doctorAvailability: [],
-          intakeFormData: {},
-          prescriptionsLoading: true,
-          prescriptionsFetchedOnce: false,
-          visitFormsLoading: true,
-          visitFormsFetchedOnce: false,
-        }),
+      resetStore: () => set({ orders: [], intakeFormData: {} }),
     })
   )
 );

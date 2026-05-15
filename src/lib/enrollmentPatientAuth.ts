@@ -74,8 +74,9 @@ export function primePatientPortalNavigation(): void {
 }
 
 /** Full navigation to patient dashboard (survives auth re-init on reload). */
-export function navigateToPatientPortalAfterEnrollment(): void {
+export function navigateToPatientPortalAfterEnrollment(portalPath = "/patient"): void {
   primePatientPortalNavigation();
-  const buster = `?enrolled=${Date.now()}`;
-  window.location.href = `/patient${buster}`;
+  const base = portalPath.startsWith("/") ? portalPath : `/${portalPath}`;
+  const buster = base.includes("?") ? `&enrolled=${Date.now()}` : `?enrolled=${Date.now()}`;
+  window.location.href = `${base}${buster}`;
 }

@@ -5,10 +5,8 @@
  * This function:
  *   1. Validates the request (auth token check)
  *   2. Fetches the full order from Supabase
- *   3. Sends the prescription to the pharmacy API (Truepill-compatible format) when
- *      PHARMACY_API_URL + PHARMACY_API_KEY are set
- *   4. On pharmacy success (or dev mode with no API configured): updates order to rx_sent
- *   5. On pharmacy failure: returns 502, does NOT set rx_sent; writes pharmacy_note for ops
+ *   3. Sends the prescription to the pharmacy API (Truepill-compatible format)
+ *   4. Updates the order status to "rx_sent" with the pharmacy's confirmation ID
  *
  * Endpoint: POST https://<project>.supabase.co/functions/v1/dispatch-prescription
  *
@@ -59,39 +57,20 @@ serve(async (req: Request) => {
     });
   }
 
-  const { order_id: rawOrderId, dosage_instructions, doctor_note, pharmacy = "truepill" } = body;
+  const { order_id, dosage_instructions, doctor_note, pharmacy = "truepill" } = body;
 
-  if (!rawOrderId) {
+  if (!order_id) {
     return new Response(JSON.stringify({ error: "order_id is required" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
-  const looksLikeUuid = (s: string) =>
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
-
   // --------------- Init Supabase (service role — bypass RLS) ---------------
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
-
-  let orderUuid = String(rawOrderId).trim();
-  if (!looksLikeUuid(orderUuid)) {
-    const { data: row, error: lookupErr } = await supabase
-      .from("orders")
-      .select("id")
-      .eq("order_number", orderUuid)
-      .maybeSingle();
-    if (lookupErr || !row?.id) {
-      return new Response(JSON.stringify({ error: "Order not found for order_id / order_number" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    orderUuid = row.id;
-  }
 
   // --------------- Fetch the full order ---------------
   const { data: order, error: fetchErr } = await supabase
@@ -104,7 +83,7 @@ serve(async (req: Request) => {
         date_of_birth
       )
     `)
-    .eq("id", orderUuid)
+    .eq("id", order_id)
     .single();
 
   if (fetchErr || !order) {
@@ -150,7 +129,6 @@ serve(async (req: Request) => {
   // --------------- Send to Pharmacy API ---------------
   let pharmacyConfirmationId: string | null = null;
   let pharmacyDispatchSuccess = false;
-  let pharmacyFailureDetail: string | null = null;
 
   if (PHARMACY_API_URL && PHARMACY_API_KEY) {
     try {
@@ -164,79 +142,37 @@ serve(async (req: Request) => {
       });
 
       if (pharmacyRes.ok) {
-        try {
-          const pharmacyData = await pharmacyRes.json();
-          pharmacyConfirmationId = pharmacyData?.id ?? pharmacyData?.order_id ?? null;
-        } catch {
-          pharmacyConfirmationId = null;
-        }
+        const pharmacyData = await pharmacyRes.json();
+        pharmacyConfirmationId = pharmacyData?.id ?? pharmacyData?.order_id ?? null;
         pharmacyDispatchSuccess = true;
         console.log(`✅ Pharmacy dispatch success: ${pharmacyConfirmationId}`);
       } else {
-        pharmacyFailureDetail = await pharmacyRes.text();
-        console.error(`Pharmacy API error ${pharmacyRes.status}: ${pharmacyFailureDetail}`);
+        const errText = await pharmacyRes.text();
+        console.error(`Pharmacy API error ${pharmacyRes.status}: ${errText}`);
       }
     } catch (err) {
-      pharmacyFailureDetail = err instanceof Error ? err.message : String(err);
       console.error("Pharmacy API fetch failed:", err);
     }
   } else {
-    // No pharmacy API configured — dev/staging only: accept without outbound call
+    // No pharmacy API configured yet — simulate success for dev/staging
     pharmacyConfirmationId = `SIMULATED-${Date.now()}`;
     pharmacyDispatchSuccess = true;
-    console.warn("⚠️  PHARMACY_API_URL / PHARMACY_API_KEY not set — simulating pharmacy acceptance (dev only).");
+    console.warn("⚠️  PHARMACY_API_URL not set — simulating dispatch for dev.");
   }
 
-  if (!pharmacyDispatchSuccess) {
-    const detail = (pharmacyFailureDetail ?? "Unknown pharmacy error").slice(0, 4000);
-    const opsLine = `[${new Date().toISOString()}] Pharmacy rejected dispatch: ${detail}`.slice(0, 8000);
-
-    const { error: failPatchErr } = await supabase
-      .from("orders")
-      .update({
-        pharmacy_note: opsLine,
-        rx_dispatched: false,
-        dosage_instructions: dosage_instructions || order.dosage_instructions,
-        ...(typeof doctor_note === "string" && doctor_note.trim()
-          ? { doctor_note: doctor_note.trim() }
-          : {}),
-      })
-      .eq("id", orderUuid);
-
-    if (failPatchErr) {
-      console.error("dispatch-prescription: failure patch error", failPatchErr);
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: "Pharmacy API did not accept the prescription dispatch.",
-        detail: detail.slice(0, 2000),
-      }),
-      { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  }
-
-  const existingTimeline = Array.isArray(order.timeline) ? order.timeline : [];
-  const newTimeline = [
-    ...existingTimeline,
-    { status: "rx_sent", date: new Date().toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) },
-  ];
-
-  // --------------- Update Supabase order (only after pharmacy acceptance or dev simulation) ---------------
+  // --------------- Update Supabase order ---------------
   const { error: updateErr } = await supabase
     .from("orders")
     .update({
-      status: "rx_sent",
-      dosage_instructions: dosage_instructions || order.dosage_instructions,
-      doctor_note: typeof doctor_note === "string" ? doctor_note : order.doctor_note ?? "",
-      pharmacy_name: pharmacy,
-      pharmacy_confirmation_id: pharmacyConfirmationId,
-      pharmacy_dispatched_at: new Date().toISOString(),
-      rx_dispatched: true,
-      timeline: newTimeline,
+      status:                    "rx_sent",
+      dosage_instructions:       dosage_instructions || order.dosage_instructions,
+      doctor_note:               doctor_note ?? "",
+      pharmacy_name:             pharmacy,
+      pharmacy_confirmation_id:  pharmacyConfirmationId,
+      pharmacy_dispatched_at:    new Date().toISOString(),
+      rx_dispatched:             pharmacyDispatchSuccess,
     })
-    .eq("id", orderUuid);
+    .eq("id", order_id);
 
   if (updateErr) {
     console.error("dispatch-prescription: DB update error", updateErr);
@@ -249,13 +185,13 @@ serve(async (req: Request) => {
   return new Response(
     JSON.stringify({
       success: true,
-      pharmacy_dispatched: true,
+      pharmacy_dispatched: pharmacyDispatchSuccess,
       pharmacy_confirmation_id: pharmacyConfirmationId,
       new_status: "rx_sent",
     }),
     {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-    },
+    }
   );
 });

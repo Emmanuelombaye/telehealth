@@ -1,7 +1,6 @@
 import { cn } from "./ui/utils";
 import {
-  CLIENT_FLOW_DIAGRAM_STEP_COUNT,
-  CLIENT_PATIENT_FLOW_NINE_STEPS,
+  ENROLLMENT_JOURNEY_STEPS,
   journeyIndexForStage,
   type ShopFlowStage,
 } from "../../lib/patientShopRoutes";
@@ -9,55 +8,50 @@ import {
 export function PatientEnrollmentStepper({
   stage,
   className,
-  intakePath,
 }: {
   stage: ShopFlowStage;
   className?: string;
-  intakePath?: "video" | "async";
 }) {
   const activeIdx = journeyIndexForStage(stage);
-  const active = CLIENT_PATIENT_FLOW_NINE_STEPS[activeIdx];
-  const n = CLIENT_FLOW_DIAGRAM_STEP_COUNT;
-  const intakeSuffix =
-    stage === "questionnaire" && intakePath === "video"
-      ? " · Video visit"
-      : stage === "questionnaire" && intakePath === "async"
-        ? " · Review only"
-        : "";
+  const active = ENROLLMENT_JOURNEY_STEPS[activeIdx];
+  const n = ENROLLMENT_JOURNEY_STEPS.length;
 
   return (
-    <div className={cn("w-full space-y-2.5", className)} role="navigation" aria-label="Enrollment progress">
-      <p className="text-sm font-semibold text-slate-900 leading-snug">
-        <span className="tabular-nums text-emerald-700">Step {active.diagramStep}</span>
-        <span className="font-normal text-slate-400"> / {n}</span>
-        <span className="font-normal text-slate-400"> · </span>
-        <span>{active.title}{intakeSuffix}</span>
-      </p>
+    <div className={cn("w-full space-y-3", className)}>
+      <div className="flex flex-wrap items-center gap-2 justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-700/90">
+            Patient journey · Step {activeIdx + 1} of {n} (maps steps 2–9 after landing)
+          </p>
+          <p className="text-sm font-bold text-foreground mt-0.5">{active.title}</p>
+          <p className="text-xs text-muted-foreground">{active.subtitle}</p>
+        </div>
+      </div>
 
-      <div
-        className="flex gap-1"
-        role="list"
-        aria-label={`Progress: step ${active.diagramStep} of ${n}, ${active.title}`}
-      >
-        {CLIENT_PATIENT_FLOW_NINE_STEPS.map((s, i) => {
-          const done = i === 0 ? activeIdx >= 1 : i < activeIdx;
+      {/* Progress dots — mobile-friendly */}
+      <div className="flex gap-1 overflow-x-auto pb-1">
+        {ENROLLMENT_JOURNEY_STEPS.map((s, i) => {
+          const done = i < activeIdx;
           const current = i === activeIdx;
           return (
             <div
-              key={`flow-${s.diagramStep}`}
-              role="listitem"
-              aria-current={current ? "step" : undefined}
-              aria-label={`Step ${s.diagramStep}: ${s.title}${current ? " (current)" : done ? " (complete)" : ""}`}
+              key={s.stage}
               className={cn(
-                "h-1.5 min-w-[18px] flex-1 rounded-full transition-colors duration-300 shrink-0 sm:h-2 sm:min-w-[22px]",
+                "h-1.5 min-w-[28px] flex-1 rounded-full transition-colors shrink-0",
                 done && "bg-emerald-500",
-                current && "bg-emerald-600 ring-2 ring-emerald-400/30",
-                !done && !current && "bg-slate-200",
+                current && "bg-emerald-600 ring-2 ring-emerald-500/30",
+                !done && !current && "bg-muted"
               )}
+              title={`${s.title} (#${s.infographicStep})`}
             />
           );
         })}
       </div>
+
+      <p className="text-[10px] text-muted-foreground leading-relaxed border-t border-border/60 pt-2">
+        Secure & HIPAA-aligned · Save & resume (this device, up to 7 days) · Clear guidance at each step · Mobile
+        optimized
+      </p>
     </div>
   );
 }

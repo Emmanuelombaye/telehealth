@@ -61,7 +61,7 @@ async function resolveBookingLink(
   supabase: ReturnType<typeof createClient>,
   record: Record<string, unknown>
 ): Promise<string> {
-  const fallback = "https://peakhealth.com/patient/appointments";
+  let bookingLink = "https://peakhealth.com/patient/appointments";
   const doctorId = record.doctor_id as string | undefined;
   if (doctorId) {
     const { data: profile } = await supabase
@@ -69,12 +69,9 @@ async function resolveBookingLink(
       .select("calendly_url, full_name")
       .eq("id", doctorId)
       .maybeSingle();
-    const cal = profile?.calendly_url;
-    if (typeof cal === "string" && /^https?:\/\//i.test(cal.trim())) return cal.trim();
+    if (profile?.calendly_url) bookingLink = profile.calendly_url as string;
   }
-  const saved = record.scheduling_booking_url;
-  if (typeof saved === "string" && /^https?:\/\//i.test(saved.trim())) return saved.trim();
-  return fallback;
+  return bookingLink;
 }
 
 async function sendVideoBookingRequested(
@@ -148,8 +145,7 @@ serve(async (req) => {
         ? record.patient_email
         : "patient@example.com";
 
-    // ── INSERT: new enrollment / order that required sync video (see Shop.tsx zoom_status) ──
-    if (pType === "INSERT" && record.zoom_status === "requested") {
+    // ── INSERT: new enrollment / order with video required ───────────────────
       await sendVideoBookingRequested(supabase, resendApiKey, record, { isInsert: true });
       return new Response(JSON.stringify({ success: true, event: "video_booking_insert" }), { status: 200 });
     }

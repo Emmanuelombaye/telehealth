@@ -1,10 +1,7 @@
 /**
- * Normalize Calendly + Cal.com (and other https schedulers) for inline iframes and share links.
+ * Normalize any Calendly scheduling URL into one suitable for an <iframe> inline embed.
  * @see https://help.calendly.com/hc/en-us/articles/223147027-Embed-options-overview
- * @see https://cal.com/help/embedding
  */
-
-export type SchedulingProvider = "calendly" | "calcom" | "generic_https";
 
 export type CalendlyEmbedOptions = {
   /** Prefill guest email (Calendly query: email) */
@@ -26,35 +23,6 @@ function safeHost(): string {
   return "localhost";
 }
 
-function isCalendlyHost(hostname: string): boolean {
-  const h = hostname.toLowerCase();
-  return h === "calendly.com" || h === "www.calendly.com";
-}
-
-/** Cal.com public booking hosts (team subdomains included). */
-function isCalDotComHost(hostname: string): boolean {
-  const h = hostname.toLowerCase();
-  return h === "cal.com" || h === "www.cal.com" || h.endsWith(".cal.com");
-}
-
-/**
- * Detect which scheduler family a URL belongs to (for UI + embed behavior).
- */
-export function detectSchedulingProvider(raw: string | null | undefined): SchedulingProvider {
-  if (!raw || typeof raw !== "string") return "generic_https";
-  let t = raw.trim();
-  if (!t) return "generic_https";
-  if (!/^https?:\/\//i.test(t)) t = `https://${t}`;
-  try {
-    const u = new URL(t);
-    if (isCalendlyHost(u.hostname)) return "calendly";
-    if (isCalDotComHost(u.hostname)) return "calcom";
-  } catch {
-    /* ignore */
-  }
-  return "generic_https";
-}
-
 /**
  * Returns a full https URL for Calendly inline embed, or null if input is not a Calendly URL.
  */
@@ -72,7 +40,7 @@ export function toCalendlyInlineEmbedUrl(
   } catch {
     return null;
   }
-  if (!isCalendlyHost(url.hostname)) {
+  if (!/calendly\.com$/i.test(url.hostname) && !/www\.calendly\.com$/i.test(url.hostname)) {
     return null;
   }
 
@@ -94,38 +62,7 @@ export function toCalendlyInlineEmbedUrl(
 }
 
 /**
- * Cal.com / Cal — inline iframe URL (adds embed + guest prefill query params).
- */
-export function toCalDotComInlineEmbedUrl(
-  raw: string | null | undefined,
-  opts: CalendlyEmbedOptions = {}
-): string | null {
-  if (!raw || typeof raw !== "string") return null;
-  let trimmed = raw.trim();
-  if (!trimmed) return null;
-  if (!/^https?:\/\//i.test(trimmed)) trimmed = `https://${trimmed}`;
-  let url: URL;
-  try {
-    url = new URL(trimmed);
-  } catch {
-    return null;
-  }
-  if (url.hostname.toLowerCase() === "app.cal.com") {
-    url.hostname = "cal.com";
-  }
-  if (!isCalDotComHost(url.hostname)) return null;
-
-  url.searchParams.set("embed", "true");
-  if (opts.email?.trim()) url.searchParams.set("email", opts.email.trim());
-  if (opts.name?.trim()) url.searchParams.set("name", opts.name.trim());
-  if (opts.utmContent?.trim()) url.searchParams.set("utm_content", opts.utmContent.trim());
-  if (opts.utmCampaign?.trim()) url.searchParams.set("utm_campaign", opts.utmCampaign.trim());
-
-  return url.toString();
-}
-
-/**
- * If `raw` is Calendly or Cal.com, return inline embed URL; otherwise return trimmed https URL for generic schedulers.
+ * If `raw` is Calendly, return inline embed URL; otherwise return trimmed https URL (e.g. Cal.com).
  */
 export function toSchedulingIframeSrc(
   raw: string | null | undefined,
@@ -134,10 +71,8 @@ export function toSchedulingIframeSrc(
   if (!raw || typeof raw !== "string") return null;
   const t = raw.trim();
   if (!t) return null;
-  const calendly = toCalendlyInlineEmbedUrl(t, opts);
-  if (calendly) return calendly;
-  const calcom = toCalDotComInlineEmbedUrl(t, opts);
-  if (calcom) return calcom;
+  const cal = toCalendlyInlineEmbedUrl(t, opts);
+  if (cal) return cal;
   if (t.startsWith("https://")) {
     try {
       const u = new URL(t);
@@ -167,7 +102,7 @@ export function defaultCalendlySchedulingUrl(): string {
 export function stripCalendlyEmbedParams(urlStr: string): string {
   try {
     const u = new URL(/^https?:\/\//i.test(urlStr) ? urlStr : `https://${urlStr}`);
-    if (!isCalendlyHost(u.hostname)) return urlStr;
+    if (!/calendly\.com$/i.test(u.hostname) && !/www\.calendly\.com$/i.test(u.hostname)) return urlStr;
     const strip = [
       "embed_type",
       "embed_domain",
@@ -185,31 +120,33 @@ export function stripCalendlyEmbedParams(urlStr: string): string {
   }
 }
 
-/**
- * URL safe to open in a new tab (strips iframe-only params; keeps guest prefill where present).
- * Works for Calendly, Cal.com, and passes through other https URLs unchanged.
- */
-export function toSchedulingOpenTabUrl(urlStr: string | null | undefined): string {
-  if (!urlStr || typeof urlStr !== "string" || !urlStr.trim()) return "";
-  const t = urlStr.trim();
-  const strippedCalendly = stripCalendlyEmbedParams(t);
-  if (strippedCalendly !== t) return strippedCalendly;
-
-  try {
-    const u = new URL(/^https?:\/\//i.test(t) ? t : `https://${t}`);
-    if (u.hostname.toLowerCase() === "app.cal.com") u.hostname = "cal.com";
-    if (!isCalDotComHost(u.hostname)) return t;
-    const strip = ["embed", "embedType", "layout", "embed_type", "embed_domain"];
-    for (const k of strip) u.searchParams.delete(k);
-    return u.toString();
-  } catch {
-    return t;
-  }
-}
-
 /** Default public booking link (new tab), not iframe. */
 export function defaultCalendlyBookingPageUrl(): string {
   const env = import.meta.env.VITE_CALENDLY_DEFAULT_URL as string | undefined;
   if (env && env.includes("calendly.com")) return stripCalendlyEmbedParams(env);
   return "https://calendly.com/peakhealth-medical/consultation";
+}
+
+export type SchedulingProvider = "calendly" | "calcom" | "unknown";
+
+export function detectSchedulingProvider(raw: string | null | undefined): SchedulingProvider {
+  if (!raw || typeof raw !== "string") return "unknown";
+  const t = raw.trim().toLowerCase();
+  if (t.includes("calendly.com")) return "calendly";
+  if (t.includes("cal.com")) return "calcom";
+  return "unknown";
+}
+
+/** Booking URL suitable for opening in a new browser tab (strips Calendly iframe params). */
+export function toSchedulingOpenTabUrl(raw: string | null | undefined): string | null {
+  if (!raw || typeof raw !== "string") return null;
+  let trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (!/^https?:\/\//i.test(trimmed)) trimmed = `https://${trimmed}`;
+  if (/calendly\.com/i.test(trimmed)) return stripCalendlyEmbedParams(trimmed);
+  try {
+    return new URL(trimmed).toString();
+  } catch {
+    return trimmed;
+  }
 }

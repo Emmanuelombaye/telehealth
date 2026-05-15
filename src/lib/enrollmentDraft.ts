@@ -40,7 +40,6 @@ export type EnrollmentDraftV1 = {
   qualifierNoMtcMen2: boolean;
   qualifierUsResident: boolean;
   identityStripeCompleted: boolean;
-  idDocumentType?: string;
   activeCat: string;
   /** Correlates Calendly/Cal booking webhooks with this enrollment (utm_content). */
   scheduling_ref?: string | null;

@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { NavLink, Link, useLocation } from "react-router";
+import { useState } from "react";
+import { NavLink, Link } from "react-router";
 import {
   LayoutDashboard, Users, Calendar, MessageSquare, ClipboardList,
   FileText, Settings, LogOut, Stethoscope, Activity, ShieldCheck,
@@ -14,7 +14,6 @@ import { useI18n } from "../../lib/i18n.tsx";
 import { brand } from "../../lib/patient-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { usePatientStore } from "../../lib/patient-store";
-import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -46,22 +45,17 @@ const menuConfig: Record<Role, any[]> = {
     { icon: Building2, label: "Insurance", href: "/patient/insurance" },
   ],
   doctor: [
-    { group: "CLINICAL CORE", icon: LayoutDashboard, label: "Overview", href: "/doctor" },
-    { group: "CLINICAL CORE", icon: ClipboardList, label: "Clinical queue", href: "/doctor/queue" },
-    { group: "CLINICAL CORE", icon: Stethoscope, label: "Case workspace", href: "/doctor/consult" },
-    { group: "CLINICAL CORE", icon: Users, label: "Patients", href: "/doctor/patients" },
-    { group: "CARE COORDINATION", icon: Calendar, label: "Schedule", href: "/doctor/schedule" },
-    { group: "CARE COORDINATION", icon: Activity, label: "Availability", href: "/doctor/availability" },
-    { group: "CARE COORDINATION", icon: MessageSquare, label: "Messages", href: "/doctor/messages" },
-    { group: "CARE COORDINATION", icon: Bell, label: "Notifications", href: "/doctor/notifications" },
-    { group: "DIAGNOSTICS & RX", icon: FlaskConical, label: "Labs", href: "/doctor/labs" },
-    { group: "DIAGNOSTICS & RX", icon: ImageIcon, label: "Imaging", href: "/doctor/imaging" },
-    { group: "DIAGNOSTICS & RX", icon: Bot, label: "AI Scribe", href: "/doctor/scribe" },
-    { group: "DIAGNOSTICS & RX", icon: Pill, label: "e-Prescribing", href: "/doctor/erx" },
-    { group: "PROGRAMS", icon: HeartPulse, label: "RPM", href: "/doctor/rpm" },
-    { group: "PROGRAMS", icon: ArrowRightLeft, label: "Referrals", href: "/doctor/referrals" },
-    { group: "PROGRAMS", icon: CreditCard, label: "Billing", href: "/doctor/billing" },
-    { group: "PROGRAMS", icon: BookOpen, label: "Education", href: "/doctor/education" },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/doctor" },
+    { icon: Users, label: "Patients", href: "/doctor/patients" },
+    { icon: ClipboardList, label: "Patient Queue", href: "/doctor/queue" },
+    { icon: Calendar, label: "Schedule", href: "/doctor/schedule" },
+    { icon: Activity, label: "Availability", href: "/doctor/availability" },
+    { icon: MessageSquare, label: "Messages", href: "/doctor/messages" },
+    { icon: Stethoscope, label: "Consultation", href: "/doctor/consult" },
+    { icon: FlaskConical, label: "Lab Requests", href: "/doctor/labs" },
+    { icon: Bot, label: "AI Scribe", href: "/doctor/scribe" },
+    { icon: Pill, label: "e-Prescribing", href: "/doctor/erx" },
+    { icon: BookOpen, label: "Education", href: "/doctor/education" },
   ],
   admin: [
     { group: "MANAGEMENT", icon: Home, label: "Home", href: "/admin" },
@@ -111,21 +105,11 @@ const roleColors: Record<Role, string> = {
 
 export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const { t } = useI18n();
-  const { pathname } = useLocation();
-  const doctorBase = doctorPortalBaseFromPath(pathname);
-  const menu = useMemo(() => {
-    const raw = menuConfig[role];
-    if (role !== "doctor") return raw;
-    return raw.map((item) => ({
-      ...item,
-      href: item.href.replace(/^\/doctor/, doctorBase),
-    }));
-  }, [role, doctorBase]);
+  const menu = menuConfig[role];
   const { user, role: authRole } = useAuthStore();
   const { orders, notifications } = usePatientStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const pendingCount = orders.filter(o => o.status === "order_submitted" || o.status === "medical_review").length;
-  const videoInboxCount = orders.filter(o => o.zoom_status === "requested").length;
   const unreadNotificationsCount = notifications.filter(n => n.unread).length;
 
   const fullName = user?.user_metadata?.first_name 
@@ -137,15 +121,8 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
 
   const MotionNavLink = motion(NavLink);
 
-  const superNav = role === "superadmin";
-
   const SidebarContent = () => (
-    <div
-      className={cn(
-        "flex h-full flex-col overflow-hidden border-r bg-white",
-        superNav ? "border-slate-200/80 text-slate-800" : "border-slate-100 text-[#0A0D14]",
-      )}
-    >
+    <div className={cn("flex h-full flex-col overflow-hidden text-[#0A0D14] border-r border-slate-100 bg-white")}>
       <div className="flex h-24 items-center justify-center border-b border-slate-100 px-6 shrink-0 bg-white relative">
         {onMobileClose && (
           <button onClick={onMobileClose} className="absolute right-4 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
@@ -171,66 +148,37 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
               
               <MotionNavLink
                 to={item.href}
-                end={
-                  role === "doctor"
-                    ? item.href === doctorBase
-                    : item.href === `/${role}`
-                }
+                end={item.href === `/${role}`}
                 onClick={onMobileClose}
-                whileHover={{ x: superNav ? 2 : 4 }}
+                whileHover={{ x: 4 }}
                 whileTap={{ scale: 0.98 }}
                 className={({ isActive }) =>
                   cn(
-                    "group relative mb-1 flex items-center justify-between overflow-hidden rounded-xl px-3 py-2.5 text-[13px] transition-colors duration-200",
-                    superNav
-                      ? isActive
-                        ? "bg-slate-900 font-medium text-white shadow-sm"
-                        : "border border-transparent font-medium text-slate-600 hover:border-slate-200 hover:bg-slate-50"
-                      : cn(
-                          "font-black duration-300",
-                          isActive
-                            ? "border-l-4 border-[#D4AF37] bg-[#0A2E1F] text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)]"
-                            : "border-l-4 border-transparent text-slate-500 hover:bg-slate-50/80 hover:text-[#0A2E1F]",
-                        ),
+                    "flex items-center justify-between rounded-2xl px-4 py-3.5 text-[13px] font-black transition-all duration-300 group relative mb-1 overflow-hidden",
+                    isActive 
+                      ? "bg-[#0A2E1F] text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)] border-l-4 border-[#D4AF37]" 
+                      : "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80 border-l-4 border-transparent"
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <div className="relative z-10 flex min-w-0 items-center gap-3">
-                      <item.icon
-                        className={cn(
-                          "h-5 w-5 shrink-0 transition-all duration-300",
-                          superNav
-                            ? isActive
-                              ? "text-emerald-400"
-                              : "text-slate-400 group-hover:text-slate-700"
-                            : isActive
-                              ? "scale-110 text-[#D4AF37]"
-                              : "text-slate-400 group-hover:scale-110 group-hover:text-[#0A2E1F]",
-                        )}
-                      />
-                      <span className={cn("truncate tracking-tight", superNav ? "" : "uppercase")}>{item.label}</span>
+                    <div className="flex items-center gap-3 min-w-0 relative z-10">
+                      <item.icon className={cn(
+                        "h-5 w-5 shrink-0 transition-all duration-300", 
+                        isActive ? "text-[#D4AF37] scale-110" : "text-slate-400 group-hover:text-[#0A2E1F] group-hover:scale-110"
+                      )} />
+                      <span className="truncate uppercase tracking-tight">{item.label}</span>
                     </div>
                     {(() => {
                       let badgeCount = item.badge;
-                      if (item.label === "Clinical queue") badgeCount = pendingCount;
-                      if (item.label === "Case workspace") badgeCount = videoInboxCount;
+                      if (item.label === "Patient Queue") badgeCount = pendingCount;
                       if (item.label === "Notifications") badgeCount = unreadNotificationsCount;
                       if (badgeCount && badgeCount > 0) {
                         return (
-                          <span
-                            className={cn(
-                              "relative z-10 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[9px] font-semibold shadow-sm",
-                              superNav
-                                ? isActive
-                                  ? "bg-emerald-400 text-slate-900"
-                                  : "bg-emerald-100 text-emerald-900"
-                                : isActive
-                                  ? "bg-[#D4AF37] font-black text-[#0A2E1F]"
-                                  : "bg-emerald-100 font-black text-[#0A2E1F]",
-                            )}
-                          >
+                          <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 shadow-sm relative z-10",
+                            isActive ? "bg-[#D4AF37] text-[#0A2E1F]" : "bg-emerald-100 text-[#0A2E1F]"
+                          )}>
                             {badgeCount}
                           </span>
                         );

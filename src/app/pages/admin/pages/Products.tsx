@@ -14,10 +14,17 @@ import {
   ShieldCheck,
   ArrowUpRight,
   Video,
+  FileText,
 } from "lucide-react";
 import { Card, Button, Input, cn } from "../../../components/ui/shared.tsx";
 import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminDataTable";
+import { ProductRoutingBadge, ProductRoutingProfileCard } from "../../../components/admin/ProductRoutingBadge";
+import { ConsultRoutingRulesPanel } from "../../../components/admin/ConsultRoutingRulesPanel";
 import { supabase } from "../../../../lib/supabaseClient";
+import {
+  countProductsByRoutingMode,
+  getProductRoutingProfile,
+} from "../../../../lib/productRoutingProfile";
 import {
   DEFAULT_PRODUCT_GATEWAYS,
   GATEWAY_DISPLAY,
@@ -178,8 +185,35 @@ export function AdminProductsPage() {
     const active = products.filter((p) => p.active).length;
     const categoryCount = new Set(products.map((p) => p.category).filter(Boolean)).size;
     const listTotalUsd = products.reduce((s, p) => s + (Number(p.price_usd) || 0), 0);
-    return { active, categoryCount, listTotalUsd };
+    const routing = countProductsByRoutingMode(products);
+    const pathA = routing.path_a_always + routing.path_a_conditional;
+    return { active, categoryCount, listTotalUsd, routing, pathA };
   }, [products]);
+
+  const productOptions = useMemo(
+    () => products.map((p) => ({ id: p.id, name: p.name as string })),
+    [products],
+  );
+
+  const editingRoutingPreview = useMemo(() => {
+    if (!editingProduct) return null;
+    const states = routeForm.video_states
+      .split(/[,;\s]+/)
+      .map((s) => s.trim().toUpperCase())
+      .filter((s) => /^[A-Z]{2}$/.test(s));
+    const vc: Record<string, unknown> = {};
+    if (routeForm.bmi_min.trim()) vc.bmiMin = Number(routeForm.bmi_min);
+    if (routeForm.age_min.trim()) vc.ageMin = Number(routeForm.age_min);
+    const previewFeatures: Record<string, unknown> = {
+      requires_video_consult: routeForm.requires_video,
+      video_required_states: states,
+    };
+    if (routeForm.scheduling_embed_url.trim().startsWith("https://")) {
+      previewFeatures.scheduling_embed_url = routeForm.scheduling_embed_url.trim();
+    }
+    if (Object.keys(vc).length) previewFeatures.video_clinical_rules = vc;
+    return getProductRoutingProfile(previewFeatures);
+  }, [editingProduct, routeForm]);
 
   const formatUsd = (n: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -208,7 +242,25 @@ export function AdminProductsPage() {
       sub: "Sum of protocol list prices",
       accent: "from-amber-500/25 to-orange-400/10",
       iconBg: "bg-amber-500/15 text-amber-800 ring-amber-500/25",
-      wide: true,
+    },
+    {
+      label: "Video intake (Path A)",
+      val: stats.pathA,
+      icon: Video,
+      sub: `${stats.routing.path_a_always} always · ${stats.routing.path_a_conditional} conditional`,
+      accent: "from-emerald-500/20 to-cyan-400/10",
+      iconBg: "bg-emerald-500/15 text-emerald-700 ring-emerald-500/20",
+    },
+    {
+      label: "Async intake (Path B)",
+      val: stats.routing.path_b,
+      icon: FileText,
+      sub:
+        stats.routing.calendar_only > 0
+          ? `${stats.routing.calendar_only} with calendar URL only`
+          : "No live video at step 8",
+      accent: "from-slate-400/15 to-slate-300/10",
+      iconBg: "bg-slate-500/10 text-slate-700 ring-slate-400/20",
     },
   ];
 
@@ -246,7 +298,8 @@ export function AdminProductsPage() {
                 </span>
               </h1>
               <p className="max-w-xl text-sm font-medium leading-relaxed text-slate-200/90 md:text-[15px]">
-                Curate the therapeutic catalog, tune checkout gateways, and align sync-video rules in one calm surface.
+                Curate the therapeutic catalog, tune checkout gateways, and see Path A (video) vs Path B (async) per protocol
+                before patients reach step 8.
                 {isSuperAdminRoute ? " Full-fidelity control for platform operators." : ""}
               </p>
               <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -283,7 +336,7 @@ export function AdminProductsPage() {
         </section>
 
         {/* Metrics */}
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
           {metricCards.map((m, i) => (
             <Card
               key={i}
@@ -351,14 +404,19 @@ export function AdminProductsPage() {
               </div>
             ) : (
               <AdminDataTable
-                data={products.map((p) => ({
-                  id: p.id.substring(0, 8),
-                  name: p.name,
-                  category: p.category,
-                  price: `$${p.price_usd}`,
-                  status: p.active ? "Active" : "Archived",
-                  updated: new Date(p.created_at).toLocaleDateString(),
-                }))}
+                data={products.map((p) => {
+                  const routingProfile = getProductRoutingProfile(p.features);
+                  return {
+                    id: p.id.substring(0, 8),
+                    fullId: p.id,
+                    name: p.name,
+                    category: p.category,
+                    price: `$${p.price_usd}`,
+                    status: p.active ? "Active" : "Archived",
+                    updated: new Date(p.created_at).toLocaleDateString(),
+                    routingProfile,
+                  };
+                })}
                 columns={[
                   {
                     header: "ID",
@@ -386,6 +444,13 @@ export function AdminProductsPage() {
                   },
                   { header: "Status", accessorKey: "status", cell: (item: any) => <StatusText status={item.status} /> },
                   {
+                    header: "Enrollment path",
+                    accessorKey: "routingProfile",
+                    cell: (item: any) => (
+                      <ProductRoutingBadge profile={item.routingProfile} size="sm" />
+                    ),
+                  },
+                  {
                     header: "Deployed",
                     accessorKey: "updated",
                     cell: (item: any) => <span className="text-[11px] font-bold text-slate-400">{item.updated}</span>,
@@ -394,7 +459,7 @@ export function AdminProductsPage() {
                     header: "",
                     accessorKey: "actions",
                     cell: (item: any) => {
-                      const prod = products.find((p) => p.id.substring(0, 8) === item.id);
+                      const prod = products.find((p) => p.id === item.fullId);
                       return (
                         <Button
                           type="button"
@@ -413,6 +478,10 @@ export function AdminProductsPage() {
             )}
           </div>
         </div>
+
+        {isSuperAdminRoute ? (
+          <ConsultRoutingRulesPanel productOptions={productOptions} />
+        ) : null}
 
       {/* ADD PRODUCT MODAL - EXECUTIVE EMERALD EDITION */}
       <AnimatePresence>
@@ -555,6 +624,9 @@ export function AdminProductsPage() {
                 </button>
               </div>
               <form onSubmit={saveProductRouting} className="p-8 space-y-5">
+                {editingRoutingPreview ? (
+                  <ProductRoutingProfileCard profile={editingRoutingPreview} />
+                ) : null}
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
                     Payment methods (shop checkout)
@@ -658,8 +730,11 @@ export function AdminProductsPage() {
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Global state list for <strong>all</strong> protocols: set <code className="text-[10px] bg-slate-100 px-1 rounded">VITE_VIDEO_REQUIRED_STATES</code> in env.
-                  Cross-product rules (e.g. GLP-1 + CA + BMI): use Supabase table <code className="text-[10px] bg-slate-100 px-1 rounded">consult_routing_rules</code> — run <code className="text-[10px] bg-slate-100 px-1 rounded">supabase_consult_routing_rules.sql</code>.
+                  Global state list for <strong>all</strong> protocols: set{" "}
+                  <code className="text-[10px] bg-slate-100 px-1 rounded">VITE_VIDEO_REQUIRED_STATES</code> in env.
+                  {isSuperAdminRoute
+                    ? " Cross-product rules: use the Global Path A panel below this table."
+                    : " Cross-product rules: Superadmin → Products → Global Path A triggers."}
                 </p>
                 <Button
                   type="submit"
