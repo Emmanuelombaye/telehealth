@@ -1,5 +1,20 @@
-import { useState, useEffect } from "react";
-import { Plus, PackageSearch, RefreshCw, X, Check, Loader2, TrendingUp, Layers, Box, Pill } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router";
+import {
+  Plus,
+  PackageSearch,
+  RefreshCw,
+  X,
+  Loader2,
+  TrendingUp,
+  Layers,
+  Box,
+  Pill,
+  Sparkles,
+  ShieldCheck,
+  ArrowUpRight,
+  Video,
+} from "lucide-react";
 import { Card, Button, Input, cn } from "../../../components/ui/shared.tsx";
 import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminDataTable";
 import { supabase } from "../../../../lib/supabaseClient";
@@ -12,6 +27,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 export function AdminProductsPage() {
+  const location = useLocation();
+  const isSuperAdminRoute = location.pathname.includes("/superadmin/");
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -48,6 +65,10 @@ export function AdminProductsPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     if (!editingProduct) return;
@@ -153,122 +174,245 @@ export function AdminProductsPage() {
     }
   };
 
+  const stats = useMemo(() => {
+    const active = products.filter((p) => p.active).length;
+    const categoryCount = new Set(products.map((p) => p.category).filter(Boolean)).size;
+    const listTotalUsd = products.reduce((s, p) => s + (Number(p.price_usd) || 0), 0);
+    return { active, categoryCount, listTotalUsd };
+  }, [products]);
+
+  const formatUsd = (n: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+
+  const metricCards = [
+    {
+      label: "Active protocols",
+      val: stats.active,
+      icon: Pill,
+      sub: "Live in checkout & routing",
+      accent: "from-emerald-500/25 to-teal-400/10",
+      iconBg: "bg-emerald-500/15 text-emerald-700 ring-emerald-500/20",
+    },
+    {
+      label: "Care verticals",
+      val: stats.categoryCount,
+      icon: Layers,
+      sub: "Distinct catalog categories",
+      accent: "from-violet-500/20 to-fuchsia-400/10",
+      iconBg: "bg-violet-500/15 text-violet-700 ring-violet-500/20",
+    },
+    {
+      label: "Listed catalog value",
+      val: formatUsd(stats.listTotalUsd),
+      icon: TrendingUp,
+      sub: "Sum of protocol list prices",
+      accent: "from-amber-500/25 to-orange-400/10",
+      iconBg: "bg-amber-500/15 text-amber-800 ring-amber-500/25",
+      wide: true,
+    },
+  ];
+
   return (
-    <div className="max-w-[1400px] mx-auto font-sans space-y-8 animate-fade-in-up p-4 md:p-0">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-           <div className="flex items-center gap-2 mb-2">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600">Inventory Command</span>
-           </div>
-           <h1 className="text-4xl font-black text-[#0A2E1F] tracking-tight">Clinical Protocols</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            className="rounded-2xl gap-2 font-black text-[10px] uppercase tracking-widest border-slate-200 h-12 px-6 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
-            onClick={() => window.open('/explore-treatments', '_blank')}
-          >
-            <PackageSearch className="h-4 w-4" /> Browse Catalog
-          </Button>
-          <Button 
-            className="bg-[#0A2E1F] hover:bg-emerald-950 text-white rounded-2xl gap-2 font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-emerald-900/20 h-12 px-8 transition-all hover:-translate-y-0.5 active:translate-y-0"
-            onClick={() => setShowAddModal(true)}
-          >
-            <Plus className="h-4 w-4" /> Add Protocol
-          </Button>
-        </div>
-      </div>
+    <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden font-sans">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(16,185,129,0.12),transparent_50%),radial-gradient(ellipse_80%_50%_at_100%_0%,rgba(139,92,246,0.08),transparent_45%),radial-gradient(ellipse_60%_40%_at_0%_100%,rgba(14,165,233,0.08),transparent_40%)]"
+        aria-hidden
+      />
+      <div className="mx-auto max-w-[1440px] space-y-10 px-4 py-8 md:px-6 md:py-10 animate-fade-in-up">
+        {/* Hero */}
+        <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/70 shadow-[0_24px_80px_-24px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 backdrop-blur-xl md:rounded-[2.5rem]">
+          <div
+            className="absolute inset-0 opacity-90"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(6,78,59,0.92) 0%, rgba(17,24,39,0.88) 42%, rgba(76,29,149,0.55) 78%, rgba(14,116,144,0.45) 100%)",
+            }}
+            aria-hidden
+          />
+          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/25 blur-3xl" aria-hidden />
+          <div className="absolute -bottom-32 left-1/4 h-80 w-80 rounded-full bg-violet-500/20 blur-3xl" aria-hidden />
+          <div className="absolute right-1/3 top-1/2 h-48 w-48 rounded-full bg-cyan-400/15 blur-2xl" aria-hidden />
 
-      {/* EXECUTIVE METRIC CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[
-          { label: "Active Protocols", val: products.filter(p => p.active).length, icon: Pill, sub: "Live clinical offerings" },
-          { label: "Drug Groups", val: "12", icon: Layers, sub: "Categorized therapeutics" },
-          { label: "Protocol Revenue", val: "$128,420", icon: TrendingUp, sub: "Monthly platform volume", highlight: true },
-        ].map((m, i) => (
-          <Card key={i} className={cn(
-            "relative overflow-hidden border-none shadow-2xl shadow-slate-200/60 p-8 group transition-all hover:shadow-emerald-900/5",
-            m.highlight ? "bg-[#0A2E1F] text-white" : "bg-white text-[#0A2E1F]"
-          )}>
-            <div className={cn(
-              "absolute top-0 right-0 w-32 h-32 blur-3xl -mr-16 -mt-16 opacity-20",
-              m.highlight ? "bg-emerald-400" : "bg-emerald-100"
-            )} />
-            <div className="relative z-10 space-y-4">
-               <div className={cn(
-                 "h-10 w-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 duration-500",
-                 m.highlight ? "bg-white/10 text-emerald-400" : "bg-emerald-50 text-emerald-600"
-               )}>
-                  <m.icon className="h-5 w-5" />
-               </div>
-               <div>
-                  <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]", m.highlight ? "text-emerald-300" : "text-slate-400")}>{m.label}</p>
-                  <h2 className="text-4xl font-black tracking-tighter mt-1">{m.val}</h2>
-                  <p className={cn("text-[10px] font-bold mt-2", m.highlight ? "text-emerald-400" : "text-slate-300")}>{m.sub}</p>
-               </div>
+          <div className="relative z-10 flex flex-col gap-10 p-8 md:flex-row md:items-end md:justify-between md:p-12 lg:p-14">
+            <div className="max-w-2xl space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.28em] text-emerald-200/95 backdrop-blur-sm">
+                <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                {isSuperAdminRoute ? "Superadmin · Protocol OS" : "Admin · Protocol OS"}
+              </div>
+              <h1 className="text-4xl font-black tracking-tight text-white md:text-5xl lg:text-[3.25rem] lg:leading-[1.05]">
+                Clinical protocols,{" "}
+                <span className="bg-gradient-to-r from-emerald-300 via-cyan-200 to-violet-200 bg-clip-text text-transparent">
+                  orchestrated beautifully
+                </span>
+              </h1>
+              <p className="max-w-xl text-sm font-medium leading-relaxed text-slate-200/90 md:text-[15px]">
+                Curate the therapeutic catalog, tune checkout gateways, and align sync-video rules in one calm surface.
+                {isSuperAdminRoute ? " Full-fidelity control for platform operators." : ""}
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-semibold text-emerald-100/90">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />
+                  Supabase-backed inventory
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-semibold text-violet-100/90">
+                  <Video className="h-3.5 w-3.5 text-violet-300" />
+                  Checkout + video routing
+                </span>
+              </div>
             </div>
-          </Card>
-        ))}
-      </div>
 
-      {/* DATA TABLE SECTION */}
-      <div className="bg-white rounded-[40px] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-        <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
-           <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-emerald-600">
-                 <Box className="h-5 w-5" />
+            <div className="flex shrink-0 flex-col gap-3 sm:flex-row md:flex-col lg:flex-row">
+              <Button
+                variant="outline"
+                className="h-12 gap-2 rounded-2xl border-white/25 bg-white/10 px-6 font-black text-[10px] uppercase tracking-[0.2em] text-white shadow-lg shadow-black/20 backdrop-blur-md transition hover:bg-white/15 hover:text-white"
+                onClick={() => window.open("/explore-treatments", "_blank")}
+              >
+                <PackageSearch className="h-4 w-4" />
+                Browse catalog
+                <ArrowUpRight className="h-3.5 w-3.5 opacity-70" />
+              </Button>
+              <Button
+                className="h-12 gap-2 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-slate-950 shadow-xl shadow-emerald-900/30 transition hover:brightness-105 active:scale-[0.99]"
+                onClick={() => setShowAddModal(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Add protocol
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Metrics */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          {metricCards.map((m, i) => (
+            <Card
+              key={i}
+              className={cn(
+                "group relative overflow-hidden border border-slate-200/80 bg-white/90 p-7 shadow-lg shadow-slate-200/40 ring-1 ring-slate-900/[0.03] backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-xl",
+                m.wide && "md:col-span-1",
+              )}
+            >
+              <div
+                className={cn(
+                  "pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-gradient-to-br opacity-70 blur-2xl transition group-hover:opacity-100",
+                  m.accent,
+                )}
+              />
+              <div className="relative z-10 flex flex-col gap-4">
+                <div
+                  className={cn(
+                    "flex h-11 w-11 items-center justify-center rounded-2xl ring-1 ring-inset transition group-hover:scale-105",
+                    m.iconBg,
+                  )}
+                >
+                  <m.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{m.label}</p>
+                  <h2 className="mt-1 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">{m.val}</h2>
+                  <p className="mt-2 text-[11px] font-semibold text-slate-500">{m.sub}</p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Table shell */}
+        <div className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/95 shadow-[0_28px_100px_-32px_rgba(15,23,42,0.2)] ring-1 ring-slate-900/[0.04] backdrop-blur-md md:rounded-[2.25rem]">
+          <div className="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-r from-slate-50/90 via-white to-emerald-50/30 p-6 md:flex-row md:items-center md:justify-between md:p-8">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-900/25">
+                <Box className="h-6 w-6" />
               </div>
               <div>
-                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Live Inventory</p>
-                 <h3 className="text-lg font-black text-[#0A2E1F]">Protocol Repository</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Live inventory</p>
+                <h3 className="text-xl font-black tracking-tight text-slate-900">Protocol repository</h3>
+                <p className="mt-0.5 text-xs font-medium text-slate-500">
+                  {products.length} row{products.length === 1 ? "" : "s"}
+                  {loading ? " · refreshing…" : ""}
+                </p>
               </div>
-           </div>
-           <Button variant="ghost" className="h-10 w-10 rounded-xl hover:bg-white" onClick={fetchProducts}>
-              <RefreshCw className={cn("h-4 w-4 text-slate-400", loading && "animate-spin")} />
-           </Button>
+            </div>
+            <Button
+              variant="outline"
+              className="h-11 gap-2 self-start rounded-xl border-slate-200 font-bold text-slate-700 md:self-auto"
+              onClick={fetchProducts}
+            >
+              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+              Sync
+            </Button>
+          </div>
+
+          <div className="relative p-2 md:p-4">
+            {loading && products.length === 0 ? (
+              <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 py-16">
+                <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
+                <p className="text-sm font-semibold text-slate-500">Loading protocols…</p>
+              </div>
+            ) : (
+              <AdminDataTable
+                data={products.map((p) => ({
+                  id: p.id.substring(0, 8),
+                  name: p.name,
+                  category: p.category,
+                  price: `$${p.price_usd}`,
+                  status: p.active ? "Active" : "Archived",
+                  updated: new Date(p.created_at).toLocaleDateString(),
+                }))}
+                columns={[
+                  {
+                    header: "ID",
+                    accessorKey: "id",
+                    cell: (item: any) => <span className="font-mono text-[10px] font-bold text-slate-400">#{item.id}</span>,
+                  },
+                  {
+                    header: "Protocol",
+                    accessorKey: "name",
+                    cell: (item: any) => (
+                      <span className="text-sm font-black uppercase tracking-tight text-slate-900">{item.name}</span>
+                    ),
+                  },
+                  {
+                    header: "Category",
+                    accessorKey: "category",
+                    cell: (item: any) => (
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{item.category}</span>
+                    ),
+                  },
+                  {
+                    header: "MSRP",
+                    accessorKey: "price",
+                    cell: (item: any) => <span className="font-black text-emerald-600">{item.price}</span>,
+                  },
+                  { header: "Status", accessorKey: "status", cell: (item: any) => <StatusText status={item.status} /> },
+                  {
+                    header: "Deployed",
+                    accessorKey: "updated",
+                    cell: (item: any) => <span className="text-[11px] font-bold text-slate-400">{item.updated}</span>,
+                  },
+                  {
+                    header: "",
+                    accessorKey: "actions",
+                    cell: (item: any) => {
+                      const prod = products.find((p) => p.id.substring(0, 8) === item.id);
+                      return (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-9 rounded-xl border-violet-200 bg-gradient-to-r from-violet-50 to-emerald-50 text-[10px] font-black uppercase text-slate-800 shadow-sm transition hover:border-violet-300 hover:from-violet-100 hover:to-emerald-50"
+                          onClick={() => prod && setEditingProduct(prod)}
+                        >
+                          Checkout & video
+                        </Button>
+                      );
+                    },
+                  },
+                ]}
+                searchPlaceholder="Search by name or category…"
+              />
+            )}
+          </div>
         </div>
-        
-        <div className="p-2">
-          <AdminDataTable 
-            data={products.map(p => ({
-              id: p.id.substring(0, 8),
-              name: p.name,
-              category: p.category,
-              price: `$${p.price_usd}`,
-              status: p.active ? "Active" : "Archived",
-              updated: new Date(p.created_at).toLocaleDateString()
-            }))} 
-            columns={[
-              { header: "ID", accessorKey: "id", cell: (item: any) => <span className="text-[10px] font-black text-slate-300">#{item.id}</span> },
-              { header: "Protocol Name", accessorKey: "name", cell: (item: any) => <span className="font-black text-[#0A2E1F] text-sm uppercase tracking-tight">{item.name}</span> },
-              { header: "Category", accessorKey: "category", cell: (item: any) => <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{item.category}</span> },
-              { header: "MSRP", accessorKey: "price", cell: (item: any) => <span className="font-black text-emerald-600">{item.price}</span> },
-              { header: "Status", accessorKey: "status", cell: (item: any) => <StatusText status={item.status} /> },
-              { header: "Deployed", accessorKey: "updated", cell: (item: any) => <span className="text-[11px] font-bold text-slate-400">{item.updated}</span> },
-              {
-                header: "",
-                accessorKey: "actions",
-                cell: (item: any) => {
-                  const prod = products.find((p) => p.id.substring(0, 8) === item.id);
-                  return (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-8 rounded-lg text-[10px] font-black uppercase"
-                      onClick={() => prod && setEditingProduct(prod)}
-                    >
-                      Checkout & video
-                    </Button>
-                  );
-                },
-              },
-            ]} 
-            searchPlaceholder="Search repository by name or category..." 
-          />
-        </div>
-      </div>
 
       {/* ADD PRODUCT MODAL - EXECUTIVE EMERALD EDITION */}
       <AnimatePresence>
@@ -276,29 +420,41 @@ export function AdminProductsPage() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#0A2E1F]/40 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-950/55 backdrop-blur-md"
               onClick={() => setShowAddModal(false)}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-lg rounded-[48px] shadow-3xl overflow-hidden border border-white/20"
+              className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/15 bg-white shadow-[0_40px_120px_-24px_rgba(15,23,42,0.5)]"
             >
-              <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-[#0A2E1F] text-white">
-                 <div>
-                    <div className="flex items-center gap-2 mb-2">
-                       <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                       <span className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-400">Clinical Creation</span>
-                    </div>
-                    <h2 className="text-3xl font-black tracking-tight">Deploy New Protocol</h2>
-                 </div>
-                 <button onClick={() => setShowAddModal(false)} className="h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
-                    <X size={20} />
-                 </button>
+              <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 p-8 text-white md:p-10">
+                <motion.div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(6,78,59,0.95) 0%, rgba(17,24,39,0.92) 55%, rgba(76,29,149,0.75) 100%)",
+                  }}
+                  aria-hidden
+                />
+                <div className="relative z-10">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-300">New protocol</span>
+                  </div>
+                  <h2 className="text-2xl font-black tracking-tight md:text-3xl">Deploy to catalog</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="relative z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+                >
+                  <X size={20} />
+                </button>
               </div>
 
-              <form onSubmit={handleAddProduct} className="p-10 space-y-8">
+              <form onSubmit={handleAddProduct} className="p-8 space-y-6 md:p-10 md:space-y-8">
                  <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Protocol Designation</label>
                     <Input 
@@ -350,9 +506,9 @@ export function AdminProductsPage() {
 
                  <Button 
                    disabled={submitting}
-                   className="w-full h-16 bg-[#0A2E1F] hover:bg-emerald-950 text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.3em] shadow-3xl shadow-emerald-900/30 mt-6 transition-all hover:-translate-y-1 active:translate-y-0"
+                   className="mt-4 h-14 w-full rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-violet-600 font-black uppercase tracking-[0.2em] text-[11px] text-white shadow-xl shadow-emerald-900/25 transition hover:brightness-105"
                  >
-                    {submitting ? <Loader2 className="h-6 w-6 animate-spin mx-auto text-emerald-400" /> : "Authorize Deployment"}
+                    {submitting ? <Loader2 className="mx-auto h-6 w-6 animate-spin text-white" /> : "Authorize deployment"}
                  </Button>
               </form>
             </motion.div>
@@ -367,25 +523,33 @@ export function AdminProductsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#0A2E1F]/40 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-950/55 backdrop-blur-md"
               onClick={() => setEditingProduct(null)}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
-              className="relative bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[32px] shadow-2xl border border-slate-100"
+              className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[2rem] border border-white/15 bg-white shadow-[0_40px_120px_-24px_rgba(15,23,42,0.5)]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">Checkout & sync video</p>
-                  <h2 className="text-xl font-black text-[#0A2E1F] mt-1">{editingProduct.name}</h2>
+              <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 p-8 text-white">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(30,27,75,0.95) 0%, rgba(6,78,59,0.9) 50%, rgba(14,116,144,0.85) 100%)",
+                  }}
+                  aria-hidden
+                />
+                <div className="relative z-10 min-w-0 pr-4">
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-violet-200">Checkout & sync video</p>
+                  <h2 className="mt-1 truncate text-xl font-black">{editingProduct.name}</h2>
                 </div>
                 <button
                   type="button"
                   onClick={() => setEditingProduct(null)}
-                  className="h-10 w-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600"
+                  className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
                 >
                   <X size={18} />
                 </button>
@@ -495,15 +659,16 @@ export function AdminProductsPage() {
                 <Button
                   type="submit"
                   disabled={routingSaving}
-                  className="w-full h-12 bg-[#0A2E1F] hover:bg-emerald-950 text-white rounded-xl font-black uppercase text-[10px] tracking-widest"
+                  className="h-12 w-full rounded-xl bg-gradient-to-r from-violet-600 via-emerald-600 to-teal-600 font-black uppercase tracking-widest text-[10px] text-white shadow-lg transition hover:brightness-105"
                 >
-                  {routingSaving ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : "Save checkout & video"}
+                  {routingSaving ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Save checkout & video"}
                 </Button>
               </form>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }
