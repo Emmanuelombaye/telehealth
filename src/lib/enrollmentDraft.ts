@@ -18,9 +18,6 @@ export type EnrollmentDraftV1 = {
   heightFt: string;
   heightIn: string;
   weight: string;
-  hairColor: string;
-  eyeColor: string;
-  bloodType: string;
   allergies: string;
   currentMeds: string;
   address: string;

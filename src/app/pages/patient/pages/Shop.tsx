@@ -207,9 +207,6 @@ export function PatientShopPage() {
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [weight, setWeight] = useState("");
-  const [hairColor, setHairColor] = useState("");
-  const [eyeColor, setEyeColor] = useState("");
-  const [bloodType, setBloodType] = useState("");
   const [allergies, setAllergies] = useState("");
   const [currentMeds, setCurrentMeds] = useState("");
   const [address, setAddress] = useState("");
@@ -426,9 +423,6 @@ export function PatientShopPage() {
     setHeightFt(d.heightFt);
     setHeightIn(d.heightIn);
     setWeight(d.weight);
-    setHairColor(d.hairColor);
-    setEyeColor(d.eyeColor);
-    setBloodType(d.bloodType);
     setAllergies(d.allergies);
     setCurrentMeds(d.currentMeds);
     setAddress(d.address);
@@ -558,9 +552,6 @@ export function PatientShopPage() {
         heightFt,
         heightIn,
         weight,
-        hairColor,
-        eyeColor,
-        bloodType,
         allergies,
         currentMeds,
         address,
@@ -602,9 +593,6 @@ export function PatientShopPage() {
     heightFt,
     heightIn,
     weight,
-    hairColor,
-    eyeColor,
-    bloodType,
     allergies,
     currentMeds,
     address,
@@ -657,7 +645,6 @@ export function PatientShopPage() {
       dob, sex,
       height: `${heightFt}'${heightIn}"`,
       weight: `${weight} lbs`, bmi,
-      hairColor, eyeColor, bloodType,
       allergies: allergies || 'None',
       currentMeds: currentMeds || 'None',
       address: `${address}, ${city}, ${state} ${zip}`,
@@ -786,7 +773,7 @@ export function PatientShopPage() {
         amount:            selected.priceUSD,
         user_id:           userId,
         intake_complete:   true,
-        intake_notes:      `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Blood: ${bloodType} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
+        intake_notes:      `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
         intake_answers:    {
           ...answers,
           ...(needsVideo
@@ -985,29 +972,6 @@ export function PatientShopPage() {
               BMI: {(((parseFloat(weight)) / Math.pow((parseInt(heightFt)*12 + parseInt(heightIn)), 2)) * 703).toFixed(1)} — auto-calculated for your clinician
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Hair Color</label>
-              <select value={hairColor} onChange={e => setHairColor(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary">
-                <option value="">Select...</option>
-                {["Black","Dark Brown","Brown","Light Brown","Blonde","Red","Auburn","Grey","White","Bald/None"].map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Eye Color</label>
-              <select value={eyeColor} onChange={e => setEyeColor(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary">
-                <option value="">Select...</option>
-                {["Brown","Hazel","Green","Blue","Grey","Amber","Other"].map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Blood Type</label>
-            <select value={bloodType} onChange={e => setBloodType(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary">
-              <option value="">Select or unknown...</option>
-              {["A+","A−","B+","B−","AB+","AB−","O+","O−","Unknown"].map(b => <option key={b}>{b}</option>)}
-            </select>
-          </div>
         </div>
 
         {/* ─── SECTION 3: Medical History ─── */}
