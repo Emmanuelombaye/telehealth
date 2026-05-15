@@ -798,6 +798,7 @@ export function PatientShopPage() {
     setQualifierNoMtcMen2(d.qualifierNoMtcMen2);
     setQualifierUsResident(d.qualifierUsResident);
     setIdentityStripeCompleted(d.identityStripeCompleted);
+    setIdDocumentType(d.idDocumentType ?? "");
     setActiveCat(d.activeCat || "All");
     setStripeClientSecret(null);
     const restoredPi = d.stripePaymentIntentId ?? null;
@@ -968,6 +969,7 @@ export function PatientShopPage() {
         qualifierNoMtcMen2,
         qualifierUsResident,
         identityStripeCompleted,
+        idDocumentType: idDocumentType || undefined,
         activeCat,
         scheduling_ref: schedulingRef,
         stripePaymentIntentId,
@@ -1012,6 +1014,7 @@ export function PatientShopPage() {
     qualifierNoMtcMen2,
     qualifierUsResident,
     identityStripeCompleted,
+    idDocumentType,
     activeCat,
     schedulingRef,
     stripePaymentIntentId,
@@ -1122,7 +1125,7 @@ export function PatientShopPage() {
       }
 
       if (!idDocumentType.trim()) {
-        setError("Please select your government ID type on the intake step.");
+        setError("Please select your government ID type on step 7 (identity verification).");
         return;
       }
 
@@ -1701,7 +1704,8 @@ export function PatientShopPage() {
   }
 
   if (stage === "identity" && selected) {
-    const canContinueIdentity = Boolean(idFile) || (bypassIdentityVerify && identityAttestation);
+    const hasIdProof = Boolean(idFile) || (bypassIdentityVerify && identityAttestation);
+    const canContinueIdentity = Boolean(idDocumentType.trim()) && hasIdProof;
 
     return (
       <motion.div className="max-w-md mx-auto space-y-6 pt-8">
@@ -1724,7 +1728,20 @@ export function PatientShopPage() {
                "Upload a government-issued ID, or confirm below to continue until automated verification is enabled."}
            </p>
 
-           <div className="relative z-10 mt-6">
+           <motion.div
+             className="relative z-10 mt-6 rounded-2xl border border-emerald-100/80 bg-white p-5 shadow-sm"
+             initial={{ opacity: 0, y: 8 }}
+             animate={{ opacity: 1, y: 0 }}
+           >
+             <IdDocumentTypePicker value={idDocumentType} onChange={setIdDocumentType} />
+           </motion.div>
+
+           <motion.div
+             className="relative z-10 mt-5"
+             initial={{ opacity: 0, y: 8 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: 0.05 }}
+           >
              <EnrollmentIdUploadPanel
                idAccept={ID_ACCEPT}
                idFile={idFile}
@@ -1750,10 +1767,16 @@ export function PatientShopPage() {
                  </span>
                </label>
              )}
-           </div>
+           </motion.div>
+
+           {!idDocumentType.trim() && hasIdProof ? (
+             <p className="relative z-10 mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-medium text-amber-900">
+               Select your government ID type above to continue.
+             </p>
+           ) : null}
 
            {error && (
-             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold">
+             <div className="relative z-10 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold">
                {error}
              </div>
            )}
@@ -1763,6 +1786,18 @@ export function PatientShopPage() {
                 className="w-full rounded-2xl h-14 text-base font-bold bg-[#0A0D14] hover:bg-gray-800 text-white shadow-xl shadow-gray-900/10"
                 disabled={!canContinueIdentity}
                 onClick={() => {
+                  if (!idDocumentType.trim()) {
+                    setError("Please select your government ID type.");
+                    return;
+                  }
+                  if (!hasIdProof) {
+                    setError(
+                      bypassIdentityVerify
+                        ? "Upload your ID or confirm the attestation below."
+                        : "Please upload a photo of your government ID.",
+                    );
+                    return;
+                  }
                   setError(null);
                   setIdentityStripeCompleted(true);
                   goToStage("questionnaire");
@@ -2319,8 +2354,7 @@ export function PatientShopPage() {
   if (stage === "questionnaire" && selected && (totalQ === 0 || currentQ)) {
     const onLastIntakeStep = totalQ === 0 || qStep === totalQ - 1;
     const showScheduler = needsScheduledVideo && onLastIntakeStep;
-    const intakeReadyToSubmit =
-      Boolean(idDocumentType) && (Boolean(idFile) || identityStripeCompleted);
+    const intakeReadyToSubmit = Boolean(idFile) || identityStripeCompleted;
 
     return (
       <div className="min-h-[100dvh] w-full bg-gradient-to-b from-emerald-50/30 via-background to-muted/20">
@@ -2336,7 +2370,7 @@ export function PatientShopPage() {
           <h1 className="text-2xl font-bold text-[#0A0D14]">Medical intake</h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
             {getClientFlowRowByDiagramStep(8)?.subtitle ??
-              "Confirm your ID type and answer clinical questions for your care team."}
+              "Answer clinical questions for your care team. Live visit scheduling (when required) is included here."}
           </p>
         </div>
         <button
@@ -2366,12 +2400,6 @@ export function PatientShopPage() {
             </div>
           )}
         </div>
-
-        <Card className="border-emerald-100/80 shadow-sm">
-          <CardContent className="p-5 sm:p-6">
-            <IdDocumentTypePicker value={idDocumentType} onChange={setIdDocumentType} />
-          </CardContent>
-        </Card>
 
         {currentQ && (
         <Card className="shadow-sm">
@@ -2446,17 +2474,6 @@ export function PatientShopPage() {
                 <span className="text-sm">{o}</span>
               </label>
             ))}
-            {onLastIntakeStep && (
-              <EnrollmentIdUploadPanel
-                idAccept={ID_ACCEPT}
-                idFile={idFile}
-                setIdFile={setIdFile}
-                identityStripeCompleted={identityStripeCompleted}
-                setError={setError}
-                idUploadInputRef={idUploadInputRef}
-                embedded
-              />
-            )}
           </CardContent>
         </Card>
         )}
@@ -2464,20 +2481,6 @@ export function PatientShopPage() {
           <Card>
             <CardContent className="p-5">
               <p className="text-sm text-muted-foreground">No additional clinical questions for this program. Continue below.</p>
-            </CardContent>
-          </Card>
-        )}
-        {onLastIntakeStep && totalQ === 0 && (
-          <Card className="border-2 border-emerald-200/80 shadow-lg shadow-emerald-900/5">
-            <CardContent className="p-6 space-y-2">
-              <EnrollmentIdUploadPanel
-                idAccept={ID_ACCEPT}
-                idFile={idFile}
-                setIdFile={setIdFile}
-                identityStripeCompleted={identityStripeCompleted}
-                setError={setError}
-                idUploadInputRef={idUploadInputRef}
-              />
             </CardContent>
           </Card>
         )}
@@ -2512,8 +2515,7 @@ export function PatientShopPage() {
         )}
         {onLastIntakeStep && !intakeReadyToSubmit && (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-medium text-amber-900">
-            Select your ID type above
-            {!idFile && !identityStripeCompleted ? " and complete step 7 (ID upload or confirmation)" : ""} to submit.
+            Complete step 7 (identity verification) before submitting your enrollment.
           </p>
         )}
         {error && (

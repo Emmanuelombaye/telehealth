@@ -124,14 +124,14 @@ export const CLIENT_PATIENT_FLOW_NINE_STEPS: ClientFlowNineJourneyRow[] = [
     diagramStep: 7,
     title: "Identity verification",
     subtitle:
-      "Upload a government-issued ID so your clinician can confirm who you are. Automated verification will be added when our provider is connected.",
+      "Select your ID type and upload a clear photo so your clinician can confirm who you are.",
     shopStage: "identity",
   },
   {
     diagramStep: 8,
     title: "Medical intake",
     subtitle:
-      "Answer a few clinical questions and confirm your ID type. Scheduling for a live visit (when required) is completed in this same step.",
+      "Answer a few clinical questions for your care team. Scheduling for a live visit (when required) is completed in this same step.",
     shopStage: "questionnaire",
   },
   {
