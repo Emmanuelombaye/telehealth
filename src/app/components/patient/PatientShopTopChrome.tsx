@@ -7,7 +7,7 @@ import type { ShopFlowStage } from "../../../lib/patientShopRoutes";
 
 type PatientShopTopChromeProps = {
   stage: ShopFlowStage;
-  brandSize?: "sm" | "md";
+  brandSize?: "sm" | "md" | "lg" | "hero" | "xl";
   onBack: () => void;
   backLabel?: string;
   badgeLabel?: string;
@@ -16,12 +16,11 @@ type PatientShopTopChromeProps = {
 };
 
 /**
- * Shared shop “chrome”: progress + brand + back affordances in one card so the
- * logo does not float in empty space away from navigation.
+ * Shared shop chrome: centered logo on top, step progress, then navigation actions.
  */
 export function PatientShopTopChrome({
   stage,
-  brandSize = "sm",
+  brandSize = "xl",
   onBack,
   backLabel = "Back to portal",
   badgeLabel = "Licensed dispensary",
@@ -36,30 +35,30 @@ export function PatientShopTopChrome({
         className,
       )}
     >
+      <div className="flex justify-center border-b border-slate-100/90 bg-gradient-to-b from-white via-emerald-50/20 to-white px-4 pt-6 pb-5 sm:pt-8 sm:pb-6">
+        <PatientBrandMark size={brandSize} className="w-full max-w-[min(100%,22rem)] sm:max-w-[26rem]" />
+      </div>
+
       <div className="border-b border-slate-100/90 bg-gradient-to-br from-slate-50/95 via-white to-emerald-50/25 px-4 py-3.5 sm:px-5 sm:py-4">
         <PatientEnrollmentStepper stage={stage} className={stepperClassName} />
       </div>
-      <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4">
-        <div className="flex justify-center sm:justify-start">
-          <PatientBrandMark size={brandSize} />
-        </div>
-        <div className="flex items-center justify-between gap-3 border-t border-slate-100/90 pt-3 sm:border-t-0 sm:pt-0 sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onBack}
-            className="h-9 shrink-0 rounded-xl border-slate-200/90 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
-          >
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5 opacity-70" />
-            {backLabel}
-          </Button>
-          {showBadge ? (
-            <span className="max-w-[52%] truncate rounded-full border border-emerald-200/70 bg-emerald-50/95 px-3 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-900 sm:max-w-none">
-              {badgeLabel}
-            </span>
-          ) : null}
-        </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onBack}
+          className="h-9 shrink-0 rounded-xl border-slate-200/90 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          <ArrowLeft className="mr-1.5 h-3.5 w-3.5 opacity-70" />
+          {backLabel}
+        </Button>
+        {showBadge ? (
+          <span className="rounded-full border border-emerald-200/70 bg-emerald-50/95 px-3 py-1.5 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-900">
+            {badgeLabel}
+          </span>
+        ) : null}
       </div>
     </div>
   );

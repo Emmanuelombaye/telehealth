@@ -1,11 +1,12 @@
 import { motion } from "framer-motion";
 import { cn } from "../ui/utils";
 
-const sizeClass: Record<"sm" | "md" | "lg" | "hero", string> = {
+const sizeClass: Record<"sm" | "md" | "lg" | "hero" | "xl", string> = {
   sm: "h-11 max-h-11 w-auto sm:h-12 sm:max-h-12",
   md: "h-12 max-h-12 w-auto sm:h-14 sm:max-h-14 md:h-[4rem] md:max-h-[4rem]",
   lg: "h-14 max-h-14 w-auto sm:h-16 sm:max-h-16 md:h-[4.5rem] md:max-h-[4.5rem]",
   hero: "h-16 max-h-16 w-auto sm:h-20 sm:max-h-20 md:h-24 md:max-h-24",
+  xl: "h-20 max-h-20 w-auto sm:h-24 sm:max-h-24 md:h-28 md:max-h-28 lg:h-32 lg:max-h-32",
 };
 
 type PatientBrandMarkProps = {

@@ -1814,7 +1814,6 @@ export function PatientShopPage() {
         <div className="max-w-md mx-auto space-y-5 pb-8">
           <PatientShopTopChrome
             stage={stage}
-            brandSize="md"
             onBack={() => goToStage("catalog")}
             backLabel="Back to catalog"
             badgeLabel="Step 3 · Checkout page"
@@ -2565,7 +2564,6 @@ export function PatientShopPage() {
     <div className="mx-auto max-w-4xl space-y-6 pb-24 px-4 sm:px-6">
       <PatientShopTopChrome
         stage={stage}
-        brandSize="sm"
         onBack={() => navigate("/patient")}
         backLabel="Back to portal"
       />
