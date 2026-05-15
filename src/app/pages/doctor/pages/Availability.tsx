@@ -4,9 +4,11 @@ import {
   ToggleLeft, ToggleRight, Video, MessageSquare, Loader2, Save
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { DoctorPageHeader } from "../../../components/doctor/DoctorPageHeader";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
 import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
+import { doctorPageContainer } from "../../../../lib/doctorPortalUi";
 import { useNavigate } from "react-router";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -142,13 +144,12 @@ export function DoctorAvailabilityPage() {
   );
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-6">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Clinical Availability</h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">Configure your practice hours and consultation preferences.</p>
-        </div>
-      </div>
+    <div className={cn(doctorPageContainer, "max-w-5xl space-y-7 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500")}>
+      <DoctorPageHeader
+        eyebrow="Practice configuration"
+        title="Clinical availability"
+        description="Weekly hours, buffers, timezone, Calendly / Cal workflows — aligns with enrollment video booking for Path A protocols."
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">

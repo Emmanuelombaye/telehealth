@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router";
 import { 
   ArrowLeft, Video, Mic, MicOff, VideoOff, MessageSquare, 
@@ -11,6 +11,7 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 import { useAuthStore } from "../../../../lib";
 import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { supabase } from "../../../../lib/supabaseClient";
+import { getOrderVideoRail } from "../../../../lib/orderVideoRail";
 import { motion, AnimatePresence } from "framer-motion";
 
 
@@ -778,6 +779,15 @@ export function DoctorConsultPage() {
     return () => clearInterval(interval);
   }, [order]);
 
+  const consultVideoRail = useMemo(() => {
+    if (!order) return null;
+    return getOrderVideoRail({
+      intake_answers: order.intake_answers,
+      zoom_status: order.zoom_status,
+      enrollmentVideoRequired: order.enrollment_video_required,
+    });
+  }, [order]);
+
   // ── Loading ──
   if (loading) {
     return (
@@ -797,6 +807,21 @@ export function DoctorConsultPage() {
   return (
     <div className="min-h-[calc(100vh-140px)] flex flex-col gap-6 animate-in fade-in duration-700 pb-10">
       <ToastBar toasts={toasts} />
+      {consultVideoRail && (
+        <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 flex flex-col sm:flex-row sm:items-start gap-3 shadow-sm">
+          <div className="h-10 w-10 rounded-xl bg-[#0A2E1F] text-white flex items-center justify-center shrink-0">
+            <Video className="h-5 w-5" aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Visit path</p>
+            <p className="text-sm font-bold text-[#0A2E1F]">{consultVideoRail.badge}</p>
+            <p className="text-xs text-slate-600 mt-1 font-medium leading-relaxed">{consultVideoRail.sub}</p>
+            <p className="text-[11px] text-violet-800/90 mt-2 font-medium leading-relaxed">
+              Enrollment video is determined at checkout (protocol / state / admin rules — not questionnaires). Decision 5B is for optional clinician-requested video on async cases.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="bg-white border border-slate-200 rounded-2xl px-6 py-5 flex flex-wrap items-center justify-between shadow-sm shrink-0 gap-4">
         <div className="flex items-center gap-4 min-w-0">
@@ -1058,9 +1083,9 @@ export function DoctorConsultPage() {
 
           {/* STEP 5: DOCTOR DECISION MATRIX */}
           <div className="lg:col-span-12">
-            <div className="flex items-center gap-3 mb-4">
+               <div className="flex items-center gap-3 mb-4">
                <div className="h-8 w-8 rounded-full bg-[#0A2E1F] text-white flex items-center justify-center font-black text-sm">5</div>
-               <h2 className="text-lg font-bold text-[#0A2E1F] uppercase tracking-widest">Doctor Decision</h2>
+               <h2 className="text-lg font-bold text-[#0A2E1F] uppercase tracking-widest">Clinical decision (5A–5D)</h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -1075,7 +1100,7 @@ export function DoctorConsultPage() {
                      <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
                        <CheckCircle2 className="h-5 w-5" />
                      </div>
-                     <span className="font-black text-xs text-emerald-900 uppercase tracking-widest">Patient Qualifies</span>
+                     <span className="font-black text-xs text-emerald-900 uppercase tracking-widest">5A · Approve &amp; prescribe</span>
                    </div>
                    <Badge className="bg-emerald-600 text-white border-none text-[9px]">RECOMMENDED</Badge>
                 </div>
@@ -1127,12 +1152,16 @@ export function DoctorConsultPage() {
                      <div className="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center text-white">
                        <Video className="h-4 w-4" />
                      </div>
-                     <span className="font-black text-xs text-amber-900 uppercase tracking-widest">Needs Video Visit</span>
+                     <span className="font-black text-xs text-amber-900 uppercase tracking-widest">5B · Request video visit</span>
                    </div>
                 </div>
                 <CardContent className="p-5 space-y-4">
                   <ul className="space-y-2 mb-6">
-                    {["More info / safety concern", "Request video call", "Send availability to patient"].map(li => (
+                    {[
+                      "Clinician-initiated synchronous visit",
+                      "Use when async intake is insufficient",
+                      "Does not replace enrollment Path A (patient step 8)",
+                    ].map(li => (
                       <li key={li} className="flex items-center gap-2 text-xs font-bold text-slate-600">
                         <div className="h-1 w-1 rounded-full bg-amber-400" /> {li}
                       </li>
@@ -1167,7 +1196,7 @@ export function DoctorConsultPage() {
                      <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
                        <FileSignature className="h-4 w-4" />
                      </div>
-                     <span className="font-black text-xs text-blue-900 uppercase tracking-widest">Follow-Up Required</span>
+                     <span className="font-black text-xs text-blue-900 uppercase tracking-widest">5C · Follow-up required</span>
                    </div>
                 </div>
                 <CardContent className="p-5 space-y-4">
@@ -1196,7 +1225,7 @@ export function DoctorConsultPage() {
                 </CardContent>
               </Card>
 
-              {/* PATH D: DISQUALIFIES */}
+              {/* PATH D: DISQUALIFY */}
               <Card className={cn(
                 "border-2 transition-all duration-300 overflow-hidden",
                 "border-red-100 hover:border-red-500 hover:shadow-xl hover:shadow-red-900/10"
@@ -1206,7 +1235,7 @@ export function DoctorConsultPage() {
                      <div className="h-8 w-8 rounded-full bg-red-500 flex items-center justify-center text-white">
                        <XCircle className="h-5 w-5" />
                      </div>
-                     <span className="font-black text-xs text-red-900 uppercase tracking-widest">Patient Disqualifies</span>
+                     <span className="font-black text-xs text-red-900 uppercase tracking-widest">5D · Disqualify &amp; refund</span>
                    </div>
                 </div>
                 <CardContent className="p-5 space-y-4">

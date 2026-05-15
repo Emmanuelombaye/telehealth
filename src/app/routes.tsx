@@ -49,6 +49,7 @@ import { DoctorReferralsPage } from "./pages/doctor/pages/Referrals";
 import { DoctorBillingPage } from "./pages/doctor/pages/Billing";
 import { DoctorEducationPage } from "./pages/doctor/pages/Education";
 import { DoctorNotificationsPage } from "./pages/doctor/pages/Notifications";
+import { DoctorWorkflowPage } from "./pages/doctor/pages/Workflow";
 
 // Admin pages
 import { AdminPatientsPage } from "./pages/admin/pages/Patients";
@@ -130,6 +131,7 @@ export const router = createBrowserRouter([
       // Auth (Isolated)
       { path: "patient/login", element: <AuthPage portal="patient" /> },
       { path: "doctor/login", element: <AuthPage portal="doctor" /> },
+      { path: "providers/login", element: <AuthPage portal="doctor" /> },
       { path: "admin/login", element: <AuthPage portal="admin" /> },
       { path: "superadmin/login", element: <AuthPage portal="superadmin" /> },
       { path: "affiliate/login", element: <AuthPage portal="affiliate" /> },
@@ -174,6 +176,32 @@ export const router = createBrowserRouter([
             element: <ProtectedRoute allowedRoles={['doctor', 'super_admin']} />,
             children: [
               { index: true, Component: DoctorDashboard },
+              { path: "workflow", Component: DoctorWorkflowPage },
+              { path: "patients", Component: DoctorPatientsPage },
+              { path: "queue", Component: DoctorQueuePage },
+              { path: "availability", Component: DoctorAvailabilityPage },
+              { path: "schedule", Component: DoctorSchedulePage },
+              { path: "messages", Component: DoctorMessagesPage },
+              { path: "consult", Component: DoctorConsultPage },
+              { path: "labs", Component: DoctorLabsPage },
+              { path: "scribe", Component: DoctorScribePage },
+              { path: "rpm", Component: DoctorRPMPage },
+              { path: "erx", Component: DoctorERxPage },
+              { path: "imaging", Component: DoctorImagingPage },
+              { path: "referrals", Component: DoctorReferralsPage },
+              { path: "billing", Component: DoctorBillingPage },
+              { path: "education", Component: DoctorEducationPage },
+              { path: "notifications", Component: DoctorNotificationsPage },
+            ],
+          },
+
+          // Provider portal (URL alias for /doctor — same screens, same RBAC)
+          {
+            path: "providers",
+            element: <ProtectedRoute allowedRoles={['doctor', 'super_admin']} />,
+            children: [
+              { index: true, Component: DoctorDashboard },
+              { path: "workflow", Component: DoctorWorkflowPage },
               { path: "patients", Component: DoctorPatientsPage },
               { path: "queue", Component: DoctorQueuePage },
               { path: "availability", Component: DoctorAvailabilityPage },

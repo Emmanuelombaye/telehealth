@@ -1,12 +1,16 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   Users, Calendar, Clock, Search, Filter, MoreVertical,
   Video, FileText, MessageSquare, TrendingUp, UserCheck,
-  ChevronRight, Activity, HeartPulse, Stethoscope, Zap,
+  ChevronRight, Activity, HeartPulse, Zap,
   Bell, Command, ShieldCheck, Database, Layers, ArrowUpRight,
   Sparkles, FlaskConical, Bot, Pill, CheckCircle2, AlertCircle, FileSignature
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Input, cn } from "../../components/ui/shared.tsx";
+import { DoctorClinicalFlowMap } from "../../components/doctor/DoctorClinicalFlowMap";
+import { DoctorPageHeader } from "../../components/doctor/DoctorPageHeader";
+import { getOrderVideoRail } from "../../../lib/orderVideoRail";
+import { doctorPageContainer, doctorSurfaceCard } from "../../../lib/doctorPortalUi";
 import { useI18n, getGreeting, usePatientStore, useAuthStore } from "../../../lib";
 import { useDoctorPortalBase } from "../../../lib/doctorPortalBase";
 import { Link, useNavigate } from "react-router";
@@ -55,41 +59,30 @@ export function DoctorDashboard() {
   }, [fetchOrders, fetchUnreadMessages, subscribeToOrders]);
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-10 animate-in fade-in duration-700">
-      
-      {/* 1. PROFESSIONAL HEADER */}
-      <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 flex flex-col xl:flex-row xl:items-center justify-between gap-6 shadow-sm">
-        <div className="flex items-center gap-5 min-w-0 w-full xl:w-auto flex-1">
-          <div className="h-14 w-14 rounded-xl bg-[#0A2E1F] flex items-center justify-center shadow-md shrink-0">
-             <Stethoscope className="h-7 w-7 text-white" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-[#0A2E1F] truncate">
-              {greeting}, {doctorName}
-            </h1>
-            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-              <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100 whitespace-nowrap">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Active Session
-              </span>
-              <span className="text-xs font-medium text-slate-500 whitespace-nowrap hidden sm:inline-block">
-                {currentTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 w-full xl:w-auto shrink-0 flex-wrap sm:flex-nowrap">
-          <Button variant="outline" className="h-10 px-4 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold gap-2 whitespace-nowrap flex-1 sm:flex-none">
-            <Search className="h-4 w-4 shrink-0" /> Find Patient
+    <div className={cn(doctorPageContainer, "space-y-7 pb-14 animate-in fade-in duration-700")}>
+      {/* 1. Hero strip */}
+      <DoctorPageHeader
+        variant="soft"
+        eyebrow="Provider cockpit"
+        title={`${greeting}, ${doctorName}`}
+        description={`${currentTime.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })} · Local time ${currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · Session sync active.`}
+      >
+        <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200/80 bg-emerald-50/95 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-emerald-800 shadow-sm">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
+          Live
+        </span>
+        <Button
+          variant="outline"
+          className="h-10 rounded-xl border-emerald-100/90 bg-white px-4 font-semibold text-[#0A2E1F] hover:bg-emerald-50/50"
+        >
+          <Search className="h-4 w-4 shrink-0 mr-2" aria-hidden /> Search
+        </Button>
+        <Link to={`${doctorBase}/consult`} className="shrink-0">
+          <Button className="h-10 rounded-xl bg-gradient-to-r from-[#0A2E1F] to-emerald-800 px-5 font-semibold text-white shadow-lg shadow-emerald-900/25 hover:from-[#0f3d29] hover:to-emerald-900">
+            <Video className="h-4 w-4 shrink-0 mr-2" aria-hidden /> Consult suite
           </Button>
-          <Link to={`${doctorBase}/consult`} className="flex-1 sm:flex-none">
-            <Button className="w-full sm:w-auto h-10 px-5 rounded-xl bg-[#0A2E1F] hover:bg-[#153e2d] text-white font-semibold gap-2 shadow-md whitespace-nowrap">
-              <Video className="h-4 w-4 shrink-0" /> Join Consult Suite
-            </Button>
-          </Link>
-        </div>
-      </div>
+        </Link>
+      </DoctorPageHeader>
 
       {/* 2. CLINICAL METRICS (4 Columns) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -99,7 +92,7 @@ export function DoctorDashboard() {
           { label: "Video Consults", value: videoConsultsToday.length, sub: "Scheduled today", icon: Video, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
           { label: "Unread Messages", value: unreadMessagesCount, sub: "Patient inquiries", icon: MessageSquare, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" }
         ].map((stat, i) => (
-          <Card key={i} className="border border-slate-200 rounded-[1.25rem] shadow-sm hover:shadow-md transition-all">
+          <Card key={i} className={cn(doctorSurfaceCard, "border-emerald-100/70 transition-shadow hover:shadow-md")}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center border", stat.bg, stat.border)}>
@@ -119,7 +112,7 @@ export function DoctorDashboard() {
         
         {/* Left Col: Active Patient Queue (Takes 2 columns) */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border border-slate-200 rounded-[1.5rem] shadow-sm overflow-hidden flex flex-col h-full">
+          <Card className={cn(doctorSurfaceCard, "flex h-full flex-col overflow-hidden border-emerald-100/70")}>
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
@@ -140,6 +133,7 @@ export function DoctorDashboard() {
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="text-left py-3 px-5 font-semibold text-slate-500">Patient</th>
                     <th className="text-left py-3 px-5 font-semibold text-slate-500">Treatment</th>
+                    <th className="text-left py-3 px-5 font-semibold text-slate-500">Visit path</th>
                     <th className="text-left py-3 px-5 font-semibold text-slate-500">Status</th>
                     <th className="text-left py-3 px-5 font-semibold text-slate-500">Time</th>
                     <th className="text-right py-3 px-5 font-semibold text-slate-500">Action</th>
@@ -158,7 +152,7 @@ export function DoctorDashboard() {
                           transition: { duration: 0.2 }
                         }}
                         className="relative transition-colors group cursor-pointer border-l-2 border-transparent hover:border-emerald-500 overflow-hidden"
-                        onClick={() => navigate(`${doctorBase}/consult?orderId=${order.order_number}`)}
+                        onClick={() => navigate(`${doctorBase}/consult?orderId=${order.id}`)}
                       >
                         {/* THE SCANNING BEAMS */}
                         <motion.div 
@@ -191,13 +185,36 @@ export function DoctorDashboard() {
                             </div>
                             <div>
                               <p className="font-black text-sm text-[#0A2E1F] tracking-tight">{order.patientName}</p>
-                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{order.order_number}</p>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{order.id}</p>
                             </div>
                           </div>
                         </td>
                         <td className="py-4 px-5 relative z-10">
                           <p className="font-black text-xs text-slate-700">{order.medication}</p>
                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{order.category}</p>
+                        </td>
+                        <td className="py-4 px-5 relative z-10">
+                          {(() => {
+                            const rail = getOrderVideoRail(order);
+                            return (
+                              <span
+                                title={rail.sub}
+                                className={cn(
+                                  "inline-flex max-w-[140px] rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-wider",
+                                  rail.kind === "async" &&
+                                    "bg-slate-100 text-slate-600 group-hover:bg-white/20 group-hover:text-emerald-50",
+                                  rail.kind === "enrollment_video" &&
+                                    "bg-violet-100 text-violet-800 group-hover:bg-white/15 group-hover:text-emerald-50",
+                                  rail.kind === "doctor_requested_video" &&
+                                    "bg-amber-100 text-amber-900 group-hover:bg-white/15 group-hover:text-emerald-50",
+                                  rail.kind === "video_confirmed" &&
+                                    "bg-emerald-100 text-emerald-900 group-hover:bg-white/20 group-hover:text-emerald-950",
+                                )}
+                              >
+                                {rail.badge}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="py-4 px-5 relative z-10">
                           <Badge variant="outline" className={cn(
@@ -244,7 +261,7 @@ export function DoctorDashboard() {
         {/* Right Col: Schedule & Quick Tools */}
         <div className="space-y-6">
           {/* Today's Schedule */}
-          <Card className="border border-slate-200 rounded-[1.5rem] shadow-sm">
+          <Card className={cn(doctorSurfaceCard, "border-emerald-100/70")}>
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-bold text-[#0A2E1F] flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-emerald-600" /> Today's Schedule
@@ -283,8 +300,13 @@ export function DoctorDashboard() {
           </Card>
 
           {/* Quick Access Tools */}
-          <Card className="border border-slate-200 rounded-[1.5rem] shadow-sm bg-slate-50/50">
-            <div className="p-5 border-b border-slate-100">
+          <Card
+            className={cn(
+              doctorSurfaceCard,
+              "border-teal-100/60 bg-gradient-to-br from-teal-50/25 via-white to-emerald-50/35",
+            )}
+          >
+            <div className="border-b border-emerald-100/70 p-5">
               <h3 className="font-bold text-[#0A2E1F] flex items-center gap-2">
                 <Zap className="h-4 w-4 text-emerald-600" /> Quick Tools
               </h3>

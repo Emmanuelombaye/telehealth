@@ -75,6 +75,8 @@ export type Order = {
   nextRefillAt?: string | null;
   refillIntervalDays?: number;
   zoomStatus?: 'requested' | 'not_requested' | 'confirmed' | 'rescheduled' | 'canceled';
+  /** True when enrollment (Path A) required sync video — distinct from clinician-only 5B video. See `orders.enrollment_video_required`. */
+  enrollmentVideoRequired?: boolean;
   userId?: string;
   user_id?: string;
   doctor_id?: string;
@@ -366,6 +368,12 @@ export const usePatientStore = create<AppState>()(
             intakeAnswers: mode === 'admin' ? undefined : d.intake_answers,
             patientVitals: mode === 'admin' ? undefined : d.patient_vitals,
             zoomStatus: d.zoom_status,
+            enrollmentVideoRequired: !!(
+              d.enrollment_video_required ??
+              (typeof d.intake_answers === "object" &&
+                d.intake_answers !== null &&
+                "_scheduling" in d.intake_answers)
+            ),
             zoomDoctorMessage: mode === 'admin' ? null : d.zoom_doctor_message,
             zoomRescheduledTime: d.zoom_rescheduled_time,
             consultationTime: d.consultation_time,

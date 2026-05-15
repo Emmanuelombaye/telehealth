@@ -795,6 +795,7 @@ export function PatientShopPage() {
         },
         patient_vitals:    patientVitals,
         consultation_time: needsVideo ? (consultationTime || null) : null,
+        enrollment_video_required: needsVideo,
         zoom_status: needsVideo ? "requested" : "not_requested",
         zoom_doctor_message:   null,
         zoom_rescheduled_time: null,

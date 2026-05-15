@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, Link } from "react-router";
+import { NavLink, Link, useLocation } from "react-router";
 import {
   LayoutDashboard, Users, Calendar, MessageSquare, ClipboardList,
   FileText, Settings, LogOut, Stethoscope, Activity, ShieldCheck,
@@ -7,7 +7,7 @@ import {
   HelpCircle, Tag, Share2, BarChart3, Layers, Home,
   Bell, User, Heart, FolderOpen, Pill, TestTube, UserCheck,
   FileCheck, Receipt, BookOpen, Building2, Truck,
-  Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse, ScrollText
+  Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse, ScrollText, Map
 } from "lucide-react";
 import { cn } from "./ui/shared.tsx";
 import { useI18n } from "../../lib/i18n.tsx";
@@ -16,6 +16,30 @@ import { useAuthStore } from "../../lib/auth-store";
 import { usePatientStore } from "../../lib/patient-store";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 import { motion, AnimatePresence } from "framer-motion";
+import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
+
+type DoctorNavItem = {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+};
+
+function buildDoctorMenu(base: "/doctor" | "/providers"): Array<DoctorNavItem & { href: string }> {
+  const p = (path: string) => `${base}${path}`;
+  return [
+    { icon: LayoutDashboard, label: "Dashboard", href: base },
+    { icon: Map, label: "Workflow map", href: p("/workflow") },
+    { icon: Users, label: "Patients", href: p("/patients") },
+    { icon: ClipboardList, label: "Patient Queue", href: p("/queue") },
+    { icon: Calendar, label: "Schedule", href: p("/schedule") },
+    { icon: Activity, label: "Availability", href: p("/availability") },
+    { icon: MessageSquare, label: "Messages", href: p("/messages") },
+    { icon: Stethoscope, label: "Consultation", href: p("/consult") },
+    { icon: FlaskConical, label: "Lab Requests", href: p("/labs") },
+    { icon: Bot, label: "AI Scribe", href: p("/scribe") },
+    { icon: Pill, label: "e-Prescribing", href: p("/erx") },
+    { icon: BookOpen, label: "Education", href: p("/education") },
+  ];
+}
 
 type Role = "patient" | "doctor" | "admin" | "superadmin" | "affiliate";
 
@@ -44,19 +68,7 @@ const menuConfig: Record<Role, any[]> = {
     { icon: Bell, label: "Notifications", href: "/patient/notifications" },
     { icon: Building2, label: "Insurance", href: "/patient/insurance" },
   ],
-  doctor: [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/doctor" },
-    { icon: Users, label: "Patients", href: "/doctor/patients" },
-    { icon: ClipboardList, label: "Patient Queue", href: "/doctor/queue" },
-    { icon: Calendar, label: "Schedule", href: "/doctor/schedule" },
-    { icon: Activity, label: "Availability", href: "/doctor/availability" },
-    { icon: MessageSquare, label: "Messages", href: "/doctor/messages" },
-    { icon: Stethoscope, label: "Consultation", href: "/doctor/consult" },
-    { icon: FlaskConical, label: "Lab Requests", href: "/doctor/labs" },
-    { icon: Bot, label: "AI Scribe", href: "/doctor/scribe" },
-    { icon: Pill, label: "e-Prescribing", href: "/doctor/erx" },
-    { icon: BookOpen, label: "Education", href: "/doctor/education" },
-  ],
+  doctor: [], // built at render from /doctor vs /providers prefix
   admin: [
     { group: "MANAGEMENT", icon: Home, label: "Home", href: "/admin" },
     { group: "MANAGEMENT", icon: Users, label: "Patients", href: "/admin/patients" },
@@ -105,7 +117,11 @@ const roleColors: Record<Role, string> = {
 
 export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const { t } = useI18n();
-  const menu = menuConfig[role];
+  const location = useLocation();
+  const doctorBase =
+    role === "doctor" ? doctorPortalBaseFromPath(location.pathname) : null;
+  const menu =
+    role === "doctor" && doctorBase !== null ? buildDoctorMenu(doctorBase) : menuConfig[role];
   const { user, role: authRole } = useAuthStore();
   const { orders, notifications } = usePatientStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -122,8 +138,20 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const MotionNavLink = motion(NavLink);
 
   const SidebarContent = () => (
-    <div className={cn("flex h-full flex-col overflow-hidden text-[#0A0D14] border-r border-slate-100 bg-white")}>
-      <div className="flex h-24 items-center justify-center border-b border-slate-100 px-6 shrink-0 bg-white relative">
+    <div
+      className={cn(
+        "flex h-full flex-col overflow-hidden text-[#0A0D14] border-r",
+        role === "doctor"
+          ? "border-emerald-200/65 bg-gradient-to-b from-emerald-50/95 via-white to-teal-50/25"
+          : "border-slate-100 bg-white",
+      )}
+    >
+      <div
+        className={cn(
+          "flex h-24 items-center justify-center border-b px-6 shrink-0 relative",
+          role === "doctor" ? "border-emerald-100/80 bg-emerald-950/[0.03]" : "border-slate-100 bg-white",
+        )}
+      >
         {onMobileClose && (
           <button onClick={onMobileClose} className="absolute right-4 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
             <X className="h-5 w-5 text-slate-500" />
@@ -148,16 +176,18 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
               
               <MotionNavLink
                 to={item.href}
-                end={item.href === `/${role}`}
+                end={role === "doctor" && doctorBase ? item.href === doctorBase : item.href === `/${role}`}
                 onClick={onMobileClose}
                 whileHover={{ x: 4 }}
                 whileTap={{ scale: 0.98 }}
                 className={({ isActive }) =>
                   cn(
                     "flex items-center justify-between rounded-2xl px-4 py-3.5 text-[13px] font-black transition-all duration-300 group relative mb-1 overflow-hidden",
-                    isActive 
-                      ? "bg-[#0A2E1F] text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)] border-l-4 border-[#D4AF37]" 
-                      : "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80 border-l-4 border-transparent"
+                    isActive
+                      ? "bg-[#0A2E1F] text-white shadow-[0_10px_28px_-6px_rgba(10,46,31,0.45)] border-l-4 border-[#D4AF37]"
+                      : role === "doctor"
+                        ? "text-slate-600 hover:text-[#0A2E1F] hover:bg-white/85 hover:border-l-emerald-300/90 border-l-4 border-transparent hover:shadow-sm"
+                        : "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80 border-l-4 border-transparent",
                   )
                 }
               >

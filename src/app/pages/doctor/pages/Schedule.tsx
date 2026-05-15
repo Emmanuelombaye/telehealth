@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Calendar, Clock, Video, ChevronRight, Plus, Loader2, CalendarPlus, CheckCircle2, AlertCircle, Activity, ShieldCheck, UserCircle, Send, Circle, Database, MessageCircle, X } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { DoctorPageHeader } from "../../../components/doctor/DoctorPageHeader";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
 import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
+import { doctorPageContainer } from "../../../../lib/doctorPortalUi";
 import { toSchedulingIframeSrc, defaultCalendlySchedulingUrl } from "../../../../lib/calendlyEmbed";
 import { useNavigate } from "react-router";
 import * as FramerMotion from "framer-motion";
@@ -105,26 +107,19 @@ export function DoctorSchedulePage() {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-10 pb-20 animate-in fade-in duration-700">
-
-      {/* HEADER */}
-      <div className="bg-white border border-slate-200 rounded-[1.75rem] px-8 py-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-        <div className="absolute -right-16 -top-16 w-48 h-48 bg-emerald-50 rounded-full blur-3xl opacity-60" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Active Video Logistics</span>
-          </div>
-          <h1 className="text-2xl font-black text-[#0A2E1F] tracking-tight uppercase">Clinical Schedule</h1>
-          <p className="text-slate-500 text-xs font-medium mt-1">Manage consultations · Click any card to take action</p>
-        </div>
+    <div className={cn(doctorPageContainer, "space-y-10 pb-24 animate-in fade-in duration-700")}>
+      <DoctorPageHeader
+        eyebrow="Video logistics"
+        title="Clinical schedule"
+        description="Synced consult requests · confirm, reschedule, or jump to embedded availability controls."
+      >
         <Button
-          onClick={() => availabilityRef.current?.scrollIntoView({ behavior: 'smooth' })}
-          className="relative z-10 h-11 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-emerald-600/20 gap-2 transition-all hover:scale-105 active:scale-95"
+          onClick={() => availabilityRef.current?.scrollIntoView({ behavior: "smooth" })}
+          className="h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-7 text-xs font-bold uppercase tracking-[0.15em] text-white shadow-lg shadow-teal-600/25 transition-transform hover:scale-[1.02] active:scale-[0.98]"
         >
-          <CalendarPlus className="h-4 w-4" /> Update Availability
+          <CalendarPlus className="mr-2 h-4 w-4" aria-hidden /> Availability
         </Button>
-      </div>
+      </DoctorPageHeader>
 
       {/* MAIN GRID */}
       <div className="grid xl:grid-cols-12 gap-8">

@@ -9,9 +9,11 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from 
 import { useState, useEffect } from "react";
 import { cn } from "./ui/utils";
 import { supabase } from "../../lib/supabaseClient";
+import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
 import { PageErrorBoundary } from "./PageErrorBoundary";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 import { motion } from "framer-motion";
+import { doctorPortalBackground, doctorMainBackground } from "../../lib/doctorPortalUi";
 
 export function AppLayout() {
   const fetchOrders = usePatientStore(state => state.fetchOrders);
@@ -84,6 +86,8 @@ export function AppLayout() {
   const isPatientPortal = path.startsWith("/patient");
   const isSuperAdminPortal = path.startsWith("/superadmin");
   const isDoctorPortal = path.startsWith("/doctor") || path.startsWith("/providers");
+  const staffPortalLogoHome =
+    sidebarRole === "doctor" ? doctorPortalBaseFromPath(path) : `/${sidebarRole}`;
 
   return (
     <div
@@ -93,7 +97,9 @@ export function AppLayout() {
           ? "bg-gradient-to-br from-emerald-50/80 via-white to-slate-50/90"
           : isSuperAdminPortal
             ? "bg-slate-100/90"
-            : "bg-white",
+            : isDoctorPortal
+              ? doctorPortalBackground
+              : "bg-white",
       )}
     >
       {/* Header: grid keeps the mark optically centered without overlapping side controls */}
@@ -103,7 +109,9 @@ export function AppLayout() {
           scrolled ? "min-h-[4.25rem] shadow-md md:min-h-[4.5rem]" : "min-h-[4.75rem] md:min-h-[5.25rem]",
           isPatientPortal
             ? "border-emerald-100/70 bg-white/88 shadow-emerald-950/[0.035]"
-            : "border-slate-100 bg-white/95",
+            : isDoctorPortal
+              ? "border-emerald-100/75 bg-white/82 shadow-[0_8px_32px_-14px_rgba(16,185,129,0.22)] backdrop-blur-xl"
+              : "border-slate-100 bg-white/95",
           "text-[#0A0D14]",
         )}
       >
@@ -127,10 +135,19 @@ export function AppLayout() {
             <div
               className={cn(
                 "shrink-0 rounded-xl border p-2.5",
-                isPatientPortal ? "border-emerald-100/80 bg-emerald-50/60" : "border-slate-100 bg-slate-50/80",
+                isPatientPortal
+                  ? "border-emerald-100/80 bg-emerald-50/60"
+                  : isDoctorPortal
+                    ? "border-emerald-200/85 bg-emerald-50/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+                    : "border-slate-100 bg-slate-50/80",
               )}
             >
-              <Activity className={cn("h-5 w-5", isPatientPortal ? "text-emerald-700" : "text-slate-600")} />
+              <Activity
+                className={cn(
+                  "h-5 w-5",
+                  isPatientPortal ? "text-emerald-700" : isDoctorPortal ? "text-emerald-700" : "text-slate-600",
+                )}
+              />
             </div>
             <div className="min-w-0 flex flex-col">
               <span className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700/65 md:text-[11px]">
@@ -176,7 +193,7 @@ export function AppLayout() {
             </motion.div>
           ) : (
             <Link
-              to={`/${sidebarRole}`}
+              to={staffPortalLogoHome}
               className="flex w-full max-w-[min(96vw,40rem)] items-center justify-center outline-none transition-opacity hover:opacity-90 md:max-w-[44rem]"
             >
               <img
@@ -247,7 +264,12 @@ export function AppLayout() {
       {/* MAIN CONTENT AREA */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Sidebar (Left) */}
-        <div className="hidden md:block h-full shrink-0 border-r border-slate-100 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+        <div
+          className={cn(
+            "hidden md:block h-full shrink-0 border-r shadow-[4px_0_28px_-8px_rgba(10,46,31,0.06)]",
+            isDoctorPortal ? "border-emerald-100/70 bg-emerald-50/20" : "border-slate-100",
+          )}
+        >
           <Sidebar role={sidebarRole} />
         </div>
 
@@ -258,23 +280,35 @@ export function AppLayout() {
             isPatientPortal ? "pb-[calc(5.25rem+env(safe-area-inset-bottom,0px))] md:pb-12" : "pb-12",
             isPatientPortal
               ? "bg-gradient-to-b from-transparent via-[#FBFBFC] to-emerald-50/20"
-              : isSuperAdminPortal
-                ? "bg-slate-50"
-                : "bg-[#FBFBFC]",
+              : isDoctorPortal
+                ? doctorMainBackground
+                : isSuperAdminPortal
+                  ? "bg-slate-50"
+                  : "bg-[#FBFBFC]",
           )}
         >
           <PageErrorBoundary>
             <div
               className={cn(
                 "mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700",
+                isDoctorPortal && "relative isolate",
                 isSuperAdminPortal ? "max-w-6xl px-3 py-4 md:px-6 md:py-6" : isPatientPortal
                   ? "max-w-[1240px] px-4 py-6 sm:px-6 md:px-10 md:py-10"
                   : isDoctorPortal
-                    ? "max-w-[1600px] px-4 py-3 md:px-5 md:py-5"
+                    ? "max-w-[1600px] px-4 py-5 md:px-7 md:py-8"
                     : "max-w-[1600px] p-6 md:p-10",
               )}
             >
-              <Outlet />
+              {isDoctorPortal && (
+                <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+                  <div className="absolute -top-44 -right-24 h-[min(520px,70vw)] w-[min(520px,70vw)] rounded-full bg-emerald-300/18 blur-[100px]" />
+                  <div className="absolute top-[22%] -left-32 h-[min(420px,55vw)] w-[min(420px,55vw)] rounded-full bg-teal-300/14 blur-[88px]" />
+                  <div className="absolute bottom-8 right-[12%] h-56 w-56 rounded-full bg-cyan-200/22 blur-[72px]" />
+                </div>
+              )}
+              <div className={cn(isDoctorPortal && "relative z-[1]")}>
+                <Outlet />
+              </div>
             </div>
           </PageErrorBoundary>
         </main>

@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Search, Filter, Video, MessageSquare, FileText, ChevronRight, Activity, Clock, ShieldCheck, User, X, CheckCircle2, MoreHorizontal, ArrowLeft, FileSignature, Pill, ActivitySquare, AlertCircle, Receipt, Fingerprint, ClipboardList } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { DoctorPageHeader } from "../../../components/doctor/DoctorPageHeader";
 import { supabase } from "../../../../lib/supabaseClient";
+import { doctorPageContainer } from "../../../../lib/doctorPortalUi";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
 import { useNavigate } from "react-router";
@@ -76,25 +78,19 @@ export function DoctorPatientsPage() {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-6 pb-32 animate-in fade-in duration-700 px-6">
-      
-      {/* 1. REGISTRY HEADER (COMPACT) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
-        <div>
-          <h1 className="text-3xl font-black text-[#0A2E1F] tracking-tighter uppercase leading-tight">
-            Clinical <span className="text-emerald-500 italic font-serif lowercase">ledger.</span>
-          </h1>
-          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] mt-2">Authorized Patient Registry</p>
-        </div>
-        <div className="flex items-center gap-4">
-           <Badge className="h-10 px-6 rounded-xl font-black text-[#0A2E1F] border-none bg-white shadow-sm">
-             {patients.length} RECORDS
-           </Badge>
-           <Button className="rounded-xl h-10 px-6 bg-[#0A2E1F] hover:bg-emerald-900 text-white font-black text-[9px] tracking-widest uppercase">
-              New Entry
-           </Button>
-        </div>
-      </div>
+    <div className={cn(doctorPageContainer, "space-y-7 pb-32 animate-in fade-in duration-700")}>
+      <DoctorPageHeader
+        eyebrow="Authorized registry"
+        title="Patient ledger"
+        description="Distinct patients derived from encounters — drill into intake, vitals, and longitudinal orders."
+      >
+        <Badge className="h-11 rounded-xl border border-emerald-200/70 bg-emerald-50 px-6 font-semibold uppercase tracking-wide text-emerald-900 shadow-sm">
+          {patients.length} records
+        </Badge>
+        <Button className="h-11 rounded-xl bg-[#0A2E1F] px-7 font-semibold uppercase tracking-wide text-[10px] text-white hover:bg-emerald-900 shadow-lg shadow-emerald-950/25">
+          New entry
+        </Button>
+      </DoctorPageHeader>
 
       {/* 2. SEARCH (COMPACT) */}
       <div className="relative group max-w-xl">

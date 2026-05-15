@@ -8,8 +8,11 @@ import {
   Sparkles, FlaskConical, Bot, Command, Globe, Truck, X, Loader2, RefreshCw
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, Input, cn } from "../../../components/ui/shared.tsx";
+import { DoctorPageHeader } from "../../../components/doctor/DoctorPageHeader";
 import { OrderStatus, Order, usePatientStore, useAuthStore } from "../../../../lib";
 import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
+import { getOrderVideoRail } from "../../../../lib/orderVideoRail";
+import { doctorPageContainer, doctorSurfaceCard } from "../../../../lib/doctorPortalUi";
 import { supabase } from "../../../../lib/supabaseClient";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
@@ -111,40 +114,34 @@ export function DoctorQueuePage() {
   };
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-10 animate-in fade-in duration-700">
-      
-      {/* Header Bar */}
-      <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-             <span className="text-emerald-700 text-[10px] font-bold uppercase tracking-widest">Real-time Matrix Active</span>
-          </div>
-          <h1 className="text-2xl font-bold text-[#0A2E1F]">Active Patient Queue</h1>
-          <p className="text-slate-500 text-xs font-medium mt-1">
-             {queue.length} patients waiting for medical review
-          </p>
-        </div>
+    <div className={cn(doctorPageContainer, "space-y-6 pb-12 animate-in fade-in duration-700")}>
+      <DoctorPageHeader
+        eyebrow="Clinical queue · real-time sync"
+        title="Active patient queue"
+        description={`${queue.length} encounter${queue.length === 1 ? "" : "s"} in scope — prioritize by visit path (enrollment video vs async vs clinician request).`}
+      >
+        <Badge
+          variant="outline"
+          className="rounded-xl border-emerald-200/90 bg-emerald-50/90 py-2.5 px-4 text-[10px] font-bold uppercase tracking-wider text-emerald-800 shadow-sm gap-1.5 border"
+        >
+          <ShieldCheck className="h-4 w-4" aria-hidden /> HIPAA secure
+        </Badge>
+        <Button
+          variant="outline"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="h-11 rounded-xl border-teal-200/80 bg-white font-semibold text-[#0A2E1F] shadow-sm hover:bg-teal-50/70 active:scale-[0.98]"
+        >
+          <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} aria-hidden />
+          {isRefreshing ? "Syncing…" : "Refresh"}
+        </Button>
+      </DoctorPageHeader>
 
-        <div className="flex items-center gap-3">
-           <Badge variant="outline" className="rounded-xl bg-emerald-50 text-emerald-700 border-emerald-200 gap-1.5 py-2 px-4 text-xs font-bold uppercase shadow-sm">
-             <ShieldCheck className="h-4 w-4" /> HIPAA SECURE
-           </Badge>
-           <Button 
-             variant="outline"
-             onClick={handleRefresh}
-             disabled={isRefreshing}
-             className="rounded-xl border-slate-200 bg-white h-11 px-4 text-slate-500 hover:bg-slate-50 transition-all active:scale-95"
-           >
-             <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
-             {isRefreshing ? 'Syncing...' : 'Refresh Queue'}
-           </Button>
-        </div>
-      </div>
-
-      <Card className="border border-slate-200 rounded-[1.5rem] shadow-sm overflow-hidden flex flex-col min-h-[600px]">
+      <Card
+        className={cn(doctorSurfaceCard, "flex min-h-[600px] flex-col overflow-hidden border-emerald-100/75")}
+      >
         {/* Table Toolbar */}
-        <div className="p-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-emerald-100/60 bg-gradient-to-r from-teal-50/40 via-white to-emerald-50/35 p-5">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <Input 
@@ -190,6 +187,7 @@ export function DoctorQueuePage() {
               <tr className="border-b border-slate-200 bg-white">
                 <th className="px-6 py-4 font-semibold text-slate-500 w-1/4">Patient Details</th>
                 <th className="px-6 py-4 font-semibold text-slate-500">Treatment Requested</th>
+                <th className="px-6 py-4 font-semibold text-slate-500">Visit path</th>
                 <th className="px-6 py-4 font-semibold text-slate-500">Submission Time</th>
                 <th className="px-6 py-4 font-semibold text-slate-500">Current Status</th>
                 <th className="px-6 py-4 font-semibold text-slate-500 text-right">Action</th>
@@ -239,18 +237,30 @@ export function DoctorQueuePage() {
                       <div>
                         <p className="font-semibold text-slate-800 group-hover:text-emerald-50 transition-colors">{order.medication}</p>
                         <p className="text-xs text-slate-500 mt-0.5 group-hover:text-emerald-200/40 transition-colors">{order.category || "General Wellness"}</p>
-                        {(order.zoomStatus ?? order.zoom_status ?? "not_requested") === "not_requested" ? (
-                          <span className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 group-hover:bg-white/20 group-hover:text-emerald-100">
-                            <FileText className="h-3 w-3" aria-hidden />
-                            Async review
-                          </span>
-                        ) : (
-                          <span className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-violet-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-800 group-hover:bg-white/20 group-hover:text-emerald-100">
-                            <Video className="h-3 w-3" aria-hidden />
-                            Video visit
-                          </span>
-                        )}
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {(() => {
+                        const rail = getOrderVideoRail(order);
+                        return (
+                          <span
+                            title={rail.sub}
+                            className={cn(
+                              "inline-flex max-w-[160px] rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-wider",
+                              rail.kind === "async" &&
+                                "bg-slate-100 text-slate-600 group-hover:bg-white/20 group-hover:text-emerald-100",
+                              rail.kind === "enrollment_video" &&
+                                "bg-violet-100 text-violet-800 group-hover:bg-white/20 group-hover:text-emerald-100",
+                              rail.kind === "doctor_requested_video" &&
+                                "bg-amber-100 text-amber-900 group-hover:bg-white/20 group-hover:text-emerald-100",
+                              rail.kind === "video_confirmed" &&
+                                "bg-emerald-100 text-emerald-900 group-hover:bg-white/20 group-hover:text-emerald-950",
+                            )}
+                          >
+                            {rail.badge}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4">
                       <motion.div className="flex items-center gap-2 text-slate-600 group-hover:text-emerald-100 transition-colors">
