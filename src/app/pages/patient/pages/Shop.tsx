@@ -133,7 +133,7 @@ function IdDocumentTypePicker({
             </button>
           );
         })}
-      </motion.div>
+      </div>
     </div>
   );
 }
