@@ -173,47 +173,10 @@ export function SuperAdminDashboard() {
                   </p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-slate-200/80 bg-white/90 px-4 py-3 text-left shadow-sm">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                      Infrastructure status
-                    </p>
-                    <p className="mt-1 flex items-center gap-2 text-base font-semibold text-[#0A2E1F]">
-                      <Activity className="h-4 w-4 text-emerald-500" aria-hidden />
-                      Optimal
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200/80 bg-white/90 px-4 py-3 text-left shadow-sm">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                      Global active nodes
-                    </p>
-                    <p className="mt-1 flex items-center gap-2 text-base font-semibold text-[#0A2E1F]">
-                      <Globe2 className="h-4 w-4 text-sky-600" aria-hidden />
-                      US · EU · APAC
-                    </p>
-                  </div>
-                </div>
+
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row sm:justify-center lg:flex-col lg:justify-start">
-                <Link to="/superadmin/security" className="w-full sm:w-auto lg:w-full">
-                  <Button
-                    variant="outline"
-                    className="h-11 w-full justify-center gap-2 rounded-xl border-slate-200 bg-white text-sm font-semibold text-[#0A2E1F] hover:bg-slate-50 lg:h-12"
-                  >
-                    <Lock className="h-4 w-4 text-emerald-600" aria-hidden />
-                    Security center
-                  </Button>
-                </Link>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 w-full rounded-xl border-slate-200 bg-white text-slate-500 hover:bg-slate-50 lg:h-12 lg:px-0"
-                  aria-label="Notifications"
-                >
-                  <Bell className="mx-auto h-5 w-5" />
-                </Button>
-              </div>
+
             </div>
           </div>
         </section>
