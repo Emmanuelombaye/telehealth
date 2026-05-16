@@ -22,7 +22,7 @@ async function runFullSystemTest() {
       category: "Weight Loss",
       status: "order_submitted",
       amount: 199.00,
-      user_id: "77777777-7777-7777-7777-777777777777"
+      user_id: "b007a354-2047-46c3-a2d3-8073bde95793"
     }]);
 
     if (insertError) {

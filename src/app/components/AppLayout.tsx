@@ -78,6 +78,12 @@ export function AppLayout() {
   else if (path.startsWith("/superadmin")) sidebarRole = "superadmin";
   else if (path.startsWith("/affiliate")) sidebarRole = "affiliate";
 
+  const isPatientPortal = path.startsWith("/patient");
+  const isSuperAdminPortal = path.startsWith("/superadmin");
+  const isDoctorPortal = path.startsWith("/doctor") || path.startsWith("/providers");
+  /** Brand + platform ops: always light, high-contrast surface (see theme.css `.staff-admin-surface`). */
+  const isStaffAdminPortal = path.startsWith("/admin") || path.startsWith("/superadmin");
+
   // Dynamic user info
   const fullName = user?.user_metadata?.first_name
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`.trim()
@@ -88,11 +94,6 @@ export function AppLayout() {
         : "Guest User";
   
   const displayRole = authRole?.replace('_', ' ').toUpperCase() || sidebarRole.toUpperCase();
-  const isPatientPortal = path.startsWith("/patient");
-  const isSuperAdminPortal = path.startsWith("/superadmin");
-  const isDoctorPortal = path.startsWith("/doctor") || path.startsWith("/providers");
-  /** Brand + platform ops: always light, high-contrast surface (see theme.css `.staff-admin-surface`). */
-  const isStaffAdminPortal = path.startsWith("/admin") || path.startsWith("/superadmin");
   const staffPortalLogoHome =
     sidebarRole === "doctor" ? doctorPortalBaseFromPath(path) : `/${sidebarRole}`;
 
