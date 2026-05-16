@@ -1,5 +1,5 @@
-import React from "react";
-import { Search, Filter, RefreshCw, ChevronLeft, ChevronRight, Copy, GripVertical, FileText } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Search, Filter, RefreshCw, ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import { Card, cn } from "../shared";
 
 export interface ColumnDef<T> {
@@ -8,19 +8,88 @@ export interface ColumnDef<T> {
   cell?: (item: T) => React.ReactNode;
 }
 
+export type AdminDataTableStatusTab = "all" | "active" | "inactive";
+
 interface AdminDataTableProps<T> {
   data: T[];
   columns: ColumnDef<T>[];
   searchPlaceholder?: string;
   onRowClick?: (item: T) => void;
+  /** Substring filter on normalized search text per row. Omit to disable search filtering. */
+  getSearchText?: (item: T) => string;
+  /** When set, All / Active / Inactive tabs filter rows. Omit to show only All (Active/Inactive hidden). */
+  getStatusCategory?: (item: T) => "active" | "inactive";
+  pageSize?: number;
+  onRefresh?: () => void;
+  rowKey?: (item: T, index: number) => React.Key;
+  /** Copy visible (filtered) rows as TSV including header row. */
+  getCopyTsvLine?: (item: T) => string;
 }
 
-export function AdminDataTable<T>({ 
-  data, 
-  columns, 
+export function AdminDataTable<T>({
+  data,
+  columns,
   searchPlaceholder = "Search...",
-  onRowClick 
+  onRowClick,
+  getSearchText,
+  getStatusCategory,
+  pageSize = 10,
+  onRefresh,
+  rowKey,
+  getCopyTsvLine,
 }: AdminDataTableProps<T>) {
+  const [search, setSearch] = useState("");
+  const [statusTab, setStatusTab] = useState<AdminDataTableStatusTab>("all");
+  const [page, setPage] = useState(1);
+
+  const searchNorm = search.trim().toLowerCase();
+
+  const filtered = useMemo(() => {
+    let rows = data;
+    if (getSearchText && searchNorm) {
+      rows = rows.filter((item) => getSearchText(item).toLowerCase().includes(searchNorm));
+    }
+    if (getStatusCategory && statusTab !== "all") {
+      rows = rows.filter((item) => {
+        const cat = getStatusCategory(item);
+        return statusTab === "active" ? cat === "active" : cat === "inactive";
+      });
+    }
+    return rows;
+  }, [data, getSearchText, getStatusCategory, searchNorm, statusTab]);
+
+  const total = filtered.length;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, pages);
+  const pageStart = (safePage - 1) * pageSize;
+  const pageRows = filtered.slice(pageStart, pageStart + pageSize);
+  const rangeEnd = total === 0 ? 0 : Math.min(total, pageStart + pageRows.length);
+
+  const resetFilters = () => {
+    setSearch("");
+    setStatusTab("all");
+    setPage(1);
+  };
+
+  const tabClass = (tab: AdminDataTableStatusTab) =>
+    cn(
+      "text-[12px] font-medium border px-3 py-1.5 rounded-full transition-colors",
+      statusTab === tab
+        ? "border-border/80 bg-background text-foreground"
+        : "border-transparent text-muted-foreground hover:bg-muted/50",
+    );
+
+  const copyVisibleTsv = async () => {
+    if (!getCopyTsvLine) return;
+    const header = columns.map((c) => c.header).join("\t");
+    const body = filtered.map((item) => getCopyTsvLine(item)).join("\n");
+    try {
+      await navigator.clipboard.writeText([header, body].filter(Boolean).join("\n"));
+    } catch {
+      /* ignore */
+    }
+  };
+
   return (
     <Card className="border-border/60 shadow-sm overflow-hidden bg-background font-sans">
       <div className="p-4 border-b border-border/60 space-y-4">
@@ -29,37 +98,69 @@ export function AdminDataTable<T>({
             <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder={searchPlaceholder}
               className="w-full border-none bg-transparent py-2 pl-9 pr-4 text-[13px] text-foreground outline-none placeholder:text-muted-foreground/80 focus:ring-0"
             />
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground">
+            <button
+              type="button"
+              title="Copy table (TSV)"
+              disabled={!getCopyTsvLine}
+              onClick={() => void copyVisibleTsv()}
+              className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground disabled:opacity-40"
+            >
               <Copy className="h-[15px] w-[15px]" />
             </button>
-            <button className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground">
+            <button
+              type="button"
+              title="Refresh"
+              onClick={() => {
+                onRefresh?.();
+                setPage(1);
+              }}
+              className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground"
+            >
               <RefreshCw className="h-[15px] w-[15px]" />
             </button>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button className="text-[12px] font-medium border border-border/80 bg-background px-3 py-1.5 rounded-full hover:bg-muted/50 transition-colors text-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className={tabClass("all")} onClick={() => { setStatusTab("all"); setPage(1); }}>
               All
             </button>
-            <button className="text-[12px] font-medium border border-transparent px-3 py-1.5 rounded-full hover:bg-muted/50 transition-colors text-muted-foreground">
-              Active
-            </button>
-            <button className="text-[12px] font-medium border border-transparent px-3 py-1.5 rounded-full hover:bg-muted/50 transition-colors text-muted-foreground">
-              Inactive
-            </button>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 border border-border/80 rounded-full text-[12px] font-medium hover:bg-muted/50 transition-colors ml-2">
+            {getStatusCategory ? (
+              <>
+                <button type="button" className={tabClass("active")} onClick={() => { setStatusTab("active"); setPage(1); }}>
+                  Active
+                </button>
+                <button type="button" className={tabClass("inactive")} onClick={() => { setStatusTab("inactive"); setPage(1); }}>
+                  Inactive
+                </button>
+              </>
+            ) : null}
+            <button
+              type="button"
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-border/80 rounded-full text-[12px] font-medium hover:bg-muted/50 transition-colors ml-0 sm:ml-2 text-muted-foreground"
+              disabled
+              title="Coming soon"
+            >
               Extra Filters <Filter className="h-3 w-3 text-muted-foreground ml-1" />
             </button>
           </div>
-          <button className="text-[12px] font-medium border border-border/80 bg-muted/20 px-4 py-1.5 rounded-full hover:bg-muted/50 transition-colors">
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="text-[12px] font-medium border border-border/80 bg-muted/20 px-4 py-1.5 rounded-full hover:bg-muted/50 transition-colors"
+          >
             Reset Filters
           </button>
         </div>
@@ -77,12 +178,12 @@ export function AdminDataTable<T>({
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40 text-[13px] text-foreground/90">
-            {data.map((item, rowIdx) => (
-              <tr 
-                key={rowIdx} 
+            {pageRows.map((item, rowIdx) => (
+              <tr
+                key={rowKey ? rowKey(item, pageStart + rowIdx) : pageStart + rowIdx}
                 className={cn(
-                  "hover:bg-muted/30 transition-colors group", 
-                  onRowClick && "cursor-pointer"
+                  "hover:bg-muted/30 transition-colors group",
+                  onRowClick && "cursor-pointer",
                 )}
                 onClick={() => onRowClick?.(item)}
               >
@@ -93,7 +194,7 @@ export function AdminDataTable<T>({
                 ))}
               </tr>
             ))}
-            {data.length === 0 && (
+            {pageRows.length === 0 && (
               <tr>
                 <td colSpan={columns.length} className="py-8 text-center text-muted-foreground text-sm">
                   No data found
@@ -103,16 +204,32 @@ export function AdminDataTable<T>({
           </tbody>
         </table>
       </div>
-      
-      <div className="p-4 border-t border-border/60 flex items-center justify-between text-[12px] text-muted-foreground">
+
+      <div className="p-4 border-t border-border/60 flex flex-wrap items-center justify-between gap-2 text-[12px] text-muted-foreground">
         <div>
-          Rows per page: <span className="font-bold text-foreground">10</span>
+          Rows per page: <span className="font-bold text-foreground">{pageSize}</span>
         </div>
         <div className="flex items-center gap-4">
-          <span>1-10 of 28 items</span>
+          <span>
+            {total === 0 ? "0" : `${pageStart + 1}-${rangeEnd}`} of {total} items
+          </span>
           <div className="flex items-center gap-1">
-            <button className="p-1 hover:bg-muted rounded transition-colors"><ChevronLeft className="h-4 w-4" /></button>
-            <button className="p-1 hover:bg-muted rounded transition-colors"><ChevronRight className="h-4 w-4" /></button>
+            <button
+              type="button"
+              className="p-1 hover:bg-muted rounded transition-colors disabled:opacity-40"
+              disabled={safePage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              className="p-1 hover:bg-muted rounded transition-colors disabled:opacity-40"
+              disabled={safePage >= pages}
+              onClick={() => setPage((p) => Math.min(pages, p + 1))}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>
