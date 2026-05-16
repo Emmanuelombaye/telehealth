@@ -155,12 +155,18 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   ).length;
   const unreadNotificationsCount = notifications.filter((n) => n?.unread).length;
 
-  const fullName = user?.user_metadata?.first_name 
-    ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`
-    : user?.email || "Guest User";
+  const fullName = user?.user_metadata?.first_name
+    ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`.trim()
+    : user?.email
+      ? user.email
+      : role === "superadmin"
+        ? "Platform administrator"
+        : "Guest User";
 
   const displayRole = authRole?.replace('_', ' ') || role;
   const isAdminPortal = role === "admin" || role === "superadmin" || role === "doctor" || (authRole as string) === "brand_admin";
+
+  const isStaffOps = role === "admin" || role === "superadmin";
 
   const SidebarContent = () => (
     <div
@@ -193,7 +199,13 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
           return (
             <div key={item.href} className="w-full">
               {showGroup && (
-                <div className="px-4 pb-2 pt-6 text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                <div
+                  className={cn(
+                    isStaffOps
+                      ? "px-3 pb-1.5 pt-5 text-[11px] font-semibold uppercase tracking-wider text-slate-500"
+                      : "px-4 pb-2 pt-6 text-[10px] font-black uppercase tracking-[0.25em] text-slate-400",
+                  )}
+                >
                   {item.group}
                 </div>
               )}
@@ -206,12 +218,17 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                   onClick={onMobileClose}
                   className={({ isActive }) =>
                     cn(
-                      "flex items-center justify-between rounded-2xl px-4 py-3.5 text-[13px] font-black transition-all duration-300 group relative overflow-hidden",
+                      "flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 transition-all duration-200 group relative overflow-hidden",
+                      isStaffOps ? "text-[13px]" : "rounded-2xl px-4 py-3.5 text-[13px] font-black duration-300",
                       isActive
-                        ? "bg-[#0A2E1F] text-white shadow-[0_10px_28px_-6px_rgba(10,46,31,0.45)] border-l-4 border-[#D4AF37]"
+                        ? isStaffOps
+                          ? "bg-[#0A2E1F] text-white shadow-md border-l-[3px] border-emerald-400/90"
+                          : "bg-[#0A2E1F] text-white shadow-[0_10px_28px_-6px_rgba(10,46,31,0.45)] border-l-4 border-[#D4AF37]"
                         : role === "doctor"
                           ? "text-slate-600 hover:text-[#0A2E1F] hover:bg-white/85 hover:border-l-emerald-300/90 border-l-4 border-transparent hover:shadow-sm"
-                          : "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80 border-l-4 border-transparent",
+                          : isStaffOps
+                            ? "text-slate-600 hover:bg-slate-100/90 border-l-[3px] border-transparent"
+                            : "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80 border-l-4 border-transparent",
                     )
                   }
                 >
@@ -219,10 +236,24 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                     <>
                       <div className="flex items-center gap-3 min-w-0 relative z-10">
                         <item.icon className={cn(
-                          "h-5 w-5 shrink-0 transition-all duration-300", 
-                          isActive ? "text-[#D4AF37] scale-110" : "text-slate-400 group-hover:text-[#0A2E1F] group-hover:scale-110"
+                          "h-5 w-5 shrink-0 transition-all duration-300",
+                          isActive
+                            ? isStaffOps
+                              ? "text-emerald-300 scale-105"
+                              : "text-[#D4AF37] scale-110"
+                            : "text-slate-400 group-hover:text-[#0A2E1F] group-hover:scale-110",
                         )} />
-                        <span className="truncate uppercase tracking-tight">{item.label}</span>
+                        <span
+                          title={item.label}
+                          className={cn(
+                            "min-w-0 text-left",
+                            isStaffOps
+                              ? "line-clamp-2 text-[12.5px] font-semibold leading-snug tracking-tight normal-case"
+                              : "truncate font-black uppercase tracking-tight",
+                          )}
+                        >
+                          {item.label}
+                        </span>
                       </div>
                       {(() => {
                         let badgeCount = item.badge;
@@ -230,8 +261,13 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                         if (item.label === "Notifications") badgeCount = unreadNotificationsCount;
                         if (badgeCount && badgeCount > 0) {
                           return (
-                            <span className={cn("h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 shadow-sm relative z-10",
-                              isActive ? "bg-[#D4AF37] text-[#0A2E1F]" : "bg-emerald-100 text-[#0A2E1F]"
+                            <span className={cn(
+                              "h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 shadow-sm relative z-10",
+                              isActive
+                                ? isStaffOps
+                                  ? "bg-emerald-400/25 text-white"
+                                  : "bg-[#D4AF37] text-[#0A2E1F]"
+                                : "bg-emerald-100 text-[#0A2E1F]",
                             )}>
                               {badgeCount}
                             </span>
@@ -253,7 +289,12 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
 
   return (
     <>
-      <div className="hidden md:flex h-full w-60 shrink-0 flex-col">
+      <div
+        className={cn(
+          "hidden md:flex h-full shrink-0 flex-col",
+          isStaffOps ? "w-[17.5rem] min-w-[17.5rem] lg:w-72 lg:min-w-[18rem]" : "w-60 min-w-[15rem]",
+        )}
+      >
         <SidebarContent />
       </div>
       {mobileOpen && (

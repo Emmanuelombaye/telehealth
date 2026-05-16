@@ -78,9 +78,13 @@ export function AppLayout() {
   else if (path.startsWith("/affiliate")) sidebarRole = "affiliate";
 
   // Dynamic user info
-  const fullName = user?.user_metadata?.first_name 
-    ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`
-    : user?.email || "Guest User";
+  const fullName = user?.user_metadata?.first_name
+    ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`.trim()
+    : user?.email
+      ? user.email
+      : isSuperAdminPortal
+        ? "Platform administrator"
+        : "Guest User";
   
   const displayRole = authRole?.replace('_', ' ').toUpperCase() || sidebarRole.toUpperCase();
   const isPatientPortal = path.startsWith("/patient");
