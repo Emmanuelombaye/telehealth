@@ -5,6 +5,8 @@ import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminD
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib/auth-store";
 import { toast } from "sonner";
+import { SuperAdminShell } from "../../../components/superadmin/SuperAdminShell";
+import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice";
 
 type QuestionType = "text" | "choice" | "yes_no";
 
@@ -228,7 +230,8 @@ export function AdminQuestionnairePage() {
       : "Not saved to database yet";
 
     return (
-      <div className="flex h-[calc(100vh-100px)] flex-col font-sans text-slate-900 -m-6 bg-slate-100">
+      <div className="flex h-[calc(100vh-100px)] flex-col font-sans text-slate-900 bg-slate-100 -m-6 md:-m-10">
+
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 py-4 shadow-sm">
           <div className="flex items-center gap-4">
             <button
@@ -442,9 +445,13 @@ export function AdminQuestionnairePage() {
               </div>
 
               <div className="z-10 border-t border-slate-200 bg-white p-4">
-                <Button className="h-12 w-full rounded-xl bg-[#0A2E1F] font-bold text-white hover:bg-[#051810]">
+                <Button 
+                  className="h-12 w-full rounded-xl bg-[#0A2E1F] font-bold text-white hover:bg-[#051810]"
+                  onClick={() => toast.info("Preview mode: this button is non-functional.")}
+                >
                   Next Step
                 </Button>
+
               </div>
             </div>
           </div>
@@ -501,10 +508,16 @@ export function AdminQuestionnairePage() {
     },
   ];
 
-  return (
-    <div className="max-w-[1500px] mx-auto font-sans space-y-6">
+  const isSuper = role === "super_admin";
+
+  const listContent = (
+    <div className={cn("max-w-[1500px] mx-auto font-sans space-y-6", isSuper && "max-w-none")}>
+      {!isBuilding && <AdminScopeNotice variant={isSuper ? "platform" : "brand"} />}
+      
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-900">Questionnaires</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">
+          {!isSuper && "Questionnaires"}
+        </h1>
         <Button
           onClick={openNewForm}
           className="bg-primary hover:bg-primary/90 text-white rounded-lg gap-2 text-[13px] h-9 px-4"
@@ -535,4 +548,18 @@ export function AdminQuestionnairePage() {
       )}
     </div>
   );
+
+  if (isSuper) {
+    return (
+      <SuperAdminShell
+        title="Intake Questionnaires"
+        description="Configure dynamic medical intake forms and screening questions for patients across all platform brands."
+      >
+        {listContent}
+      </SuperAdminShell>
+    );
+  }
+
+  return listContent;
 }
+

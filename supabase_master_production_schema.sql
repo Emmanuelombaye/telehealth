@@ -194,21 +194,21 @@ CREATE TABLE public.intake_forms (
 -- 13. ADMIN QUESTIONNAIRES
 DROP TABLE IF EXISTS public.admin_questionnaires CASCADE;
 CREATE TABLE public.admin_questionnaires (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    date TEXT,
-    questions TEXT,
-    products TEXT,
-    checkout_pages TEXT,
-    domain TEXT,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    name TEXT NOT NULL DEFAULT 'Untitled questionnaire',
     slug TEXT,
-    review TEXT,
-    status TEXT,
-    mode TEXT,
-    intake TEXT,
-    last_used TEXT,
-    created_at TIMESTAMPTZ DEFAULT now()
+    status TEXT NOT NULL DEFAULT 'draft',
+    questions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    brand_id TEXT,
+    created_by UUID REFERENCES auth.users (id) ON DELETE SET NULL
 );
+
+-- Enable RLS and add basic policies (super_admin all)
+ALTER TABLE public.admin_questionnaires ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "super_admin_all" ON public.admin_questionnaires FOR ALL TO authenticated USING (public.get_auth_role() = 'super_admin');
+
 
 -- ENABLE RLS ON ALL TABLES
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
