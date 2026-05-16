@@ -91,7 +91,7 @@ export function PatientDashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
 
-  const awaitingReview = orders.filter(o => o.status === "order_submitted").length;
+  const awaitingReview = (orders ?? []).filter((o) => o.status === "order_submitted").length;
 
   return (
     <motion.div

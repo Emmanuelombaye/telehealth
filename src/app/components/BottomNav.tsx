@@ -27,7 +27,13 @@ export function BottomNav() {
           <NavLink
             key={item.href}
             to={item.href}
-            end={item.href === "/patient"}
+            end={
+              item.href === "/patient"
+                ? true
+                : item.href === "/patient/shop"
+                  ? false
+                  : true
+            }
             className={({ isActive }) =>
               cn(
                 "relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-colors duration-200",

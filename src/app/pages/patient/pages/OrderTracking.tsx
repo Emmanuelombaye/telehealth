@@ -32,6 +32,23 @@ function trackingRowIcon(step: FulfillmentRailStep) {
   return stepIcon[step.key] ?? FileText;
 }
 
+/** Prefer business id; avoid unstable keys when DB row is incomplete. */
+function stableOrderKey(order: Record<string, unknown>): string | null {
+  const o = order.order_number ?? order.id;
+  return o != null && String(o) !== "" ? String(o) : null;
+}
+
+function truncateOrderDisplayId(order: Record<string, unknown>, len = 8): string {
+  const raw =
+    order.order_number != null && String(order.order_number) !== ""
+      ? String(order.order_number)
+      : order.id != null
+        ? String(order.id)
+        : "—";
+  if (raw === "—") return raw;
+  return raw.length <= len ? raw : raw.slice(0, len);
+}
+
 export function PatientOrderTrackingPage() {
   const [selected, setSelected] = useState<Order | null>(null);
   const [copied, setCopied] = useState(false);
@@ -82,7 +99,13 @@ export function PatientOrderTrackingPage() {
   };
 
   // Keep the selected order state in sync if it updates
-  const activeSelected = selected ? orders.find(o => o.id === selected.id) || selected : null;
+  const activeSelected = selected
+    ? orders.find((o) => {
+        const ak = stableOrderKey(o as Record<string, unknown>);
+        const bk = stableOrderKey(selected as unknown as Record<string, unknown>);
+        return ak && bk && ak === bk;
+      }) || selected
+    : null;
 
   if (activeSelected) {
     const trackSteps = buildOrderTrackingVerticalSteps(activeSelected);
@@ -108,7 +131,7 @@ export function PatientOrderTrackingPage() {
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wide text-primary">{activeSelected.sub_brand || activeSelected.subBrand}</p>
             <h1 className="text-xl font-bold">{activeSelected.medication}</h1>
-            <p className="text-xs text-muted-foreground">{activeSelected.id.substring(0,8)} · Ordered {activeSelected.ordered_date || activeSelected.orderedDate}</p>
+            <p className="text-xs text-muted-foreground">{truncateOrderDisplayId(activeSelected as unknown as Record<string, unknown>)} · Ordered {activeSelected.ordered_date || activeSelected.orderedDate}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{activeSelected.dosage_instructions || activeSelected.dosageInstructions}</p>
           </div>
           <span className="font-extrabold text-primary shrink-0">{typeof activeSelected.amount === 'number' ? `$${activeSelected.amount}` : activeSelected.amount}</span>
@@ -358,14 +381,28 @@ export function PatientOrderTrackingPage() {
       </div>
 
       <div className="space-y-3">
-        {orders.map(order => {
+        {orders.length === 0 ? (
+          <Card className="border-dashed border-2 bg-muted/20">
+            <CardContent className="p-8 text-center space-y-3">
+              <Package className="h-10 w-10 text-muted-foreground mx-auto opacity-60" />
+              <p className="font-semibold text-foreground">No orders yet</p>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                When you complete checkout, your treatment orders will appear here with live tracking.
+              </p>
+              <Link to="/patient/shop">
+                <Button className="rounded-xl mt-2">Browse treatments</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          orders.map((order, idx) => {
           const vSteps = buildOrderTrackingVerticalSteps(order);
           const vIdx = getOrderTrackingVerticalIndex(order);
           const cur = vSteps[vIdx];
           const Icon = cur ? trackingRowIcon(cur) : Package;
           const progress = vSteps.length ? Math.round(((vIdx + 1) / vSteps.length) * 100) : 0;
           return (
-            <Card key={order.id} className="hover:border-primary/40 transition-colors cursor-pointer"
+            <Card key={stableOrderKey(order as Record<string, unknown>) ?? `order-row-${idx}`} className="hover:border-primary/40 transition-colors cursor-pointer"
               onClick={() => setSelected(order)}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
@@ -377,7 +414,7 @@ export function PatientOrderTrackingPage() {
                       <div className="min-w-0">
                         <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{order.sub_brand || order.subBrand}</p>
                         <p className="font-bold text-sm truncate">{order.medication}</p>
-                        <p className="text-xs text-muted-foreground">{order.id.substring(0,8)} · Ordered {order.ordered_date || order.orderedDate || new Date(order.created_at).toLocaleDateString()}</p>
+                        <p className="text-xs text-muted-foreground">{truncateOrderDisplayId(order as Record<string, unknown>)} · Ordered {order.ordered_date || order.orderedDate || new Date(order.created_at).toLocaleDateString()}</p>
                       </div>
                       <span className="font-bold text-primary text-sm shrink-0">{typeof order.amount === 'number' ? `$${order.amount}` : order.amount}</span>
                     </div>
@@ -404,7 +441,8 @@ export function PatientOrderTrackingPage() {
               </CardContent>
             </Card>
           );
-        })}
+        })
+        )}
       </div>
     </div>
   );

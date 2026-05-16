@@ -43,6 +43,21 @@ function buildDoctorMenu(base: "/doctor" | "/providers"): Array<DoctorNavItem & 
 
 type Role = "patient" | "doctor" | "admin" | "superadmin" | "affiliate";
 
+/** Patient leaf routes share `/patient`; without correct `end`, NavLink falsely matches unrelated pages. */
+function navLinkEndsAtExact(role: Role, doctorBase: "/doctor" | "/providers" | null, itemHref: string): boolean {
+  if (role === "doctor" && doctorBase) return itemHref === doctorBase;
+  if (role === "patient") {
+    if (itemHref === "/patient") return true;
+    /** Shop + enrollment steps live under `/patient/shop/...` */
+    if (itemHref === "/patient/shop" || itemHref.startsWith("/patient/shop/")) return false;
+    return true;
+  }
+  if (role === "admin") return itemHref === "/admin";
+  if (role === "superadmin") return itemHref === "/superadmin";
+  if (role === "affiliate") return itemHref === "/affiliate";
+  return false;
+}
+
 interface SidebarProps {
   role: Role;
   mobileOpen?: boolean;
@@ -132,10 +147,13 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const menu =
     role === "doctor" && doctorBase !== null ? buildDoctorMenu(doctorBase) : menuConfig[role];
   const { user, role: authRole } = useAuthStore();
-  const { orders, notifications } = usePatientStore();
+  const orders = usePatientStore((s) => s.orders) ?? [];
+  const notifications = usePatientStore((s) => s.notifications) ?? [];
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const pendingCount = orders.filter(o => o.status === "order_submitted" || o.status === "medical_review").length;
-  const unreadNotificationsCount = notifications.filter(n => n.unread).length;
+  const pendingCount = orders.filter(
+    (o) => o.status === "order_submitted" || o.status === "medical_review"
+  ).length;
+  const unreadNotificationsCount = notifications.filter((n) => n?.unread).length;
 
   const fullName = user?.user_metadata?.first_name 
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`
@@ -184,7 +202,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
               <motion.div whileHover={{ x: 4 }} whileTap={{ scale: 0.98 }} className="mb-1">
                 <NavLink
                   to={item.href}
-                  end={role === "doctor" && doctorBase ? item.href === doctorBase : item.href === `/${role}`}
+                  end={navLinkEndsAtExact(role, doctorBase, item.href)}
                   onClick={onMobileClose}
                   className={({ isActive }) =>
                     cn(

@@ -120,9 +120,20 @@ export function AppointmentsPage() {
           table: "orders",
         },
         (payload) => {
-          const row = payload.new as { id?: string; user_id?: string };
+          const row = payload.new as { id?: string; user_id?: string; order_number?: string };
           if (row.user_id !== uid) return;
-          setOrders((prev) => prev.map((o) => (o.id === row.id ? { ...o, ...payload.new } : o)));
+          setOrders((prev) =>
+            prev.map((o) => {
+              const sameById =
+                o.id != null && row.id != null && String(o.id) === String(row.id);
+              const sameByOrderNum =
+                row.order_number != null &&
+                o.order_number != null &&
+                String(o.order_number) === String(row.order_number);
+              if (sameById || sameByOrderNum) return { ...o, ...payload.new };
+              return o;
+            })
+          );
           setLastUpdated(new Date());
         }
       )
