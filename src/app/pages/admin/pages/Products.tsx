@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useLocation } from "react-router";
 import {
   Plus,
@@ -487,124 +488,128 @@ export function AdminProductsPage() {
         ) : null}
 
       {/* ADD PRODUCT MODAL - EXECUTIVE EMERALD EDITION */}
-      <AnimatePresence>
-        {showAddModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-950/55 backdrop-blur-md"
-              onClick={() => setShowAddModal(false)}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/15 bg-white shadow-[0_40px_120px_-24px_rgba(15,23,42,0.5)]"
-            >
-              <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 p-8 text-white md:p-10">
-                <motion.div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(6,78,59,0.95) 0%, rgba(17,24,39,0.92) 55%, rgba(76,29,149,0.75) 100%)",
-                  }}
-                  aria-hidden
-                />
-                <div className="relative z-10">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-300">New protocol</span>
+      {typeof document !== "undefined" && createPortal(
+        <AnimatePresence>
+          {showAddModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-slate-950/55 backdrop-blur-md"
+                onClick={() => setShowAddModal(false)}
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/15 bg-white shadow-[0_40px_120px_-24px_rgba(15,23,42,0.5)]"
+              >
+                <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 p-8 text-white md:p-10">
+                  <motion.div
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(6,78,59,0.95) 0%, rgba(17,24,39,0.92) 55%, rgba(76,29,149,0.75) 100%)",
+                    }}
+                    aria-hidden
+                  />
+                  <div className="relative z-10">
+                    <div className="mb-2 flex items-center gap-2">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-300">New protocol</span>
+                    </div>
+                    <h2 className="text-2xl font-black tracking-tight md:text-3xl">Deploy to catalog</h2>
                   </div>
-                  <h2 className="text-2xl font-black tracking-tight md:text-3xl">Deploy to catalog</h2>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="relative z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+                  >
+                    <X size={20} />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="relative z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-                >
-                  <X size={20} />
-                </button>
-              </div>
 
-              <form onSubmit={handleAddProduct} className="p-8 space-y-6 md:p-10 md:space-y-8">
-                 <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Protocol Designation</label>
-                    <Input 
-                      required 
-                      placeholder="e.g. Semaglutide (GLP-1)" 
-                      value={newProduct.name}
-                      onChange={e => setNewProduct({...newProduct, name: e.target.value})}
-                      className="rounded-2xl border-slate-200 h-14 font-bold focus:ring-emerald-500/10"
-                    />
-                 </div>
+                <form onSubmit={handleAddProduct} className="p-8 space-y-6 md:p-10 md:space-y-8">
+                   <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Protocol Designation</label>
+                      <Input 
+                        required 
+                        placeholder="e.g. Semaglutide (GLP-1)" 
+                        value={newProduct.name}
+                        onChange={e => setNewProduct({...newProduct, name: e.target.value})}
+                        className="rounded-2xl border-slate-200 h-14 font-bold focus:ring-emerald-500/10"
+                      />
+                   </div>
 
-                 <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                       <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Biological Domain</label>
-                       <select 
-                         className="flex h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer"
-                         value={newProduct.category}
-                         onChange={e => setNewProduct({...newProduct, category: e.target.value})}
-                       >
-                          <option>Weight Loss</option>
-                          <option>Sexual Wellness</option>
-                          <option>Hair Loss</option>
-                          <option>Anti-Aging</option>
-                          <option>Longevity</option>
-                       </select>
-                    </div>
-                    <div className="space-y-3">
-                       <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Target MSRP ($)</label>
-                       <Input 
-                         required 
-                         type="number" 
-                         placeholder="199" 
-                         value={newProduct.price_usd}
-                         onChange={e => setNewProduct({...newProduct, price_usd: e.target.value})}
-                         className="rounded-2xl border-slate-200 h-14 font-bold focus:ring-emerald-500/10"
-                       />
-                    </div>
-                 </div>
+                   <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                         <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Biological Domain</label>
+                         <select 
+                           className="flex h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer"
+                           value={newProduct.category}
+                           onChange={e => setNewProduct({...newProduct, category: e.target.value})}
+                         >
+                            <option>Weight Loss</option>
+                            <option>Sexual Wellness</option>
+                            <option>Hair Loss</option>
+                            <option>Anti-Aging</option>
+                            <option>Longevity</option>
+                         </select>
+                      </div>
+                      <div className="space-y-3">
+                         <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Target MSRP ($)</label>
+                         <Input 
+                           required 
+                           type="number" 
+                           placeholder="199" 
+                           value={newProduct.price_usd}
+                           onChange={e => setNewProduct({...newProduct, price_usd: e.target.value})}
+                           className="rounded-2xl border-slate-200 h-14 font-bold focus:ring-emerald-500/10"
+                         />
+                      </div>
+                   </div>
 
-                 <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Clinical Narrative</label>
-                    <textarea 
-                      className="flex min-h-[120px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
-                      placeholder="Describe the therapeutic mechanism..."
-                      value={newProduct.description}
-                      onChange={e => setNewProduct({...newProduct, description: e.target.value})}
-                    />
-                 </div>
+                   <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Clinical Narrative</label>
+                      <textarea 
+                        className="flex min-h-[120px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                        placeholder="Describe the therapeutic mechanism..."
+                        value={newProduct.description}
+                        onChange={e => setNewProduct({...newProduct, description: e.target.value})}
+                      />
+                   </div>
 
-                 <Button 
-                   disabled={submitting}
-                   className="mt-4 h-14 w-full rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-violet-600 font-black uppercase tracking-[0.2em] text-[11px] text-white shadow-xl shadow-emerald-900/25 transition hover:brightness-105"
-                 >
-                    {submitting ? <Loader2 className="mx-auto h-6 w-6 animate-spin text-white" /> : "Authorize deployment"}
-                 </Button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                   <Button 
+                     disabled={submitting}
+                     className="mt-4 h-14 w-full rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-violet-600 font-black uppercase tracking-[0.2em] text-[11px] text-white shadow-xl shadow-emerald-900/25 transition hover:brightness-105"
+                   >
+                      {submitting ? <Loader2 className="mx-auto h-6 w-6 animate-spin text-white" /> : "Authorize deployment"}
+                   </Button>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
-      <AnimatePresence>
-        {editingProduct && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-950/55 backdrop-blur-md"
-              onClick={() => setEditingProduct(null)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 12 }}
-              className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[2rem] border border-white/15 bg-white shadow-[0_40px_120px_-24px_rgba(15,23,42,0.5)]"
-              onClick={(e) => e.stopPropagation()}
-            >
+      {typeof document !== "undefined" && createPortal(
+        <AnimatePresence>
+          {editingProduct && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-slate-950/55 backdrop-blur-md"
+                onClick={() => setEditingProduct(null)}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[2rem] border border-white/15 bg-white shadow-[0_40px_120px_-24px_rgba(15,23,42,0.5)]"
+                onClick={(e) => e.stopPropagation()}
+              >
               <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 p-8 text-white">
                 <div
                   className="absolute inset-0"
