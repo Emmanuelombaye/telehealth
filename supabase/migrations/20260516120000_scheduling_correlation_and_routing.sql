@@ -82,8 +82,8 @@ CREATE POLICY "consult_routing_super_admin_all"
   USING (public.get_auth_role() = 'super_admin')
   WITH CHECK (public.get_auth_role() = 'super_admin');
 
-GRANT SELECT ON TABLE public.consult_routing_rules TO anon, authenticated;
-GRANT ALL ON TABLE public.consult_routing_rules TO service_role;
+GRANT SELECT ON TABLE public.consult_routing_rules TO anon;
+GRANT ALL ON TABLE public.consult_routing_rules TO authenticated, service_role;
 
 COMMENT ON TABLE public.consult_routing_rules IS
   'Optional rules for mandatory sync video (state/category/product/clinical JSON).';

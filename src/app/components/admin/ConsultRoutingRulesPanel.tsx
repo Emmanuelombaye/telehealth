@@ -81,11 +81,15 @@ export function ConsultRoutingRulesPanel({ productOptions }: { productOptions: {
       };
 
       const { error: err } = await supabase.from("consult_routing_rules").insert([row]);
-      if (err) throw err;
+      if (err) {
+        console.error("Supabase insert error:", err);
+        throw new Error(`${err.message} ${err.details || ""}`);
+      }
       setForm(emptyForm);
       setShowForm(false);
       await fetchRules();
     } catch (e) {
+      console.error(e);
       setError(e instanceof Error ? e.message : "Save failed — check super_admin role.");
     } finally {
       setSaving(false);
