@@ -1,4 +1,9 @@
-@custom-variant dark (&:is(.dark *));
+/**
+ * Dark mode applies under `html.dark`, except inside `.staff-admin-surface`
+ * (brand admin + superadmin). Those portals always use light, high-contrast tokens
+ * so tables, form builders, and inputs stay readable regardless of patient theme.
+ */
+@custom-variant dark (&:is(.dark *):not(:is(.staff-admin-surface, .staff-admin-surface *)));
 
 :root {
   --font-size: 16px;
@@ -51,6 +56,40 @@
   --brand-peach-900: #7C2D12;
   --brand-sky-50: #F0F9FF;
   --brand-hero: linear-gradient(135deg, #0A2E1F 0%, #10B981 100%);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0A0D14;
+  --sidebar-primary: #0A2E1F;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #F0F7F4;
+  --sidebar-accent-foreground: #0A2E1F;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #10B981;
+}
+
+/* Re-assert light tokens on the subtree (overrides html.dark inheritance for variables). */
+.staff-admin-surface {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #0A0D14;
+  --card: #ffffff;
+  --card-foreground: #0A0D14;
+  --popover: #ffffff;
+  --popover-foreground: #0A0D14;
+  --primary: #0A2E1F;
+  --primary-foreground: #ffffff;
+  --secondary: #F0F7F4;
+  --secondary-foreground: #0A2E1F;
+  --muted: #F1F5F9;
+  --muted-foreground: #475569;
+  --accent: #10B981;
+  --accent-foreground: #ffffff;
+  --destructive: #EF4444;
+  --destructive-foreground: #ffffff;
+  --border: #E2E8F0;
+  --input: #ffffff;
+  --input-background: #ffffff;
+  --switch-background: #CBD5E1;
+  --ring: #10B981;
   --sidebar: #ffffff;
   --sidebar-foreground: #0A0D14;
   --sidebar-primary: #0A2E1F;

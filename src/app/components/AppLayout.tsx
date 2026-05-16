@@ -25,7 +25,7 @@ export function AppLayout() {
   const subscribeToOrders = usePatientStore(state => state.subscribeToOrders);
   const unreadMessagesCount = usePatientStore(state => state.unreadMessagesCount);
   const notifications = usePatientStore(state => state.notifications);
-  const unreadNotificationsCount = notifications.filter(n => n.unread).length;
+  const unreadNotificationsCount = notifications.filter((n) => n?.unread).length;
   const totalNotifications = unreadMessagesCount + unreadNotificationsCount;
   
   useEffect(() => {
@@ -86,6 +86,8 @@ export function AppLayout() {
   const isPatientPortal = path.startsWith("/patient");
   const isSuperAdminPortal = path.startsWith("/superadmin");
   const isDoctorPortal = path.startsWith("/doctor") || path.startsWith("/providers");
+  /** Brand + platform ops: always light, high-contrast surface (see theme.css `.staff-admin-surface`). */
+  const isStaffAdminPortal = path.startsWith("/admin") || path.startsWith("/superadmin");
   const staffPortalLogoHome =
     sidebarRole === "doctor" ? doctorPortalBaseFromPath(path) : `/${sidebarRole}`;
 
@@ -93,6 +95,7 @@ export function AppLayout() {
     <div
       className={cn(
         "flex flex-col h-screen w-full overflow-hidden font-sans antialiased text-[#0A0D14]",
+        isStaffAdminPortal && "staff-admin-surface",
         isPatientPortal
           ? "bg-gradient-to-br from-emerald-50/80 via-white to-slate-50/90"
           : isSuperAdminPortal
@@ -127,7 +130,9 @@ export function AppLayout() {
                 <SheetTitle>Clinical Navigation</SheetTitle>
                 <SheetDescription>Main control portal</SheetDescription>
               </div>
-              <Sidebar role={sidebarRole} onMobileClose={() => setIsMobileMenuOpen(false)} />
+              <PageErrorBoundary pageName="Sidebar navigation">
+                <Sidebar role={sidebarRole} onMobileClose={() => setIsMobileMenuOpen(false)} />
+              </PageErrorBoundary>
             </SheetContent>
           </Sheet>
 
@@ -280,7 +285,9 @@ export function AppLayout() {
             isDoctorPortal ? "border-emerald-100/70 bg-emerald-50/20" : "border-slate-100",
           )}
         >
-          <Sidebar role={sidebarRole} />
+          <PageErrorBoundary pageName="Sidebar navigation">
+            <Sidebar role={sidebarRole} />
+          </PageErrorBoundary>
         </div>
 
         <main

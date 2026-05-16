@@ -30,7 +30,7 @@ export function AdminDataTable<T>({
             <input
               type="text"
               placeholder={searchPlaceholder}
-              className="w-full pl-9 pr-4 py-2 bg-transparent border-none text-[13px] outline-none placeholder:text-muted-foreground/70 focus:ring-0"
+              className="w-full border-none bg-transparent py-2 pl-9 pr-4 text-[13px] text-foreground outline-none placeholder:text-muted-foreground/80 focus:ring-0"
             />
           </div>
           
