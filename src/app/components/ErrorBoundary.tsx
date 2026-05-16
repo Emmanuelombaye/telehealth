@@ -13,8 +13,20 @@ export function ErrorBoundary() {
   }
 
   let is404 = false;
+  let isDeploymentError = false;
+
   if (isRouteErrorResponse(error) && error.status === 404) {
     is404 = true;
+  }
+
+  // Detect ChunkLoadError / Deployment Sync issues
+  if (
+    error instanceof Error && 
+    (error.name === 'ChunkLoadError' || 
+     /failed to fetch/i.test(error.message) ||
+     /dynamically imported module/i.test(error.message))
+  ) {
+    isDeploymentError = true;
   }
 
   return (
@@ -29,11 +41,13 @@ export function ErrorBoundary() {
         {/* Copy */}
         <div className="space-y-3">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-            {is404 ? "Page Not Found" : "Something went wrong"}
+            {is404 ? "Page Not Found" : isDeploymentError ? "System Update" : "Something went wrong"}
           </h1>
           <p className="text-slate-500 font-medium leading-relaxed max-w-sm mx-auto">
             {is404
               ? "The page you're looking for doesn't exist or has been moved."
+              : isDeploymentError
+              ? "A new version of the platform has been deployed. Please click reload to sync with the latest clinical infrastructure."
               : "We encountered an unexpected issue. Your data is safe and nothing was lost. Please try again or return home."}
           </p>
         </div>
