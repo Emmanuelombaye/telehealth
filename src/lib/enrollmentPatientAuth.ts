@@ -1,5 +1,4 @@
 import { supabase } from "./supabaseClient";
-import { useAuthStore } from "./auth-store";
 import { setForcePatientPortalIntent } from "./patientPortalIntent";
 
 export {
@@ -15,6 +14,9 @@ export {
  * - refresh JWT user_metadata.role = patient
  * - upsert profiles.role = patient
  * - session flag survives full page reload to /patient
+ *
+ * Does not import auth-store (avoids circular module init / TDZ in production bundles).
+ * Role in UI updates via `refreshSession` + `onAuthStateChange`; `hasForcePatientPortalIntent` wins in auth helpers until cleared.
  */
 export async function ensurePatientPortalRoleAfterEnrollment(
   userId: string,
@@ -53,13 +55,20 @@ export async function ensurePatientPortalRoleAfterEnrollment(
     console.warn("[enrollment] patient profile upsert:", error.message);
   }
 
-  useAuthStore.setState({ role: "patient" });
+  try {
+    const { useAuthStore } = await import("./auth-store");
+    useAuthStore.setState({ role: "patient" });
+  } catch {
+    /* non-fatal if chunk still loading */
+  }
 }
 
 /** Call right before navigating to /patient from enrollment complete UI. */
 export function primePatientPortalNavigation(): void {
   setForcePatientPortalIntent();
-  useAuthStore.setState({ role: "patient" });
+  void import("./auth-store").then(({ useAuthStore }) => {
+    useAuthStore.setState({ role: "patient" });
+  });
 }
 
 /** Full navigation to patient dashboard (survives auth re-init on reload). */

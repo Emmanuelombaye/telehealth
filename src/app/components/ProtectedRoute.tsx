@@ -5,7 +5,7 @@ import { doctorPortalBaseFromPath } from '../../lib/doctorPortalBase';
 import {
   clearForcePatientPortalIntent,
   hasForcePatientPortalIntent,
-} from '../../lib/enrollmentPatientAuth';
+} from '../../lib/patientPortalIntent';
 
 const portalLoginUrl = (path: string) => {
   if (path.startsWith('/doctor')) return '/doctor/login';

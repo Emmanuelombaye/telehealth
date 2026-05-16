@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { RouterProvider } from 'react-router';
-import { router } from './routes';
 import { Toaster, toast } from 'sonner';
-import { usePatientStore } from '../lib/patient-store';
+/** Initialize auth + patient stores before the router graph to avoid rare circular-init TDZ in production. */
 import { useAuthStore } from '../lib/auth-store';
+import { usePatientStore } from '../lib/patient-store';
+import { router } from './routes';
 import { runProductionPreflight } from '../lib/productionPreflight';
 
 export default function App() {
