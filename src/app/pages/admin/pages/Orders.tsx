@@ -570,7 +570,7 @@ export function AdminOrdersPage() {
                       )}
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
