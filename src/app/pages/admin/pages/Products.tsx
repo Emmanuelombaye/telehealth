@@ -465,18 +465,27 @@ export function AdminProductsPage() {
                     cell: (item: any) => {
                       const prod = products.find((p) => p.id === item.fullId);
                       return (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="h-9 rounded-xl border-violet-200 bg-gradient-to-r from-violet-50 to-emerald-50 text-[10px] font-black uppercase text-slate-800 shadow-sm transition hover:border-violet-300 hover:from-violet-100 hover:to-emerald-50"
-                          onClick={() => prod && setEditingProduct(prod)}
-                        >
-                          Checkout & video
-                        </Button>
+                        <div className="flex justify-end opacity-0 transition-all duration-300 group-hover:opacity-100 pr-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-9 rounded-xl border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 text-[10px] font-black uppercase text-emerald-800 shadow-sm transition hover:border-emerald-400 hover:from-emerald-100 hover:to-teal-100"
+                            onClick={(e) => {
+                              e.stopPropagation(); // prevent double click if row is clicked
+                              if (prod) setEditingProduct(prod);
+                            }}
+                          >
+                            Edit Protocol
+                          </Button>
+                        </div>
                       );
                     },
                   },
                 ]}
+                onRowClick={(item: any) => {
+                  const prod = products.find((p) => p.id === item.fullId);
+                  if (prod) setEditingProduct(prod);
+                }}
                 searchPlaceholder="Search by name or category…"
               />
             )}

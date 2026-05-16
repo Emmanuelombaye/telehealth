@@ -182,8 +182,10 @@ export function AdminDataTable<T>({
               <tr
                 key={rowKey ? rowKey(item, pageStart + rowIdx) : pageStart + rowIdx}
                 className={cn(
-                  "hover:bg-muted/30 transition-colors group",
-                  onRowClick && "cursor-pointer",
+                  "transition-all duration-300 group",
+                  onRowClick
+                    ? "cursor-pointer hover:bg-gradient-to-r hover:from-emerald-50/80 hover:to-transparent hover:shadow-[inset_4px_0_0_0_#10b981]"
+                    : "hover:bg-muted/30",
                 )}
                 onClick={() => onRowClick?.(item)}
               >
