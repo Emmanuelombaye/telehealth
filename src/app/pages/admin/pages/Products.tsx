@@ -276,97 +276,78 @@ export function AdminProductsPage() {
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(16,185,129,0.12),transparent_50%),radial-gradient(ellipse_80%_50%_at_100%_0%,rgba(139,92,246,0.08),transparent_45%),radial-gradient(ellipse_60%_40%_at_0%_100%,rgba(14,165,233,0.08),transparent_40%)]"
         aria-hidden
       />
-      <div className="mx-auto max-w-[1440px] space-y-10 px-4 py-8 md:px-6 md:py-10 animate-fade-in-up">
-        {/* Hero */}
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/70 shadow-[0_24px_80px_-24px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 backdrop-blur-xl md:rounded-[2.5rem]">
-          <div
-            className="absolute inset-0 opacity-90"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(6,78,59,0.92) 0%, rgba(17,24,39,0.88) 42%, rgba(76,29,149,0.55) 78%, rgba(14,116,144,0.45) 100%)",
-            }}
-            aria-hidden
-          />
-          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/25 blur-3xl" aria-hidden />
-          <div className="absolute -bottom-32 left-1/4 h-80 w-80 rounded-full bg-violet-500/20 blur-3xl" aria-hidden />
-          <div className="absolute right-1/3 top-1/2 h-48 w-48 rounded-full bg-cyan-400/15 blur-2xl" aria-hidden />
-
-          <div className="relative z-10 flex flex-col gap-10 p-8 md:flex-row md:items-end md:justify-between md:p-12 lg:p-14">
-            <div className="max-w-2xl space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.28em] text-emerald-200/95 backdrop-blur-sm">
-                <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-                {isSuperAdminRoute ? "Superadmin · Protocol OS" : "Admin · Protocol OS"}
+      <div className="mx-auto max-w-[1440px] space-y-6 px-4 py-6 md:px-6 md:py-8 animate-fade-in-up">
+        {/* Compact header */}
+        <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-lg ring-1 ring-slate-900/[0.04] backdrop-blur-xl md:rounded-[1.75rem]">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/[0.06] via-transparent to-violet-500/[0.04]" aria-hidden />
+          <div className="relative z-10 flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between md:px-8 md:py-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-900/25">
+                <Sparkles className="h-5 w-5" />
               </div>
-              <h1 className="text-4xl font-black tracking-tight text-white md:text-5xl lg:text-[3.25rem] lg:leading-[1.05]">
-                Clinical protocols,{" "}
-                <span className="bg-gradient-to-r from-emerald-300 via-cyan-200 to-violet-200 bg-clip-text text-transparent">
-                  orchestrated beautifully
-                </span>
-              </h1>
-              <p className="max-w-xl text-sm font-medium leading-relaxed text-slate-200/90 md:text-[15px]">
-                Curate the therapeutic catalog, tune checkout gateways, and see Path A (video) vs Path B (async) per protocol
-                before patients reach step 8.
-                {isSuperAdminRoute ? " Full-fidelity control for platform operators." : ""}
-              </p>
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-semibold text-emerald-100/90">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />
-                  Supabase-backed inventory
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-semibold text-violet-100/90">
-                  <Video className="h-3.5 w-3.5 text-violet-300" />
-                  Checkout + video routing
-                </span>
+              <div>
+                <h1 className="text-lg font-black tracking-tight text-slate-900 md:text-xl">
+                  Protocol OS
+                </h1>
+                <p className="mt-0.5 text-xs font-medium text-slate-500">
+                  {isSuperAdminRoute ? "Superadmin" : "Admin"} · {products.length} protocol{products.length === 1 ? "" : "s"} · Path A / B routing
+                </p>
               </div>
             </div>
-
-            <div className="flex shrink-0 flex-col gap-3 sm:flex-row md:flex-col lg:flex-row">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                <ShieldCheck className="h-3 w-3" />
+                Supabase-backed
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-100 bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700">
+                <Video className="h-3 w-3" />
+                Video routing
+              </span>
               <Button
                 variant="outline"
-                className="h-12 gap-2 rounded-2xl border-white/25 bg-white/10 px-6 font-black text-[10px] uppercase tracking-[0.2em] text-white shadow-lg shadow-black/20 backdrop-blur-md transition hover:bg-white/15 hover:text-white"
+                className="h-9 gap-1.5 rounded-xl border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:border-slate-300"
                 onClick={() => window.open("/explore-treatments", "_blank")}
               >
-                <PackageSearch className="h-4 w-4" />
-                Browse catalog
-                <ArrowUpRight className="h-3.5 w-3.5 opacity-70" />
+                <PackageSearch className="h-3.5 w-3.5" />
+                Catalog
+                <ArrowUpRight className="h-3 w-3 opacity-50" />
               </Button>
               <Button
-                className="h-12 gap-2 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-slate-950 shadow-xl shadow-emerald-900/30 transition hover:brightness-105 active:scale-[0.99]"
+                className="h-9 gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 text-[10px] font-black uppercase tracking-widest text-white shadow-md shadow-emerald-900/20 transition hover:brightness-105"
                 onClick={() => setShowAddModal(true)}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
                 Add protocol
               </Button>
             </div>
           </div>
         </section>
 
-        {/* Metrics */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
+        {/* Metrics — compact row */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
           {metricCards.map((m, i) => (
             <Card
               key={i}
-              className="group relative overflow-hidden border border-slate-200/80 bg-white/90 p-7 shadow-lg shadow-slate-200/40 ring-1 ring-slate-900/[0.03] backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-xl"
+              className="group relative overflow-hidden border border-slate-200/60 bg-white/90 px-4 py-4 shadow-sm ring-1 ring-slate-900/[0.02] backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div
                 className={cn(
-                  "pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-gradient-to-br opacity-70 blur-2xl transition group-hover:opacity-100",
+                  "pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br opacity-50 blur-2xl transition group-hover:opacity-80",
                   m.accent,
                 )}
               />
-              <div className="relative z-10 flex flex-col gap-4">
+              <div className="relative z-10 flex items-center gap-3">
                 <div
                   className={cn(
-                    "flex h-11 w-11 items-center justify-center rounded-2xl ring-1 ring-inset transition group-hover:scale-105",
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset transition group-hover:scale-105",
                     m.iconBg,
                   )}
                 >
-                  <m.icon className="h-5 w-5" />
+                  <m.icon className="h-4 w-4" />
                 </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{m.label}</p>
-                  <h2 className="mt-1 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">{m.val}</h2>
-                  <p className="mt-2 text-[11px] font-semibold text-slate-500">{m.sub}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">{m.label}</p>
+                  <h2 className="text-xl font-black tracking-tight text-slate-900">{m.val}</h2>
                 </div>
               </div>
             </Card>
