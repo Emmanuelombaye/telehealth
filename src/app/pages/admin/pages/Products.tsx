@@ -755,7 +755,9 @@ export function AdminProductsPage() {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+    )}
       </div>
     </div>
   );
