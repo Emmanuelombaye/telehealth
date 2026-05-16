@@ -20,7 +20,11 @@ export function MessagesPage() {
 
   // Step 1: Fetch threads
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // Fallback: If auth state is missing or bypassed, don't spin infinitely
+      const timer = setTimeout(() => setLoading(false), 1500);
+      return () => clearTimeout(timer);
+    }
     fetchThreads();
   }, [user]);
 
