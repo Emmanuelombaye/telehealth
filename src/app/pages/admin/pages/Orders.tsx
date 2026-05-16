@@ -509,7 +509,7 @@ export function AdminOrdersPage() {
                                       placeholder="AUTO..." 
                                       className="w-full bg-slate-50 border-none rounded-xl px-6 py-3.5 text-[11px] font-black text-[#0A2E1F] outline-none focus:ring-4 focus:ring-emerald-500/5 placeholder:text-slate-200 transition-all uppercase tracking-widest"
                                       value={trackingNumber}
-                                      onChange={(e) => setNewOrder({...newOrder, trackingNumber: e.target.value})}
+                                      onChange={(e) => setTrackingNumber(e.target.value)}
                                     />
                                  </div>
                               </div>
