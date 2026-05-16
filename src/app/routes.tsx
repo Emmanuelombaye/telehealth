@@ -1,96 +1,101 @@
+import { lazy } from "react";
 import { createBrowserRouter } from "react-router";
 import { AppLayout } from "./components/AppLayout";
 import { PublicLayout } from "./components/PublicLayout";
-import { LandingPage } from "./pages/Landing";
-import { PatientDashboard } from "./pages/patient/Dashboard";
-import { DoctorDashboard } from "./pages/doctor/Dashboard";
-import { AdminDashboard } from "./pages/admin/Dashboard";
-import { WeightLossPage, SexualWellnessPage, HairLossPage, LongevityPage, BioOptimizerPage } from "./pages/treatments";
-import { ClinicalResearchPage } from "./pages/authority/ClinicalResearch";
-import { SupportHubPage } from "./pages/SupportHub";
-import { HowItWorksPage } from "./pages/HowItWorks";
-import { FrequentlyAskedQuestionsPage } from "./pages/FAQ";
-import { ExploreTreatmentsPage } from "./pages/ExploreTreatments";
-import { SelectTreatmentPage } from "./pages/quiz/SelectTreatment";
-import { ReviewsPage } from "./pages/quiz/Reviews";
+
+// --- LAZY LOADED PAGES ---
+// Base & Auth
+const LandingPage = lazy(() => import("./pages/Landing").then(m => ({ default: m.LandingPage })));
+const AuthPage = lazy(() => import("./pages/auth/AuthPage").then(m => ({ default: m.AuthPage })));
+const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPassword").then(m => ({ default: m.ResetPasswordPage })));
+const NotFoundPage = lazy(() => import("./pages/NotFound").then(m => ({ default: m.NotFoundPage })));
+
+// Treatments & Authority
+const WeightLossPage = lazy(() => import("./pages/treatments").then(m => ({ default: m.WeightLossPage })));
+const SexualWellnessPage = lazy(() => import("./pages/treatments").then(m => ({ default: m.SexualWellnessPage })));
+const HairLossPage = lazy(() => import("./pages/treatments").then(m => ({ default: m.HairLossPage })));
+const LongevityPage = lazy(() => import("./pages/treatments").then(m => ({ default: m.LongevityPage })));
+const BioOptimizerPage = lazy(() => import("./pages/treatments").then(m => ({ default: m.BioOptimizerPage })));
+const ClinicalResearchPage = lazy(() => import("./pages/authority/ClinicalResearch").then(m => ({ default: m.ClinicalResearchPage })));
+const SupportHubPage = lazy(() => import("./pages/SupportHub").then(m => ({ default: m.SupportHubPage })));
+const HowItWorksPage = lazy(() => import("./pages/HowItWorks").then(m => ({ default: m.HowItWorksPage })));
+const FrequentlyAskedQuestionsPage = lazy(() => import("./pages/FAQ").then(m => ({ default: m.FrequentlyAskedQuestionsPage })));
+const ExploreTreatmentsPage = lazy(() => import("./pages/ExploreTreatments").then(m => ({ default: m.ExploreTreatmentsPage })));
+
+// Quiz
+const SelectTreatmentPage = lazy(() => import("./pages/quiz/SelectTreatment").then(m => ({ default: m.SelectTreatmentPage })));
+const ReviewsPage = lazy(() => import("./pages/quiz/Reviews").then(m => ({ default: m.ReviewsPage })));
+
+// Patient Pages
+const PatientDashboard = lazy(() => import("./pages/patient/Dashboard").then(m => ({ default: m.PatientDashboard })));
+const PatientShopPage = lazy(() => import("./pages/patient/pages/Shop").then(m => ({ default: m.PatientShopPage })));
+const PatientOrderTrackingPage = lazy(() => import("./pages/patient/pages/OrderTracking").then(m => ({ default: m.PatientOrderTrackingPage })));
+const AppointmentsPage = lazy(() => import("./pages/patient/pages/Appointments").then(m => ({ default: m.AppointmentsPage })));
+const IntakeFormsPage = lazy(() => import("./pages/patient/pages/IntakeForms").then(m => ({ default: m.IntakeFormsPage })));
+const VisitFormsPage = lazy(() => import("./pages/patient/pages/VisitForms").then(m => ({ default: m.VisitFormsPage })));
+const MessagesPage = lazy(() => import("./pages/patient/pages/Messages").then(m => ({ default: m.MessagesPage })));
+const VisitSummariesPage = lazy(() => import("./pages/patient/pages/VisitSummaries").then(m => ({ default: m.VisitSummariesPage })));
+const PrescriptionsPage = lazy(() => import("./pages/patient/pages/Prescriptions").then(m => ({ default: m.PrescriptionsPage })));
+const LabResultsPage = lazy(() => import("./pages/patient/pages/LabResults").then(m => ({ default: m.LabResultsPage })));
+const DocumentsPage = lazy(() => import("./pages/patient/pages/Documents").then(m => ({ default: m.DocumentsPage })));
+const ProfilePage = lazy(() => import("./pages/patient/pages/Profile").then(m => ({ default: m.ProfilePage })));
+const IdentityPage = lazy(() => import("./pages/patient/pages/Identity").then(m => ({ default: m.IdentityPage })));
+const FamilyAccessPage = lazy(() => import("./pages/patient/pages/FamilyAccess").then(m => ({ default: m.FamilyAccessPage })));
+const NotificationsPage = lazy(() => import("./pages/patient/pages/Notifications").then(m => ({ default: m.NotificationsPage })));
+const InsurancePage = lazy(() => import("./pages/patient/pages/Insurance").then(m => ({ default: m.InsurancePage })));
+const PatientConsultPage = lazy(() => import("./pages/patient/pages/Consult").then(m => ({ default: m.PatientConsultPage })));
+
+// Doctor Pages
+const DoctorDashboard = lazy(() => import("./pages/doctor/Dashboard").then(m => ({ default: m.DoctorDashboard })));
+const DoctorQueuePage = lazy(() => import("./pages/doctor/pages/Queue").then(m => ({ default: m.DoctorQueuePage })));
+const DoctorAvailabilityPage = lazy(() => import("./pages/doctor/pages/Availability").then(m => ({ default: m.DoctorAvailabilityPage })));
+const DoctorPatientsPage = lazy(() => import("./pages/doctor/pages/Patients").then(m => ({ default: m.DoctorPatientsPage })));
+const DoctorSchedulePage = lazy(() => import("./pages/doctor/pages/Schedule").then(m => ({ default: m.DoctorSchedulePage })));
+const DoctorMessagesPage = lazy(() => import("./pages/doctor/pages/Messages").then(m => ({ default: m.DoctorMessagesPage })));
+const DoctorConsultPage = lazy(() => import("./pages/doctor/pages/Consult").then(m => ({ default: m.DoctorConsultPage })));
+const DoctorLabsPage = lazy(() => import("./pages/doctor/pages/Labs").then(m => ({ default: m.DoctorLabsPage })));
+const DoctorScribePage = lazy(() => import("./pages/doctor/pages/Scribe").then(m => ({ default: m.DoctorScribePage })));
+const DoctorRPMPage = lazy(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.DoctorRPMPage })));
+const DoctorERxPage = lazy(() => import("./pages/doctor/pages/ERx").then(m => ({ default: m.DoctorERxPage })));
+const DoctorImagingPage = lazy(() => import("./pages/doctor/pages/Imaging").then(m => ({ default: m.DoctorImagingPage })));
+const DoctorReferralsPage = lazy(() => import("./pages/doctor/pages/Referrals").then(m => ({ default: m.DoctorReferralsPage })));
+const DoctorBillingPage = lazy(() => import("./pages/doctor/pages/Billing").then(m => ({ default: m.DoctorBillingPage })));
+const DoctorEducationPage = lazy(() => import("./pages/doctor/pages/Education").then(m => ({ default: m.DoctorEducationPage })));
+const DoctorNotificationsPage = lazy(() => import("./pages/doctor/pages/Notifications").then(m => ({ default: m.DoctorNotificationsPage })));
+const DoctorWorkflowPage = lazy(() => import("./pages/doctor/pages/Workflow").then(m => ({ default: m.DoctorWorkflowPage })));
+
+// Admin Pages
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard").then(m => ({ default: m.AdminDashboard })));
+const AdminPatientsPage = lazy(() => import("./pages/admin/pages/Patients").then(m => ({ default: m.AdminPatientsPage })));
+const AdminTreatmentsPage = lazy(() => import("./pages/admin/pages/Treatments").then(m => ({ default: m.AdminTreatmentsPage })));
+const AdminOrdersPage = lazy(() => import("./pages/admin/pages/Orders").then(m => ({ default: m.AdminOrdersPage })));
+const AdminMessagesPage = lazy(() => import("./pages/admin/pages/Messages").then(m => ({ default: m.AdminMessagesPage })));
+const AdminAnalyticsPage = lazy(() => import("./pages/admin/pages/Analytics").then(m => ({ default: m.AdminAnalyticsPage })));
+const AdminToolsPage = lazy(() => import("./pages/admin/pages/Tools").then(m => ({ default: m.AdminToolsPage })));
+const AdminQuestionnairePage = lazy(() => import("./pages/admin/pages/Questionnaire").then(m => ({ default: m.AdminQuestionnairePage })));
+const AdminProductsPage = lazy(() => import("./pages/admin/pages/Products").then(m => ({ default: m.AdminProductsPage })));
+const AdminBuildersPage = lazy(() => import("./pages/admin/pages/Builders").then(m => ({ default: m.AdminBuildersPage })));
+const AdminFinancePage = lazy(() => import("./pages/admin/pages/Finance").then(m => ({ default: m.AdminFinancePage })));
+const AdminDiscountsPage = lazy(() => import("./pages/admin/pages/Discounts").then(m => ({ default: m.AdminDiscountsPage })));
+const AdminAffiliatesPage = lazy(() => import("./pages/admin/pages/Affiliates").then(m => ({ default: m.AdminAffiliatesPage })));
+const AdminUsersPage = lazy(() => import("./pages/admin/pages/Users").then(m => ({ default: m.AdminUsersPage })));
+const AdminAuditPage = lazy(() => import("./pages/admin/pages/Audit").then(m => ({ default: m.AdminAuditPage })));
+const AdminSettingsPage = lazy(() => import("./pages/admin/pages/Settings").then(m => ({ default: m.AdminSettingsPage })));
+
+// SuperAdmin Pages
+const SuperAdminDashboard = lazy(() => import("./pages/superadmin/Dashboard").then(m => ({ default: m.SuperAdminDashboard })));
+const SuperAdminBrandsPage = lazy(() => import("./pages/superadmin/pages/Brands").then(m => ({ default: m.SuperAdminBrandsPage })));
+const SuperAdminAnalyticsPage = lazy(() => import("./pages/superadmin/pages/Analytics").then(m => ({ default: m.SuperAdminAnalyticsPage })));
+const SuperAdminUsersPage = lazy(() => import("./pages/superadmin/pages/Users").then(m => ({ default: m.SuperAdminUsersPage })));
+const SuperAdminDoctorsPage = lazy(() => import("./pages/superadmin/pages/Doctors").then(m => ({ default: m.SuperAdminDoctorsPage })));
+const SuperAdminFinancePage = lazy(() => import("./pages/superadmin/pages/Finance").then(m => ({ default: m.SuperAdminFinancePage })));
+const SuperAdminSecurityPage = lazy(() => import("./pages/superadmin/pages/Security").then(m => ({ default: m.SuperAdminSecurityPage })));
+
+// Affiliate & Misc
+const AffiliateDashboard = lazy(() => import("./pages/affiliate/AffiliateDashboard").then(m => ({ default: m.AffiliateDashboard })));
+
 import { ErrorBoundary } from "./components/ErrorBoundary";
-
-// Patient pages
-import { PatientShopPage } from "./pages/patient/pages/Shop";
-import { PatientOrderTrackingPage } from "./pages/patient/pages/OrderTracking";
-import { AppointmentsPage } from "./pages/patient/pages/Appointments";
-import { IntakeFormsPage } from "./pages/patient/pages/IntakeForms";
-import { VisitFormsPage } from "./pages/patient/pages/VisitForms";
-import { MessagesPage } from "./pages/patient/pages/Messages";
-import { VisitSummariesPage } from "./pages/patient/pages/VisitSummaries";
-import { PrescriptionsPage } from "./pages/patient/pages/Prescriptions";
-import { LabResultsPage } from "./pages/patient/pages/LabResults";
-import { DocumentsPage } from "./pages/patient/pages/Documents";
-import { ProfilePage } from "./pages/patient/pages/Profile";
-import { IdentityPage } from "./pages/patient/pages/Identity";
-import { FamilyAccessPage } from "./pages/patient/pages/FamilyAccess";
-import { NotificationsPage } from "./pages/patient/pages/Notifications";
-import { InsurancePage } from "./pages/patient/pages/Insurance";
-import { PatientConsultPage } from "./pages/patient/pages/Consult";
-
-// Doctor pages
-import { DoctorQueuePage } from "./pages/doctor/pages/Queue";
-import { DoctorAvailabilityPage } from "./pages/doctor/pages/Availability";
-import { DoctorPatientsPage } from "./pages/doctor/pages/Patients";
-import { DoctorSchedulePage } from "./pages/doctor/pages/Schedule";
-import { DoctorMessagesPage } from "./pages/doctor/pages/Messages";
-import { DoctorConsultPage } from "./pages/doctor/pages/Consult";
-import { DoctorLabsPage } from "./pages/doctor/pages/Labs";
-import { DoctorScribePage } from "./pages/doctor/pages/Scribe";
-import { DoctorRPMPage } from "./pages/doctor/pages/RPM";
-import { DoctorERxPage } from "./pages/doctor/pages/ERx";
-import { DoctorImagingPage } from "./pages/doctor/pages/Imaging";
-import { DoctorReferralsPage } from "./pages/doctor/pages/Referrals";
-import { DoctorBillingPage } from "./pages/doctor/pages/Billing";
-import { DoctorEducationPage } from "./pages/doctor/pages/Education";
-import { DoctorNotificationsPage } from "./pages/doctor/pages/Notifications";
-import { DoctorWorkflowPage } from "./pages/doctor/pages/Workflow";
-
-// Admin pages
-import { AdminPatientsPage } from "./pages/admin/pages/Patients";
-import { AdminTreatmentsPage } from "./pages/admin/pages/Treatments";
-import { AdminOrdersPage } from "./pages/admin/pages/Orders";
-import { AdminMessagesPage } from "./pages/admin/pages/Messages";
-import { AdminAnalyticsPage } from "./pages/admin/pages/Analytics";
-import { AdminToolsPage } from "./pages/admin/pages/Tools";
-import { AdminQuestionnairePage } from "./pages/admin/pages/Questionnaire";
-import { AdminProductsPage } from "./pages/admin/pages/Products";
-import { AdminBuildersPage } from "./pages/admin/pages/Builders";
-import { AdminFinancePage } from "./pages/admin/pages/Finance";
-import { AdminDiscountsPage } from "./pages/admin/pages/Discounts";
-import { AdminAffiliatesPage } from "./pages/admin/pages/Affiliates";
-import { AdminUsersPage } from "./pages/admin/pages/Users";
-import { AdminAuditPage } from "./pages/admin/pages/Audit";
-import { AdminSettingsPage } from "./pages/admin/pages/Settings";
-
-
-
-import { SuperAdminDashboard } from "./pages/superadmin/Dashboard";
-import { SuperAdminBrandsPage } from "./pages/superadmin/pages/Brands";
-import { SuperAdminAnalyticsPage } from "./pages/superadmin/pages/Analytics";
-import { SuperAdminUsersPage } from "./pages/superadmin/pages/Users";
-import { SuperAdminDoctorsPage } from "./pages/superadmin/pages/Doctors";
-import { SuperAdminFinancePage } from "./pages/superadmin/pages/Finance";
-import { SuperAdminSecurityPage } from "./pages/superadmin/pages/Security";
-
-// Pharmacy pages
-import { 
-  PharmacyDashboard, PharmacyOrdersPage, PharmacyShippingPage, 
-  PharmacyInventoryPage, PharmacySettingsPage 
-} from "./pages/pharmacy/pages";
-
-import { NotFoundPage } from "./pages/NotFound";
-import { AuthPage } from "./pages/auth/AuthPage";
-import { ResetPasswordPage } from "./pages/auth/ResetPassword";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-
-// Affiliate pages
-import { AffiliateDashboard } from "./pages/affiliate/AffiliateDashboard";
 
 
 export const router = createBrowserRouter([

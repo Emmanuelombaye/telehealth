@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Link, Outlet, useLocation } from "react-router";
+import { AuthLoadingScreen } from "./ProtectedRoute";
 import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 import { 
   ArrowRight, ChevronDown, X, Menu, ShieldCheck, Lock, Star, 
@@ -389,7 +390,9 @@ export function PublicLayout() {
       {/* Main Content */}
       <main>
         <PageErrorBoundary>
-          <Outlet />
+          <Suspense fallback={<AuthLoadingScreen />}>
+            <Outlet />
+          </Suspense>
         </PageErrorBoundary>
       </main>
 

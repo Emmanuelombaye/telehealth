@@ -17,7 +17,7 @@ const portalLoginUrl = (path: string) => {
   return '/patient/login';
 };
 
-function AuthLoadingScreen() {
+export function AuthLoadingScreen() {
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center gap-6 z-50">
       <img src="/originallogo.png" alt="Peak Health" className="h-14 object-contain opacity-90" />

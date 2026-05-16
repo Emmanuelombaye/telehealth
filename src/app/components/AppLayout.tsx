@@ -6,12 +6,13 @@ import { Button } from "./ui/shared.tsx";
 import { useAuthStore } from "../../lib/auth-store";
 import { usePatientStore } from "../../lib/patient-store";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "./ui/sheet";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { cn } from "./ui/utils";
 import { supabase } from "../../lib/supabaseClient";
 import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
 import { PageErrorBoundary } from "./PageErrorBoundary";
 import { LogoutConfirmation } from "./LogoutConfirmation";
+import { AuthLoadingScreen } from "./ProtectedRoute";
 import { motion } from "framer-motion";
 import { doctorPortalBackground, doctorMainBackground } from "../../lib/doctorPortalUi";
 
@@ -331,7 +332,9 @@ export function AppLayout() {
                 </div>
               )}
               <div className={cn(isDoctorPortal && "relative z-[1]")}>
-                <Outlet />
+                <Suspense fallback={<AuthLoadingScreen />}>
+                  <Outlet />
+                </Suspense>
               </div>
             </div>
           </PageErrorBoundary>
