@@ -277,7 +277,6 @@ export function AdminProductsPage() {
         aria-hidden
       />
       <div className="mx-auto max-w-[1440px] space-y-10 px-4 py-8 md:px-6 md:py-10 animate-fade-in-up">
-        <AdminScopeNotice variant={scopeNoticeVariant} />
         {/* Hero */}
         <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/70 shadow-[0_24px_80px_-24px_rgba(15,23,42,0.25)] ring-1 ring-slate-900/5 backdrop-blur-xl md:rounded-[2.5rem]">
           <div
