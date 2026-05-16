@@ -351,221 +351,184 @@ export function AdminOrdersPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/30 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-50">
-                <th className="py-7 px-10">Subject Identity</th>
-                <th className="py-7 px-6">Origin Brand</th>
-                <th className="py-7 px-6">Clinical Assets</th>
-                <th className="py-7 px-6">Ledger Entry</th>
-                <th className="py-7 px-6">Matrix Status</th>
-                <th className="py-7 px-10 text-right">Logistics Terminal</th>
+              <tr className="bg-slate-50/50 text-slate-400 text-[9px] font-black uppercase tracking-widest border-b border-slate-100">
+                <th className="py-4 px-10">Subject Identity</th>
+                <th className="py-4 px-6">Origin Brand</th>
+                <th className="py-4 px-6">Clinical Assets</th>
+                <th className="py-4 px-6">Ledger Entry</th>
+                <th className="py-4 px-6">Matrix Status</th>
+                <th className="py-4 px-10 text-right">Logistics Terminal</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50/60">
               {filteredOrders.map((item, i) => (
                 <motion.tr 
                   key={item.id} 
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: Math.min(i * 0.04, 0.3) }}
-                  whileHover={{ 
-                    scale: 1.005, 
-                    backgroundColor: "rgba(248, 250, 252, 0.8)",
-                    boxShadow: "0 10px 30px -10px rgba(0,0,0,0.05)"
-                  }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.03, 0.2) }}
+                  whileHover={{ backgroundColor: "rgba(248, 250, 252, 0.8)" }}
                   onClick={() => setEditingOrder(editingOrder === item.id ? null : item.id)}
                   className={cn(
-                    "transition-all group/row cursor-pointer relative",
-                    editingOrder === item.id ? "bg-emerald-50/30 ring-1 ring-emerald-100 z-10" : ""
+                    "transition-all group/row cursor-pointer border-b border-slate-50 last:border-0",
+                    editingOrder === item.id ? "bg-emerald-50/20 ring-1 ring-inset ring-emerald-100/50" : ""
                   )}
                 >
-                  <td className="py-8 px-10">
-                    <div className="flex items-center gap-5">
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-4">
                       <motion.div 
-                        whileHover={{ rotate: 5, scale: 1.1 }}
-                        className="h-14 w-14 rounded-2xl bg-[#0A2E1F] text-emerald-400 flex items-center justify-center font-black text-sm italic shadow-xl shadow-[#0A2E1F]/20 group-hover/row:shadow-emerald-500/20 transition-all"
+                        whileHover={{ scale: 1.1 }}
+                        className="h-10 w-10 rounded-xl bg-slate-900 text-emerald-400 flex items-center justify-center font-black text-[10px] italic shadow-lg shadow-slate-900/10 group-hover/row:bg-[#0A2E1F] transition-all"
                       >
                          {(item.patient_name || 'P').split(' ').map((n: string) => n[0]).join('').slice(0,2)}
                       </motion.div>
                       <div>
-                        <div className="font-black text-lg italic uppercase tracking-tight text-slate-900 group-hover/row:text-emerald-700 transition-colors leading-none">{item.patient_name || item.patientName}</div>
-                        <div className="flex items-center gap-3 mt-2">
-                          <div className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] group-hover/row:text-slate-500 transition-colors">REF: {item.order_number || (item.id ? String(item.id).substring(0, 8) : "N/A")}</div>
+                        <div className="font-black text-[13px] uppercase tracking-tight text-slate-900 group-hover/row:text-emerald-700 transition-colors leading-none">{item.patient_name || item.patientName}</div>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">#{item.order_number || (item.id ? String(item.id).substring(0, 6) : "N/A")}</span>
                           {item.mrn && (
-                             <>
-                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                               <div className="text-[10px] text-emerald-600 font-black uppercase tracking-[0.2em]">MRN: {item.mrn}</div>
-                             </>
+                             <Badge variant="outline" className="h-4 px-1.5 border-emerald-100 bg-emerald-50/30 text-emerald-600 text-[8px] font-black uppercase tracking-widest rounded-md">MRN: {item.mrn}</Badge>
                           )}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="py-8 px-6">
-                    <Badge variant="outline" className="bg-white border-slate-200 group-hover/row:border-emerald-200 text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 px-4 py-1.5 rounded-xl transition-all">
-                      {item.sub_brand || item.subBrand || "Peak Health"}
-                    </Badge>
+                  <td className="py-4 px-4">
+                    <div className="flex items-center gap-2">
+                       <div className="h-1.5 w-1.5 rounded-full bg-slate-200 group-hover/row:bg-emerald-400 transition-colors" />
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{item.sub_brand || item.subBrand || "Peak Health"}</span>
+                    </div>
                   </td>
-                  <td className="py-8 px-6">
-                    <div className="space-y-1.5">
-                      <div className="text-[14px] font-black text-slate-900 uppercase italic tracking-tight leading-none">{item.medication}</div>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest opacity-60">
-                         <Building2 className="h-3.5 w-3.5" /> {item.pharmacy || 'Default Node'}
+                  <td className="py-4 px-4">
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-black text-slate-900 uppercase italic tracking-tight leading-none">{item.medication}</div>
+                      <div className="flex items-center gap-1.5 text-[9px] text-slate-400 font-bold uppercase tracking-widest opacity-60">
+                         <Building2 className="h-3 w-3" /> {item.pharmacy || 'Standard Node'}
                       </div>
                     </div>
                   </td>
-                  <td className="py-8 px-6">
-                    <div className="text-[12px] font-black text-slate-600 tracking-tighter uppercase italic">{item.ordered_date || item.orderedDate || new Date(item.created_at).toLocaleDateString()}</div>
-                    <div className="text-[9px] text-slate-400 font-black uppercase mt-1.5 tracking-widest opacity-50">Ledger Confirmed</div>
+                  <td className="py-4 px-4">
+                    <div className="text-[10px] font-black text-slate-500 tracking-widest uppercase">{item.ordered_date || item.orderedDate || new Date(item.created_at).toLocaleDateString()}</div>
                   </td>
-                  <td className="py-8 px-6">
-                    <div className="flex flex-col gap-2.5">
-                       <span className={cn(
-                         "inline-flex items-center justify-center px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm transition-all group-hover/row:scale-105", 
-                         statusStyles[item.status as OrderStatus] || "bg-slate-100 border-slate-200 text-slate-500"
+                  <td className="py-4 px-4">
+                    <div className="flex flex-col gap-1.5">
+                       <div className={cn(
+                         "inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all", 
+                         statusStyles[item.status as OrderStatus] || "bg-slate-50 border-slate-100 text-slate-400"
                        )}>
+                         <div className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                          {statusLabels[item.status as OrderStatus] || String(item.status).replace(/_/g, ' ')}
-                       </span>
-                       {item.pharmacy_note && (
-                         <div className="text-[9px] font-bold text-amber-800 bg-amber-50/50 border border-amber-100/30 px-3 py-2 rounded-2xl max-w-[200px] leading-relaxed shadow-sm">
-                           <span className="opacity-40 uppercase mr-1">Trace:</span> {item.pharmacy_note}
-                         </div>
-                       )}
+                       </div>
                     </div>
                   </td>
-                  <td className="py-8 px-10 text-right">
-                    <div className="flex flex-col items-end gap-3">
-                      {item.status === "rx_sent" && editingOrder !== item.id && (
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="opacity-0 group-hover/row:opacity-100 transition-opacity"
-                        >
-                          <Button 
-                            className="h-12 px-8 rounded-2xl bg-[#0A2E1F] hover:bg-emerald-950 text-white text-[11px] font-black uppercase italic gap-3 shadow-2xl shadow-emerald-900/30 transition-all hover:scale-105 active:scale-95"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingOrder(item.id);
-                            }}
+                  <td className="py-4 px-6 text-right">
+                    <div className="flex items-center justify-end gap-3 h-full">
+                      <AnimatePresence mode="wait">
+                        {item.status === "rx_sent" && editingOrder !== item.id && (
+                          <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
                           >
-                            <Zap className="h-4 w-4 text-emerald-400 fill-emerald-400" />
-                            Initialize Bridge
-                          </Button>
-                        </motion.div>
-                      )}
-                      
+                            <Button 
+                              size="sm"
+                              className="h-9 px-5 rounded-xl bg-[#0A2E1F] hover:bg-emerald-950 text-white text-[9px] font-black uppercase tracking-widest gap-2 shadow-xl shadow-emerald-900/10 transition-all hover:scale-105 active:scale-95"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingOrder(item.id);
+                              }}
+                            >
+                              <Zap size={12} className="text-emerald-400" />
+                              Ship
+                            </Button>
+                          </motion.div>
+                        )}
+                        
+                        {item.status === "shipped" && (
+                          <div className="flex items-center gap-3">
+                             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest hidden lg:block">{item.carrier}: {item.tracking_number || item.tracking}</div>
+                             <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="h-9 px-4 rounded-xl border-emerald-100 bg-white text-emerald-600 hover:bg-emerald-500 hover:text-white text-[9px] font-black uppercase tracking-widest gap-2 transition-all"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkDelivered(item.id);
+                                }}
+                              >
+                                <CheckCircle size={12} /> Deliver
+                              </Button>
+                          </div>
+                        )}
+
+                        {item.status === "delivered" && (
+                           <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-inner">
+                              <CheckCircle2 size={16} />
+                           </div>
+                        )}
+                      </AnimatePresence>
+
                       {editingOrder === item.id && (
                         <div 
-                          className="flex flex-col gap-8 min-w-[460px] bg-white p-12 rounded-[4rem] border-2 border-emerald-500/10 shadow-[0_48px_96px_-24px_rgba(10,46,31,0.15)] animate-in fade-in zoom-in-95 slide-in-from-right-12 duration-500 relative overflow-hidden text-left"
+                          className="fixed right-8 top-1/2 -translate-y-1/2 z-[100] w-[400px] bg-white p-10 rounded-[3rem] border border-emerald-500/10 shadow-[0_32px_128px_-32px_rgba(10,46,31,0.25)] animate-in fade-in zoom-in-95 slide-in-from-right-10 duration-500 text-left"
                           onClick={(e) => e.stopPropagation()}
                         >
-                           {/* Decorative Glow */}
-                           <div className="absolute top-0 right-0 h-40 w-40 bg-emerald-400/10 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none" />
-                           <div className="absolute bottom-0 left-0 h-32 w-32 bg-emerald-600/5 rounded-full blur-[50px] -ml-16 -mb-16 pointer-events-none" />
-                           
-                           <div className="flex items-center justify-between relative z-10">
-                              <div className="flex items-center gap-5">
-                                 <div className="h-14 w-14 rounded-2xl bg-[#0A2E1F] flex items-center justify-center border border-white/10 shadow-xl">
-                                   <RefreshCw className="h-7 w-7 text-emerald-400 animate-spin-slow" />
+                           <div className="flex items-center justify-between mb-10">
+                              <div className="flex items-center gap-4">
+                                 <div className="h-12 w-12 rounded-2xl bg-[#0A2E1F] flex items-center justify-center shadow-xl shadow-emerald-900/20">
+                                   <RefreshCw size={24} className="text-emerald-400 animate-spin-slow" />
                                  </div>
                                  <div>
-                                    <h4 className="text-sm font-black text-[#0A2E1F] uppercase tracking-[0.3em] leading-none mb-2">Bridge Uplink</h4>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] opacity-60">Authorized node sync</p>
+                                    <h4 className="text-[12px] font-black text-[#0A2E1F] uppercase tracking-[0.2em] leading-none mb-1.5">Dispatch Bridge</h4>
+                                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em]">Pharmacy Authorization</p>
                                  </div>
                               </div>
-                              <button 
-                                onClick={() => setEditingOrder(null)} 
-                                className="h-12 w-12 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-300 hover:text-slate-500 transition-all hover:rotate-90"
-                              >
+                              <button onClick={() => setEditingOrder(null)} className="h-10 w-10 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-300 hover:text-slate-500 transition-all">
                                  <X size={20} />
                               </button>
                            </div>
                           
-                           <div className="space-y-8 relative z-10">
-                              <div className="grid grid-cols-2 gap-5">
-                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-1">Logistics Matrix</label>
+                           <div className="space-y-6">
+                              <div className="grid grid-cols-2 gap-4">
+                                 <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Carrier</label>
                                     <select 
-                                      className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-6 py-4 text-[12px] font-black text-[#0A2E1F] uppercase outline-none focus:bg-white focus:ring-8 focus:ring-emerald-500/5 focus:border-emerald-500/20 transition-all appearance-none cursor-pointer"
+                                      className="w-full bg-slate-50 border-none rounded-xl px-5 py-3.5 text-[11px] font-black text-[#0A2E1F] uppercase outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all appearance-none cursor-pointer"
                                       value={carrier}
                                       onChange={(e) => setCarrier(e.target.value)}
                                     >
                                       <option>USPS Global</option>
-                                      <option>FedEx Prime</option>
-                                      <option>UPS Priority</option>
-                                      <option>DHL Express</option>
+                                      <option>FedEx</option>
+                                      <option>UPS</option>
                                     </select>
                                  </div>
-                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-1">Tracking Signature</label>
+                                 <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Tracking ID</label>
                                     <input 
                                       type="text" 
-                                      placeholder="AUTO-RESOLVING..." 
-                                      className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-7 py-4 text-xs font-bold text-[#0A2E1F] outline-none focus:bg-white focus:ring-8 focus:ring-emerald-500/5 focus:border-emerald-500/20 placeholder:text-slate-200 transition-all uppercase tracking-[0.2em]"
+                                      placeholder="AUTO..." 
+                                      className="w-full bg-slate-50 border-none rounded-xl px-6 py-3.5 text-[11px] font-black text-[#0A2E1F] outline-none focus:ring-4 focus:ring-emerald-500/5 placeholder:text-slate-200 transition-all uppercase tracking-widest"
                                       value={trackingNumber}
-                                      onChange={(e) => setTrackingNumber(e.target.value)}
+                                      onChange={(e) => setNewOrder({...newOrder, trackingNumber: e.target.value})}
                                     />
                                  </div>
                               </div>
-                              <div className="space-y-3">
-                                 <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-1">Fulfillment Manifest (PHI Isolated)</label>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Operational Note</label>
                                  <textarea
-                                   placeholder="ENTER OPERATIONAL NOTES FOR THE CLINICAL LEDGER..."
-                                   className="w-full bg-slate-50 border-2 border-slate-50 rounded-[2.5rem] px-8 py-7 text-xs font-medium text-[#0A2E1F] outline-none focus:bg-white focus:ring-8 focus:ring-emerald-500/5 focus:border-emerald-500/20 resize-none h-48 placeholder:text-slate-200 transition-all leading-relaxed shadow-inner"
+                                   placeholder="Fulfillment details..."
+                                   className="w-full bg-slate-50 border-none rounded-2xl px-6 py-5 text-[11px] font-medium text-[#0A2E1F] outline-none focus:ring-4 focus:ring-emerald-500/5 resize-none h-32 placeholder:text-slate-200 transition-all"
                                    value={pharmacyNote}
                                    onChange={(e) => setPharmacyNote(e.target.value)}
                                  />
                               </div>
+                              <Button 
+                                className="w-full h-16 bg-[#0A2E1F] hover:bg-emerald-950 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-emerald-900/30 transition-all hover:-translate-y-1 active:translate-y-0" 
+                                onClick={() => handleMarkShipped(item.id)}
+                              >
+                                Authorize Dispatch
+                              </Button>
                            </div>
-
-                           <Button 
-                              className="w-full h-20 bg-[#0A2E1F] hover:bg-emerald-950 text-white text-[12px] font-black uppercase tracking-[0.4em] rounded-[2rem] shadow-3xl shadow-emerald-950/40 transition-all hover:-translate-y-1.5 active:translate-y-0 group/btn overflow-hidden relative" 
-                              onClick={() => handleMarkShipped(item.id)}
-                           >
-                              <span className="relative z-10 flex items-center justify-center gap-4">
-                                 <ShieldCheck className="h-5 w-5 text-emerald-400 group-hover/btn:animate-pulse" />
-                                 Authorize & Broadcast Dispatch
-                              </span>
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-400/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
-                           </Button>
-                        </div>
-                      )}
-
-                      {item.status === "shipped" && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex flex-col items-end gap-3 bg-emerald-50/40 p-5 rounded-3xl border border-emerald-100/50 shadow-inner group/shipping"
-                        >
-                          <div className="flex items-center gap-3">
-                             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                             <div className="text-[10px] font-black text-emerald-800 uppercase tracking-[0.2em]">{item.carrier} IN TRANSIT</div>
-                             <span className="font-mono text-xs font-bold text-slate-900 tracking-tighter opacity-80 group-hover/shipping:opacity-100 transition-opacity">{item.tracking_number || item.tracking}</span>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="h-11 px-7 rounded-[1.25rem] border-emerald-200 bg-white text-emerald-600 hover:bg-[#0A2E1F] hover:text-white hover:border-transparent text-[11px] font-black uppercase italic gap-3 transition-all hover:scale-105 active:scale-95 shadow-sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMarkDelivered(item.id);
-                            }}
-                          >
-                            <CheckCircle className="h-4 w-4" /> Resolve Delivery
-                          </Button>
-                        </motion.div>
-                      )}
-                      
-                      {item.status === "delivered" && (
-                        <div className="flex items-center gap-5 bg-slate-50/80 px-8 py-4 rounded-[2rem] border border-slate-100 transition-all group-hover/row:bg-white group-hover/row:border-emerald-200 group-hover/row:shadow-xl group-hover/row:shadow-emerald-900/5">
-                           <div className="text-right">
-                           </div>
-                        </div>
-                      )}
-
-                      {item.status === "order_submitted" && (
-                        <div className="flex items-center gap-3 px-6 py-3 bg-amber-50/50 rounded-2xl border border-amber-100/50">
-                           <Clock className="h-4 w-4 text-amber-600 animate-pulse" />
-                           <span className="text-[10px] font-black text-amber-800 uppercase tracking-widest italic leading-none">Medical Hold</span>
                         </div>
                       )}
                     </div>
@@ -577,38 +540,35 @@ export function AdminOrdersPage() {
         </div>
 
         {filteredOrders.length === 0 && (
-           <div className="py-40 flex flex-col items-center justify-center text-center space-y-6">
-              <div className="h-24 w-24 rounded-[2.5rem] bg-slate-50 flex items-center justify-center border border-slate-100">
-                 <Search size={40} className="text-slate-200" />
+           <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="h-16 w-16 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 shadow-inner">
+                 <Search size={24} className="text-slate-200" />
               </div>
-              <div className="space-y-1">
-                 <h3 className="text-xl font-black italic uppercase tracking-tighter text-slate-900">Zero matches found</h3>
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">The matrix returned no records for this query</p>
+              <div>
+                 <h3 className="text-sm font-black italic uppercase tracking-tight text-slate-900">Zero matches found</h3>
+                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Refine your search matrix</p>
               </div>
-              <Button variant="outline" onClick={() => setSearchQuery("")} className="rounded-xl h-12 px-8 text-[10px] font-black uppercase tracking-widest border-slate-200">Clear all filters</Button>
            </div>
         )}
       </Card>
-      
-      {/* Network Stats - Advanced Global Operations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-2">
+
+      {/* Unified Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
          {[
-           { label: "Dispatch Matrix", value: "Synchronized", color: "text-emerald-500", icon: Activity, bg: "bg-emerald-50" },
-           { label: "Pipeline Load", value: "Nominal", color: "text-emerald-500", icon: Package, bg: "bg-emerald-50" },
-           { label: "Security Protocol", value: "AES-256 GCM", color: "text-blue-500", icon: ShieldCheck, bg: "bg-blue-50" },
-           { label: "System Latency", value: "12.4ms", color: "text-indigo-500", icon: Zap, bg: "bg-indigo-50" },
+           { label: "Matrix Sync", value: "Active", color: "text-emerald-500", icon: Activity, bg: "bg-emerald-50" },
+           { label: "Queue Load", value: "Optimized", color: "text-blue-500", icon: Zap, bg: "bg-blue-50" },
+           { label: "Auth Node", value: "Encrypted", color: "text-slate-900", icon: ShieldCheck, bg: "bg-slate-100" },
+           { label: "Dispatch Latency", value: "12ms", color: "text-indigo-500", icon: Clock, bg: "bg-indigo-50" },
          ].map((stat, i) => (
-           <Card key={i} className="border-none shadow-sm rounded-[2rem] bg-white p-7 transition-all hover:shadow-md group">
-              <div className="flex items-center gap-5">
-                <div className={cn("h-14 w-14 rounded-[1.25rem] flex items-center justify-center transition-all group-hover:scale-110", stat.bg)}>
-                  <stat.icon className={cn("h-6 w-6", stat.color)} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-                  <p className={cn("text-base font-black italic uppercase leading-none", stat.color)}>{stat.value}</p>
-                </div>
+           <div key={i} className="bg-white p-5 rounded-[1.75rem] shadow-sm border border-slate-50 flex items-center gap-4 group hover:shadow-md transition-all">
+              <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform", stat.bg)}>
+                <stat.icon className={cn("h-4 w-4", stat.color)} />
               </div>
-           </Card>
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{stat.label}</p>
+                <p className={cn("text-[13px] font-black italic uppercase leading-none", stat.color)}>{stat.value}</p>
+              </div>
+           </div>
          ))}
       </div>
     </div>
