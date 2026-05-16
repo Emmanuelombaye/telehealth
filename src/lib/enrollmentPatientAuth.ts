@@ -1,24 +1,13 @@
 import { supabase } from "./supabaseClient";
 import { useAuthStore } from "./auth-store";
+import { setForcePatientPortalIntent } from "./patientPortalIntent";
 
-/** Set when finishing shop enrollment — forces /patient routing across reload until consumed. */
-export const FORCE_PATIENT_PORTAL_KEY = "peak_health_force_patient_portal";
-
-export function setForcePatientPortalIntent(): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.setItem(FORCE_PATIENT_PORTAL_KEY, "1");
-  localStorage.removeItem("peak_health_dev_role");
-}
-
-export function hasForcePatientPortalIntent(): boolean {
-  if (typeof window === "undefined") return false;
-  return sessionStorage.getItem(FORCE_PATIENT_PORTAL_KEY) === "1";
-}
-
-export function clearForcePatientPortalIntent(): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.removeItem(FORCE_PATIENT_PORTAL_KEY);
-}
+export {
+  FORCE_PATIENT_PORTAL_KEY,
+  setForcePatientPortalIntent,
+  hasForcePatientPortalIntent,
+  clearForcePatientPortalIntent,
+} from "./patientPortalIntent";
 
 /**
  * After shop enrollment, force patient portal routing:

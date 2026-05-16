@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from './supabaseClient';
 import { User, Session } from '@supabase/supabase-js';
-import { hasForcePatientPortalIntent } from './enrollmentPatientAuth';
+import { hasForcePatientPortalIntent } from './patientPortalIntent';
 
 export type Role =
   | 'patient'
