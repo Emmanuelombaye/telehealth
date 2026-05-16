@@ -501,7 +501,7 @@ export function AdminProductsPage() {
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/15 bg-white shadow-[0_40px_120px_-24px_rgba(15,23,42,0.5)]"
+                className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/15 bg-white shadow-[0_40px_120px_-24px_rgba(15,23,42,0.5)] text-slate-900 staff-admin-surface"
               >
                 <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 p-8 text-white md:p-10">
                   <motion.div
@@ -607,7 +607,7 @@ export function AdminProductsPage() {
                 initial={{ opacity: 0, scale: 0.95, y: 12 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 12 }}
-                className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[2rem] border border-white/15 bg-white shadow-[0_40px_120px_-24px_rgba(15,23,42,0.5)]"
+                className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[2rem] border border-white/15 bg-white shadow-[0_40px_120px_-24px_rgba(15,23,42,0.5)] text-slate-900 staff-admin-surface"
                 onClick={(e) => e.stopPropagation()}
               >
               <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 p-8 text-white">
@@ -731,7 +731,7 @@ export function AdminProductsPage() {
                     Answer triggers apply only to legacy in-app consult flows, not patient shop step 8.
                   </p>
                   <textarea
-                    className="w-full min-h-[100px] rounded-xl border border-slate-200 px-3 py-2 text-xs font-mono"
+                    className="w-full min-h-[100px] rounded-xl border border-slate-200 px-3 py-2 text-xs font-mono text-slate-900"
                     placeholder='[{"questionId":"q_x","values":["Yes"]}]'
                     value={routeForm.answer_triggers_json}
                     onChange={(e) => setRouteForm((f) => ({ ...f, answer_triggers_json: e.target.value }))}
