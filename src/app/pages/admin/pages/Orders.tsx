@@ -55,6 +55,7 @@ export function AdminOrdersPage() {
   const [carrier, setCarrier] = useState("USPS");
   const [pharmacyNote, setPharmacyNote] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "shipped">("all");
 
   const fetchOrders = async () => {
     try {
@@ -200,11 +201,23 @@ export function AdminOrdersPage() {
     }
   };
 
-  const filteredOrders = orders.filter(o => 
-    o.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.medication?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredOrders = orders.filter(o => {
+    const matchesSearch = 
+      o.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.medication?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (statusFilter === "pending") {
+      // Pending = anything not yet shipped or delivered
+      return !["shipped", "delivered"].includes(o.status);
+    }
+    if (statusFilter === "shipped") {
+      return o.status === "shipped" || o.status === "delivered";
+    }
+    return true;
+  });
 
   return (
       <div className="max-w-[1700px] mx-auto space-y-8 pb-20 relative animate-in fade-in duration-700 font-sans">
@@ -336,15 +349,48 @@ export function AdminOrdersPage() {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex bg-slate-100/50 p-1 rounded-2xl border border-slate-100">
-               <Button variant="ghost" className="h-10 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-900 bg-white shadow-sm border border-slate-100">All Orders</Button>
-               <Button variant="ghost" className="h-10 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Pending</Button>
-               <Button variant="ghost" className="h-10 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Shipped</Button>
+            <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
+               <button 
+                onClick={() => setStatusFilter("all")}
+                className={cn(
+                  "h-8 px-5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300",
+                  statusFilter === "all" 
+                    ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50" 
+                    : "text-slate-400 hover:text-slate-600"
+                )}
+               >
+                 All Orders
+               </button>
+               <button 
+                onClick={() => setStatusFilter("pending")}
+                className={cn(
+                  "h-8 px-5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300",
+                  statusFilter === "pending" 
+                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
+                    : "text-slate-400 hover:text-slate-600"
+                )}
+               >
+                 Pending
+               </button>
+               <button 
+                onClick={() => setStatusFilter("shipped")}
+                className={cn(
+                  "h-8 px-5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300",
+                  statusFilter === "shipped" 
+                    ? "bg-[#0A2E1F] text-white shadow-lg shadow-slate-900/20" 
+                    : "text-slate-400 hover:text-slate-600"
+                )}
+               >
+                 Shipped
+               </button>
             </div>
-            <div className="w-[1px] h-8 bg-slate-200 mx-1" />
-            <Button variant="ghost" className="h-12 w-12 rounded-2xl hover:bg-white text-slate-400 border border-transparent hover:border-slate-100 transition-all" onClick={fetchOrders}>
-              <RefreshCw className={cn("h-5 w-5", loadingOrders && "animate-spin text-emerald-500")} />
-            </Button>
+            <div className="w-[1px] h-6 bg-slate-200 mx-1" />
+            <button 
+              className="h-10 w-10 rounded-xl hover:bg-white text-slate-400 border border-transparent hover:border-slate-100 transition-all flex items-center justify-center active:scale-95" 
+              onClick={fetchOrders}
+            >
+              <RefreshCw className={cn("h-4 w-4", loadingOrders && "animate-spin text-emerald-500")} />
+            </button>
           </div>
         </div>
 
