@@ -221,7 +221,6 @@ export function AdminOrdersPage() {
 
   return (
       <div className="max-w-[1700px] mx-auto space-y-8 pb-20 relative animate-in fade-in duration-700 font-sans">
-      <AdminScopeNotice variant={scopeVariant} />
 
       {/* Manual Entry Modal */}
       <AnimatePresence>
