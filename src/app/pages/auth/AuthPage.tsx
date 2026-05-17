@@ -308,7 +308,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
                     onChange={e => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    className="w-full rounded-[14px] pl-[42px] pr-10 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800 font-medium tracking-[0.2em]"
+                    className={`w-full rounded-[14px] pl-[42px] pr-10 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800 font-medium ${!showPassword ? 'tracking-[0.2em]' : ''}`}
                     placeholder="••••••••"
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
@@ -329,7 +329,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full rounded-[14px] pl-[42px] pr-10 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800 font-medium tracking-[0.2em]"
+                    className={`w-full rounded-[14px] pl-[42px] pr-10 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800 font-medium ${!showPassword ? 'tracking-[0.2em]' : ''}`}
                     placeholder="••••••••"
                   />
                 </div>

@@ -3,7 +3,7 @@
 // No service role key or database access needed.
 
 const { createClient } = require('@supabase/supabase-js');
-
+global.WebSocket = require('ws');
 const supabase = createClient(
   'https://kvopgyhcjcniaocjozje.supabase.co',
   'sb_publishable_wr1AUarSttsAd7_m3VAH1A_z0jhs2XZ'

@@ -1081,7 +1081,17 @@ export function DoctorConsultPage() {
             </CardContent>
           </Card>
 
-          {/* STEP 5: DOCTOR DECISION MATRIX */}
+          
+
+          <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mt-6 bg-slate-50 py-2 rounded-lg">
+            Routing to: <span className="text-emerald-600">{order.pharmacy || "Network Pharmacy"}</span>
+          </p>
+
+        </div>
+      </div>
+
+      <div className="w-full mt-2">
+        {/* STEP 5: DOCTOR DECISION MATRIX */}
           <div className="lg:col-span-12">
                <div className="flex items-center gap-3 mb-4">
                <div className="h-8 w-8 rounded-full bg-[#0A2E1F] text-white flex items-center justify-center font-black text-sm">5</div>
@@ -1271,12 +1281,6 @@ export function DoctorConsultPage() {
 
             </div>
           </div>
-
-          <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mt-6 bg-slate-50 py-2 rounded-lg">
-            Routing to: <span className="text-emerald-600">{order.pharmacy || "Network Pharmacy"}</span>
-          </p>
-
-        </div>
       </div>
     </div>
   );

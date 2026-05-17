@@ -1598,7 +1598,7 @@ export function PatientShopPage() {
                         setCardExpiry(v);
                       }}
                       placeholder="MM / YY"
-                      className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background"
+                      className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-white text-gray-900 tracking-widest"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -1609,7 +1609,7 @@ export function PatientShopPage() {
                       value={cardCvc}
                       onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 3))}
                       placeholder="3 digits"
-                      className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-background"
+                      className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono focus:outline-none focus:border-primary bg-white text-gray-900 tracking-widest"
                     />
                   </div>
                 </div>
