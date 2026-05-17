@@ -1,1 +1,5 @@
-export { MessagesPage as DoctorMessagesPage } from "../../patient/pages/Messages";
+import { MessagesPage } from "../../patient/pages/Messages";
+
+export function DoctorMessagesPage() {
+  return <MessagesPage />;
+}

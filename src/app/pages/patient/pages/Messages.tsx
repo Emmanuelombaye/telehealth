@@ -54,7 +54,7 @@ export function MessagesPage() {
             name: other.full_name || "Unknown",
             role: other.role,
             lastMsg: msg.content,
-            time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            time: formatMessageTime(msg.created_at),
             unread: 0,
           };
         }
@@ -174,6 +174,12 @@ export function MessagesPage() {
   const initials = (name?: string) =>
     (name || "?").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
+  const formatMessageTime = (dateVal?: string | null) => {
+    if (!dateVal) return "";
+    const d = new Date(dateVal);
+    return isNaN(d.getTime()) ? "" : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   // ─── ACTIVE CHAT VIEW ────────────────────────────────────────────────────────
   if (resolvingTarget) {
     return (
@@ -238,7 +244,7 @@ export function MessagesPage() {
                   "text-[10px] mt-1.5",
                   msg.sender_id === user?.id ? "text-white/60 text-right" : "text-muted-foreground"
                 )}>
-                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {formatMessageTime(msg.created_at)}
                 </p>
               </div>
             </div>
