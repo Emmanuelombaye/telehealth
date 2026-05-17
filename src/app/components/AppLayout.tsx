@@ -1,7 +1,7 @@
 import { Outlet, useLocation, Link, useNavigate } from "react-router";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
-import { Activity, Bell, Menu, LogOut } from "lucide-react";
+import { Activity, Bell, Menu, LogOut, Bot, X } from "lucide-react";
 import { Button } from "./ui/shared.tsx";
 import { useAuthStore } from "../../lib/auth-store";
 import { usePatientStore } from "../../lib/patient-store";
@@ -13,7 +13,7 @@ import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
 import { PageErrorBoundary } from "./PageErrorBoundary";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 import { AuthLoadingScreen } from "./ProtectedRoute";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { doctorPortalBackground, doctorMainBackground } from "../../lib/doctorPortalUi";
 
 export function AppLayout() {
@@ -61,6 +61,80 @@ export function AppLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isChatbotEnabled, setIsChatbotEnabled] = useState(false);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [messages, setMessages] = useState<Array<{ sender: "user" | "bot"; text: string }>>([
+    { sender: "bot", text: "Hello! I am your Peak Health Virtual Care Assistant. How can I help you today?" }
+  ]);
+  const [inputText, setInputText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    if (isPatientPortal) {
+      const checkChatbot = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("platform_tools")
+            .select("status")
+            .eq("name", "Chatbot Assistant")
+            .single();
+          if (data) {
+            setIsChatbotEnabled(!!data.status);
+          }
+        } catch (e) {
+          console.warn("Could not check chatbot assistant status:", e);
+        }
+      };
+      
+      checkChatbot();
+
+      // Subscribe to real-time updates for the "Chatbot Assistant" toggle
+      const channel = supabase
+        .channel("realtime-platform-tools")
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "platform_tools", filter: "name=eq.Chatbot Assistant" },
+          (payload) => {
+            if (payload.new) {
+              setIsChatbotEnabled(!!(payload.new as any).status);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [isPatientPortal]);
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputText.trim()) return;
+
+    const userMsg = inputText.trim();
+    setMessages(prev => [...prev, { sender: "user", text: userMsg }]);
+    setInputText("");
+    setIsTyping(true);
+
+    setTimeout(() => {
+      let reply = "I'm here to assist with your telehealth needs. For clinical diagnostics, please schedule a consultation with one of our licensed providers.";
+      
+      const lower = userMsg.toLowerCase();
+      if (lower.includes("weight") || lower.includes("semaglutide") || lower.includes("glp")) {
+        reply = "Our Semaglutide (GLP-1) weight loss protocols are highly effective. You can explore treatments under the 'Products & protocols' catalog and begin your doctor consultation right inside your dashboard!";
+      } else if (lower.includes("doctor") || lower.includes("consult") || lower.includes("appointment") || lower.includes("visit")) {
+        reply = "You can schedule or join a video visit with your doctor by navigating to the 'Appointments' section in your sidebar menu.";
+      } else if (lower.includes("order") || lower.includes("shipping") || lower.includes("package")) {
+        reply = "To track active shipments, medication refills, or view billing details, check the 'Orders' tracker in your navigation menu.";
+      } else if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
+        reply = "Hello there! How can I assist you with your Peak Health care journey today?";
+      }
+
+      setMessages(prev => [...prev, { sender: "bot", text: reply }]);
+      setIsTyping(false);
+    }, 1200);
+  };
 
   const onScroll = (e: React.UIEvent<HTMLElement>) => {
     setScrolled(e.currentTarget.scrollTop > 20);
@@ -357,6 +431,115 @@ export function AppLayout() {
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={handleLogout}
       />
+
+      {/* ── REAL-TIME AI FLOATING CHATBOT WIDGET ── */}
+      {isPatientPortal && isChatbotEnabled && (
+        <div className="fixed bottom-6 right-6 z-[99] font-sans">
+          <AnimatePresence>
+            {isChatbotOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                className="mb-4 h-[450px] w-[340px] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-2xl flex flex-col"
+              >
+                {/* Chatbot Header */}
+                <div className="flex items-center justify-between bg-[#0A2E1F] px-4 py-3.5 text-white">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                      <Bot className="h-5 w-5" />
+                      <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-400 border border-[#0A2E1F] animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold leading-tight">Peak Health AI</h4>
+                      <p className="text-[10px] text-emerald-300 font-medium">Online &amp; Active</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsChatbotOpen(false)}
+                    className="rounded-full p-1 text-emerald-200 hover:bg-white/10 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Messages Container */}
+                <div className="flex-1 space-y-4 overflow-y-auto p-4 bg-zinc-50/50">
+                  {messages.map((m, idx) => (
+                    <div
+                      key={idx}
+                      className={cn(
+                        "flex items-end gap-2 max-w-[85%]",
+                        m.sender === "user" ? "ml-auto flex-row-reverse" : "mr-auto"
+                      )}
+                    >
+                      {m.sender === "bot" && (
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[#0A2E1F] border border-emerald-100">
+                          <Bot className="h-3.5 w-3.5" />
+                        </div>
+                      )}
+                      <div
+                        className={cn(
+                          "rounded-2xl px-3 py-2 text-xs font-semibold leading-relaxed",
+                          m.sender === "user"
+                            ? "bg-[#0A2E1F] text-white rounded-br-none"
+                            : "bg-white border border-slate-100 text-slate-800 rounded-bl-none shadow-sm"
+                        )}
+                      >
+                        {m.text}
+                      </div>
+                    </div>
+                  ))}
+                  {isTyping && (
+                    <div className="flex items-end gap-2 max-w-[85%] mr-auto">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[#0A2E1F] border border-emerald-100">
+                        <Bot className="h-3.5 w-3.5" />
+                      </div>
+                      <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-none px-3 py-2 text-xs text-slate-400 font-bold flex items-center gap-1.5 shadow-sm">
+                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Form Input */}
+                <form onSubmit={handleSendMessage} className="border-t border-slate-100 bg-white p-3 flex gap-2">
+                  <input
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder="Type your question..."
+                    className="flex-1 rounded-xl border border-slate-200 bg-zinc-50/50 px-3 py-2 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+                  />
+                  <Button
+                    type="submit"
+                    className="h-8 px-3 rounded-xl bg-[#0A2E1F] hover:bg-[#051810] text-white text-xs font-black uppercase tracking-wider"
+                  >
+                    Send
+                  </Button>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Trigger Button */}
+          <button
+            type="button"
+            onClick={() => setIsChatbotOpen(!isChatbotOpen)}
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0A2E1F] text-white shadow-2xl hover:bg-emerald-950 transition-all hover:scale-105 active:scale-95 border border-emerald-800"
+          >
+            <div className="relative">
+              <Bot className="h-6 w-6" />
+              <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+              </span>
+            </div>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
