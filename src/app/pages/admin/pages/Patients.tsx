@@ -7,6 +7,7 @@ import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib/auth-store";
 import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope } from "../../../../lib/adminScope";
 import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice.tsx";
+import { generateMRN } from "../../../../lib/patient-store";
 
 export function AdminPatientsPage() {
   const location = useLocation();
@@ -37,11 +38,25 @@ export function AdminPatientsPage() {
             seen.add(pId);
             const d = new Date(order.created_at);
             const dateStr = isNaN(d.getTime()) ? "N/A" : d.toLocaleDateString();
+            
+            let currentMrn = order.mrn;
+            if (!currentMrn || currentMrn === "Pending") {
+              currentMrn = generateMRN();
+              // Backfill the missing MRN to the database permanently
+              supabase
+                .from("orders")
+                .update({ mrn: currentMrn })
+                .eq("id", order.id)
+                .then(({ error }) => {
+                  if (error) console.error("Error writing auto-generated MRN back to database:", error);
+                });
+            }
+
             uniquePatients.push({
               id: order.id,
               name: order.patient_name || "New Patient",
               date: dateStr,
-              mrn: order.mrn || "Pending",
+              mrn: currentMrn,
               subscription: typeof order.amount === 'number' ? `$${order.amount}` : order.amount || "$0",
               product: "Telehealth Visit",
               email: order.patient_email || "—",

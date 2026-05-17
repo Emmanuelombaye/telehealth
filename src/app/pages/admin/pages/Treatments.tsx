@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { Card } from "../../../components/ui/shared.tsx";
 import { AdminDataTable } from "../../../components/ui/tables/AdminDataTable";
 import { supabase } from "../../../../lib/supabaseClient";
+import { generateMRN } from "../../../../lib/patient-store";
 
 export function AdminTreatmentsPage() {
   const [treatments, setTreatments] = useState<any[]>([]);
@@ -25,11 +26,25 @@ export function AdminTreatmentsPage() {
           const pId = order.patient_name || order.id;
           if (!seen.has(pId)) {
             seen.add(pId);
+            
+            let currentMrn = order.mrn;
+            if (!currentMrn || currentMrn === "Pending") {
+              currentMrn = generateMRN();
+              // Backfill the missing MRN to the database permanently
+              supabase
+                .from("orders")
+                .update({ mrn: currentMrn })
+                .eq("id", order.id)
+                .then(({ error }) => {
+                  if (error) console.error("Error writing auto-generated MRN back to database:", error);
+                });
+            }
+
             uniqueTreatments.push({
               id: order.id,
               name: order.patient_name || "New Patient",
               date: new Date(order.created_at).toLocaleDateString(),
-              mrn: order.mrn || "Pending",
+              mrn: currentMrn,
               email: "Secure Record",
               phone: "Secure Record",
               orders: "1"
