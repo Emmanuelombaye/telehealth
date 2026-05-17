@@ -227,7 +227,6 @@ export function SuperAdminBrandsPage() {
       <SuperAdminShell
         eyebrow="Brands"
         title="White-label brands"
-        description={`${dbBrands.length} brand rows (Supabase or demo). A realtime channel keeps this list updated.`}
         actions={
           <Button
             type="button"
