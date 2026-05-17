@@ -1054,17 +1054,20 @@ export function PatientShopPage() {
           if (!firstName || !lastName) missing.push("Full name");
           if (!email || !email.includes('@')) missing.push("Valid email address");
           if (!password || password.length < 6) missing.push("Password (min 6 characters)");
+          if (!dob) missing.push("Date of birth");
+          if (!sex) missing.push("Sex at birth");
+          if (!phone || phone.replace(/\D/g,'').length < 10) missing.push("Phone number (10 digits)");
           if (!agreedToTerms) missing.push("Agreement to Terms of Service");
           return missing.length > 0 ? (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 space-y-1">
-              <p className="font-bold">Please complete the following:</p>
+              <p className="font-bold">Please complete the following to continue:</p>
               {missing.map(m => <p key={m} className="flex items-center gap-1.5">• {m}</p>)}
             </div>
           ) : null;
         })()}
 
         <Button className="w-full rounded-xl h-12 text-base font-bold bg-primary hover:bg-primary/90 text-white"
-          disabled={!dob || !sex || !password || password.length < 6 || !agreedToTerms}
+          disabled={!dob || !sex || !password || password.length < 6 || !agreedToTerms || !phone || phone.replace(/\D/g,'').length < 10}
           onClick={() => {
             const currentUser = useAuthStore.getState().user;
             if (currentUser) {
