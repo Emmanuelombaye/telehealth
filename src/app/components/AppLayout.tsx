@@ -57,6 +57,13 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname;
+
+  const isPatientPortal = path.startsWith("/patient");
+  const isSuperAdminPortal = path.startsWith("/superadmin");
+  const isDoctorPortal = path.startsWith("/doctor") || path.startsWith("/providers");
+  /** Brand + platform ops: always light, high-contrast surface (see theme.css `.staff-admin-surface`). */
+  const isStaffAdminPortal = path.startsWith("/admin") || path.startsWith("/superadmin");
+
   const { user, role: authRole, signOut } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -151,12 +158,6 @@ export function AppLayout() {
   else if (path.startsWith("/admin")) sidebarRole = "admin";
   else if (path.startsWith("/superadmin")) sidebarRole = "superadmin";
   else if (path.startsWith("/affiliate")) sidebarRole = "affiliate";
-
-  const isPatientPortal = path.startsWith("/patient");
-  const isSuperAdminPortal = path.startsWith("/superadmin");
-  const isDoctorPortal = path.startsWith("/doctor") || path.startsWith("/providers");
-  /** Brand + platform ops: always light, high-contrast surface (see theme.css `.staff-admin-surface`). */
-  const isStaffAdminPortal = path.startsWith("/admin") || path.startsWith("/superadmin");
 
   // Dynamic user info
   const fullName = user?.user_metadata?.first_name
