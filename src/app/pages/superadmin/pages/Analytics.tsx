@@ -29,22 +29,61 @@ export function SuperAdminAnalyticsPage() {
   const { orders } = usePatientStore();
   const { user } = useAuthStore();
   const [ready, setReady] = useState(false);
+  const [timeRange, setTimeRange] = useState("ALL");
+  const [selectedBrand, setSelectedBrand] = useState("ALL");
+  const [selectedProduct, setSelectedProduct] = useState("ALL");
 
   useEffect(() => {
     if (orders) setReady(true);
   }, [orders]);
 
-  const totalMRR = orders.reduce((sum, o) => {
+  // Derived state
+  const brandsList = Array.from(new Set(orders.map((o: any) => o.subBrand || o.sub_brand || "Peak Health")));
+  const productsList = Array.from(new Set(orders.map((o: any) => o.medication || o.product || "Consultation")));
+
+  const filteredOrders = orders.filter((o: any) => {
+    // Time filter
+    let timeMatch = true;
+    if (timeRange !== "ALL") {
+      const now = new Date();
+      const orderDate = new Date(o.created_at || new Date());
+      const diffMs = now.getTime() - orderDate.getTime();
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+      if (timeRange === "1W" && diffDays > 7) timeMatch = false;
+      if (timeRange === "3W" && diffDays > 21) timeMatch = false;
+      if (timeRange === "1M" && diffDays > 30) timeMatch = false;
+      if (timeRange === "3M" && diffDays > 90) timeMatch = false;
+      if (timeRange === "YTD" && orderDate.getFullYear() !== now.getFullYear()) timeMatch = false;
+    }
+
+    // Brand filter
+    let brandMatch = true;
+    if (selectedBrand !== "ALL") {
+      const b = o.subBrand || o.sub_brand || "Peak Health";
+      if (b !== selectedBrand) brandMatch = false;
+    }
+
+    // Product filter
+    let productMatch = true;
+    if (selectedProduct !== "ALL") {
+      const p = o.medication || o.product || "Consultation";
+      if (p !== selectedProduct) productMatch = false;
+    }
+
+    return timeMatch && brandMatch && productMatch;
+  });
+
+  const totalMRR = filteredOrders.reduce((sum, o) => {
     const amt = typeof o.amount === "number" ? o.amount : parseFloat(String(o.amount).replace(/[^0-9.-]+/g, "")) || 0;
     return sum + amt;
   }, 0);
 
-  const uniquePatientsCount = new Set(orders.map((o) => o.patient_name)).size;
-  const totalOrdersCount = orders.length;
+  const uniquePatientsCount = new Set(filteredOrders.map((o: any) => o.patient_name)).size;
+  const totalOrdersCount = filteredOrders.length;
 
-  // Real data for Area Chart (Aggregate Revenue)
-  const groupedRevenue = orders.reduce(
-    (acc, order) => {
+  const groupedRevenue = filteredOrders.reduce(
+    (acc, order: any) => {
       const date = new Date(order.created_at || new Date());
       const month = date.toLocaleString("default", { month: "short" });
       const brand = order.subBrand || order.sub_brand || "Peak Health";
@@ -65,11 +104,10 @@ export function SuperAdminAnalyticsPage() {
       return rest;
     });
 
-  const brands = Array.from(new Set(orders.map((o) => o.subBrand || o.sub_brand || "Peak Health")));
+  const brands = Array.from(new Set(filteredOrders.map((o: any) => o.subBrand || o.sub_brand || "Peak Health")));
   const brandColors = ["#059669", "#0f766e", "#14b8a6", "#10b981", "#34d399"];
 
-  // Real data for Geography
-  const geoCounts = orders.reduce((acc, o) => {
+  const geoCounts = filteredOrders.reduce((acc, o: any) => {
     const country = o.patient_country || o.patientCountry || "🇺🇸 United States";
     acc[country] = (acc[country] || 0) + 1;
     return acc;
@@ -80,7 +118,7 @@ export function SuperAdminAnalyticsPage() {
     .map(([country, count]) => ({
       country,
       patients: count,
-      pct: Math.round((count / (orders.length || 1)) * 100)
+      pct: Math.round((count / (filteredOrders.length || 1)) * 100)
     }))
     .slice(0, 5);
 
@@ -88,16 +126,15 @@ export function SuperAdminAnalyticsPage() {
     geoData.push({ country: "🇺🇸 United States", patients: 0, pct: 0 });
   }
 
-  // Real data for Funnel
   const funnelCounts = {
-    submitted: orders.length,
-    inReview: orders.filter(o => ['medical_review', 'rx_sent', 'shipped', 'delivered'].includes(o.status)).length,
-    approved: orders.filter(o => ['rx_sent', 'shipped', 'delivered'].includes(o.status)).length,
-    shipped: orders.filter(o => ['shipped', 'delivered'].includes(o.status)).length,
-    delivered: orders.filter(o => o.status === 'delivered').length,
+    submitted: filteredOrders.length,
+    inReview: filteredOrders.filter((o: any) => ['medical_review', 'rx_sent', 'shipped', 'delivered'].includes(o.status)).length,
+    approved: filteredOrders.filter((o: any) => ['rx_sent', 'shipped', 'delivered'].includes(o.status)).length,
+    shipped: filteredOrders.filter((o: any) => ['shipped', 'delivered'].includes(o.status)).length,
+    delivered: filteredOrders.filter((o: any) => o.status === 'delivered').length,
   };
   
-  const funnelTotal = orders.length || 1;
+  const funnelTotal = filteredOrders.length || 1;
   const approvalRate = Math.round((funnelCounts.approved / funnelTotal) * 100) || 0;
 
   const funnelData = [
@@ -148,6 +185,42 @@ export function SuperAdminAnalyticsPage() {
         </Button>
       }
     >
+      {/* Figma-based luxury filter bar */}
+      <div className="flex flex-wrap items-center gap-3 mb-6 p-1.5 bg-slate-100/50 rounded-2xl border border-slate-200 backdrop-blur-md">
+        <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-100">
+          {["ALL", "1W", "3W", "1M", "3M", "YTD"].map((t) => (
+            <button
+              key={t}
+              onClick={() => setTimeRange(t)}
+              className={cn(
+                "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                timeRange === t ? "bg-[#0A2E1F] text-emerald-400 shadow-md" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+
+        <select
+          value={selectedBrand}
+          onChange={(e) => setSelectedBrand(e.target.value)}
+          className="bg-white border border-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-sm transition-all cursor-pointer"
+        >
+          <option value="ALL">ALL BRANDS</option>
+          {brandsList.map((b: any) => <option key={b} value={b}>{b}</option>)}
+        </select>
+
+        <select
+          value={selectedProduct}
+          onChange={(e) => setSelectedProduct(e.target.value)}
+          className="bg-white border border-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-sm transition-all cursor-pointer"
+        >
+          <option value="ALL">ALL PROTOCOLS</option>
+          {productsList.map((p: any) => <option key={p} value={p}>{p}</option>)}
+        </select>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         {[
