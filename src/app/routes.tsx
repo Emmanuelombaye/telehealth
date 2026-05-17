@@ -51,6 +51,7 @@ const DoctorDashboard = lazy(() => lazyRetry(() => import("./pages/doctor/Dashbo
 const DoctorQueuePage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Queue").then(m => ({ default: m.DoctorQueuePage }))));
 const DoctorAvailabilityPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Availability").then(m => ({ default: m.DoctorAvailabilityPage }))));
 const DoctorPatientsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Patients").then(m => ({ default: m.DoctorPatientsPage }))));
+const DoctorPatientDetailPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/PatientDetail").then(m => ({ default: m.DoctorPatientDetailPage }))));
 const DoctorSchedulePage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Schedule").then(m => ({ default: m.DoctorSchedulePage }))));
 const DoctorMessagesPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Messages").then(m => ({ default: m.DoctorMessagesPage }))));
 const DoctorConsultPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Consult").then(m => ({ default: m.DoctorConsultPage }))));
@@ -184,6 +185,7 @@ export const router = createBrowserRouter([
               { index: true, Component: DoctorDashboard },
               { path: "workflow", Component: DoctorWorkflowPage },
               { path: "patients", Component: DoctorPatientsPage },
+              { path: "patients/:id", Component: DoctorPatientDetailPage },
               { path: "queue", Component: DoctorQueuePage },
               { path: "availability", Component: DoctorAvailabilityPage },
               { path: "schedule", Component: DoctorSchedulePage },
@@ -209,6 +211,7 @@ export const router = createBrowserRouter([
               { index: true, Component: DoctorDashboard },
               { path: "workflow", Component: DoctorWorkflowPage },
               { path: "patients", Component: DoctorPatientsPage },
+              { path: "patients/:id", Component: DoctorPatientDetailPage },
               { path: "queue", Component: DoctorQueuePage },
               { path: "availability", Component: DoctorAvailabilityPage },
               { path: "schedule", Component: DoctorSchedulePage },

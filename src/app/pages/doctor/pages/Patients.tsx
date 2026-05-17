@@ -122,7 +122,7 @@ export function DoctorPatientsPage() {
               <div 
                 className="flex flex-col md:flex-row items-center gap-3 p-3 rounded-xl border bg-white border-slate-50 hover:border-emerald-200 hover:shadow-md transition-all duration-300 cursor-pointer relative"
               >
-                <div onClick={() => setSelectedId(selectedId === p.id ? null : p.id)} className="flex items-center gap-3 flex-1 w-full">
+                <div onClick={() => navigate(`${doctorBase}/patients/${p.id}`)} className="flex items-center gap-3 flex-1 w-full">
                   <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center font-black text-[10px] text-slate-400 shrink-0 group-hover:bg-[#0A2E1F] group-hover:text-emerald-400 transition-all">
                     {p.avatar}
                   </div>
@@ -142,10 +142,10 @@ export function DoctorPatientsPage() {
                   </Button>
                   <Button 
                     variant="outline" 
-                    onClick={() => setSelectedIntakeId(p.id)}
+                    onClick={() => navigate(`${doctorBase}/patients/${p.id}`)}
                     className="h-8 w-8 p-0 rounded-lg border-emerald-100 bg-emerald-50 text-emerald-600 group-hover:bg-[#D4AF37] group-hover:text-white group-hover:border-[#D4AF37] transition-all duration-300 shadow-sm"
                   >
-                     <Receipt className="h-3.5 w-3.5" />
+                     <User className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
@@ -154,100 +154,7 @@ export function DoctorPatientsPage() {
         )}
       </div>
 
-      {/* THE MICRO-PRECISION CLINICAL MATRIX OVERLAY */}
-      <AnimatePresence>
-        {selectedIntakeId && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedIntakeId(null)}
-              className="absolute inset-0 bg-[#0A2E1F]/90 backdrop-blur-sm"
-            />
-            
-            <motion.div
-              initial={{ scale: 0.98, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.98, opacity: 0 }}
-              className="w-full max-w-[520px] relative z-10"
-            >
-              <div className="bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col relative border-t-8 border-[#0A2E1F]">
-                <div className="p-6 md:p-8 space-y-6">
-                  {/* COMPACT HEADER */}
-                  <div className="flex items-center gap-4 pb-4 border-b border-dashed border-slate-100">
-                     <div className="h-12 w-12 rounded-2xl bg-emerald-500 flex items-center justify-center font-black text-[#0A2E1F] text-xl shadow-lg shrink-0">
-                        {selectedPatient?.avatar}
-                     </div>
-                     <div className="flex-1 min-w-0">
-                        <h2 className="text-xl font-black text-[#0A2E1F] uppercase tracking-tighter truncate">{selectedPatient?.name}</h2>
-                        <div className="flex items-center gap-3">
-                           <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">PH-{selectedPatient?.order_number}</p>
-                           <Badge className={cn("rounded-md text-[7px] h-4 font-black uppercase tracking-widest border-none px-2", riskColors[selectedPatient?.risk as keyof typeof riskColors])}>
-                              {selectedPatient?.risk} RISK
-                           </Badge>
-                        </div>
-                     </div>
-                     <Button variant="ghost" size="icon" onClick={() => setSelectedIntakeId(null)} className="h-8 w-8 rounded-full text-slate-300 hover:bg-slate-50">
-                        <X className="h-4 w-4" />
-                     </Button>
-                  </div>
-
-                  {/* PROTOCOL SUMMARY (MINIMAL) */}
-                  <div className="grid grid-cols-2 gap-4 bg-emerald-50/30 p-4 rounded-xl border border-emerald-100">
-                     <div>
-                        <p className="text-[8px] font-black text-emerald-600/60 uppercase tracking-widest">Protocol Request</p>
-                        <p className="text-[11px] font-black text-[#0A2E1F] truncate">{selectedPatient?.medication}</p>
-                     </div>
-                     <div className="text-right">
-                        <p className="text-[8px] font-black text-emerald-600/60 uppercase tracking-widest">Primary Condition</p>
-                        <p className="text-[11px] font-black text-[#0A2E1F] truncate">{selectedPatient?.condition}</p>
-                     </div>
-                  </div>
-
-                  {/* MICRO-MATRIX QUESTIONNAIRE (NO SCROLLING GOAL) */}
-                  <div className="space-y-4">
-                     <div className="flex items-center gap-2 text-slate-300">
-                        <ClipboardList className="h-3 w-3" />
-                        <p className="text-[8px] font-black uppercase tracking-[0.2em]">Full Clinical Matrix</p>
-                     </div>
-                     
-                     {/* 2-COLUMN MICRO GRID */}
-                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                        {Object.entries(selectedPatient?.intake_answers || {}).map(([key, val]: [string, any], idx) => (
-                           <div key={idx} className="space-y-0.5 border-b border-slate-50 pb-1.5">
-                              <p className="text-[7px] font-black text-slate-300 uppercase tracking-widest truncate">{key.replace(/_/g, ' ')}</p>
-                              <p className="text-[10px] font-black text-[#0A2E1F] leading-tight line-clamp-2">
-                                 {Array.isArray(val) ? val.join(", ") : String(val)}
-                              </p>
-                           </div>
-                        ))}
-                     </div>
-
-                     {/* MICRO NARRATIVE */}
-                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                        <p className="text-[7px] font-black text-slate-300 uppercase tracking-widest mb-1">Clinical Narrative</p>
-                        <p className="text-[10px] leading-tight text-slate-500 font-medium italic">
-                           "{selectedPatient?.intake_notes}"
-                        </p>
-                     </div>
-                  </div>
-
-                  {/* ACTION HUB (COMPACT) */}
-                  <div className="pt-4 border-t border-slate-100">
-                     <Button 
-                       onClick={() => navigate(`${doctorBase}/consult?orderId=${selectedPatient?.order_number}`)}
-                       className="w-full h-12 rounded-xl bg-[#0A2E1F] hover:bg-emerald-900 text-white font-black text-[10px] tracking-widest uppercase gap-3"
-                     >
-                        <Video className="h-4 w-4" /> Engage Consult
-                     </Button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* THE MICRO-PRECISION CLINICAL MATRIX OVERLAY HAS BEEN REPLACED BY FULL PAGE */}
     </div>
   );
 }
