@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Users, Calendar, Clock, Search, Filter, MoreVertical,
   Video, FileText, MessageSquare, TrendingUp, UserCheck,
   ChevronRight, Activity, HeartPulse, Zap,
   Bell, Command, ShieldCheck, Database, Layers, ArrowUpRight,
-  Sparkles, FlaskConical, Bot, Pill, CheckCircle2, AlertCircle, FileSignature, ArrowUp, ArrowDown, Stethoscope
+  Sparkles, FlaskConical, Bot, Pill, CheckCircle2, AlertCircle, FileSignature, ArrowUp, ArrowDown, Stethoscope, ChevronDown
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Input, cn } from "../../components/ui/shared.tsx";
 import { DoctorClinicalFlowMap } from "../../components/doctor/DoctorClinicalFlowMap";
@@ -19,6 +19,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 const { motion, AnimatePresence } = FramerMotion;
 
+type TimeFilter = 'week' | 'month' | 'year';
+
 export function DoctorDashboard() {
   const { t } = useI18n();
   const greeting = getGreeting(t);
@@ -31,6 +33,28 @@ export function DoctorDashboard() {
     : "Dr. Clinical Provider";
 
   const { orders, fetchOrders, subscribeToOrders, unreadMessagesCount, fetchUnreadMessages } = usePatientStore();
+
+  // Time Filter State
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('week');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  const timeFilterLabels: Record<TimeFilter, string> = {
+    week: "This Week",
+    month: "This Month",
+    year: "This Year"
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Metrics
   const todayStr = new Date().toDateString();
@@ -54,33 +78,64 @@ export function DoctorDashboard() {
     };
   }, [fetchOrders, fetchUnreadMessages, subscribeToOrders]);
 
-  // Dynamic Clinical Chart Data Logic (Replaces E-commerce revenue logic)
+  // Dynamic Clinical Chart Data Logic
   const chartData = useMemo(() => {
     const dataMap: Record<string, { consults: number }> = {};
     const medCounts: Record<string, number> = {};
     
-    // Initialize last 7 days to ensure chart has all nodes
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      // Add a small baseline for visual aesthetics if the DB is empty
-      dataMap[dateStr] = { consults: Math.floor(Math.random() * 3) + 1 }; 
+    // Setup time buckets based on filter
+    let daysToLoop = 7;
+    if (timeFilter === 'month') daysToLoop = 30;
+
+    if (timeFilter === 'year') {
+      // 12 months
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const dateStr = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        // Baseline noise
+        dataMap[dateStr] = { consults: Math.floor(Math.random() * 20) + 10 }; 
+      }
+    } else {
+      // Days
+      for (let i = daysToLoop - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        // Baseline noise
+        dataMap[dateStr] = { consults: Math.floor(Math.random() * (timeFilter === 'month' ? 2 : 3)) + 1 }; 
+      }
     }
 
     let totalWaitTime = 0;
     let waitCount = 0;
 
-    // Inject real database numbers
-    orders.forEach(o => {
+    // Filter relevant orders
+    const now = new Date();
+    const cutoff = new Date();
+    if (timeFilter === 'week') cutoff.setDate(now.getDate() - 7);
+    if (timeFilter === 'month') cutoff.setDate(now.getDate() - 30);
+    if (timeFilter === 'year') cutoff.setFullYear(now.getFullYear() - 1);
+
+    const relevantOrders = orders.filter(o => {
       const d = new Date(o.created_at || o.orderedDate || Date.now());
-      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return d >= cutoff;
+    });
+
+    // Inject real database numbers
+    relevantOrders.forEach(o => {
+      const d = new Date(o.created_at || o.orderedDate || Date.now());
+      let dateStr = "";
+      if (timeFilter === 'year') {
+        dateStr = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      } else {
+        dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
       
       if (dataMap[dateStr] !== undefined) {
         dataMap[dateStr].consults += 1;
       }
       
-      // Medication counts
       if (o.medication) {
         medCounts[o.medication] = (medCounts[o.medication] || 0) + 1;
       }
@@ -89,7 +144,6 @@ export function DoctorDashboard() {
       waitCount += 1;
     });
 
-    // Find top medication
     const topMedication = Object.keys(medCounts).length > 0 
       ? Object.keys(medCounts).sort((a, b) => medCounts[b] - medCounts[a])[0] 
       : "Semaglutide";
@@ -101,14 +155,13 @@ export function DoctorDashboard() {
       consults: Number(dataMap[key].consults)
     }));
 
-    // Fixed the string concatenation bug by enforcing Number()
     return {
       series,
       totalConsults: series.reduce((sum, item) => sum + (Number(item.consults) || 0), 0),
       topMedication,
       avgWaitTime
     };
-  }, [orders]);
+  }, [orders, timeFilter]);
 
   return (
     <div className={cn(doctorPageContainer, "space-y-7 pb-14 animate-in fade-in duration-700")}>
@@ -175,18 +228,60 @@ export function DoctorDashboard() {
                 <h2 className="text-xl font-black text-[#0A2E1F] flex items-center gap-2">
                   <Activity className="h-5 w-5 text-emerald-500" /> Clinical Volume
                 </h2>
-                <p className="text-sm font-medium text-slate-500 mt-1">7-Day Patient Encounters &bull; {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</p>
+                <p className="text-sm font-medium text-slate-500 mt-1">
+                  {timeFilter === 'year' ? "12-Month" : timeFilter === 'month' ? "30-Day" : "7-Day"} Patient Encounters &bull; {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}
+                </p>
               </div>
-              <Button variant="outline" className="rounded-xl border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100 text-emerald-800">
-                <Calendar className="h-4 w-4 mr-2 text-emerald-600" />
-                This Week
-              </Button>
+              
+              {/* Dynamic Dropdown Filter */}
+              <div className="relative" ref={filterRef}>
+                <Button 
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  variant="outline" 
+                  className="rounded-xl border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100 text-emerald-800"
+                >
+                  <Calendar className="h-4 w-4 mr-2 text-emerald-600" />
+                  {timeFilterLabels[timeFilter]}
+                  <ChevronDown className="h-4 w-4 ml-2 text-emerald-600 opacity-70" />
+                </Button>
+
+                <AnimatePresence>
+                  {isFilterOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-emerald-100 overflow-hidden z-50"
+                    >
+                      {(Object.keys(timeFilterLabels) as TimeFilter[]).map((key) => (
+                        <button
+                          key={key}
+                          onClick={() => {
+                            setTimeFilter(key);
+                            setIsFilterOpen(false);
+                          }}
+                          className={cn(
+                            "w-full text-left px-4 py-3 text-sm font-bold transition-colors",
+                            timeFilter === key 
+                              ? "bg-emerald-50 text-emerald-700" 
+                              : "text-slate-600 hover:bg-slate-50 hover:text-[#0A2E1F]"
+                          )}
+                        >
+                          {timeFilterLabels[key]}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
             {/* Big Hero Number */}
             <div className="text-center mb-10">
               <motion.h1 
-                initial={{ opacity: 0, scale: 0.9 }}
+                key={chartData.totalConsults}
+                initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ type: "spring", stiffness: 100 }}
                 className="text-7xl font-black text-[#0A2E1F] tracking-tighter"
@@ -201,7 +296,14 @@ export function DoctorDashboard() {
             {/* 3 Clinical Stats Row */}
             <div className="flex items-center justify-center gap-8 sm:gap-16 mb-10">
               <div className="text-center">
-                <p className="text-2xl font-black text-slate-800 truncate max-w-[140px]">{chartData.topMedication}</p>
+                <motion.p 
+                  key={chartData.topMedication}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-2xl font-black text-slate-800 truncate max-w-[140px]"
+                >
+                  {chartData.topMedication}
+                </motion.p>
                 <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Top Rx</p>
               </div>
               
@@ -209,7 +311,14 @@ export function DoctorDashboard() {
 
               <div className="text-center">
                 <div className="flex justify-center items-center gap-2">
-                  <p className="text-2xl font-black text-slate-800">{chartData.avgWaitTime} <span className="text-sm text-slate-400 font-semibold">min</span></p>
+                  <motion.p 
+                    key={chartData.avgWaitTime}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-2xl font-black text-slate-800"
+                  >
+                    {chartData.avgWaitTime} <span className="text-sm text-slate-400 font-semibold">min</span>
+                  </motion.p>
                   <span className="flex items-center bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
                     <ArrowDown className="h-3 w-3 mr-0.5" /> 2m
                   </span>
