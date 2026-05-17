@@ -123,7 +123,7 @@ export function DoctorPatientDetailPage() {
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Shipping Address</p>
                     <p className="text-sm font-bold text-slate-700 leading-snug">
                       {patientData.shipping_address_line1 || "No Address Provided"}<br/>
-                      {patientData.shipping_address_line2 && <>{patientData.shipping_address_line2}<br/>}
+                      {patientData.shipping_address_line2 && <>{patientData.shipping_address_line2}<br/></>}
                       {patientData.shipping_city}{patientData.shipping_city ? ',' : ''} {patientData.shipping_state} {patientData.shipping_zip}
                     </p>
                   </div>
