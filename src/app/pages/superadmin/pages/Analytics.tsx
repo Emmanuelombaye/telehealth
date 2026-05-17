@@ -222,7 +222,7 @@ export function SuperAdminAnalyticsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-8">
         {[
           { label: "Aggregate Revenue", value: `$${totalMRR.toLocaleString()}`, icon: CreditCard, color: "emerald", desc: "Gross platform settlement" },
           { label: "Unique Identities", value: uniquePatientsCount.toLocaleString(), icon: Users, color: "gold", desc: "Total patient reach" },
@@ -231,33 +231,30 @@ export function SuperAdminAnalyticsPage() {
         ].map((s, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="h-full"
+            transition={{ delay: i * 0.08, ease: "easeOut" }}
           >
-            <Card className="group border-none shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-[2rem] p-6 sm:p-8 bg-white hover:bg-[#0A2E1F] hover:text-white hover:shadow-[0_20px_40px_rgba(10,46,31,0.2)] transition-all duration-500 cursor-pointer relative overflow-hidden h-full flex flex-col justify-between">
-               <div className="absolute top-0 right-0 p-4 sm:p-6 opacity-[0.03] group-hover:opacity-10 transition-opacity">
-                  <s.icon className="h-16 w-16 sm:h-24 sm:w-24" />
-               </div>
-               
-               <div className="flex items-center justify-between mb-6 sm:mb-10 relative z-10">
+            <Card className="group relative overflow-hidden border border-slate-200/50 bg-white/70 backdrop-blur-xl p-5 sm:p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_24px_-8px_rgba(10,46,31,0.08)] hover:border-emerald-200/60 hover:bg-white rounded-[1.5rem]">
+               <div className="flex items-start justify-between mb-6">
                   <div className={cn(
-                    "h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-sm",
-                    s.color === 'emerald' ? "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white group-hover:shadow-emerald-500/30" :
-                    s.color === 'gold' ? "bg-amber-50 text-amber-600 group-hover:bg-amber-500 group-hover:text-white group-hover:shadow-amber-500/30" :
-                    s.color === 'indigo' ? "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-500 group-hover:text-white group-hover:shadow-indigo-500/30" :
-                    "bg-rose-50 text-rose-600 group-hover:bg-rose-500 group-hover:text-white group-hover:shadow-rose-500/30"
+                    "h-10 w-10 sm:h-11 sm:w-11 rounded-[14px] flex items-center justify-center transition-colors duration-300 shadow-sm border border-white/50",
+                    s.color === 'emerald' ? "bg-emerald-50/80 text-emerald-600 group-hover:bg-emerald-100" :
+                    s.color === 'gold' ? "bg-amber-50/80 text-amber-600 group-hover:bg-amber-100" :
+                    s.color === 'indigo' ? "bg-indigo-50/80 text-indigo-600 group-hover:bg-indigo-100" :
+                    "bg-rose-50/80 text-rose-600 group-hover:bg-rose-100"
                   )}>
-                    <s.icon className="h-6 w-6 sm:h-7 sm:w-7" />
+                    <s.icon className="h-5 w-5 sm:h-5 sm:w-5 stroke-[2.5]" />
                   </div>
+                  <Badge variant="outline" className="border-slate-200/60 bg-white/50 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 group-hover:border-emerald-100 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors shadow-sm">
+                     Live
+                  </Badge>
                </div>
 
-               <div className="relative z-10">
-                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tighter italic mb-2 drop-shadow-sm">{s.value}</h2>
-                 <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 group-hover:text-emerald-300 transition-colors mb-2 sm:mb-4">{s.label}</p>
-                 <div className="h-px w-8 bg-slate-100 group-hover:bg-emerald-500/30 mb-3 sm:mb-4 transition-colors" />
-                 <p className="text-[9px] font-bold text-slate-300 group-hover:text-white/50 uppercase tracking-widest leading-relaxed transition-colors">
+               <div>
+                 <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-slate-400/80 mb-1.5">{s.label}</p>
+                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0A2E1F] leading-none mb-1">{s.value}</h2>
+                 <p className="text-[10px] font-semibold text-slate-400/70 uppercase tracking-widest mt-2 group-hover:text-slate-500 transition-colors">
                    {s.desc}
                  </p>
                </div>
