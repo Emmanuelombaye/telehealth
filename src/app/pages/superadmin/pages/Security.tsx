@@ -277,6 +277,48 @@ export function SuperAdminSecurityPage() {
               exit={{ opacity: 0, y: -8 }}
               className="grid gap-4"
             >
+              {/* Clinical self-defense firewall simulator card */}
+              <Card className="border border-emerald-500/20 bg-emerald-50/50 p-5 rounded-[1.5rem] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex gap-3.5">
+                  <div className="h-10 w-10 shrink-0 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-700">
+                    <ShieldAlert className="h-5 w-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-emerald-800">Clinical Active Protection Sandbox</h4>
+                    <p className="text-[11px] text-emerald-950/80 leading-relaxed mt-0.5">
+                      Test active HIPAA network protection. Triggering a simulated firewall rule will immediately restrict routing, unmount access, and secure clinical records.
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('https://api.ipify.org?format=json');
+                      const data = await res.json();
+                      const clientIP = data.ip;
+                      
+                      const blockedList = JSON.parse(localStorage.getItem('peak_health_blocked_ips') || '[]');
+                      blockedList.push(clientIP);
+                      localStorage.setItem('peak_health_blocked_ips', JSON.stringify(blockedList));
+                      
+                      toast.success("Active Security Protection Engaged", {
+                        description: "Initiating firewall block & unmounting application scope."
+                      });
+                      
+                      setTimeout(() => {
+                        window.location.reload();
+                      }, 1200);
+                    } catch (err) {
+                      localStorage.setItem('peak_health_blocked_ips', JSON.stringify(['simulate_local_block']));
+                      window.location.reload();
+                    }
+                  }}
+                  className="h-10 rounded-xl bg-emerald-800 text-white hover:bg-emerald-950 font-black uppercase text-[10px] tracking-widest shrink-0 shadow-sm transition-all hover:scale-105"
+                >
+                  Test Active Lockdown
+                </Button>
+              </Card>
+
               {threatList.map((t) => (
                 <Card key={t.id} className={saPanel}>
                   <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
