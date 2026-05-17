@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router";
 import { Send, Lock, Search, ChevronLeft, Paperclip, Loader2, MessageSquare, Shield } from "lucide-react";
 import { Button, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
-import { useAuthStore } from "../../../../lib";
+import { useAuthStore, usePatientStore } from "../../../../lib";
 
 export function MessagesPage() {
   const { user } = useAuthStore();
@@ -57,6 +57,9 @@ export function MessagesPage() {
             time: formatMessageTime(msg.created_at),
             unread: 0,
           };
+        }
+        if (msg.receiver_id === user!.id && !msg.is_read) {
+          threadMap[other.id].unread += 1;
         }
       });
       setThreads(Object.values(threadMap));
@@ -125,7 +128,19 @@ export function MessagesPage() {
           `and(sender_id.eq.${user!.id},receiver_id.eq.${activeThread.id}),and(sender_id.eq.${activeThread.id},receiver_id.eq.${user!.id})`
         )
         .order('created_at', { ascending: true });
-      if (!error) setMessages(data || []);
+      if (!error) {
+        setMessages(data || []);
+        
+        // Mark as read
+        const unreadIds = (data || [])
+          .filter((m: any) => m.receiver_id === user!.id && !m.is_read)
+          .map((m: any) => m.id);
+          
+        if (unreadIds.length > 0) {
+          await supabase.from('messages').update({ is_read: true }).in('id', unreadIds);
+          usePatientStore.getState().fetchUnreadMessages();
+        }
+      }
     }
     fetchMessages();
 
@@ -136,7 +151,14 @@ export function MessagesPage() {
         const isInThread =
           (msg.sender_id === user!.id && msg.receiver_id === activeThread.id) ||
           (msg.sender_id === activeThread.id && msg.receiver_id === user!.id);
-        if (isInThread) setMessages(prev => [...prev, msg]);
+        if (isInThread) {
+          setMessages(prev => [...prev, msg]);
+          if (msg.receiver_id === user!.id && !msg.is_read) {
+             supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then(() => {
+               usePatientStore.getState().fetchUnreadMessages();
+             });
+          }
+        }
       })
       .subscribe();
 

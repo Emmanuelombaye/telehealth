@@ -229,9 +229,12 @@ export const usePatientStore = create<AppState>()(
 
       fetchUnreadMessages: async () => {
         try {
+          const user = useAuthStore.getState().user;
+          if (!user) return;
           const { data, count, error } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
+            .eq('receiver_id', user.id)
             .eq('is_read', false);
           
           if (error) {
