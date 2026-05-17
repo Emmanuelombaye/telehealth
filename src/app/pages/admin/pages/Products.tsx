@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router";
+import { toast } from "sonner";
 import {
   Plus,
   PackageSearch,
@@ -8,6 +9,8 @@ import {
   X,
   Loader2,
   TrendingUp,
+  Trash2,
+  Save,
   Layers,
   Box,
   Pill,
@@ -48,6 +51,9 @@ export function AdminProductsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [routingSaving, setRoutingSaving] = useState(false);
+  const [coreSaving, setCoreSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [coreForm, setCoreForm] = useState({ name: "", category: "", price_usd: "", active: true });
   const [paymentGatewaysSelected, setPaymentGatewaysSelected] = useState<string[]>([]);
   const [routeForm, setRouteForm] = useState({
     requires_video: false,
@@ -85,6 +91,12 @@ export function AdminProductsPage() {
 
   useEffect(() => {
     if (!editingProduct) return;
+    setCoreForm({
+      name: editingProduct.name || "",
+      category: editingProduct.category || "",
+      price_usd: String(editingProduct.price_usd || ""),
+      active: editingProduct.active !== false,
+    });
     const f =
       editingProduct.features &&
       typeof editingProduct.features === "object" &&
@@ -163,6 +175,46 @@ export function AdminProductsPage() {
       setRoutingSaving(false);
     }
   }
+
+  const handleSaveCoreFields = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    setCoreSaving(true);
+    try {
+      const { error } = await supabase.from("products").update({
+        name: coreForm.name,
+        category: coreForm.category,
+        price_usd: parseFloat(coreForm.price_usd),
+        active: coreForm.active,
+      }).eq("id", editingProduct.id);
+      if (error) throw error;
+      toast.success("Protocol updated", { description: `${coreForm.name} — $${coreForm.price_usd}` });
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      toast.error("Save failed — check console / RLS.");
+    } finally {
+      setCoreSaving(false);
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!editingProduct) return;
+    if (!window.confirm(`Permanently delete "${editingProduct.name}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("products").delete().eq("id", editingProduct.id);
+      if (error) throw error;
+      toast.success("Protocol deleted");
+      setEditingProduct(null);
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      toast.error("Delete failed — check RLS.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -612,7 +664,7 @@ export function AdminProductsPage() {
                   aria-hidden
                 />
                 <div className="relative z-10 min-w-0 pr-4">
-                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-violet-200">Checkout & sync video</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.25em] text-violet-200">Edit Protocol</p>
                   <h2 className="mt-1 truncate text-xl font-black">{editingProduct.name}</h2>
                 </div>
                 <button
@@ -623,7 +675,82 @@ export function AdminProductsPage() {
                   <X size={18} />
                 </button>
               </div>
-              <form onSubmit={saveProductRouting} className="p-8 space-y-5">
+              {/* ── CORE DETAILS ── */}
+              <form onSubmit={handleSaveCoreFields} className="p-6 space-y-4 border-b border-slate-100 bg-slate-50/60">
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">Core Details</p>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Protocol Name</label>
+                  <input
+                    required
+                    className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                    value={coreForm.name}
+                    onChange={e => setCoreForm(f => ({ ...f, name: e.target.value }))}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Category</label>
+                    <select
+                      className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/30 appearance-none"
+                      value={coreForm.category}
+                      onChange={e => setCoreForm(f => ({ ...f, category: e.target.value }))}
+                    >
+                      <option>Weight Loss</option>
+                      <option>Sexual Wellness</option>
+                      <option>Hair Loss</option>
+                      <option>Anti-Aging</option>
+                      <option>Longevity</option>
+                      <option>Skincare</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">MSRP ($)</label>
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                      value={coreForm.price_usd}
+                      onChange={e => setCoreForm(f => ({ ...f, price_usd: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-emerald-600"
+                      checked={coreForm.active}
+                      onChange={e => setCoreForm(f => ({ ...f, active: e.target.checked }))}
+                    />
+                    <span className="text-sm font-bold text-slate-700">Active (visible in checkout)</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDeleteProduct}
+                      disabled={deleting}
+                      className="flex h-9 items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 text-[10px] font-black uppercase tracking-widest text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                    >
+                      {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      Delete
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={coreSaving}
+                      className="flex h-9 items-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {coreSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              {/* ── ROUTING & VIDEO ── */}
+              <form onSubmit={saveProductRouting} className="p-6 space-y-5">
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">Checkout &amp; Routing</p>
                 {editingRoutingPreview ? (
                   <ProductRoutingProfileCard profile={editingRoutingPreview} />
                 ) : null}
