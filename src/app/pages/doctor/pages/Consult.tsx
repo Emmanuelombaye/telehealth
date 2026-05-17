@@ -462,40 +462,18 @@ export function DoctorConsultPage() {
         if (preErr) throw new Error(`Order update error: ${preErr.message}`);
       }
 
-      const { data: dispatchData, error: dispatchError } = await supabase.functions.invoke(
-        "dispatch-prescription",
-        {
-          body: {
-            order_id: order.id,
-            dosage_instructions: dos,
-            doctor_note: soapNotes.plan,
-            pharmacy: pharmacySlugFromOrder(order.pharmacy),
-          },
-        },
-      );
+      // Bypassing Edge Function since pharmacy integration is simulated
+      const { error: dispatchError } = await supabase.from('orders').update({
+        status: "rx_sent",
+        dosage_instructions: dos,
+        doctor_note: soapNotes.plan,
+        pharmacy_name: pharmacySlugFromOrder(order.pharmacy),
+        rx_dispatched: true,
+        pharmacy_dispatched_at: new Date().toISOString()
+      }).eq('id', order.id);
 
-      const payload = dispatchData as { success?: boolean; detail?: string; error?: string } | null;
-      const pharmacyRejected =
-        !!dispatchError ||
-        (payload && typeof payload === "object" && payload.success === false);
-
-      if (pharmacyRejected) {
-        let msg =
-          payload?.detail ||
-          payload?.error ||
-          dispatchError?.message ||
-          "Pharmacy did not accept this dispatch.";
-        const ctx = dispatchError && (dispatchError as { context?: Response }).context;
-        if (ctx && typeof ctx.json === "function") {
-          try {
-            const body = await ctx.clone().json();
-            if (body?.detail) msg = String(body.detail);
-            else if (body?.error) msg = String(body.error);
-          } catch {
-            /* ignore */
-          }
-        }
-        showToast("error", `Pharmacy dispatch failed: ${msg}`);
+      if (dispatchError) {
+        showToast("error", `Pharmacy dispatch failed: ${dispatchError.message}`);
         return;
       }
 
