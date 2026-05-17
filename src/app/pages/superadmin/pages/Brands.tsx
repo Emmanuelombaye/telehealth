@@ -50,24 +50,20 @@ export function SuperAdminBrandsPage() {
       const { data, error } = await supabase.from('brands').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       
-      if (data && data.length > 0) {
-        const mappedData = data.map(d => ({
-          id: d.id, name: d.name, slug: d.slug, domain: d.domain,
-          country: d.country, timezone: d.timezone, status: d.status,
-          plan: d.plan, since: d.since_date, patients: d.patients_count,
-          doctors: d.doctors_count, staff: d.staff_count, mrr: Number(d.mrr),
-          growth: Number(d.growth), products: d.products || [],
-          gateways: d.gateways || [], languages: d.languages || [],
-          revenueData: d.revenue_data || [], orders: d.orders_data || {},
-          compliance: d.compliance || {}
-        }));
-        setDbBrands(mappedData);
-      } else {
-        setDbBrands(mockBrands);
-      }
+      const mappedData = (data || []).map(d => ({
+        id: d.id, name: d.name, slug: d.slug, domain: d.domain,
+        country: d.country, timezone: d.timezone, status: d.status,
+        plan: d.plan, since: d.since_date, patients: d.patients_count,
+        doctors: d.doctors_count, staff: d.staff_count, mrr: Number(d.mrr),
+        growth: Number(d.growth), products: d.products || [],
+        gateways: d.gateways || [], languages: d.languages || [],
+        revenueData: d.revenue_data || [], orders: d.orders_data || {},
+        compliance: d.compliance || {}
+      }));
+      setDbBrands(mappedData);
     } catch (err) {
       console.error("Error fetching brands:", err);
-      setDbBrands(mockBrands);
+      setDbBrands([]);
     } finally {
       setLoading(false);
     }
