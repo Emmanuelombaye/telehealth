@@ -55,6 +55,7 @@ export function AdminProductsPage() {
   const [deleting, setDeleting] = useState(false);
   const [coreForm, setCoreForm] = useState({ name: "", category: "", price_usd: "", active: true });
   const [paymentGatewaysSelected, setPaymentGatewaysSelected] = useState<string[]>([]);
+  const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [routeForm, setRouteForm] = useState({
     requires_video: false,
     video_states: "",
@@ -62,6 +63,7 @@ export function AdminProductsPage() {
     bmi_min: "",
     age_min: "",
     answer_triggers_json: "",
+    questionnaire_id: "",
   });
   
   const [newProduct, setNewProduct] = useState({
@@ -87,6 +89,20 @@ export function AdminProductsPage() {
 
   useEffect(() => {
     fetchProducts();
+
+    async function fetchQuestionnaires() {
+      try {
+        const { data, error } = await supabase
+          .from("admin_questionnaires")
+          .select("id, name, questions, status")
+          .order("name", { ascending: true });
+        if (error) throw error;
+        setQuestionnaires(data || []);
+      } catch (err) {
+        console.error("Error fetching questionnaires:", err);
+      }
+    }
+    fetchQuestionnaires();
   }, []);
 
   useEffect(() => {
@@ -115,6 +131,7 @@ export function AdminProductsPage() {
       bmi_min: vc.bmiMin != null ? String(vc.bmiMin) : vc.bmi_min != null ? String(vc.bmi_min) : "",
       age_min: vc.ageMin != null ? String(vc.ageMin) : vc.age_min != null ? String(vc.age_min) : "",
       answer_triggers_json: triggers ? JSON.stringify(triggers, null, 2) : "",
+      questionnaire_id: typeof (f as any).questionnaire_id === "string" ? (f as any).questionnaire_id : "",
     });
   }, [editingProduct]);
 
@@ -141,6 +158,19 @@ export function AdminProductsPage() {
       } else {
         delete next.scheduling_embed_url;
       }
+
+      // Link selected questionnaire to product features
+      if (routeForm.questionnaire_id) {
+        next.questionnaire_id = routeForm.questionnaire_id;
+        const selectedQ = questionnaires.find((q) => q.id === routeForm.questionnaire_id);
+        if (selectedQ) {
+          next.questionnaire = selectedQ.questions;
+        }
+      } else {
+        delete next.questionnaire_id;
+        delete next.questionnaire;
+      }
+
       const vc: Record<string, unknown> = {};
       if (routeForm.bmi_min.trim()) vc.bmiMin = Number(routeForm.bmi_min);
       if (routeForm.age_min.trim()) vc.ageMin = Number(routeForm.age_min);
@@ -166,6 +196,7 @@ export function AdminProductsPage() {
 
       const { error } = await supabase.from("products").update({ features: next }).eq("id", editingProduct.id);
       if (error) throw error;
+      toast.success("Checkout & routing configurations updated successfully!");
       setEditingProduct(null);
       fetchProducts();
     } catch (err) {
@@ -793,7 +824,34 @@ export function AdminProductsPage() {
                     })}
                   </div>
                 </div>
-                <label className="flex items-center gap-3 cursor-pointer">
+                {/* ── QUESTIONNAIRE ASSOCIATION ── */}
+                <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-700">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-900">
+                      Intake Questionnaire Link
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                    Assign a published questionnaire template to this product. When patients select this treatment in the checkout flow, they will answer this questionnaire.
+                  </p>
+                  <select
+                    className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
+                    value={routeForm.questionnaire_id}
+                    onChange={(e) => setRouteForm((f) => ({ ...f, questionnaire_id: e.target.value }))}
+                  >
+                    <option value="">-- Use default questions --</option>
+                    {questionnaires.map((q) => (
+                      <option key={q.id} value={q.id}>
+                        {q.name} ({Array.isArray(q.questions) ? q.questions.length : 0} questions)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <label className="flex items-center gap-3 cursor-pointer pt-2">
                   <input
                     type="checkbox"
                     className="h-4 w-4 accent-emerald-600"
