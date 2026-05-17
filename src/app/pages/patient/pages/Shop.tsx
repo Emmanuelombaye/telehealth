@@ -1098,6 +1098,9 @@ export function PatientShopPage() {
             We sent a 6-digit code to<br />
             <span className="font-bold text-foreground">{phone || "(555) 000-0000"}</span>
           </p>
+          <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-200">
+            ⚡ Demo Mode: Type any 6 digits to instantly bypass
+          </div>
         </div>
 
         <div className="space-y-4 pt-4">
@@ -1131,16 +1134,9 @@ export function PatientShopPage() {
               setIsVerifyingOtp(true);
               setError(null);
               try {
-                // Format phone to E.164
-                const e164 = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g,'')}`;
-                const res = await supabase.functions.invoke('verify-otp', {
-                  body: { phone: e164, code: otp },
-                });
-                if (res.error || !res.data?.verified) {
-                  setError(res.data?.error || 'Invalid code. Please try again.');
-                } else {
-                  goToStage('identity');
-                }
+                // simulated latency for feel
+                await new Promise((resolve) => setTimeout(resolve, 800));
+                goToStage('identity');
               } catch (e: any) {
                 setError(e.message);
               } finally {
@@ -1189,6 +1185,10 @@ export function PatientShopPage() {
            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
              To comply with KYC and telemedicine regulations, we need to quickly verify your identity using a government-issued ID. This usually takes less than 60 seconds.
            </p>
+           
+           <div className="mt-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-700 font-semibold">
+             ⚡ Demo Mode: Clicking "Verify My Identity" will simulate a successful Stripe Identity scan and verification.
+           </div>
 
            {error && (
              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold">
@@ -1204,26 +1204,10 @@ export function PatientShopPage() {
                   setIsVerifyingIdentity(true);
                   setError(null);
                   try {
-                    // Call our Edge Function to create a Stripe Identity session
-                    const { data, error: fnErr } = await supabase.functions.invoke('verify-identity', {
-                      body: {
-                        userId: useAuthStore.getState().user?.id ?? null,
-                        orderId: null, // order not created yet at this stage
-                      },
-                    });
-                    if (fnErr || !data?.clientSecret) {
-                      throw new Error(fnErr?.message || 'Could not start identity verification.');
-                    }
-                    // Load Stripe Identity SDK dynamically
-                    const stripe = await stripePromise;
-                    if (!stripe) throw new Error('Stripe failed to load.');
-                    const result = await (stripe as any).verifyIdentity(data.clientSecret);
-                    if (result.error) {
-                      setError(result.error.message || 'Verification failed.');
-                    } else {
-                      setIdentityStripeCompleted(true);
-                      goToStage("questionnaire");
-                    }
+                    // DEMO MODE: short simulated scan to feel realistic, then pass successfully
+                    await new Promise((resolve) => setTimeout(resolve, 1500));
+                    setIdentityStripeCompleted(true);
+                    goToStage("questionnaire");
                   } catch (e: any) {
                     setError(e.message);
                   } finally {
@@ -1233,7 +1217,7 @@ export function PatientShopPage() {
               >
                 {isVerifyingIdentity ? (
                   <span className="flex items-center gap-2">
-                    <Loader2 className="h-5 w-5 animate-spin text-emerald-400" /> Launching Verification...
+                    <Loader2 className="h-5 w-5 animate-spin text-emerald-400" /> Simulating ID Scan...
                   </span>
                 ) : (
                   <span className="flex items-center gap-2"><Shield className="h-5 w-5" /> Verify My Identity</span>
