@@ -3,12 +3,15 @@ import { Users, TrendingUp, Package, CreditCard, Globe2, Radar, Download, Activi
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, linearGradient } from "recharts";
 import { usePatientStore } from "../../../../lib/patient-store";
+import { useAuthStore } from "../../../../lib/auth-store";
+import { logAdminAudit } from "../../../../lib/adminAudit";
 import { motion } from "framer-motion";
 import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
 import { toast } from "sonner";
 
 export function SuperAdminAnalyticsPage() {
   const { orders } = usePatientStore();
+  const { user } = useAuthStore();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -89,8 +92,15 @@ export function SuperAdminAnalyticsPage() {
     { stage: "Delivered", val: Math.round((funnelCounts.delivered / funnelTotal) * 100), count: funnelCounts.delivered, color: "bg-emerald-400" },
   ];
 
-  const handleExport = () => {
+  const handleExport = async () => {
     toast.success("Export generated", { description: "The analytics report has been downloaded." });
+    
+    await logAdminAudit({
+      action: "Exported Platform Analytics CSV",
+      target_type: "analytics_report",
+      detail: { records_included: platformRevenueData.length }
+    });
+
     const rows = ["Month,Total Revenue"];
     platformRevenueData.forEach((d: any) => {
       rows.push(`${d.month},${d.total}`);

@@ -3,11 +3,14 @@ import { DollarSign, TrendingUp, CreditCard, Download, FileText, ChevronRight, Z
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { usePatientStore } from "../../../../lib/patient-store";
+import { useAuthStore } from "../../../../lib/auth-store";
+import { logAdminAudit } from "../../../../lib/adminAudit";
 import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
 import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice.tsx";
 
 export function SuperAdminFinancePage() {
   const { orders } = usePatientStore();
+  const { user } = useAuthStore();
   const [timeFilter, setTimeFilter] = useState("all");
 
   const filterOrders = () => {
@@ -69,7 +72,13 @@ export function SuperAdminFinancePage() {
   const totalCommission = totalPlatformMRR * 0.1;
   const pendingPayouts = brandFinancials.reduce((sum, b) => sum + (b.status === "pending" ? b.payout : 0), 0);
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    await logAdminAudit({
+      action: "Exported Platform Finance CSV",
+      target_type: "finance_ledger",
+      detail: { brands_included: brandFinancials.length }
+    });
+
     const rows: string[] = [];
     const date = new Date().toLocaleDateString();
 

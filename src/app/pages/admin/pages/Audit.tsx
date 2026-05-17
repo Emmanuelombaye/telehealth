@@ -43,7 +43,8 @@ export function AdminAuditPage() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    
+    const fetchLogs = async () => {
       try {
         setLoading(true);
         const { data, error } = await supabase
@@ -72,9 +73,20 @@ export function AdminAuditPage() {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
+    };
+
+    fetchLogs();
+
+    const channel = supabase
+      .channel('audit_sync')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'admin_audit_logs' }, () => {
+        fetchLogs();
+      })
+      .subscribe();
+
     return () => {
       cancelled = true;
+      supabase.removeChannel(channel);
     };
   }, [role, brandId]);
 

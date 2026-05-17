@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   Globe2,
   TrendingUp,
@@ -32,6 +32,8 @@ import { AdminScopeNotice } from "../../components/admin/AdminScopeNotice.tsx";
 export function SuperAdminDashboard() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [auditCount, setAuditCount] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchOrders() {
@@ -48,18 +50,24 @@ export function SuperAdminDashboard() {
         setLoading(false);
       }
     }
+
+    async function fetchAuditCount() {
+      const { count } = await supabase
+        .from("admin_audit_logs")
+        .select("*", { count: "exact", head: true });
+      setAuditCount(count || 0);
+    }
+
     fetchOrders();
+    fetchAuditCount();
 
     const channel = supabase
-      .channel("schema-db-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        fetchOrders();
-      })
+      .channel("dashboard-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchOrders())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "admin_audit_logs" }, () => fetchAuditCount())
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const totalMRR = orders.reduce((sum, order) => {
@@ -286,21 +294,24 @@ export function SuperAdminDashboard() {
                 </div>
                 <ul className="space-y-2">
                   {[
-                    { label: "Edge latency", val: "14 ms" },
-                    { label: "Database load", val: "22%" },
-                    { label: "Active alerts", val: "0" },
+                    { label: "Live orders", val: orders.length.toString() },
+                    { label: "Pending review", val: orders.filter(o => o.status === 'medical_review' || o.status === 'order_submitted').length.toString() },
+                    { label: "Audit events", val: auditCount.toString() },
                   ].map((m) => (
                     <li
                       key={m.label}
                       className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm"
                     >
                       <span className="text-xs font-medium text-emerald-100/80">{m.label}</span>
-                      <span className="font-semibold tabular-nums text-white">{m.val}</span>
+                      <span className="font-semibold tabular-nums text-emerald-300">{m.val}</span>
                     </li>
                   ))}
                 </ul>
-                <Button className="h-10 w-full rounded-xl bg-emerald-500 text-sm font-semibold text-[#0A2E1F] hover:bg-emerald-400">
-                  System audit
+                <Button
+                  onClick={() => navigate('/superadmin/audit')}
+                  className="h-10 w-full rounded-xl bg-emerald-500 text-sm font-semibold text-[#0A2E1F] hover:bg-emerald-400"
+                >
+                  View audit logs
                 </Button>
               </CardContent>
             </Card>
