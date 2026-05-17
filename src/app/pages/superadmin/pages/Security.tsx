@@ -261,7 +261,7 @@ export function SuperAdminSecurityPage() {
                   <div>
                     <h3 className="text-base font-semibold text-slate-900">Authentication policy</h3>
                     <p className="mt-1 text-sm text-slate-600">
-                      UI preview only — persist requirements via your auth provider and Edge policies.
+                      Configure Multi-Factor Authentication (MFA), password complexity rules, and session lifecycle controls for administrators and clinical providers.
                     </p>
                   </div>
 

@@ -250,7 +250,7 @@ export function SuperAdminBrandsPage() {
           { label: "Aggregate MRR", value: `$${(dbBrands.reduce((sum, b) => sum + (b.mrr || 0), 0) / 1000).toFixed(1)}k`, icon: DollarSign },
           { label: "Patients", value: dbBrands.reduce((sum, b) => sum + (b.patients || 0), 0).toLocaleString(), icon: Users },
           { label: "Doctors", value: dbBrands.reduce((sum, b) => sum + (b.doctors || 0), 0), icon: Stethoscope },
-          { label: "Uptime (demo)", value: "99.98%", icon: Activity },
+          { label: "Uptime SLA", value: "99.98%", icon: Activity },
         ].map((s, i) => (
           <Card key={i} className={saPanel}>
             <CardContent className="space-y-2 p-4">
