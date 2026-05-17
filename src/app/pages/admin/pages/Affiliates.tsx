@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Share2, Plus, Users, RefreshCw, ExternalLink, Zap, ShieldCheck, Play, Code, AlertCircle, Sparkles, CheckCircle2 } from "lucide-react";
+import { Share2, Plus, Users, RefreshCw, ExternalLink, Zap, ShieldCheck, Play, Code, AlertCircle, Sparkles, CheckCircle2, X, Link, Award, Copy, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared.tsx";
 import { toast } from "sonner";
 import { cn } from "../../../components/ui/utils";
@@ -17,7 +17,7 @@ type Campaign = {
 
 const INITIAL_CAMPAIGNS: Campaign[] = [
   { id: "CAMP-01", name: "Peak Wellness Elite", referralLink: "https://peak-health.io?ref=wellness_elite", commission: "20% Lifetime", clicks: 1245, conversions: 184, revenue: "$14,720.00", status: "Active" },
-  { id: "CAMP-02", name: "Semaglutide Weight Loss influencers", referralLink: "https://peak-health.io?ref=glp1_promo", commission: "25% First Order", clicks: 3840, conversions: 512, revenue: "$48,960.00", status: "Active" },
+  { id: "CAMP-02", name: "Semaglutide Weight Loss Influencers", referralLink: "https://peak-health.io?ref=glp1_promo", commission: "25% First Order", clicks: 3840, conversions: 512, revenue: "$48,960.00", status: "Active" },
   { id: "CAMP-03", name: "Clinical Provider Referrals", referralLink: "https://peak-health.io?ref=provider_ref", commission: "15% Lifetime", clicks: 540, conversions: 78, revenue: "$9,360.00", status: "Active" },
   { id: "CAMP-04", name: "Bio-Hacking Podcast Network", referralLink: "https://peak-health.io?ref=biohack_pod", commission: "20% Lifetime", clicks: 920, conversions: 0, revenue: "$0.00", status: "Paused" },
 ];
@@ -31,6 +31,13 @@ export function AdminAffiliatesPage() {
     "[System] Referly.so SDK initialized.",
     "[Telemetry] Connected to tracking endpoint 'partners.peak-health.io'"
   ]);
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newCampaignName, setNewCampaignName] = useState("");
+  const [newSlug, setNewSlug] = useState("");
+  const [newCommission, setNewCommission] = useState("20% Lifetime");
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   const handleFireTestEvent = () => {
     if (!testAmount.trim() || !testEmail.trim()) {
@@ -61,8 +68,54 @@ export function AdminAffiliatesPage() {
     }));
   };
 
+  const handleCreateCampaign = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCampaignName.trim()) {
+      toast.error("Please provide a campaign name.");
+      return;
+    }
+    if (!newSlug.trim()) {
+      toast.error("Please provide a referral link slug.");
+      return;
+    }
+
+    const cleanSlug = newSlug.trim().toLowerCase().replace(/\s+/g, "_");
+    const link = `https://peak-health.io?ref=${cleanSlug}`;
+    const newId = `CAMP-0${campaigns.length + 1}`;
+
+    const newCamp: Campaign = {
+      id: newId,
+      name: newCampaignName,
+      referralLink: link,
+      commission: newCommission,
+      clicks: 0,
+      conversions: 0,
+      revenue: "$0.00",
+      status: "Active"
+    };
+
+    setCampaigns(prev => [newCamp, ...prev]);
+    setIsModalOpen(false);
+    
+    toast.success("Campaign Initialized!", {
+      description: `Referral link: ${link} successfully pushed to Referly.so database.`,
+      action: {
+        label: "Copy Link",
+        onClick: () => {
+          navigator.clipboard.writeText(link);
+          toast.success("Copied to clipboard!");
+        }
+      }
+    });
+
+    // Reset inputs
+    setNewCampaignName("");
+    setNewSlug("");
+    setNewCommission("20% Lifetime");
+  };
+
   return (
-    <div className="max-w-[1500px] mx-auto font-sans space-y-8 animate-in fade-in duration-500">
+    <div className="max-w-[1500px] mx-auto font-sans space-y-8 animate-in fade-in duration-500 relative">
       
       {/* --- HEADER --- */}
       <div className="flex items-center justify-between gap-4 flex-wrap border-b border-slate-100 pb-6">
@@ -84,8 +137,11 @@ export function AdminAffiliatesPage() {
           >
             Open Referly.so Console <ExternalLink className="h-3.5 w-3.5" />
           </Button>
-          <Button className="h-10 px-6 rounded-xl bg-[#0A2E1F] text-white hover:bg-emerald-950 font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-950/20">
-            Create Campaign Link
+          <Button 
+            onClick={() => setIsModalOpen(true)}
+            className="h-10 px-6 rounded-xl bg-[#0A2E1F] text-white hover:bg-emerald-950 font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-950/20 gap-2"
+          >
+            <Plus className="h-4 w-4" /> Create Campaign Link
           </Button>
         </div>
       </div>
@@ -144,7 +200,21 @@ export function AdminAffiliatesPage() {
                       <td className="p-4 pl-6">
                         <div>
                           <p className="font-bold text-slate-900">{c.name}</p>
-                          <p className="text-[10px] font-mono text-emerald-600 mt-0.5 truncate max-w-[220px]">{c.referralLink}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <p className="text-[10px] font-mono text-emerald-600 truncate max-w-[220px]">{c.referralLink}</p>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(c.referralLink);
+                                setCopiedLink(c.id);
+                                toast.success("Campaign link copied!");
+                                setTimeout(() => setCopiedLink(null), 2000);
+                              }}
+                              className="text-slate-400 hover:text-[#0A2E1F] shrink-0"
+                              title="Copy Link"
+                            >
+                              {copiedLink === c.id ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                            </button>
+                          </div>
                         </div>
                       </td>
                       <td className="p-4 text-slate-600 font-bold">{c.commission}</td>
@@ -270,6 +340,92 @@ if (window.referly) {
           </div>
         </CardContent>
       </Card>
+
+      {/* --- PREMIUM CREATE CAMPAIGN MODAL Overlay --- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="w-full max-w-lg bg-white border border-slate-100 shadow-[0_30px_60px_rgba(0,0,0,0.15)] rounded-[2.5rem] overflow-hidden p-8 space-y-6 animate-in zoom-in-95 duration-300">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <Badge className="bg-emerald-50 text-emerald-700 border-none font-black text-[8px] uppercase tracking-widest px-2.5 py-1">
+                  Campaign Registrar
+                </Badge>
+                <h3 className="text-lg font-black text-[#0A2E1F] tracking-tight mt-1 flex items-center gap-1.5">
+                  <Sparkles className="h-5 w-5 text-amber-500" /> Initialize Referly Campaign
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleCreateCampaign} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Campaign Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Wellness Podcast Network"
+                  value={newCampaignName}
+                  onChange={(e) => setNewCampaignName(e.target.value)}
+                  className="w-full h-11 px-4 rounded-xl bg-slate-50 border border-slate-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-xs font-semibold text-slate-800 transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Referral URL Slug</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 italic">peak-health.io?ref=</span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="podcast_elite"
+                    value={newSlug}
+                    onChange={(e) => setNewSlug(e.target.value)}
+                    className="w-full h-11 pl-[125px] pr-4 rounded-xl bg-slate-50 border border-slate-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-xs font-mono font-bold text-emerald-700 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Commission Strategy</label>
+                <select
+                  value={newCommission}
+                  onChange={(e) => setNewCommission(e.target.value)}
+                  className="w-full h-11 px-4 rounded-xl bg-slate-50 border border-slate-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-xs font-semibold text-slate-800 transition-all appearance-none cursor-pointer"
+                >
+                  <option value="20% Lifetime">20% Lifetime Revenue Share</option>
+                  <option value="25% First Order">25% First Order Bonus</option>
+                  <option value="15% Lifetime">15% Lifetime Revenue Share</option>
+                  <option value="30% Custom Agency">30% Enterprise/Agency Tier</option>
+                </select>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <Button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 h-12 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 font-black uppercase text-[10px] tracking-widest"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 h-12 rounded-xl bg-[#0A2E1F] text-white hover:bg-emerald-950 font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-950/20"
+                >
+                  Deploy Campaign Link
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
