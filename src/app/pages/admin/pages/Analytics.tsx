@@ -70,7 +70,15 @@ export function AdminAnalyticsPage() {
       ["medical_review", "rx_sent", "shipped", "delivered"].includes(o.status)
     ).length;
 
-    const conversionRate = Math.round((totalConsults / filteredOrders.length) * 100) || 0;
+    const conversionRate = Math.round((totalConsults / (filteredOrders.length || 1)) * 100) || 0;
+
+    const prevConsults = prevOrders.filter(o => ["medical_review", "rx_sent", "shipped", "delivered"].includes(o.status)).length;
+    const prevConversionRate = Math.round((prevConsults / (prevOrders.length || 1)) * 100) || 0;
+    const conversionTrendVal = conversionRate - prevConversionRate;
+
+    const currentYield = Math.round(totalRevenue / (filteredOrders.length || 1));
+    const prevYield = Math.round(prevRevenue / (prevOrders.length || 1));
+    const yieldTrendVal = prevYield ? ((currentYield - prevYield) / prevYield * 100) : 100;
 
     // 2. Chart Data Generation
     const chartData = [];
@@ -146,7 +154,12 @@ export function AdminAnalyticsPage() {
       patientTrend: `+${filteredOrders.length - prevOrders.length}`,
       consults: totalConsults.toLocaleString(),
       conversion: `${conversionRate}%`,
-      yield: `$${Math.round(totalRevenue / (filteredOrders.length || 1))}`,
+      yield: `$${currentYield}`,
+      yieldTrend: `${yieldTrendVal > 0 ? '+' : ''}${yieldTrendVal.toFixed(1)}%`,
+      conversionTrend: `${conversionTrendVal > 0 ? '+' : ''}${conversionTrendVal.toFixed(1)}%`,
+      activeConsults: filteredOrders.filter(o => o.status === 'medical_review' || o.status === 'order_submitted').length.toString(),
+      shippedCount: filteredOrders.filter(o => o.status === 'shipped' || o.status === 'delivered').length.toString(),
+      regionsCount: new Set(filteredOrders.map(o => o.patient_country || o.patientCountry || "United States")).size.toString(),
       chartData,
       topTreatments,
     };
@@ -243,8 +256,8 @@ export function AdminAnalyticsPage() {
         {[
           { label: "Gross Revenue", value: stats.revenue, trend: stats.revenueTrend, icon: DollarSign, color: "emerald", desc: "Settlement volume in period" },
           { label: "Growth Velocity", value: stats.patients, trend: stats.patientTrend, icon: Zap, color: "gold", desc: "New patient onboarding" },
-          { label: "Yield Optimization", value: stats.yield, trend: "+4.1%", icon: Gem, color: "indigo", desc: "Avg. revenue per patient" },
-          { label: "Conversion Delta", value: stats.conversion, trend: "+2.5%", icon: Target, color: "rose", desc: "Clinical approval velocity" },
+          { label: "Yield Optimization", value: stats.yield, trend: stats.yieldTrend, icon: Gem, color: "indigo", desc: "Avg. revenue per patient" },
+          { label: "Conversion Delta", value: stats.conversion, trend: stats.conversionTrend, icon: Target, color: "rose", desc: "Clinical approval velocity" },
         ].map((s, i) => (
           <motion.div
             key={i}
@@ -402,10 +415,10 @@ export function AdminAnalyticsPage() {
               
               <div className="grid grid-cols-2 gap-4">
                  {[
-                   { label: "Uptime", val: "99.98%", icon: ShieldCheck },
-                   { label: "Latency", val: "142ms", icon: Clock },
-                   { label: "AI Accuracy", val: "94.2%", icon: Sparkles },
-                   { label: "Security", val: "L7 AES", icon: ShieldCheck },
+                   { label: "Gross Volume", val: stats.revenue, icon: DollarSign },
+                   { label: "Pending Consults", val: stats.activeConsults, icon: Activity },
+                   { label: "Completed Orders", val: stats.shippedCount, icon: Sparkles },
+                   { label: "Active Regions", val: stats.regionsCount, icon: Globe },
                  ].map((item, i) => (
                    <div key={i} className="p-4 rounded-2xl bg-white/5 border border-white/10">
                       <p className="text-[8px] font-black text-emerald-400/60 uppercase tracking-widest mb-1.5">{item.label}</p>
@@ -421,7 +434,7 @@ export function AdminAnalyticsPage() {
                     </div>
                     <div>
                        <p className="text-[10px] font-black uppercase tracking-widest">Global Nodes</p>
-                       <p className="text-[9px] font-bold text-white/40">12 Active Regions</p>
+                       <p className="text-[9px] font-bold text-white/40">{stats.regionsCount} Active Regions</p>
                     </div>
                  </div>
                  <ArrowUpRight className="h-4 w-4 text-emerald-400/40" />
