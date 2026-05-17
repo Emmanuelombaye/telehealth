@@ -592,6 +592,6 @@ export function SuperAdminSecurityPage() {
         </div>
       )}
 
-    </div>
+    </SuperAdminShell>
   );
 }
