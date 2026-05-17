@@ -36,6 +36,34 @@ export function AffiliateDashboard() {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-10 pb-32 animate-in fade-in duration-1000">
+
+      {/* ── REFERLY.SO DYNAMIC CO-BRANDED BRIDGE ── */}
+      <Card className="border-amber-200 bg-amber-50/60 rounded-[2.5rem] overflow-hidden shadow-sm">
+        <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex gap-4 items-start">
+            <div className="h-12 w-12 rounded-2xl bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5 text-amber-700">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-bold text-amber-950 text-sm md:text-base">Co-Branded Affiliate Program</p>
+                <Badge className="bg-[#0A2E1F] text-white border-none text-[8px] font-black uppercase tracking-wider py-0.5">
+                  Powered by Referly.so
+                </Badge>
+              </div>
+              <p className="text-xs text-amber-900/80 mt-1.5 max-w-3xl leading-relaxed">
+                Peak Health is partnered with **Referly.so** for tracking clicks, conversions, and automating payouts. Your link clicks are monitored locally in this panel, while payouts are paid directly to your registered Referly wallet.
+              </p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => window.open("https://referly.so", "_blank")}
+            className="h-12 px-6 rounded-xl bg-[#0A2E1F] hover:bg-[#051810] text-white font-black uppercase text-[10px] tracking-widest gap-2 shadow-lg shadow-emerald-950/20 shrink-0"
+          >
+            Launch Referly Partner App <ExternalLink className="h-4 w-4" />
+          </Button>
+        </CardContent>
+      </Card>
       
       {/* ── HIGH-FIDELITY NAVIGATION TABS ── */}
       <div className="flex items-center justify-between gap-4 flex-wrap border-b border-slate-100 pb-6">
