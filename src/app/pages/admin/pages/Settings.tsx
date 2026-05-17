@@ -33,6 +33,10 @@ export function AdminSettingsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newSetting, setNewSetting] = useState({ key: "", value: "", category: "general", description: "" });
 
+  // Figma-style Destructive Confirmation state
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<PlatformSetting | null>(null);
+  const [typedConfirmName, setTypedConfirmName] = useState("");
+
   const fetchSettings = async () => {
     try {
       setLoading(true);
@@ -241,7 +245,10 @@ export function AdminSettingsPage() {
                                )}
 
                                <button 
-                                onClick={() => handleDelete(item.id)}
+                                onClick={() => {
+                                  setDeleteConfirmTarget(item);
+                                  setTypedConfirmName("");
+                                }}
                                 className="h-12 w-12 rounded-xl bg-rose-50 text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white flex items-center justify-center"
                                >
                                   <Trash2 size={18} />
@@ -367,6 +374,85 @@ export function AdminSettingsPage() {
            </Card>
          ))}
       </div>
+
+      {/* Destructive Action Modal (Figma/GitHub Style) */}
+      <AnimatePresence>
+        {deleteConfirmTarget && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeleteConfirmTarget(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              className="relative z-[111] w-full max-w-lg bg-white rounded-[2.5rem] overflow-hidden shadow-2xl p-10 border border-slate-100"
+            >
+              {/* Alert Header */}
+              <div className="flex items-start gap-5">
+                <div className="h-14 w-14 rounded-2xl bg-rose-50 flex items-center justify-center shrink-0 border border-rose-100/50">
+                  <AlertCircle className="h-7 w-7 text-rose-500" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter text-[#0A2E1F]">Destructive Action</h3>
+                  <p className="text-xs font-bold text-rose-500 uppercase tracking-widest mt-1">Resource Expungement Authorization</p>
+                </div>
+              </div>
+
+              {/* Warning Text */}
+              <div className="mt-8 p-5 bg-rose-50/50 rounded-2xl border border-rose-100/40 text-left">
+                <p className="text-xs font-semibold leading-relaxed text-rose-900">
+                  Warning: You are about to permanently delete the configuration variable <strong className="font-black text-rose-950">"{deleteConfirmTarget.key}"</strong>. This will instantly expunge the variable from the global system matrix and might cause downstream pipeline interruptions.
+                </p>
+              </div>
+
+              {/* Confirmation Input */}
+              <div className="mt-6 space-y-2.5 text-left">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                  Type <span className="font-mono font-black text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">{deleteConfirmTarget.key}</span> to authorize deletion:
+                </label>
+                <input
+                  type="text"
+                  value={typedConfirmName}
+                  onChange={(e) => setTypedConfirmName(e.target.value)}
+                  placeholder={deleteConfirmTarget.key}
+                  className="w-full h-14 px-5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-mono font-bold text-rose-950 focus:outline-none focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/5 transition-all"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-8 flex gap-4">
+                <button
+                  onClick={() => {
+                    setDeleteConfirmTarget(null);
+                    setTypedConfirmName("");
+                  }}
+                  className="flex-1 h-14 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-400 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <Button
+                  onClick={async () => {
+                    if (typedConfirmName === deleteConfirmTarget.key) {
+                      await handleDelete(deleteConfirmTarget.id);
+                      setDeleteConfirmTarget(null);
+                      setTypedConfirmName("");
+                    }
+                  }}
+                  disabled={typedConfirmName !== deleteConfirmTarget.key}
+                  className="flex-[2] h-14 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-black uppercase tracking-wider text-xs shadow-xl shadow-rose-500/10 disabled:opacity-30 transition-all active:scale-[0.98]"
+                >
+                  Expunge Variable
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
