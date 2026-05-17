@@ -29,27 +29,16 @@ export function AuthLoadingScreen() {
   );
 }
 
-/**
- * Check if a dev-role override is active (used for staff/testing bypass).
- * This allows access when no real Supabase session exists but a role was set.
- */
-function getDevRoleOverride(): Role | null {
-  if (typeof window === 'undefined') return null;
-  const devRole = localStorage.getItem('peak_health_dev_role');
-  if (devRole) return devRole as Role;
-  return null;
-}
+
 
 export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
   const { user, role, isLoading } = useAuthStore();
   const navigate = useNavigate();
   const redirected = useRef(false);
 
-  // Dev override only when there is no real Supabase user (staff testing bypass).
-  const devRole = getDevRoleOverride();
   const forcePatient = hasForcePatientPortalIntent();
-  const effectiveRole = forcePatient ? 'patient' : user ? role : devRole;
-  const isAuthenticated = !!user || !!devRole;
+  const effectiveRole = forcePatient ? 'patient' : user ? role : null;
+  const isAuthenticated = !!user;
 
   // Memoize allowed roles check to prevent infinite loops from unstable array props
   const rolesKey = allowedRoles?.join(',') || '';

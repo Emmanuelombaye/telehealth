@@ -112,18 +112,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
         });
       } else {
-        // No real session — check for dev role override (staff/testing bypass)
-        const devRole = typeof window !== 'undefined' ? localStorage.getItem('peak_health_dev_role') : null;
-        if (devRole) {
-          const fakeUser = {
-            id: '00000000-0000-0000-0000-000000000000',
-            email: `${devRole.replace('_', '')}@peakbodyco.com`,
-            user_metadata: { first_name: devRole.split('_').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') }
-          } as unknown as User;
-          set({ session: null, user: fakeUser, role: devRole as Role, brandId: null, isLoading: false });
-        } else {
-          set({ session: null, user: null, role: null, brandId: null, isLoading: false });
-        }
+        set({ session: null, user: null, role: null, brandId: null, isLoading: false });
       }
 
       supabase.auth.onAuthStateChange((_event, newSession) => {

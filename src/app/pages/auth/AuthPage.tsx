@@ -114,30 +114,12 @@ export function AuthPage({ portal }: { portal: Portal }) {
           password,
         });
 
-        const staffAccounts: Record<string, { role: Role; password?: string }> = {
-          'doctor@peakbodyco.com':   { role: 'doctor' },
-          'admin@peakbodyco.com':    { role: 'brand_admin' },
-          'brandon@peakbodyco.com':  { role: 'super_admin' },
-        };
-        const staffEntry = staffAccounts[email.toLowerCase()];
-
         if (signInError) {
-          if (staffEntry) {
-            console.warn('[Auth] Real login failed, using dev override for staff:', email);
-            localStorage.setItem('peak_health_dev_role', staffEntry.role as string);
-            await initialize();
-            navigate(portalTarget(portal), { replace: true });
-            return;
-          }
           throw signInError;
         }
         
         if (data.user) {
-          if (staffEntry) {
-            localStorage.setItem('peak_health_dev_role', staffEntry.role as string);
-          } else {
-            localStorage.removeItem('peak_health_dev_role');
-          }
+          localStorage.removeItem('peak_health_dev_role');
 
           await initialize();
           const role = useAuthStore.getState().role;
