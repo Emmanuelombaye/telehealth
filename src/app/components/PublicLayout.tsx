@@ -396,95 +396,127 @@ export function PublicLayout() {
         </PageErrorBoundary>
       </main>
 
-      {/* TRUST & PARTNERSHIPS BAND */}
-      <div className="bg-slate-50 border-t border-slate-100 py-6 px-6 relative overflow-hidden">
-         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-4 md:gap-12">
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Trusted By:</span>
-            <div className="flex flex-wrap justify-center gap-6 md:gap-10 items-center">
-               <div className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-600"/><span className="text-[11px] font-black tracking-widest uppercase text-slate-700">LegitScript</span></div>
-               <div className="flex items-center gap-1.5"><Activity className="h-4 w-4 text-emerald-600"/><span className="text-[11px] font-black tracking-widest uppercase text-slate-700">AHA VERIFIED</span></div>
-               <div className="flex items-center gap-1.5"><Lock className="h-4 w-4 text-emerald-600"/><span className="text-[11px] font-bold tracking-widest uppercase text-slate-700">HIPAA Secure</span></div>
-               <div className="flex items-center gap-1.5"><Globe2 className="h-4 w-4 text-emerald-600"/><span className="text-[11px] font-black uppercase tracking-widest text-slate-700">GlobalHealth</span></div>
-            </div>
-         </div>
-      </div>
-
       {/* FOOTER */}
-      <footer className="bg-white pt-16 pb-10 px-6 lg:px-20 overflow-hidden relative">
-        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-emerald-50/40 rounded-full blur-[100px] -mr-64 -mb-64 pointer-events-none"></div>
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 mb-16">
-            
-            <div className="lg:col-span-2 space-y-8">
-              <Link to="/" className="flex items-center group w-fit">
-                <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-24 md:h-32 w-auto transition-transform duration-700 group-hover:scale-105" />
-              </Link>
-              <p className="text-sm font-medium text-slate-500 leading-relaxed max-w-xs">
-                Precision medicine and biological optimization, delivered directly to your door through our elite clinical network.
-              </p>
-              <div className="flex items-center gap-4 pt-4">
-                 <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-50 border border-slate-100 text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all cursor-pointer"><Instagram className="h-4 w-4" /></div>
-                 <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-50 border border-slate-100 text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all cursor-pointer"><Linkedin className="h-4 w-4" /></div>
-                 <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-50 border border-slate-100 text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all cursor-pointer"><Facebook className="h-4 w-4" /></div>
+      <footer className="bg-[#f8f9fa] pt-16 pb-10 px-4 md:px-8">
+        <div className="max-w-[1400px] mx-auto">
+          {/* Main White Card */}
+          <div className="bg-white rounded-[3rem] p-8 md:p-16 w-full relative mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">
+              
+              {/* Col 1: Logo & Info */}
+              <div className="md:col-span-4 flex flex-col gap-8">
+                <Link to="/" className="w-fit">
+                  <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-12 md:h-16 w-auto" />
+                </Link>
+                <p className="text-[13px] text-slate-500 font-medium">
+                  © {new Date().getFullYear()} Peak Health, Inc. All rights reserved.
+                </p>
+                
+                {/* Badges */}
+                <div className="flex items-center gap-4 flex-wrap">
+                   {/* LegitScript Mock */}
+                   <div className="flex flex-col items-center justify-center bg-[#0e1d3e] text-white p-2 rounded-lg w-16 h-16 relative shadow-sm">
+                      <ShieldCheck className="h-4 w-4 mb-1 text-emerald-400" />
+                      <span className="text-[6px] font-bold tracking-wider uppercase text-center leading-tight">LegitScript<br/>Certified</span>
+                   </div>
+                   {/* Compounded in USA Mock */}
+                   <div className="flex flex-col items-center justify-center bg-white border border-slate-200 text-[#0e1d3e] p-2 rounded-t-xl rounded-b-3xl w-16 h-16 shadow-sm">
+                      <span className="text-[5px] font-black tracking-widest uppercase text-center mb-1 leading-tight">Compounded IN<br/>USA</span>
+                      <Flag className="h-3 w-3 text-red-600" />
+                   </div>
+                   {/* HIPAA Mock */}
+                   <div className="flex items-center gap-2">
+                      <Lock className="h-8 w-8 text-indigo-900" />
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-bold text-indigo-900 leading-none mb-0.5">HIPAA</span>
+                        <span className="text-[8px] font-medium text-indigo-900 leading-none">COMPLIANT</span>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Social Icons */}
+                <div className="flex items-center gap-5 pt-2">
+                  <Instagram className="h-5 w-5 text-slate-800 hover:text-emerald-600 cursor-pointer transition-colors" />
+                  <Facebook className="h-5 w-5 text-slate-800 hover:text-emerald-600 cursor-pointer transition-colors" />
+                  <Linkedin className="h-5 w-5 text-slate-800 hover:text-emerald-600 cursor-pointer transition-colors" />
+                  <div className="flex items-center gap-1.5 cursor-pointer group">
+                    <Star className="h-5 w-5 text-slate-800 fill-slate-800 group-hover:text-emerald-600 group-hover:fill-emerald-600 transition-colors" />
+                    <span className="text-[17px] font-bold text-slate-800 group-hover:text-emerald-600 transition-colors tracking-tight">Trustpilot</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Col 2: Treatments */}
+              <div className="md:col-span-3 lg:col-span-3">
+                <h4 className="text-[14px] text-slate-400 mb-6">Treatments</h4>
+                <ul className="space-y-5">
+                  <li className="flex flex-col gap-0.5">
+                    <Link to="/treatments/weight-loss" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Personalized Tirzepatide+</Link>
+                    <span className="text-[13px] text-slate-500">Weight Loss</span>
+                  </li>
+                  <li className="flex flex-col gap-0.5">
+                    <Link to="/treatments/weight-loss" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Personalized Semaglutide+</Link>
+                    <span className="text-[13px] text-slate-500">Weight Loss</span>
+                  </li>
+                  <li className="flex flex-col gap-0.5">
+                    <Link to="/bio/nad-plus" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">NAD+</Link>
+                    <span className="text-[13px] text-slate-500">Longevity</span>
+                  </li>
+                  <li className="flex flex-col gap-0.5">
+                    <Link to="/bio/peptides" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Sermorelin</Link>
+                    <span className="text-[13px] text-slate-500">Muscle Recovery</span>
+                  </li>
+                  <li className="flex flex-col gap-0.5">
+                    <span className="text-[16px] text-slate-700">Peptides</span>
+                    <span className="text-[13px] text-slate-500">Coming Soon</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Col 3: Peak Health */}
+              <div className="md:col-span-3 lg:col-span-2">
+                <h4 className="text-[14px] text-slate-400 mb-6">Peak Health</h4>
+                <ul className="space-y-4">
+                  <li><Link to="/how-it-works" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">How It Works</Link></li>
+                  <li><Link to="/patient/login" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Log In</Link></li>
+                  <li><Link to="/explore-treatments" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Explore Treatments</Link></li>
+                  <li className="flex items-center gap-2">
+                     <span className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors cursor-pointer">Referral Program</span>
+                     <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>
+                  </li>
+                  <li><Link to="/faq" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">FAQ</Link></li>
+                  <li><Link to="/blog" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Blog</Link></li>
+                </ul>
+              </div>
+
+              {/* Col 4: Medical */}
+              <div className="md:col-span-2 lg:col-span-3 relative flex flex-col justify-between">
+                <div>
+                  <h4 className="text-[14px] text-slate-400 mb-6">Medical</h4>
+                  <ul className="space-y-4">
+                    <li><Link to="/safety" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Safety Information</Link></li>
+                    <li><Link to="/consent" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Consent to Telehealth</Link></li>
+                    <li><Link to="/code-of-conduct" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Physician Code of Conduct</Link></li>
+                  </ul>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0A2E1F]">Clinical Pathways</h4>
-               <ul className="space-y-4">
-                 {["Metabolic Control", "Hormone Optimization", "Cognitive Enhancement", "Biological Age Reversal", "Cellular Energy"].map(name => (
-                   <li key={name} className="group cursor-pointer flex items-center gap-2">
-                      <ChevronRight className="h-3 w-3 text-emerald-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                      <span className="text-[13px] font-bold text-slate-500 group-hover:text-[#0A2E1F] transition-colors">{name}</span>
-                   </li>
-                 ))}
-               </ul>
+            {/* "it's about you" text at bottom right */}
+            <div className="mt-16 md:absolute md:bottom-12 md:right-16 text-right">
+                <h2 className="text-4xl md:text-5xl font-medium tracking-tight text-[#2D3748] leading-none select-none">
+                  it's about <span className="text-emerald-500 font-serif italic">you.</span>
+                </h2>
             </div>
-
-            <div className="space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0A2E1F]">Platform</h4>
-               <ul className="space-y-4">
-                 {[
-                   { name: "How It Works", path: "/how-it-works" },
-                   { name: "Patient Portal", path: "/patient/login" },
-                   { name: "Clinical Assessment", path: "/patient/shop" },
-                   { name: "Medical Research", path: "/blog" },
-                 ].map(item => (
-                   <li key={item.name} className="group flex items-center gap-2">
-                      <ChevronRight className="h-3 w-3 text-emerald-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                      <Link to={item.path} className="text-[13px] font-bold text-slate-500 group-hover:text-[#0A2E1F] transition-colors">{item.name}</Link>
-                   </li>
-                 ))}
-               </ul>
-            </div>
-
-            <div className="lg:col-span-2 space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0A2E1F]">Medical Disclaimer</h4>
-               <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 space-y-4">
-                  <p className="text-[11px] leading-relaxed font-medium text-slate-500">
-                    The clinical information provided on this platform is for informational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment.
-                  </p>
-                  <div className="flex items-center gap-3 pt-2">
-                     <ShieldAlert className="h-4 w-4 text-emerald-600" />
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Prescription Required</span>
-                  </div>
-               </div>
-            </div>
-
           </div>
 
-          <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-8">
-             <div className="flex items-center gap-6 flex-wrap justify-center">
-                {["Privacy Policy", "Terms of Service", "Telehealth Consent", "HIPAA Notice"].map(link => (
-                  <span key={link} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-600 cursor-pointer transition-colors">
-                    {link}
-                  </span>
-                ))}
-             </div>
-             
-             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 text-center md:text-right">
-               © {new Date().getFullYear()} Peak Health Technology Group, Inc.<br/>All rights reserved.
-             </p>
+          {/* Bottom Links (Outside the card) */}
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-8 px-4 py-2 text-[13px] text-slate-500">
+             <Link to="/llms" className="hover:text-emerald-600 underline decoration-slate-300 underline-offset-4">LLMs.txt</Link>
+             <Link to="/terms" className="hover:text-emerald-600 underline decoration-slate-300 underline-offset-4">Terms of Service</Link>
+             <Link to="/privacy" className="hover:text-emerald-600 underline decoration-slate-300 underline-offset-4">Privacy Policy</Link>
+             <Link to="/refund" className="hover:text-emerald-600 underline decoration-slate-300 underline-offset-4">Refund Policy</Link>
+             <Link to="/shipping" className="hover:text-emerald-600 underline decoration-slate-300 underline-offset-4">Shipping Policy</Link>
           </div>
         </div>
       </footer>
