@@ -400,14 +400,14 @@ export function AdminSettingsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-xl p-4"
+              className="fixed inset-0 z-[100] overflow-y-auto bg-slate-900/40 backdrop-blur-xl p-4 md:p-10 flex justify-center items-start md:items-center"
             >
               <motion.div 
                 initial={{ scale: 0.9, opacity: 0, y: 40 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 40 }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="relative w-full max-w-lg bg-white border border-slate-100 rounded-[2.5rem] p-8 md:p-10 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] text-left overflow-hidden"
+                className="relative my-auto w-full max-w-lg bg-white border border-slate-100 rounded-[2.5rem] p-8 md:p-10 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] text-left overflow-hidden"
               >
                 <div className="relative z-10 flex items-center gap-4 mb-8">
                   <div className="h-14 w-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
@@ -486,19 +486,19 @@ export function AdminSettingsPage() {
         {/* Destructive Action Modal */}
         <AnimatePresence>
           {deleteConfirmTarget && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[110] overflow-y-auto p-4 md:p-10 flex justify-center items-start md:items-center">
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setDeleteConfirmTarget(null)}
-                className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl"
+                className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl"
               />
               <motion.div
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative z-[111] w-full max-w-md bg-white rounded-[2.5rem] overflow-hidden shadow-2xl p-8 border border-slate-100"
+                className="relative z-[111] my-auto w-full max-w-md bg-white rounded-[2.5rem] overflow-hidden shadow-2xl p-8 border border-slate-100"
               >
                 <div className="relative z-10 flex items-start gap-4">
                   <div className="h-14 w-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0 shadow-sm">
