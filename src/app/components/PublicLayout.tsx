@@ -502,10 +502,10 @@ export function PublicLayout() {
               </div>
             </div>
 
-            {/* "it's about you" text at bottom right */}
-            <div className="mt-16 md:absolute md:bottom-12 md:right-16 text-right">
-                <h2 className="text-4xl md:text-5xl font-medium tracking-tight text-[#2D3748] leading-none select-none">
-                  it's about <span className="text-emerald-500 font-serif italic">you.</span>
+            {/* "It's about your digital health solution." text at bottom right */}
+            <div className="mt-16 md:absolute md:bottom-12 md:right-16 text-right max-w-sm md:max-w-md">
+                <h2 className="text-3xl md:text-4xl font-medium tracking-tight text-[#2D3748] leading-tight select-none">
+                  It's about your <span className="text-emerald-500 font-serif italic">digital health solution.</span>
                 </h2>
             </div>
           </div>
