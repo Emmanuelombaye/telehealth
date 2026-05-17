@@ -313,13 +313,13 @@ function PatientPicker() {
                   )}
                 >
                   <span className="relative">
-                    Join Room
+                    {order.zoom_status === 'requested' || order.zoom_status === 'confirmed' || order.enrollment_video_required ? "Join Video" : order.status === 'order_submitted' ? "Review Chart" : order.status === 'medical_review' ? "Resume Review" : order.status === 'rx_sent' || order.status === 'cancelled' ? "View Record" : "Open Chart"}
                     <motion.span 
                       animate={{ opacity: [0.4, 1, 0.4], scale: [0.98, 1.02, 0.98] }}
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                       className="absolute inset-0 blur-sm text-[#D4AF37] select-none"
                     >
-                      Join Room
+                      {order.zoom_status === 'requested' || order.zoom_status === 'confirmed' || order.enrollment_video_required ? "Join Video" : order.status === 'order_submitted' ? "Review Chart" : order.status === 'medical_review' ? "Resume Review" : order.status === 'rx_sent' || order.status === 'cancelled' ? "View Record" : "Open Chart"}
                     </motion.span>
                   </span>
                   <motion.div
