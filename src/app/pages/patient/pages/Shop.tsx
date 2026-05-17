@@ -731,8 +731,10 @@ export function PatientShopPage() {
         }
       }
 
-      if (!idFile && !identityStripeCompleted)
-        throw new Error("Please upload a photo of your government ID, or complete Stripe Identity verification.");
+      // Identity verification is required before clinical prescription dispatch, but does not block order submission.
+      if (!idFile && !identityStripeCompleted) {
+        console.log("[Enrollment] Government ID not yet verified — allowed per skip-for-now policy.");
+      }
 
       const rules = parseProductVideoRules(selected.rawFeatures);
       const needsVideo = requiresSyncVideoVisit(rules, globalVideoStates, routingRulesFromDb, {
@@ -922,6 +924,13 @@ export function PatientShopPage() {
         <div className="flex justify-center mb-4">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
+        <button
+          type="button"
+          onClick={() => goToStage("payment_confirmation")}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
         <div>
           <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-100 mb-4">
             <CheckCircle2 className="h-3.5 w-3.5" /> Payment Successful
@@ -1071,7 +1080,7 @@ export function PatientShopPage() {
           onClick={() => {
             const currentUser = useAuthStore.getState().user;
             if (currentUser) {
-              goToStage("questionnaire");
+              goToStage("identity");
             } else {
               goToStage("2fa");
             }
@@ -1089,6 +1098,13 @@ export function PatientShopPage() {
         <div className="flex justify-center mb-4">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
+        <button
+          type="button"
+          onClick={() => goToStage("account_setup")}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
         <div className="text-center">
           <div className="h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
              <ShieldCheck className="h-8 w-8 text-blue-500" />
@@ -1170,6 +1186,20 @@ export function PatientShopPage() {
         <div className="flex justify-center mb-4">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            const currentUser = useAuthStore.getState().user;
+            if (currentUser) {
+              goToStage("payment_confirmation");
+            } else {
+              goToStage("2fa");
+            }
+          }}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
 
         <div className="bg-white border border-gray-200 rounded-[2rem] p-6 shadow-sm relative overflow-hidden">
            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
@@ -1699,7 +1729,7 @@ export function PatientShopPage() {
               setFirstName(currentUser.user_metadata?.first_name || firstName);
               setLastName(currentUser.user_metadata?.last_name || lastName);
               setEmail(currentUser.email || email);
-              goToStage("questionnaire");
+              goToStage("identity");
             } else {
               goToStage("account_setup");
             }
