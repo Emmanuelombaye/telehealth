@@ -1,12 +1,28 @@
 import { useState } from "react";
 import { DollarSign, TrendingUp, CreditCard, Download, FileText, ChevronRight, Zap, ArrowUpRight } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, PieChart, Pie, Legend } from "recharts";
 import { usePatientStore } from "../../../../lib/patient-store";
 import { useAuthStore } from "../../../../lib/auth-store";
 import { logAdminAudit } from "../../../../lib/adminAudit";
 import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
 import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice.tsx";
+
+const BRAND_COLORS = ['#059669', '#0ea5e9', '#8b5cf6', '#f59e0b', '#ec4899', '#14b8a6'];
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-xl border border-white/10 bg-slate-900/95 p-3 shadow-xl backdrop-blur-xl">
+        <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">{label || payload[0].name}</p>
+        <p className="text-sm font-black text-white">
+          ${Number(payload[0].value).toLocaleString()}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export function SuperAdminFinancePage() {
   const { orders } = usePatientStore();
@@ -174,40 +190,100 @@ export function SuperAdminFinancePage() {
         ))}
       </div>
 
-      <Card className={cn(saPanel, "print:border print:border-slate-200 print:shadow-none")}>
-        <CardContent className="space-y-4 p-5 sm:p-6">
-          <div className="flex flex-wrap items-end justify-between gap-2">
-            <div>
-              <h2 className="text-base font-semibold text-slate-900">Monthly revenue</h2>
-              <p className="text-xs text-slate-500">Filtered by the range control above</p>
-            </div>
-            <Badge variant="outline" className="text-[10px] font-normal text-slate-600">
-              Live orders
-            </Badge>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Revenue Trend (Area Chart) */}
+        <Card className={cn(saPanel, "lg:col-span-2 overflow-hidden print:border print:border-slate-200 print:shadow-none")}>
+          <div className="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-900">Revenue Trajectory</h2>
+            <p className="text-[11px] font-medium text-slate-500 mt-0.5">Cumulative monthly volume across all brands</p>
           </div>
+          <CardContent className="p-5 sm:p-6">
+            <div className="h-[280px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyRevenue.length > 0 ? monthlyRevenue : [{ month: "—", total: 0 }]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.35}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 600 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 600 }} tickFormatter={(val) => `$${val/1000}k`} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area type="monotone" dataKey="total" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" activeDot={{ r: 6, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Brand Distribution (Pie Chart) */}
+        <Card className={cn(saPanel, "overflow-hidden print:border print:border-slate-200 print:shadow-none")}>
+          <div className="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-900">Portfolio Mix</h2>
+            <p className="text-[11px] font-medium text-slate-500 mt-0.5">MRR distribution by brand</p>
+          </div>
+          <CardContent className="p-5 sm:p-6 flex flex-col items-center justify-center">
+            <div className="h-[240px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Pie
+                    data={brandFinancials.length > 0 ? brandFinancials : [{ brand: "No Data", mrr: 1 }]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="mrr"
+                    nameKey="brand"
+                    stroke="none"
+                  >
+                    {(brandFinancials.length > 0 ? brandFinancials : [{ brand: "No Data", mrr: 1 }]).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={BRAND_COLORS[index % BRAND_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36} 
+                    iconType="circle"
+                    formatter={(value) => <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Monthly Performance (Modern Bar Chart) */}
+      <Card className={cn(saPanel, "mb-6 overflow-hidden print:border print:border-slate-200 print:shadow-none")}>
+        <div className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-900">Monthly Performance</h2>
+            <p className="text-[11px] font-medium text-slate-500 mt-0.5">Absolute revenue generation per month</p>
+          </div>
+          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[9px] font-black uppercase tracking-widest">
+            Live Orders
+          </Badge>
+        </div>
+        <CardContent className="p-5 sm:p-6">
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={monthlyRevenue.length > 0 ? monthlyRevenue : [{ month: "—", total: 0, dateObj: new Date() }]}
-                barSize={28}
+                data={monthlyRevenue.length > 0 ? monthlyRevenue : [{ month: "—", total: 0 }]}
+                barSize={32}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#64748b" }} />
-                <YAxis hide />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#0f172a",
-                    border: "none",
-                    borderRadius: "10px",
-                    color: "#fff",
-                    fontSize: "12px",
-                  }}
-                  formatter={(v: number) => [`$${Number(v).toLocaleString()}`, "Total"]}
-                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 600 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 600 }} tickFormatter={(val) => `$${val/1000}k`} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
                 <Bar dataKey="total" radius={[6, 6, 0, 0]}>
-                  {(monthlyRevenue.length > 0 ? monthlyRevenue : [{ month: "—", total: 0, dateObj: new Date() }]).map(
+                  {(monthlyRevenue.length > 0 ? monthlyRevenue : [{ month: "—", total: 0 }]).map(
                     (_, index, arr) => (
-                      <Cell key={`cell-${index}`} fill={index === arr.length - 1 ? "#059669" : "#cbd5e1"} />
+                      <Cell key={`cell-${index}`} fill={index === arr.length - 1 ? "#059669" : "#94a3b8"} />
                     ),
                   )}
                 </Bar>
