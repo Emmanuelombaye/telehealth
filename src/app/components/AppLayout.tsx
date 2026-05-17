@@ -333,7 +333,11 @@ export function AppLayout() {
                 </div>
               )}
               <div className={cn(isDoctorPortal && "relative z-[1]")}>
-                <Suspense fallback={<AuthLoadingScreen />}>
+                <Suspense fallback={
+                  <div className="w-full h-[60vh] flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full border-4 border-slate-200 border-t-emerald-500 animate-spin" />
+                  </div>
+                }>
                   <Outlet />
                 </Suspense>
               </div>

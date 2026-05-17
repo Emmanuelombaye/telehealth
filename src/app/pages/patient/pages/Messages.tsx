@@ -16,6 +16,7 @@ export function MessagesPage() {
   const [threadQuery, setThreadQuery] = useState("");
   const [searchParams] = useSearchParams();
   const targetUserId = searchParams.get('userId');
+  const [resolvingTarget, setResolvingTarget] = useState(!!targetUserId);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Step 1: Fetch threads
@@ -79,8 +80,11 @@ export function MessagesPage() {
 
   // Step 2: If targetUserId in URL, open that thread immediately — don't wait for threads
   useEffect(() => {
-    if (!targetUserId || !user) return;
-    openThreadById(targetUserId);
+    if (!targetUserId || !user) {
+      setResolvingTarget(false);
+      return;
+    }
+    openThreadById(targetUserId).finally(() => setResolvingTarget(false));
   }, [targetUserId, user]);
 
   async function openThreadById(targetId: string) {
@@ -171,6 +175,14 @@ export function MessagesPage() {
     (name || "?").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
   // ─── ACTIVE CHAT VIEW ────────────────────────────────────────────────────────
+  if (resolvingTarget) {
+    return (
+      <div className="max-w-2xl mx-auto h-[calc(100vh-8rem)] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   if (activeThread) {
     return (
       <div className="max-w-2xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
