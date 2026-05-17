@@ -503,8 +503,8 @@ export function PublicLayout() {
             </div>
 
             {/* "It's about your digital health solution." text at bottom right */}
-            <div className="mt-16 md:absolute md:bottom-12 md:right-16 text-right max-w-sm md:max-w-md">
-                <h2 className="text-3xl md:text-4xl font-medium tracking-tight text-[#2D3748] leading-tight select-none">
+            <div className="mt-16 md:absolute md:bottom-12 md:right-16 text-right whitespace-nowrap">
+                <h2 className="text-lg sm:text-xl md:text-[22px] font-medium tracking-tight text-[#2D3748] leading-none select-none">
                   It's about your <span className="text-emerald-500 font-serif italic">digital health solution.</span>
                 </h2>
             </div>
