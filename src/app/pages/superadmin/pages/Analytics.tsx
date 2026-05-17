@@ -1,13 +1,29 @@
 import { useEffect, useState } from "react";
 import { Users, TrendingUp, Package, CreditCard, Globe2, Radar, Download, Activity, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, linearGradient } from "recharts";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from "recharts";
 import { usePatientStore } from "../../../../lib/patient-store";
 import { useAuthStore } from "../../../../lib/auth-store";
 import { logAdminAudit } from "../../../../lib/adminAudit";
 import { motion } from "framer-motion";
 import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
 import { toast } from "sonner";
+
+const CHART_COLORS = ['#059669', '#0ea5e9', '#8b5cf6', '#f59e0b', '#ec4899', '#14b8a6'];
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-xl border border-white/10 bg-[#0A2E1F]/95 p-3 shadow-2xl backdrop-blur-xl">
+        <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-emerald-400">{label || payload[0].name}</p>
+        <p className="text-sm font-black text-white">
+          {payload[0].name === "val" ? `${payload[0].value}%` : (typeof payload[0].value === 'number' ? payload[0].value.toLocaleString() : payload[0].value)}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export function SuperAdminAnalyticsPage() {
   const { orders } = usePatientStore();
@@ -221,33 +237,41 @@ export function SuperAdminAnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Grid for Geo and Funnel */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Grid for Geo and Funnel using Recharts */}
+      <div className="grid gap-6 lg:grid-cols-2 mt-6">
         <Card className={cn(saPanel, "border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white")}>
           <CardContent className="space-y-6 p-6 sm:p-8">
             <div className="flex items-center justify-between border-b border-slate-50 pb-5">
               <h2 className="text-sm font-black uppercase tracking-widest text-[#0A2E1F]">Patient Geography</h2>
               <Globe2 className="h-5 w-5 text-emerald-500" aria-hidden />
             </div>
-            <div className="space-y-5">
-              {geoData.map((c, i) => (
-                <div key={c.country} className="space-y-2 group">
-                  <div className="flex justify-between text-xs">
-                    <span className="font-bold text-slate-700">{c.country}</span>
-                    <span className="tabular-nums font-black tracking-widest text-emerald-700">
-                      {c.patients.toLocaleString()} <span className="text-slate-400 font-medium ml-1">({c.pct}%)</span>
-                    </span>
-                  </div>
-                  <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${c.pct}%` }}
-                      transition={{ duration: 1, delay: i * 0.1, ease: "easeOut" }}
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 group-hover:from-emerald-300 group-hover:to-emerald-500 transition-colors"
-                    />
-                  </div>
-                </div>
-              ))}
+            <div className="h-[260px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Pie
+                    data={geoData.length > 0 ? geoData : [{ country: "No Data", patients: 1 }]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={90}
+                    paddingAngle={5}
+                    dataKey="patients"
+                    nameKey="country"
+                    stroke="none"
+                  >
+                    {(geoData.length > 0 ? geoData : [{ country: "No Data", patients: 1 }]).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36} 
+                    iconType="circle"
+                    formatter={(value) => <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
@@ -259,24 +283,25 @@ export function SuperAdminAnalyticsPage() {
               <h2 className="text-sm font-black uppercase tracking-widest text-emerald-50">Operational Funnel</h2>
               <Radar className="h-5 w-5 text-emerald-400" aria-hidden />
             </div>
-            <div className="space-y-4">
-              {funnelData.map((s, i) => (
-                <div key={s.stage} className="flex items-center gap-4 group">
-                  <span className="w-28 shrink-0 text-[10px] font-black uppercase tracking-widest text-emerald-100/70 group-hover:text-emerald-50 transition-colors">{s.stage}</span>
-                  <div className="relative h-10 flex-1 overflow-hidden rounded-xl bg-white/5 ring-1 ring-white/10 shadow-inner backdrop-blur-sm">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${s.val}%` }}
-                      transition={{ duration: 1, delay: i * 0.1, ease: "easeOut" }}
-                      className={cn("flex h-full items-center px-3 transition-all", s.color)}
-                    >
-                      <span className="text-[11px] font-black tracking-widest text-white drop-shadow-md">
-                        {s.val}% <span className="opacity-70 ml-1">({s.count})</span>
-                      </span>
-                    </motion.div>
-                  </div>
-                </div>
-              ))}
+            <div className="h-[260px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={funnelData}
+                  layout="vertical"
+                  margin={{ top: 0, right: 30, left: 20, bottom: 0 }}
+                  barSize={24}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#10b981" strokeOpacity={0.1} />
+                  <XAxis type="number" hide />
+                  <YAxis type="category" dataKey="stage" axisLine={false} tickLine={false} tick={{ fill: '#a7f3d0', fontSize: 10, fontWeight: 800 }} width={80} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#064e3b', opacity: 0.4 }} />
+                  <Bar dataKey="val" radius={[0, 8, 8, 0]}>
+                    {funnelData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
