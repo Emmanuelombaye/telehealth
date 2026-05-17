@@ -7,7 +7,7 @@ import {
   Activity, Heart, Pill, Plus, Plane, MapPin, Shield, Flag,
   Instagram, Facebook, Linkedin, ExternalLink, HeartPulse,
   Brain, Zap, Sparkles, Rocket, Microscope, Wind, Layers,
-  ChevronUp, ShieldAlert, ChevronRight
+  ChevronUp, ShieldAlert, ChevronRight, Globe2
 } from "lucide-react";
 import { Button, cn } from "./ui/shared.tsx";
 import { PageErrorBoundary } from "./PageErrorBoundary";
@@ -396,84 +396,95 @@ export function PublicLayout() {
         </PageErrorBoundary>
       </main>
 
+      {/* TRUST & PARTNERSHIPS BAND */}
+      <div className="bg-slate-50 border-t border-slate-100 py-16 px-6 lg:px-20 relative overflow-hidden">
+         <div className="max-w-7xl mx-auto">
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-center text-slate-400 mb-10">Trusted By Elite Organizations</p>
+            <div className="flex flex-wrap justify-center gap-12 md:gap-24 items-center opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
+               <div className="flex items-center gap-2"><ShieldCheck className="h-6 w-6 text-emerald-600"/><span className="text-xl font-black tracking-tighter uppercase text-slate-800">LegitScript</span></div>
+               <div className="flex items-center gap-2"><Activity className="h-6 w-6 text-emerald-600"/><span className="text-xl font-bold tracking-widest text-slate-800">AHA VERIFIED</span></div>
+               <div className="flex items-center gap-2"><Lock className="h-6 w-6 text-emerald-600"/><span className="text-xl font-serif italic font-bold text-slate-800">HIPAA Secure</span></div>
+               <div className="flex items-center gap-2"><Globe2 className="h-6 w-6 text-emerald-600"/><span className="text-xl font-black uppercase tracking-tight text-slate-800">GlobalHealth</span></div>
+            </div>
+         </div>
+      </div>
+
       {/* FOOTER */}
-      <footer className="bg-white pt-24 pb-12 px-6 lg:px-20 border-t border-slate-100 overflow-hidden relative">
-        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-emerald-50/30 rounded-full blur-[120px] -mr-64 -mb-64 pointer-events-none"></div>
+      <footer className="bg-white pt-24 pb-12 px-6 lg:px-20 overflow-hidden relative">
+        <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-emerald-50/40 rounded-full blur-[120px] -mr-96 -mb-96 pointer-events-none"></div>
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 mb-24">
-            <div className="lg:col-span-2 space-y-10">
-              <div className="space-y-6">
-                <Link to="/" className="flex items-center group">
-                  <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-36 md:h-44 w-auto transition-transform group-hover:scale-105" />
-                </Link>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 leading-relaxed max-w-xs">
-                  © {new Date().getFullYear()} Peak Health Technology Group, Inc. <br/> All clinical rights reserved.
-                </p>
-              </div>
-              <div className="flex items-center gap-4 flex-wrap">
-                 <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#0A2E1F] text-white shadow-xl shadow-emerald-900/10 border border-emerald-400/20">
-                    <Shield className="h-4 w-4 text-emerald-400" />
-                    <span className="text-[8px] font-black uppercase tracking-widest">LegitScript Certified</span>
-                 </div>
-                 <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white text-[#0A2E1F] shadow-xl shadow-slate-200/50 border border-slate-100">
-                    <Flag className="h-4 w-4 text-emerald-600" />
-                    <span className="text-[8px] font-black uppercase tracking-widest">Compounded in USA</span>
-                 </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-16 mb-24">
+            
+            <div className="lg:col-span-2 space-y-8">
+              <Link to="/" className="flex items-center group w-fit">
+                <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-24 md:h-32 w-auto transition-transform duration-700 group-hover:scale-105" />
+              </Link>
+              <p className="text-sm font-medium text-slate-500 leading-relaxed max-w-xs">
+                Precision medicine and biological optimization, delivered directly to your door through our elite clinical network.
+              </p>
+              <div className="flex items-center gap-4 pt-4">
+                 <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-50 border border-slate-100 text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all cursor-pointer"><Instagram className="h-4 w-4" /></div>
+                 <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-50 border border-slate-100 text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all cursor-pointer"><Linkedin className="h-4 w-4" /></div>
+                 <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-50 border border-slate-100 text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all cursor-pointer"><Facebook className="h-4 w-4" /></div>
               </div>
             </div>
+
             <div className="space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Clinical Focus</h4>
-               <ul className="space-y-5">
-                 {["Metabolic Optimization", "Cognitive Performance", "Longevity Science", "Biological Recovery", "Signature Protocols"].map(name => (
-                   <li key={name} className="group cursor-pointer">
-                      <span className="text-sm font-bold text-slate-700 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{name}</span>
+               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0A2E1F]">Clinical Pathways</h4>
+               <ul className="space-y-4">
+                 {["Metabolic Control", "Hormone Optimization", "Cognitive Enhancement", "Biological Age Reversal", "Cellular Energy"].map(name => (
+                   <li key={name} className="group cursor-pointer flex items-center gap-2">
+                      <ChevronRight className="h-3 w-3 text-emerald-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                      <span className="text-[13px] font-bold text-slate-500 group-hover:text-[#0A2E1F] transition-colors">{name}</span>
                    </li>
                  ))}
                </ul>
             </div>
+
             <div className="space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Infrastructure</h4>
-               <ul className="space-y-5">
+               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0A2E1F]">Platform</h4>
+               <ul className="space-y-4">
                  {[
                    { name: "How It Works", path: "/how-it-works" },
-                   { name: "Patient Login", path: "/patient/login" },
-                   { name: "Start Journey", path: "/patient/shop" },
-                   { name: "Clinical Blog", path: "/blog" },
+                   { name: "Patient Portal", path: "/patient/login" },
+                   { name: "Clinical Assessment", path: "/patient/shop" },
+                   { name: "Medical Research", path: "/blog" },
                  ].map(item => (
-                   <li key={item.name}>
-                      <Link to={item.path} className="text-sm font-bold text-slate-700 uppercase tracking-widest hover:text-emerald-600 transition-colors">{item.name}</Link>
+                   <li key={item.name} className="group flex items-center gap-2">
+                      <ChevronRight className="h-3 w-3 text-emerald-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                      <Link to={item.path} className="text-[13px] font-bold text-slate-500 group-hover:text-[#0A2E1F] transition-colors">{item.name}</Link>
                    </li>
                  ))}
                </ul>
             </div>
-            <div className="space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Compliance</h4>
-               <ul className="space-y-5">
-                 {["Safety Information", "Consent to Telehealth", "Privacy Policy", "Terms of Service"].map(name => (
-                   <li key={name} className="group cursor-pointer">
-                      <span className="text-sm font-bold text-slate-700 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{name}</span>
-                   </li>
-                 ))}
-               </ul>
+
+            <div className="lg:col-span-2 space-y-8">
+               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0A2E1F]">Medical Disclaimer</h4>
+               <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 space-y-4">
+                  <p className="text-[11px] leading-relaxed font-medium text-slate-500">
+                    The clinical information provided on this platform is for informational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment.
+                  </p>
+                  <div className="flex items-center gap-3 pt-2">
+                     <ShieldAlert className="h-4 w-4 text-emerald-600" />
+                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Prescription Required</span>
+                  </div>
+               </div>
             </div>
+
           </div>
-          <div className="pt-16 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-12">
-             <div className="flex items-center gap-10 opacity-30">
-                <div className="flex items-center gap-2">
-                   <Lock size={12} />
-                   <span className="text-[8px] font-black uppercase tracking-[0.2em]">AES-256 Encrypted</span>
-                </div>
-                <div className="flex items-center gap-2">
-                   <ShieldCheck size={12} />
-                   <span className="text-[8px] font-black uppercase tracking-[0.2em]">HIPAA Secure</span>
-                </div>
+
+          <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-8">
+             <div className="flex items-center gap-6 flex-wrap justify-center">
+                {["Privacy Policy", "Terms of Service", "Telehealth Consent", "HIPAA Notice"].map(link => (
+                  <span key={link} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-600 cursor-pointer transition-colors">
+                    {link}
+                  </span>
+                ))}
              </div>
-             <div className="text-right">
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300 mb-1">Biological Excellence</p>
-                <h2 className="text-4xl md:text-6xl font-black tracking-tight text-[#0A2E1F] leading-none select-none">
-                  it's about <span className="text-emerald-600 font-serif italic font-medium">you.</span>
-                </h2>
-             </div>
+             
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 text-center md:text-right">
+               © {new Date().getFullYear()} Peak Health Technology Group, Inc.<br/>All rights reserved.
+             </p>
           </div>
         </div>
       </footer>
