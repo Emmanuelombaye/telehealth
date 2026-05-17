@@ -46,20 +46,21 @@ export function MessagesPage() {
 
       const threadMap: Record<string, any> = {};
       (data || []).forEach((msg: any) => {
-        const other = msg.sender_id === user!.id ? msg.receiver : msg.sender;
-        if (!other) return;
-        if (!threadMap[other.id]) {
-          threadMap[other.id] = {
-            id: other.id,
-            name: other.full_name || "Unknown",
-            role: other.role,
+        const otherProfile = msg.sender_id === user!.id ? msg.receiver : msg.sender;
+        const otherId = msg.sender_id === user!.id ? msg.receiver_id : msg.sender_id;
+        
+        if (!threadMap[otherId]) {
+          threadMap[otherId] = {
+            id: otherId,
+            name: otherProfile?.full_name || "Unknown User",
+            role: otherProfile?.role || "patient",
             lastMsg: msg.content,
             time: formatMessageTime(msg.created_at),
             unread: 0,
           };
         }
         if (msg.receiver_id === user!.id && !msg.is_read) {
-          threadMap[other.id].unread += 1;
+          threadMap[otherId].unread += 1;
         }
       });
       setThreads(Object.values(threadMap));
