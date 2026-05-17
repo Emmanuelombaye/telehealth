@@ -280,45 +280,48 @@ export function AdminProductsPage() {
         {/* Compact header */}
         <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-lg ring-1 ring-slate-900/[0.04] backdrop-blur-xl md:rounded-[1.75rem]">
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/[0.06] via-transparent to-violet-500/[0.04]" aria-hidden />
-          <div className="relative z-10 flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between md:px-8 md:py-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-900/25">
-                <Sparkles className="h-5 w-5" />
+          <div className="relative z-10 px-5 py-4 md:px-7 md:py-5">
+            {/* Top row: icon + title + buttons */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-900/20">
+                  <Sparkles className="h-4.5 w-4.5" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="whitespace-nowrap text-base font-black tracking-tight text-slate-900 md:text-lg">
+                    Protocol OS
+                  </h1>
+                  <p className="whitespace-nowrap text-[11px] font-medium text-slate-500">
+                    {isSuperAdminRoute ? "Superadmin" : "Admin"} · {products.length} protocol{products.length === 1 ? "" : "s"}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-lg font-black tracking-tight text-slate-900 md:text-xl">
-                  Protocol OS
-                </h1>
-                <p className="mt-0.5 text-xs font-medium text-slate-500">
-                  {isSuperAdminRoute ? "Superadmin" : "Admin"} · {products.length} protocol{products.length === 1 ? "" : "s"} · Path A / B routing
-                </p>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="hidden items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-700 sm:inline-flex">
+                  <ShieldCheck className="h-2.5 w-2.5" />
+                  Supabase
+                </span>
+                <span className="hidden items-center gap-1 rounded-full border border-violet-100 bg-violet-50 px-2 py-0.5 text-[9px] font-bold text-violet-700 sm:inline-flex">
+                  <Video className="h-2.5 w-2.5" />
+                  Video
+                </span>
+                <Button
+                  variant="outline"
+                  className="h-8 gap-1 rounded-lg border-slate-200 px-3 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:border-slate-300"
+                  onClick={() => window.open("/explore-treatments", "_blank")}
+                >
+                  <PackageSearch className="h-3 w-3" />
+                  Catalog
+                  <ArrowUpRight className="h-2.5 w-2.5 opacity-50" />
+                </Button>
+                <Button
+                  className="h-8 gap-1 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 px-4 text-[9px] font-black uppercase tracking-widest text-white shadow-sm shadow-emerald-900/15 transition hover:brightness-105"
+                  onClick={() => setShowAddModal(true)}
+                >
+                  <Plus className="h-3 w-3" />
+                  Add protocol
+                </Button>
               </div>
-            </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
-                <ShieldCheck className="h-3 w-3" />
-                Supabase-backed
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-100 bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700">
-                <Video className="h-3 w-3" />
-                Video routing
-              </span>
-              <Button
-                variant="outline"
-                className="h-9 gap-1.5 rounded-xl border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:border-slate-300"
-                onClick={() => window.open("/explore-treatments", "_blank")}
-              >
-                <PackageSearch className="h-3.5 w-3.5" />
-                Catalog
-                <ArrowUpRight className="h-3 w-3 opacity-50" />
-              </Button>
-              <Button
-                className="h-9 gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 text-[10px] font-black uppercase tracking-widest text-white shadow-md shadow-emerald-900/20 transition hover:brightness-105"
-                onClick={() => setShowAddModal(true)}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add protocol
-              </Button>
             </div>
           </div>
         </section>
