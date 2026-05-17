@@ -15,7 +15,7 @@ export function DoctorReferralsPage() {
             <ArrowRightLeft className="h-6 w-6 text-emerald-700" /> Specialist referrals
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Track outbound specialty referrals and inbound transfers. (List below is illustrative until referral rows are wired to Supabase.)
+            Track outbound specialty referrals and inbound transfers. (List below is illustrative until referral rows are wired to the database.)
           </p>
         </div>
         <Button

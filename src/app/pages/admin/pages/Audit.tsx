@@ -164,7 +164,7 @@ export function AdminAuditPage() {
         <Card className="border-amber-200 bg-amber-50/60">
           <CardContent className="p-4 text-sm text-amber-900">
             The <code className="rounded bg-white/80 px-1">admin_audit_logs</code> table is not installed. Run{" "}
-            <code className="rounded bg-white/80 px-1">supabase_admin_audit_and_scope.sql</code> in the Supabase SQL editor to
+            <code className="rounded bg-white/80 px-1">supabase_admin_audit_and_scope.sql</code> in the database SQL editor to
             enable persistent logging.
           </CardContent>
         </Card>

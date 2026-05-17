@@ -109,7 +109,7 @@ export function AdminQuestionnairePage() {
     } catch (err) {
       console.error(err);
       toast.error("Could not load questionnaires", {
-        description: err instanceof Error ? err.message : "Check Supabase RLS and migrations.",
+        description: err instanceof Error ? err.message : "Check database RLS and migrations.",
       });
     } finally {
       setLoading(false);

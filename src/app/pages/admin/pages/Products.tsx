@@ -382,7 +382,7 @@ export function AdminProductsPage() {
               <div className="flex shrink-0 items-center gap-2">
                 <span className="hidden items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-700 sm:inline-flex">
                   <ShieldCheck className="h-2.5 w-2.5" />
-                  Supabase
+                  Secure DB
                 </span>
                 <span className="hidden items-center gap-1 rounded-full border border-violet-100 bg-violet-50 px-2 py-0.5 text-[9px] font-bold text-violet-700 sm:inline-flex">
                   <Video className="h-2.5 w-2.5" />

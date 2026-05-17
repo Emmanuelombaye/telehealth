@@ -220,7 +220,7 @@ export function SuperAdminSecurityPage() {
     <SuperAdminShell
       eyebrow="Security"
       title="Threat surface & access"
-      description="Live threat incidents, administrative policy configurations, and real-time database audit feeds powered by Supabase."
+      description="Live threat incidents, administrative policy configurations, and real-time database audit feeds."
       actions={
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline" className="h-8 border-red-200 bg-red-50 text-xs font-medium text-red-800">

@@ -92,7 +92,7 @@ export function PharmacyInventoryPage() {
         <Card className="border-amber-300 bg-amber-50">
           <CardContent className="p-4 text-sm text-amber-900">
             <p className="font-bold mb-1">Inventory table not yet provisioned.</p>
-            <p>Apply <code className="font-mono bg-white px-2 py-0.5 rounded">supabase_pharmacy_inventory.sql</code> in your Supabase SQL editor.</p>
+            <p>Apply <code className="font-mono bg-white px-2 py-0.5 rounded">supabase_pharmacy_inventory.sql</code> in your database SQL editor.</p>
           </CardContent>
         </Card>
       )}

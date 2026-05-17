@@ -123,7 +123,7 @@ export function SuperAdminDoctorsPage() {
       if (iErr) console.warn('[Doctors] invitations read warning:', iErr.message);
     } catch (err: any) {
       console.error('[Doctors] fetch failed:', err);
-      toast.error("Could not load clinical network. Check your Supabase schema.");
+      toast.error("Could not load clinical network. Check your database schema.");
     } finally {
       setLoading(false);
     }
@@ -174,7 +174,7 @@ export function SuperAdminDoctorsPage() {
       }]);
 
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Database request timed out. Please verify that the 'doctor_invitations' table exists and is not locked in Supabase.")), 10000)
+        setTimeout(() => reject(new Error("Database request timed out. Please verify that the 'doctor_invitations' table exists and is not locked.")), 10000)
       );
 
       const { error } = await Promise.race([invitePromise, timeoutPromise]) as any;

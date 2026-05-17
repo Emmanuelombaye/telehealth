@@ -281,8 +281,8 @@ export function AppLayout() {
                   height={120}
                   decoding="async"
                   className={cn(
-                    "block h-[3rem] w-auto max-h-none object-contain object-center sm:h-[3.5rem] md:h-[4.5rem] lg:h-[5rem]",
-                    scrolled && "h-[2.65rem] sm:h-[3.1rem] md:h-[3.75rem] lg:h-[4.1rem]",
+                    "block h-[4rem] w-auto max-h-none object-contain object-center scale-150 origin-center sm:h-[4.5rem] md:h-[5rem] lg:h-[6rem] xl:h-[6.5rem] transition-all",
+                    scrolled && "h-[3.25rem] scale-125 sm:h-[3.75rem] md:h-[4.25rem] lg:h-[4.75rem] xl:h-[5rem]",
                   )}
                 />
               </Link>

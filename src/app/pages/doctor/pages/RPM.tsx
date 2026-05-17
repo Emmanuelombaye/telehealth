@@ -109,7 +109,7 @@ export function DoctorRPMPage() {
         <Card className="border-amber-300 bg-amber-50">
           <CardContent className="p-4 text-sm text-amber-900">
             <p className="font-bold mb-1">RPM table not yet provisioned.</p>
-            <p>Apply <code className="font-mono bg-white px-2 py-0.5 rounded">supabase_vital_readings.sql</code> in your Supabase SQL editor to enable live device telemetry.</p>
+            <p>Apply <code className="font-mono bg-white px-2 py-0.5 rounded">supabase_vital_readings.sql</code> in your database SQL editor to enable live device telemetry.</p>
           </CardContent>
         </Card>
       )}
