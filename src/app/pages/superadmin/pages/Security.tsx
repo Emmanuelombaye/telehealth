@@ -151,8 +151,9 @@ export function SuperAdminSecurityPage() {
       const actorEmail = adminUser?.email || "superadmin@peak-health.io";
       const actionName = `Firewall Rule: Blocked IP ${t.ip}`;
       
-      // 2. Dispatch real-time audit write to Supabase
+      // 2. Dispatch real-time audit write to database
       const { error } = await supabase.from("admin_audit_logs").insert([{
+        actor_id: adminUser?.id,
         actor_email: actorEmail,
         role: adminRole || "super_admin",
         brand_scope: t.brand,
@@ -188,8 +189,9 @@ export function SuperAdminSecurityPage() {
       setExportingSIEM(true);
       const actorEmail = adminUser?.email || "superadmin@peak-health.io";
       
-      // Dispatch SIEM audit write to Supabase
+      // Dispatch SIEM audit write to database
       const { error } = await supabase.from("admin_audit_logs").insert([{
+        actor_id: adminUser?.id,
         actor_email: actorEmail,
         role: adminRole || "super_admin",
         brand_scope: t.brand,
