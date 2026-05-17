@@ -195,6 +195,7 @@ export function MessagesPage() {
         {/* Header */}
         <div className="flex items-center gap-3 pb-4 border-b border-border mb-4 shrink-0">
           <button
+            type="button"
             onClick={() => { setActiveThread(null); setMessages([]); }}
             className="p-1.5 rounded-xl hover:bg-accent transition-colors"
           >
@@ -254,18 +255,24 @@ export function MessagesPage() {
 
         {/* Input */}
         <div className="flex items-center gap-2 pt-3 border-t border-border shrink-0">
-          <button className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors">
+          <button type="button" className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors">
             <Paperclip className="h-4 w-4" />
           </button>
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()}
+            onKeyDown={e => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
             className="flex-1 bg-muted rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
             placeholder={`Message ${activeThread.name}...`}
             autoFocus
           />
           <Button
+            type="button"
             size="sm"
             className="rounded-xl h-10 w-10 p-0 shadow-md"
             onClick={handleSend}
@@ -322,6 +329,7 @@ export function MessagesPage() {
           <>
             {filteredThreads.map((thread) => (
               <button
+                type="button"
                 key={thread.id}
                 onClick={() => setActiveThread(thread)}
                 className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-accent transition-colors text-left group"
