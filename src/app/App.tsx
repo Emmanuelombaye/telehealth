@@ -5,7 +5,7 @@ import { useAuthStore } from '../lib/auth-store';
 import { usePatientStore } from '../lib/patient-store';
 import { router } from './routes';
 import { runProductionPreflight } from '../lib/productionPreflight';
-import { ShieldAlert, Terminal, Lock, HelpCircle, Check } from 'lucide-react';
+import { ShieldAlert, Terminal, Lock, HelpCircle, EyeOff, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function App() {
@@ -20,6 +20,9 @@ export default function App() {
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockedIP, setBlockedIP] = useState('');
   const [blockDetails, setBlockDetails] = useState<any>(null);
+
+  // Window Focus Blur Guard (Conceals PHI and blocks screenshot capture attempts)
+  const [isWindowFocused, setIsWindowFocused] = useState(true);
 
   useEffect(() => {
     if (preflightDone.current) return;
@@ -63,12 +66,10 @@ export default function App() {
   useEffect(() => {
     async function runSecurityAudit() {
       try {
-        // 1. Fetch the user's public IP securely
         const res = await fetch('https://api.ipify.org?format=json');
         const data = await res.json();
         const clientIP = data.ip;
         
-        // 2. Check if this IP is registered in the database blocks or local storage firewall rules
         const { data: dbBlock } = await supabase
           .from('admin_audit_logs')
           .select('actor_email, detail')
@@ -79,7 +80,6 @@ export default function App() {
         const localBlockedString = localStorage.getItem('peak_health_blocked_ips') || '[]';
         const localBlockedList = JSON.parse(localBlockedString) as string[];
 
-        // Check if current IP or simulated IP matches any blocked targets
         if (dbBlock || localBlockedList.includes(clientIP) || localBlockedList.includes('simulate_local_block')) {
           setIsBlocked(true);
           setBlockedIP(clientIP);
@@ -91,14 +91,12 @@ export default function App() {
           });
         }
       } catch (err) {
-        // Fallback silently in case of network lookup limits, maintaining high uptime
         console.log('[Firewall Shield] Security audit active.');
       }
     }
 
     void runSecurityAudit();
 
-    // Set up a listener for real-time firewall block updates
     const channel = supabase
       .channel('firewall_live_sync')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'admin_audit_logs' }, () => {
@@ -111,13 +109,68 @@ export default function App() {
     };
   }, []);
 
+  // ACTIVE ANTI-SCREENSHOT & FOCUS LOSS CONCEALMENT:
+  useEffect(() => {
+    const handleFocus = () => setIsWindowFocused(true);
+    const handleBlur = () => {
+      // Blur the viewport when window loses focus (e.g. Snipping tool, print-screen overlays, out of focus)
+      setIsWindowFocused(false);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    // Prevent PrintScreen key captures, copy attempts, and context menus globally on HIPAA portals
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'PrintScreen') {
+        e.preventDefault();
+        navigator.clipboard.writeText(''); // Wipe clipboard instantly
+        toast.error('Security Alert: Screenshots are restricted on clinical portals.');
+      }
+      
+      // Block Ctrl+C / Cmd+C copy attempts
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        e.preventDefault();
+        toast.error('Security Alert: Clipboard operations are restricted to protect patient files.');
+      }
+
+      // Block Inspect Console shortcuts (F12, Ctrl+Shift+I)
+      if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i'))) {
+        e.preventDefault();
+        toast.error('Security Alert: Developer debugging console is locked under clinical policy.');
+      }
+    };
+
+    const handleCopy = (e: ClipboardEvent) => {
+      e.preventDefault();
+      toast.error('Security Alert: Copying of protected medical records is restricted.');
+    };
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      toast.error('Security Alert: Right-click context menus are restricted on HIPAA portals.');
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('copy', handleCopy);
+    window.addEventListener('contextmenu', handleContextMenu);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('copy', handleCopy);
+      window.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
+
   const handleReleaseBlock = () => {
     localStorage.removeItem('peak_health_blocked_ips');
     setIsBlocked(false);
     toast.success('Firewall rule released successfully!');
   };
 
-  // IF FIREWALL BLOCKS INBOUND TRAFFIC: Enforce absolute lockdown, unmounting the application router
+  // 1. IF FIREWALL BLOCKS INBOUND TRAFFIC: Enforce absolute lockdown, unmounting the application router
   if (isBlocked) {
     return (
       <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950 text-slate-100 font-sans p-6">
@@ -126,18 +179,16 @@ export default function App() {
         <div className="w-full max-w-2xl bg-slate-900/50 border border-red-500/20 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden space-y-8 animate-in fade-in duration-700">
           <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-red-600 via-amber-600 to-red-600 animate-pulse" />
           
-          {/* Lock Icon */}
           <div className="flex justify-center">
             <div className="h-16 w-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 animate-bounce">
               <ShieldAlert className="h-8 w-8" />
             </div>
           </div>
 
-          {/* Heading */}
           <div className="text-center space-y-2">
-            <Badge className="bg-red-500/10 text-red-400 border border-red-500/20 font-black text-[9px] uppercase tracking-widest px-3 py-1">
+            <div className="inline-flex rounded-full bg-red-500/10 text-red-400 border border-red-500/20 font-black text-[9px] uppercase tracking-widest px-3 py-1">
               Active Firewall Block
-            </Badge>
+            </div>
             <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white uppercase">Access Denied</h2>
             <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
               Your connection has been terminated by the Peak Health Security Operations Center (SOC) due to suspicious, hostile access attempts. 
@@ -145,7 +196,6 @@ export default function App() {
             </p>
           </div>
 
-          {/* Forensic Data Table */}
           <div className="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-5 font-mono text-[10px] space-y-3.5 relative">
             <div className="absolute top-3 right-3 flex items-center gap-1.5 text-[8px] font-black uppercase text-slate-500 tracking-wider">
               <Terminal className="h-3 w-3" /> Forensic Logs
@@ -171,7 +221,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button 
               onClick={() => window.open('mailto:security@peak-health.io')}
@@ -186,7 +235,6 @@ export default function App() {
               <Lock className="h-4 w-4" /> Bypass / Release Lock (Admin Test)
             </button>
           </div>
-
         </div>
       </div>
     );
@@ -194,7 +242,35 @@ export default function App() {
 
   return (
     <>
-      <RouterProvider router={router} />
+      {/* 2. ANTI-SCREENSHOT FOCUS OBSCUREMENT: Conceals viewports out of focus */}
+      <div className={!isWindowFocused ? "filter blur-2xl select-none pointer-events-none transition-all duration-300" : "transition-all duration-300"}>
+        <RouterProvider router={router} />
+      </div>
+
+      {!isWindowFocused && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/90 text-slate-100 font-sans p-6 backdrop-blur-2xl transition-all duration-300 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-slate-900/40 border border-emerald-500/20 rounded-[2rem] p-8 md:p-10 shadow-2xl relative text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <EyeOff className="h-6 w-6 animate-pulse" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="inline-flex rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-black text-[8px] uppercase tracking-widest px-3 py-1">
+                <ShieldCheck className="h-3 w-3 inline mr-1" /> PHI Secure Shield
+              </div>
+              <h3 className="text-lg font-black tracking-tight uppercase text-white">Protected Clinical Record</h3>
+              <p className="text-[11px] text-slate-400 leading-relaxed max-w-xs mx-auto">
+                To prevent unauthorized screenshots and comply with HIPAA security guidelines, medical records are temporarily concealed while the browser is out of focus.
+              </p>
+            </div>
+            <div className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">
+              Focus browser window to resume
+            </div>
+          </div>
+        </div>
+      )}
+
       <Toaster position="top-right" />
     </>
   );

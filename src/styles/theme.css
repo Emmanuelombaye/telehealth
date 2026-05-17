@@ -337,3 +337,23 @@
   background-size: 200% auto;
   animation: shimmer 3s linear infinite;
 }
+
+/* HIPAA & PHI ACCESS HARDENING: Anti-Screenshot, Anti-Print, and Selection Guards */
+@media print {
+  body, html, #root {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+}
+
+/* Restrict text selection on HIPAA clinical components to prevent direct copying */
+.phi-protected-zone,
+.phi-protected-zone *,
+[role="grid"],
+[role="table"] {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -ms-user-select: none !important;
+  -moz-user-select: none !important;
+}
