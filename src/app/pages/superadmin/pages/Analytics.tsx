@@ -222,22 +222,47 @@ export function SuperAdminAnalyticsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 mb-8">
         {[
-          { label: "Aggregate Revenue", value: `$${totalMRR.toLocaleString()}`, icon: CreditCard, bg: "bg-emerald-50", fg: "text-emerald-700" },
-          { label: "Unique Identities", value: uniquePatientsCount.toLocaleString(), icon: Users, bg: "bg-slate-100", fg: "text-slate-800" },
-          { label: "Active Operations", value: totalOrdersCount.toLocaleString(), icon: Package, bg: "bg-emerald-50", fg: "text-emerald-800" },
-          { label: "Clinical Approval", value: `${approvalRate}%`, icon: CheckCircle2, bg: "bg-[#0A2E1F]/5", fg: "text-[#0A2E1F]" },
+          { label: "Aggregate Revenue", value: `$${totalMRR.toLocaleString()}`, icon: CreditCard, color: "emerald", desc: "Gross platform settlement" },
+          { label: "Unique Identities", value: uniquePatientsCount.toLocaleString(), icon: Users, color: "gold", desc: "Total patient reach" },
+          { label: "Active Operations", value: totalOrdersCount.toLocaleString(), icon: Package, color: "indigo", desc: "Total platform volume" },
+          { label: "Clinical Approval", value: `${approvalRate}%`, icon: CheckCircle2, color: "rose", desc: "Approval conversion rate" },
         ].map((s, i) => (
-          <Card key={i} className={cn(saPanel, "border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white")}>
-            <CardContent className="flex flex-col gap-2 p-5 sm:p-6">
-              <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", s.bg, s.fg)}>
-                <s.icon className="h-5 w-5" />
-              </div>
-              <p className="text-3xl mt-2 font-black tracking-tighter text-slate-900 leading-none">{s.value}</p>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{s.label}</p>
-            </CardContent>
-          </Card>
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="h-full"
+          >
+            <Card className="group border-none shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-[2rem] p-6 sm:p-8 bg-white hover:bg-[#0A2E1F] hover:text-white hover:shadow-[0_20px_40px_rgba(10,46,31,0.2)] transition-all duration-500 cursor-pointer relative overflow-hidden h-full flex flex-col justify-between">
+               <div className="absolute top-0 right-0 p-4 sm:p-6 opacity-[0.03] group-hover:opacity-10 transition-opacity">
+                  <s.icon className="h-16 w-16 sm:h-24 sm:w-24" />
+               </div>
+               
+               <div className="flex items-center justify-between mb-6 sm:mb-10 relative z-10">
+                  <div className={cn(
+                    "h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-sm",
+                    s.color === 'emerald' ? "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white group-hover:shadow-emerald-500/30" :
+                    s.color === 'gold' ? "bg-amber-50 text-amber-600 group-hover:bg-amber-500 group-hover:text-white group-hover:shadow-amber-500/30" :
+                    s.color === 'indigo' ? "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-500 group-hover:text-white group-hover:shadow-indigo-500/30" :
+                    "bg-rose-50 text-rose-600 group-hover:bg-rose-500 group-hover:text-white group-hover:shadow-rose-500/30"
+                  )}>
+                    <s.icon className="h-6 w-6 sm:h-7 sm:w-7" />
+                  </div>
+               </div>
+
+               <div className="relative z-10">
+                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tighter italic mb-2 drop-shadow-sm">{s.value}</h2>
+                 <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 group-hover:text-emerald-300 transition-colors mb-2 sm:mb-4">{s.label}</p>
+                 <div className="h-px w-8 bg-slate-100 group-hover:bg-emerald-500/30 mb-3 sm:mb-4 transition-colors" />
+                 <p className="text-[9px] font-bold text-slate-300 group-hover:text-white/50 uppercase tracking-widest leading-relaxed transition-colors">
+                   {s.desc}
+                 </p>
+               </div>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
