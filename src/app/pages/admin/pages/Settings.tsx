@@ -400,62 +400,67 @@ export function AdminSettingsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] overflow-y-auto bg-slate-900/40 backdrop-blur-xl p-4 md:p-10 flex justify-center items-start md:items-center"
+              className="fixed inset-0 z-[100] overflow-y-auto bg-slate-900/40 backdrop-blur-xl p-4 flex justify-center items-center"
             >
               <motion.div 
-                initial={{ scale: 0.9, opacity: 0, y: 40 }}
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 40 }}
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="relative my-auto w-full max-w-lg bg-white border border-slate-100 rounded-[2.5rem] p-8 md:p-10 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] text-left overflow-hidden"
+                className="relative my-auto w-full max-w-md bg-white border border-slate-100 rounded-[2rem] p-6 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.12)] text-left overflow-hidden"
               >
-                <div className="relative z-10 flex items-center gap-4 mb-8">
-                  <div className="h-14 w-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
-                    <Plus className="h-7 w-7" />
+                <div className="relative z-10 flex items-center gap-3 mb-6">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
+                    <Plus className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-slate-800">Inject Variable</h2>
-                    <p className="text-xs text-slate-500 font-medium">Add a new variable node to the global system matrix.</p>
+                    <h2 className="text-xl font-bold tracking-tight text-slate-800">Inject Variable</h2>
+                    <p className="text-[11px] text-slate-500 font-medium">Add a new global system variable node.</p>
                   </div>
                 </div>
                 
                 <div className="relative z-10 space-y-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">Key (Internal identifier)</label>
+                    <label className="text-[9px] font-bold uppercase text-slate-400 tracking-wider ml-1">Key (Internal identifier)</label>
                     <input 
-                      className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white shadow-sm rounded-xl px-4 py-3.5 text-xs font-bold text-slate-955 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300 transition-all placeholder:text-slate-400 shadow-inner"
+                      className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white shadow-sm rounded-xl px-4 py-2.5 text-xs font-bold text-slate-955 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300 transition-all placeholder:text-slate-400 shadow-inner"
                       placeholder="e.g. PLATFORM_FEE"
                       value={newSetting.key}
                       onChange={e => setNewSetting({...newSetting, key: e.target.value})}
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">Initial Value</label>
-                    <input 
-                      className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white shadow-sm rounded-xl px-4 py-3.5 text-xs font-bold text-slate-955 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300 transition-all placeholder:text-slate-400 shadow-inner"
-                      placeholder="Value (or 'true'/'false' for toggles)"
-                      value={newSetting.value}
-                      onChange={e => setNewSetting({...newSetting, value: e.target.value})}
-                    />
+
+                  {/* 2-Column Grid for Value & Category to save substantial height */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase text-slate-400 tracking-wider ml-1">Initial Value</label>
+                      <input 
+                        className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white shadow-sm rounded-xl px-4 py-2.5 text-xs font-bold text-slate-955 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300 transition-all placeholder:text-slate-400 shadow-inner"
+                        placeholder="e.g. true"
+                        value={newSetting.value}
+                        onChange={e => setNewSetting({...newSetting, value: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase text-slate-400 tracking-wider ml-1">Category</label>
+                      <select 
+                        className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white shadow-sm rounded-xl px-4 py-2.5 text-xs font-bold text-slate-955 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300 transition-all appearance-none cursor-pointer"
+                        value={newSetting.category}
+                        onChange={e => setNewSetting({...newSetting, category: e.target.value})}
+                      >
+                        <option value="general">General</option>
+                        <option value="security">Security</option>
+                        <option value="notifications">Notifications</option>
+                        <option value="integrations">Integrations</option>
+                        <option value="billing">Billing</option>
+                      </select>
+                    </div>
                   </div>
+
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">Matrix Category</label>
-                    <select 
-                      className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white shadow-sm rounded-xl px-4 py-3.5 text-xs font-bold text-slate-955 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300 transition-all appearance-none cursor-pointer"
-                      value={newSetting.category}
-                      onChange={e => setNewSetting({...newSetting, category: e.target.value})}
-                    >
-                      <option value="general">General</option>
-                      <option value="security">Security</option>
-                      <option value="notifications">Notifications</option>
-                      <option value="integrations">Integrations</option>
-                      <option value="billing">Billing</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">Description (Optional)</label>
+                    <label className="text-[9px] font-bold uppercase text-slate-400 tracking-wider ml-1">Description (Optional)</label>
                     <textarea 
-                      className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white shadow-sm rounded-xl px-4 py-3.5 text-xs font-bold text-slate-955 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300 transition-all placeholder:text-slate-400 h-24 resize-none shadow-inner"
+                      className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white shadow-sm rounded-xl px-4 py-2.5 text-xs font-bold text-slate-955 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300 transition-all placeholder:text-slate-400 h-16 resize-none shadow-inner"
                       placeholder="What does this variable control?"
                       value={newSetting.description}
                       onChange={e => setNewSetting({...newSetting, description: e.target.value})}
@@ -463,16 +468,16 @@ export function AdminSettingsPage() {
                   </div>
                 </div>
 
-                <div className="relative z-10 flex gap-3 mt-8">
+                <div className="relative z-10 flex gap-3 mt-6">
                    <Button 
                     variant="ghost" 
-                    className="flex-1 rounded-xl h-12 text-slate-500 font-black uppercase tracking-widest text-[10px] hover:bg-slate-50 border border-slate-200 transition-colors cursor-pointer"
+                    className="flex-1 rounded-xl h-11 text-slate-500 font-bold uppercase tracking-wider text-[10px] hover:bg-slate-50 border border-slate-200 transition-colors cursor-pointer"
                     onClick={() => setIsAddModalOpen(false)}
                   >
                     Abort
                   </Button>
                   <Button 
-                    className="flex-[2] rounded-xl h-12 bg-[#0A2E1F] hover:bg-[#124430] text-white font-black uppercase tracking-widest text-[10px] shadow-md shadow-emerald-950/20 hover:scale-[1.01] transition-all cursor-pointer"
+                    className="flex-[2] rounded-xl h-11 bg-[#0A2E1F] hover:bg-[#124430] text-white font-bold uppercase tracking-wider text-[10px] shadow-md shadow-emerald-950/20 hover:scale-[1.01] transition-all cursor-pointer"
                     onClick={handleAdd}
                   >
                     Sync to Matrix
