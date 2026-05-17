@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, ArrowLeft, GripVertical, Trash2, Loader2 } from "lucide-react";
+import { Plus, ArrowLeft, GripVertical, Trash2, Loader2, CheckCircle2 } from "lucide-react";
 import { Card, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { AdminDataTable, StatusText } from "../../../components/ui/tables/AdminDataTable";
 import { supabase } from "../../../../lib/supabaseClient";
@@ -91,6 +91,10 @@ export function AdminQuestionnairePage() {
   const [questions, setQuestions] = useState<Question[]>([...DEFAULT_QUESTIONS]);
   const [saving, setSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+
+  // Interactive Mobile Preview States
+  const [previewAnswers, setPreviewAnswers] = useState<Record<string, string>>({});
+  const [previewComplete, setPreviewComplete] = useState(false);
 
   const fetchQuestionnaires = useCallback(async () => {
     try {
@@ -396,63 +400,134 @@ export function AdminQuestionnairePage() {
                 <h3 className="text-lg font-bold leading-tight text-white">{formName}</h3>
               </div>
 
-              <div className="flex-1 space-y-6 overflow-y-auto bg-zinc-50 p-5">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-                  <div className="h-full w-1/4 rounded-full bg-[#0A2E1F]" />
-                </div>
-
-                {questions.map((q) => (
-                  <div key={q.id} className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
-                    <p className="text-[15px] font-semibold leading-snug text-slate-900">
-                      {q.title} {q.required && <span className="text-red-600">*</span>}
-                    </p>
-
-                    {q.type === "text" && (
-                      <textarea
-                        disabled
-                        className="w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400"
-                        rows={3}
-                        placeholder="Type your answer here..."
-                      />
-                    )}
-
-                    {q.type === "choice" && (
-                      <div className="space-y-2">
-                        {q.options?.map((opt, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
-                          >
-                            <div className="h-4 w-4 rounded-full border border-slate-300" />
-                            <span className="text-sm text-slate-800">{opt}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {q.type === "yes_no" && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-xl border border-slate-200 bg-white p-3 text-center text-sm font-medium text-slate-800">
-                          Yes
-                        </div>
-                        <div className="rounded-xl border border-slate-200 bg-white p-3 text-center text-sm font-medium text-slate-800">
-                          No
-                        </div>
-                      </div>
-                    )}
+              {previewComplete ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-6 bg-zinc-50 space-y-6 text-center animate-in fade-in zoom-in-95 duration-300">
+                  <div className="h-20 w-20 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+                    <CheckCircle2 className="h-10 w-10 text-emerald-500" />
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <h4 className="text-lg font-black text-slate-800">Preview Complete!</h4>
+                    <p className="text-xs text-slate-400 font-bold mt-2 leading-relaxed">
+                      All required questions validated successfully. This is exactly how the form will perform for patients.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      setPreviewAnswers({});
+                      setPreviewComplete(false);
+                    }}
+                    className="h-11 px-6 rounded-xl bg-[#0A2E1F] text-white text-xs font-bold hover:bg-emerald-950"
+                  >
+                    Reset &amp; Try Again
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex-1 space-y-6 overflow-y-auto bg-zinc-50 p-5">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full w-1/4 rounded-full bg-[#0A2E1F]" />
+                    </div>
 
-              <div className="z-10 border-t border-slate-200 bg-white p-4">
-                <Button 
-                  className="h-12 w-full rounded-xl bg-[#0A2E1F] font-bold text-white hover:bg-[#051810]"
-                  onClick={() => toast.info("Preview mode: this button is non-functional.")}
-                >
-                  Next Step
-                </Button>
+                    {questions.map((q) => (
+                      <div key={q.id} className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
+                        <p className="text-[15px] font-semibold leading-snug text-slate-900">
+                          {q.title} {q.required && <span className="text-red-600">*</span>}
+                        </p>
 
-              </div>
+                        {q.type === "text" && (
+                          <textarea
+                            value={previewAnswers[q.id] || ""}
+                            onChange={(e) => setPreviewAnswers({ ...previewAnswers, [q.id]: e.target.value })}
+                            className="w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0A2E1F] focus:outline-none focus:ring-1 focus:ring-[#0A2E1F]/20"
+                            rows={3}
+                            placeholder="Type your answer here..."
+                          />
+                        )}
+
+                        {q.type === "choice" && (
+                          <div className="space-y-2">
+                            {q.options?.map((opt, idx) => {
+                              const isSelected = previewAnswers[q.id] === opt;
+                              return (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => setPreviewAnswers({ ...previewAnswers, [q.id]: opt })}
+                                  className={cn(
+                                    "w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all",
+                                    isSelected
+                                      ? "border-[#0A2E1F] bg-[#0A2E1F]/5 text-[#0A2E1F] ring-1 ring-[#0A2E1F]"
+                                      : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
+                                  )}
+                                >
+                                  <div className={cn(
+                                    "h-4 w-4 rounded-full border flex items-center justify-center transition-all",
+                                    isSelected ? "border-[#0A2E1F] bg-[#0A2E1F]" : "border-slate-300 bg-white"
+                                  )}>
+                                    {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                                  </div>
+                                  <span className="text-sm font-medium">{opt}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {q.type === "yes_no" && (
+                          <div className="grid grid-cols-2 gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewAnswers({ ...previewAnswers, [q.id]: "Yes" })}
+                              className={cn(
+                                "rounded-xl border p-3 text-center text-sm font-medium transition-all",
+                                previewAnswers[q.id] === "Yes"
+                                  ? "border-emerald-500 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-500"
+                                  : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
+                              )}
+                            >
+                              Yes
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPreviewAnswers({ ...previewAnswers, [q.id]: "No" })}
+                              className={cn(
+                                "rounded-xl border p-3 text-center text-sm font-medium transition-all",
+                                previewAnswers[q.id] === "No"
+                                  ? "border-rose-500 bg-rose-50 text-rose-800 ring-1 ring-rose-500"
+                                  : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
+                              )}
+                            >
+                              No
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="z-10 border-t border-slate-200 bg-white p-4">
+                    <Button 
+                      className="h-12 w-full rounded-xl bg-[#0A2E1F] font-bold text-white hover:bg-[#051810]"
+                      onClick={() => {
+                        const missing = questions.find(q => q.required && !previewAnswers[q.id]);
+                        if (missing) {
+                          toast.error("Form Validation Failed", {
+                            description: `Please answer the required question: "${missing.title}"`
+                          });
+                          return;
+                        }
+                        
+                        toast.success("Verification Success", {
+                          description: "All required questions have been answered perfectly!"
+                        });
+                        setPreviewComplete(true);
+                      }}
+                    >
+                      Next Step
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
