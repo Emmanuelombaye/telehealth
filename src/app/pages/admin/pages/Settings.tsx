@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { 
   Settings, Shield, Globe, Bell, CreditCard, Mail, 
   Lock, ToggleLeft, ToggleRight, Save, Plus, Trash2, 
-  RefreshCw, AlertCircle, Zap, Activity, Check, Database
+  RefreshCw, AlertCircle, Zap, Activity, Check, Database, X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, Button, Badge } from "../../../components/ui/shared.tsx";
@@ -409,6 +409,14 @@ export function AdminSettingsPage() {
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
                 className="relative my-auto w-full max-w-md bg-white border border-slate-100 rounded-[2rem] p-6 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.12)] text-left overflow-hidden"
               >
+                {/* Close Button 'X' */}
+                <button
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer z-20"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+
                 <div className="relative z-10 flex items-center gap-3 mb-6">
                   <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
                     <Plus className="h-5 w-5" />
@@ -503,8 +511,18 @@ export function AdminSettingsPage() {
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative z-[111] my-auto w-full max-w-md bg-white rounded-[2.5rem] overflow-hidden shadow-2xl p-8 border border-slate-100"
+                className="relative z-[111] my-auto w-full max-w-md bg-white rounded-[2rem] overflow-hidden shadow-2xl p-8 border border-slate-100"
               >
+                {/* Close Button 'X' */}
+                <button
+                  onClick={() => {
+                    setDeleteConfirmTarget(null);
+                    setTypedConfirmName("");
+                  }}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer z-20"
+                >
+                  <X className="h-4 w-4" />
+                </button>
                 <div className="relative z-10 flex items-start gap-4">
                   <div className="h-14 w-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0 shadow-sm">
                     <AlertCircle className="h-7 w-7 text-rose-600" />
