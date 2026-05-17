@@ -5,7 +5,7 @@ import {
   CheckCircle2, AlertCircle, Circle, Stethoscope, Pill,
   Phone, ToggleLeft, ToggleRight, Search, Filter, Bell, Zap,
   Activity, HeartPulse, ShieldCheck, Database, Layers, ArrowUpRight,
-  Sparkles, FlaskConical, Bot, Command, Globe, Truck, X, Loader2, RefreshCw
+  Sparkles, FlaskConical, Bot, Command, Globe, Truck, X, Loader2, RefreshCw, ArrowLeft
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, Input, cn } from "../../../components/ui/shared.tsx";
 import { DoctorPageHeader } from "../../../components/doctor/DoctorPageHeader";
@@ -317,15 +317,35 @@ export function DoctorQueuePage() {
       <AnimatePresence>
         {selectedId && selected && (
           <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/40 backdrop-blur-sm overflow-hidden">
+            <div className="absolute inset-0" onClick={() => setSelectedId(null)} />
             <motion.div
               initial={{ x: "100%", opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="w-full max-w-2xl h-full bg-white shadow-2xl flex flex-col border-l border-slate-200"
+              className="w-full max-w-2xl h-full bg-white shadow-2xl flex flex-col border-l border-slate-200 relative z-10"
             >
-              {/* Sidebar Header */}
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              {/* Sidebar Header Navigation */}
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 sticky top-0 z-10">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setSelectedId(null)} 
+                  className="text-slate-500 hover:bg-white hover:text-[#0A2E1F] font-black uppercase text-[10px] tracking-widest gap-2 h-9 px-3 rounded-lg border border-slate-200"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Back to Queue
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setSelectedId(null)}
+                  className="rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {/* Patient Identity Header */}
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-xl text-emerald-800">
                     {selected.patientName.charAt(0)}
@@ -339,14 +359,6 @@ export function DoctorQueuePage() {
                     </div>
                   </div>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => setSelectedId(null)}
-                  className="rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
               </div>
 
               <div className="px-6 py-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 to-white flex gap-2">
