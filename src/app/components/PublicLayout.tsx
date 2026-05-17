@@ -467,7 +467,7 @@ export function PublicLayout() {
                     <span className="text-[13px] text-slate-500">Muscle Recovery</span>
                   </li>
                   <li className="flex flex-col gap-0.5">
-                    <span className="text-[16px] text-slate-700">Peptides</span>
+                    <span className="text-[16px] text-slate-700">Bio-Optimizers</span>
                     <span className="text-[13px] text-slate-500">Coming Soon</span>
                   </li>
                 </ul>
