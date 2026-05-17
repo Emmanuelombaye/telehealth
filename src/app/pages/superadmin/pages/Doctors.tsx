@@ -161,7 +161,7 @@ export function SuperAdminDoctorsPage() {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('doctor_invitations').insert([{
+      const invitePromise = supabase.from('doctor_invitations').insert([{
         invited_by: user?.id || null,
         email: invEmail.trim().toLowerCase(),
         full_name: invFullName.trim(),
@@ -172,7 +172,14 @@ export function SuperAdminDoctorsPage() {
         calendly_url: invCalendly || null,
         status: 'pending',
       }]);
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Database request timed out. Please verify that the 'doctor_invitations' table exists and is not locked in Supabase.")), 10000)
+      );
+
+      const { error } = await Promise.race([invitePromise, timeoutPromise]) as any;
       if (error) throw error;
+      
       toast.success(`Invitation sent to ${invEmail}`);
       resetInviteForm();
       setShowInviteModal(false);
