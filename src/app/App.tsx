@@ -111,56 +111,12 @@ export default function App() {
 
   // ACTIVE ANTI-SCREENSHOT & FOCUS LOSS CONCEALMENT:
   useEffect(() => {
+    // Developer Mode: Security restrictions (F12 block, blur on focus loss, right-click block) disabled for coding
     const handleFocus = () => setIsWindowFocused(true);
-    const handleBlur = () => {
-      // Blur the viewport when window loses focus (e.g. Snipping tool, print-screen overlays, out of focus)
-      setIsWindowFocused(false);
-    };
-
     window.addEventListener('focus', handleFocus);
-    window.addEventListener('blur', handleBlur);
-
-    // Prevent PrintScreen key captures, copy attempts, and context menus globally on HIPAA portals
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'PrintScreen') {
-        e.preventDefault();
-        navigator.clipboard.writeText(''); // Wipe clipboard instantly
-        toast.error('Security Alert: Screenshots are restricted on clinical portals.');
-      }
-      
-      // Block Ctrl+C / Cmd+C copy attempts
-      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-        e.preventDefault();
-        toast.error('Security Alert: Clipboard operations are restricted to protect patient files.');
-      }
-
-      // Block Inspect Console shortcuts (F12, Ctrl+Shift+I)
-      if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i'))) {
-        e.preventDefault();
-        toast.error('Security Alert: Developer debugging console is locked under clinical policy.');
-      }
-    };
-
-    const handleCopy = (e: ClipboardEvent) => {
-      e.preventDefault();
-      toast.error('Security Alert: Copying of protected medical records is restricted.');
-    };
-
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      toast.error('Security Alert: Right-click context menus are restricted on HIPAA portals.');
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('copy', handleCopy);
-    window.addEventListener('contextmenu', handleContextMenu);
 
     return () => {
       window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('blur', handleBlur);
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('copy', handleCopy);
-      window.removeEventListener('contextmenu', handleContextMenu);
     };
   }, []);
 
