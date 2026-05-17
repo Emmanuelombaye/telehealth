@@ -397,23 +397,23 @@ export function PublicLayout() {
       </main>
 
       {/* TRUST & PARTNERSHIPS BAND */}
-      <div className="bg-slate-50 border-t border-slate-100 py-16 px-6 lg:px-20 relative overflow-hidden">
-         <div className="max-w-7xl mx-auto">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-center text-slate-400 mb-10">Trusted By Elite Organizations</p>
-            <div className="flex flex-wrap justify-center gap-12 md:gap-24 items-center opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
-               <div className="flex items-center gap-2"><ShieldCheck className="h-6 w-6 text-emerald-600"/><span className="text-xl font-black tracking-tighter uppercase text-slate-800">LegitScript</span></div>
-               <div className="flex items-center gap-2"><Activity className="h-6 w-6 text-emerald-600"/><span className="text-xl font-bold tracking-widest text-slate-800">AHA VERIFIED</span></div>
-               <div className="flex items-center gap-2"><Lock className="h-6 w-6 text-emerald-600"/><span className="text-xl font-serif italic font-bold text-slate-800">HIPAA Secure</span></div>
-               <div className="flex items-center gap-2"><Globe2 className="h-6 w-6 text-emerald-600"/><span className="text-xl font-black uppercase tracking-tight text-slate-800">GlobalHealth</span></div>
+      <div className="bg-slate-50 border-t border-slate-100 py-6 px-6 relative overflow-hidden">
+         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-4 md:gap-12">
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Trusted By:</span>
+            <div className="flex flex-wrap justify-center gap-6 md:gap-10 items-center">
+               <div className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-600"/><span className="text-[11px] font-black tracking-widest uppercase text-slate-700">LegitScript</span></div>
+               <div className="flex items-center gap-1.5"><Activity className="h-4 w-4 text-emerald-600"/><span className="text-[11px] font-black tracking-widest uppercase text-slate-700">AHA VERIFIED</span></div>
+               <div className="flex items-center gap-1.5"><Lock className="h-4 w-4 text-emerald-600"/><span className="text-[11px] font-bold tracking-widest uppercase text-slate-700">HIPAA Secure</span></div>
+               <div className="flex items-center gap-1.5"><Globe2 className="h-4 w-4 text-emerald-600"/><span className="text-[11px] font-black uppercase tracking-widest text-slate-700">GlobalHealth</span></div>
             </div>
          </div>
       </div>
 
       {/* FOOTER */}
-      <footer className="bg-white pt-24 pb-12 px-6 lg:px-20 overflow-hidden relative">
-        <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-emerald-50/40 rounded-full blur-[120px] -mr-96 -mb-96 pointer-events-none"></div>
+      <footer className="bg-white pt-16 pb-10 px-6 lg:px-20 overflow-hidden relative">
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-emerald-50/40 rounded-full blur-[100px] -mr-64 -mb-64 pointer-events-none"></div>
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-16 mb-24">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 mb-16">
             
             <div className="lg:col-span-2 space-y-8">
               <Link to="/" className="flex items-center group w-fit">
