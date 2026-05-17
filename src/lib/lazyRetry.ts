@@ -6,17 +6,21 @@
 export function lazyRetry<T extends { default: any }>(componentImport: () => Promise<T>): Promise<T> {
   return componentImport().catch((error) => {
     // Check if the error is a "Failed to fetch" error (Chrome/Firefox/Safari vary slightly)
+    const errorMessage = error?.message || '';
     const isChunkLoadError = 
-      error.name === 'ChunkLoadError' || 
-      /failed to fetch/i.test(error.message) ||
-      /dynamically imported module/i.test(error.message);
+      error?.name === 'ChunkLoadError' || 
+      /failed to fetch/i.test(errorMessage) ||
+      /dynamically imported module/i.test(errorMessage);
 
     if (isChunkLoadError) {
-      // If we haven't reloaded yet for this specific session, try once
-      const hasReloaded = window.sessionStorage.getItem('chunk-reload-occurred');
+      // Extract the failed chunk URL or hash to key the reload once per unique asset
+      const chunkUrl = errorMessage.split(': ').pop() || 'unknown-chunk';
+      const storageKey = `chunk-reload-${chunkUrl}`;
+      const hasReloaded = window.sessionStorage.getItem(storageKey);
       
       if (!hasReloaded) {
-        window.sessionStorage.setItem('chunk-reload-occurred', 'true');
+        console.warn("[lazyRetry] Chunk load failure detected. Reloading page to fetch latest build asset map...", chunkUrl);
+        window.sessionStorage.setItem(storageKey, 'true');
         window.location.reload();
       }
     }

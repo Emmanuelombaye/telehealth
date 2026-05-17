@@ -28,6 +28,21 @@
       #root { height: 100%; }
       * { -webkit-tap-highlight-color: transparent; }
     </style>
+    <!-- GLOBAL CHUNK ERROR AUTO-RECOVERY -->
+    <script>
+      window.addEventListener('error', function(e) {
+        var msg = e.message || '';
+        if (msg.indexOf('Failed to fetch dynamically imported module') > -1 || msg.indexOf('ChunkLoadError') > -1) {
+          var chunkUrl = msg.split(': ').pop() || 'unknown-chunk';
+          var storageKey = 'chunk-reload-' + chunkUrl;
+          if (!window.sessionStorage.getItem(storageKey)) {
+            console.warn('[Auto-Recovery] Dynamic import failed, reloading page...', chunkUrl);
+            window.sessionStorage.setItem(storageKey, 'true');
+            window.location.reload();
+          }
+        }
+      }, true);
+    </script>
   </head>
   <body>
     <div id="root"></div>
