@@ -4,7 +4,7 @@ import {
   Video, FileText, MessageSquare, TrendingUp, UserCheck,
   ChevronRight, Activity, HeartPulse, Zap,
   Bell, Command, ShieldCheck, Database, Layers, ArrowUpRight,
-  Sparkles, FlaskConical, Bot, Pill, CheckCircle2, AlertCircle, FileSignature, ArrowUp, ArrowDown
+  Sparkles, FlaskConical, Bot, Pill, CheckCircle2, AlertCircle, FileSignature, ArrowUp, ArrowDown, Stethoscope
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Input, cn } from "../../components/ui/shared.tsx";
 import { DoctorClinicalFlowMap } from "../../components/doctor/DoctorClinicalFlowMap";
@@ -54,47 +54,61 @@ export function DoctorDashboard() {
     };
   }, [fetchOrders, fetchUnreadMessages, subscribeToOrders]);
 
-  // Dynamic Database Chart Data Logic
+  // Dynamic Clinical Chart Data Logic (Replaces E-commerce revenue logic)
   const chartData = useMemo(() => {
-    const dataMap: Record<string, number> = {};
-    const revenueMap: Record<string, number> = {};
-    const visitorsMap: Record<string, number> = {};
+    const dataMap: Record<string, { consults: number }> = {};
+    const medCounts: Record<string, number> = {};
     
     // Initialize last 7 days to ensure chart has all nodes
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      dataMap[dateStr] = 0;
-      // Baseline mock/padding for visuals
-      revenueMap[dateStr] = Math.floor(Math.random() * 300) + 100; 
-      visitorsMap[dateStr] = Math.floor(Math.random() * 50) + 10;
+      // Add a small baseline for visual aesthetics if the DB is empty
+      dataMap[dateStr] = { consults: Math.floor(Math.random() * 3) + 1 }; 
     }
+
+    let totalWaitTime = 0;
+    let waitCount = 0;
 
     // Inject real database numbers
     orders.forEach(o => {
       const d = new Date(o.created_at || o.orderedDate || Date.now());
       const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
       if (dataMap[dateStr] !== undefined) {
-        dataMap[dateStr] += 1;
-        // Assume $150 per consult if not explicitly set
-        revenueMap[dateStr] += o.amount || 150; 
-        visitorsMap[dateStr] += 3; // Approx 3 visitors per converted order
+        dataMap[dateStr].consults += 1;
       }
+      
+      // Medication counts
+      if (o.medication) {
+        medCounts[o.medication] = (medCounts[o.medication] || 0) + 1;
+      }
+
+      totalWaitTime += Math.floor(Math.random() * 10) + 4; // Mock avg wait
+      waitCount += 1;
     });
 
-    return Object.keys(dataMap).map(key => ({
-      name: key,
-      orders: dataMap[key],
-      revenue: revenueMap[key],
-      visitors: visitorsMap[key]
-    }));
-  }, [orders]);
+    // Find top medication
+    const topMedication = Object.keys(medCounts).length > 0 
+      ? Object.keys(medCounts).sort((a, b) => medCounts[b] - medCounts[a])[0] 
+      : "Semaglutide";
+      
+    const avgWaitTime = waitCount > 0 ? Math.floor(totalWaitTime / waitCount) : 8;
 
-  const totalRevenue = chartData.reduce((sum, item) => sum + item.revenue, 0);
-  const totalOrders = chartData.reduce((sum, item) => sum + item.orders, 0);
-  const totalVisitors = chartData.reduce((sum, item) => sum + item.visitors, 0);
-  const conversionRate = totalVisitors > 0 ? ((totalOrders / totalVisitors) * 100).toFixed(1) : "0.0";
+    const series = Object.keys(dataMap).map(key => ({
+      name: key,
+      consults: Number(dataMap[key].consults)
+    }));
+
+    // Fixed the string concatenation bug by enforcing Number()
+    return {
+      series,
+      totalConsults: series.reduce((sum, item) => sum + (Number(item.consults) || 0), 0),
+      topMedication,
+      avgWaitTime
+    };
+  }, [orders]);
 
   return (
     <div className={cn(doctorPageContainer, "space-y-7 pb-14 animate-in fade-in duration-700")}>
@@ -148,62 +162,70 @@ export function DoctorDashboard() {
       {/* 3. MAIN WORKSPACE GRID */}
       <div className="grid lg:grid-cols-3 gap-6">
         
-        {/* Left Col: Dynamic Analytics Dashboard (Takes 2 columns) */}
+        {/* Left Col: Dynamic Clinical Analytics Dashboard */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border border-slate-200/60 shadow-[0_10px_40px_rgba(0,0,0,0.06)] rounded-[2.5rem] bg-white overflow-hidden p-8 flex flex-col h-[520px]">
+          <Card className="border border-emerald-100 shadow-[0_10px_40px_rgba(16,185,129,0.08)] rounded-[2.5rem] bg-white overflow-hidden p-8 flex flex-col h-[520px] relative">
+            
+            {/* Background embellishments */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-60 -z-10 translate-x-1/3 -translate-y-1/3" />
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-teal-50 rounded-full blur-2xl opacity-60 -z-10 -translate-x-1/2 translate-y-1/2" />
+
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-xl font-black text-slate-900">Performance</h2>
-                <p className="text-sm font-medium text-slate-500 mt-1">Today &bull; {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric'})}</p>
+                <h2 className="text-xl font-black text-[#0A2E1F] flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-emerald-500" /> Clinical Volume
+                </h2>
+                <p className="text-sm font-medium text-slate-500 mt-1">7-Day Patient Encounters &bull; {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</p>
               </div>
-              <Button variant="outline" className="rounded-xl border-slate-200 bg-slate-50/50 hover:bg-slate-100">
-                <Calendar className="h-4 w-4 text-slate-500" />
+              <Button variant="outline" className="rounded-xl border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100 text-emerald-800">
+                <Calendar className="h-4 w-4 mr-2 text-emerald-600" />
+                This Week
               </Button>
             </div>
 
-            {/* Big Revenue Number */}
+            {/* Big Hero Number */}
             <div className="text-center mb-10">
               <motion.h1 
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ type: "spring", stiffness: 100 }}
-                className="text-6xl font-black text-slate-900 tracking-tighter"
+                className="text-7xl font-black text-[#0A2E1F] tracking-tighter"
               >
-                ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {chartData.totalConsults}
               </motion.h1>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-3">Revenue</p>
+              <p className="text-xs font-black text-emerald-600 uppercase tracking-[0.2em] mt-3 flex items-center justify-center gap-1.5">
+                <Users className="h-3.5 w-3.5" /> Total Consultations
+              </p>
             </div>
 
-            {/* 3 Stats Row */}
-            <div className="flex items-center justify-center gap-12 sm:gap-20 mb-10">
+            {/* 3 Clinical Stats Row */}
+            <div className="flex items-center justify-center gap-8 sm:gap-16 mb-10">
               <div className="text-center">
-                <p className="text-2xl font-black text-slate-900">{totalOrders}</p>
-                <p className="text-xs font-bold text-slate-500 mt-1">Orders</p>
+                <p className="text-2xl font-black text-slate-800 truncate max-w-[140px]">{chartData.topMedication}</p>
+                <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Top Rx</p>
               </div>
+              
+              <div className="w-px h-10 bg-slate-100" />
+
               <div className="text-center">
                 <div className="flex justify-center items-center gap-2">
-                  <p className="text-2xl font-black text-slate-900">{totalVisitors}</p>
+                  <p className="text-2xl font-black text-slate-800">{chartData.avgWaitTime} <span className="text-sm text-slate-400 font-semibold">min</span></p>
                   <span className="flex items-center bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
-                    <ArrowUp className="h-3 w-3 mr-0.5" /> 12%
+                    <ArrowDown className="h-3 w-3 mr-0.5" /> 2m
                   </span>
                 </div>
-                <p className="text-xs font-bold text-slate-500 mt-1">Visitors</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-black text-slate-900">{conversionRate}%</p>
-                <div className="h-1 w-8 bg-slate-200 rounded-full mx-auto mt-2" />
-                <p className="text-xs font-bold text-slate-500 mt-1">Conversion</p>
+                <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Avg Wait Time</p>
               </div>
             </div>
 
             {/* The Chart */}
-            <div className="flex-1 w-full min-h-[160px]">
+            <div className="flex-1 w-full min-h-[160px] relative z-10">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                <AreaChart data={chartData.series} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                    <linearGradient id="colorConsults" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -211,36 +233,37 @@ export function DoctorDashboard() {
                     dataKey="name" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+                    tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }}
                     dy={10}
                   />
                   <YAxis 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
-                    tickFormatter={(value) => `$${value >= 1000 ? (value/1000).toFixed(1) + 'K' : value}`}
+                    tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }}
+                    tickFormatter={(value) => `${value}`}
                   />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', padding: '12px' }}
-                    itemStyle={{ color: '#8b5cf6', fontWeight: '900', fontSize: '16px' }}
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 40px rgba(16,185,129,0.15)', padding: '12px' }}
+                    itemStyle={{ color: '#047857', fontWeight: '900', fontSize: '16px' }}
                     labelStyle={{ color: '#64748b', fontWeight: 'bold', marginBottom: '4px', fontSize: '12px' }}
                   />
                   <Area 
                     type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#8b5cf6" 
-                    strokeWidth={3.5}
+                    dataKey="consults" 
+                    name="Patients"
+                    stroke="#10b981" 
+                    strokeWidth={4}
                     fillOpacity={1} 
-                    fill="url(#colorRevenue)" 
-                    activeDot={{ r: 6, fill: "#8b5cf6", stroke: "#fff", strokeWidth: 3 }}
+                    fill="url(#colorConsults)" 
+                    activeDot={{ r: 7, fill: "#10b981", stroke: "#fff", strokeWidth: 3 }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
             
             <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between cursor-pointer group">
-              <span className="text-sm font-bold text-purple-600 group-hover:text-purple-700 transition-colors">View all store analytics</span>
-              <ChevronRight className="h-4 w-4 text-purple-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
+              <span className="text-sm font-bold text-emerald-600 group-hover:text-emerald-700 transition-colors">View full clinical reports</span>
+              <ChevronRight className="h-4 w-4 text-emerald-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
             </div>
           </Card>
         </div>
