@@ -13,7 +13,8 @@
     "check:patient-e2e": "node scripts/patient-e2e-check.mjs",
     "check:engineering": "node scripts/engineering-check.mjs",
     "check:production": "node scripts/production-preflight.mjs",
-    "check:scheduling-gate": "node scripts/scheduling-production-gate.mjs"
+    "check:scheduling-gate": "node scripts/scheduling-production-gate.mjs",
+    "db:seed-clinical-intake": "node scripts/apply-clinical-intake-seed.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

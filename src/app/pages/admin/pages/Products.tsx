@@ -902,14 +902,16 @@ export function AdminProductsPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Answer triggers (JSON array)</label>
-                  <p className="text-[10px] text-amber-800/90 leading-relaxed rounded-lg border border-amber-200/80 bg-amber-50/80 px-2.5 py-2">
-                    Enrollment routing ignores questionnaire answers. Use product flags, state lists, BMI/age, and{" "}
-                    <code className="text-[9px] bg-white/80 px-1 rounded">consult_routing_rules</code> instead.
-                    Answer triggers apply only to legacy in-app consult flows, not patient shop step 8.
+                  <p className="text-[10px] text-emerald-900/90 leading-relaxed rounded-lg border border-emerald-200/80 bg-emerald-50/80 px-2.5 py-2">
+                    Tied to this product&apos;s intake questionnaire: when an answer matches, enrollment can require video,
+                    show a warning, block submit, or flag manual review. Use the question <code className="text-[9px] bg-white/80 px-1 rounded">id</code> from
+                    the linked questionnaire. Optional fields: <code className="text-[9px] bg-white/80 px-1 rounded">message</code>,{" "}
+                    <code className="text-[9px] bg-white/80 px-1 rounded">blockSubmit</code>,{" "}
+                    <code className="text-[9px] bg-white/80 px-1 rounded">flagManualReview</code>.
                   </p>
                   <textarea
                     className="w-full min-h-[100px] rounded-xl border border-slate-200 px-3 py-2 text-xs font-mono text-slate-900"
-                    placeholder='[{"questionId":"q_x","values":["Yes"]}]'
+                    placeholder='[{"questionId":"q_pregnant","values":["Yes"],"requireVideo":true,"message":"Live visit required.","flagManualReview":true}]'
                     value={routeForm.answer_triggers_json}
                     onChange={(e) => setRouteForm((f) => ({ ...f, answer_triggers_json: e.target.value }))}
                   />

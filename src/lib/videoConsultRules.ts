@@ -8,7 +8,7 @@
  *   video_clinical_rules?: {
  *     bmiMin?: number;
  *     ageMin?: number;
- *     answerTriggers?: { questionId: string; values: string[] }[];
+ *     answerTriggers?: IntakeAnswerTrigger[];
  *   }
  *
  * Env: VITE_VIDEO_REQUIRED_STATES=CA,FL  (any product → video if shipping to these states)
@@ -19,10 +19,22 @@
 
 import { defaultCalendlySchedulingUrl, toSchedulingIframeSrc } from "./calendlyEmbed";
 
+/** Product / DB rule: specific intake answer → actions (video, block, manual review). */
+export type IntakeAnswerTrigger = {
+  questionId: string;
+  values: string[];
+  /** Patient-facing reason when this trigger requires video */
+  message?: string;
+  /** Block enrollment submit on medical-intake step */
+  blockSubmit?: boolean;
+  /** Flag order for clinician manual review (sets orders.urgent) */
+  flagManualReview?: boolean;
+};
+
 export type VideoClinicalRules = {
   bmiMin?: number;
   ageMin?: number;
-  answerTriggers?: { questionId: string; values: string[] }[];
+  answerTriggers?: IntakeAnswerTrigger[];
 };
 
 export type ProductVideoRules = {
@@ -92,9 +104,18 @@ function parseVideoClinicalRules(raw: unknown): VideoClinicalRules | undefined {
           const qid = (tr.questionId ?? tr.question_id) as string | undefined;
           const vals = tr.values;
           if (!qid || !Array.isArray(vals)) return null;
-          return { questionId: String(qid), values: vals.map((v) => String(v)) };
+          const message =
+            typeof tr.message === "string" && tr.message.trim() ? tr.message.trim() : undefined;
+          return {
+            questionId: String(qid),
+            values: vals.map((v) => String(v)),
+            message,
+            blockSubmit: tr.blockSubmit === true || tr.block_submit === true,
+            flagManualReview:
+              tr.flagManualReview === true || tr.flag_manual_review === true,
+          };
         })
-        .filter((x): x is { questionId: string; values: string[] } => x != null)
+        .filter((x): x is IntakeAnswerTrigger => x != null)
     : undefined;
   if (bmiMin == null && ageMin == null && (!answerTriggers || answerTriggers.length === 0)) return undefined;
   return { bmiMin, ageMin, answerTriggers };
@@ -155,7 +176,7 @@ export function computeAgeYears(dob: string): number | null {
   return y >= 0 && y < 130 ? y : null;
 }
 
-function answerMatchesValues(
+export function answerMatchesValues(
   answers: Record<string, string | string[]>,
   questionId: string,
   values: string[]
@@ -229,6 +250,62 @@ export function requiresSyncVideoVisit(
     if (routingRuleApplies(rule, ctx) && rule.requires_sync_video) return true;
   }
   return false;
+}
+
+/** Matched product-level intake answer triggers (for UI copy and submit guards). */
+export function getMatchedProductAnswerTriggers(
+  clinical: VideoClinicalRules | undefined,
+  answers: Record<string, string | string[]>
+): IntakeAnswerTrigger[] {
+  if (!clinical?.answerTriggers?.length) return [];
+  return clinical.answerTriggers.filter((t) =>
+    answerMatchesValues(answers, t.questionId, t.values)
+  );
+}
+
+/** Patient-facing bullets for why video / async path was chosen (includes intake answers). */
+export function buildEnrollmentVideoReasons(
+  productRules: ProductVideoRules | null,
+  globalVideoStates: string[],
+  dbRules: ConsultRoutingRuleRow[],
+  ctx: ClinicalContext
+): string[] {
+  const reasons: string[] = [];
+  if (!productRules) return reasons;
+
+  const st = normalizeUsState(ctx.patientState);
+  if (productRules.requiresVideoConsult) {
+    reasons.push("This treatment program requires a brief live video visit with a licensed clinician.");
+  }
+  if (st && globalVideoStates.includes(st)) {
+    reasons.push(`Regulations for patients in ${st} require a synchronous video consultation.`);
+  }
+  if (st && productRules.videoRequiredStates.length > 0 && productRules.videoRequiredStates.includes(st)) {
+    reasons.push(`This medication requires a video visit for patients in ${st}.`);
+  }
+  if (productRules.clinical?.bmiMin != null && ctx.bmi != null && ctx.bmi >= productRules.clinical.bmiMin) {
+    reasons.push("Your BMI qualifies this program for a live clinical video visit.");
+  }
+  if (productRules.clinical?.ageMin != null && ctx.age != null && ctx.age >= productRules.clinical.ageMin) {
+    reasons.push("Your age requires a live clinical video visit for this program.");
+  }
+
+  for (const t of getMatchedProductAnswerTriggers(productRules.clinical, ctx.answers)) {
+    reasons.push(
+      t.message ||
+        `Based on your answer to the intake questionnaire, a live video visit is required.`
+    );
+  }
+
+  const sorted = [...dbRules].sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
+  for (const rule of sorted) {
+    if (routingRuleApplies(rule, ctx) && rule.requires_sync_video) {
+      reasons.push("Your care program routing requires a scheduled video visit.");
+      break;
+    }
+  }
+
+  return [...new Set(reasons)];
 }
 
 export function defaultSchedulingEmbedUrl(): string {

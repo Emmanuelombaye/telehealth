@@ -7,6 +7,11 @@ import { useAuthStore } from "../../../../lib/auth-store";
 import { toast } from "sonner";
 import { SuperAdminShell } from "../../../components/superadmin/SuperAdminShell";
 import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice";
+import {
+  CLINICAL_INTAKE_TEMPLATES,
+  templateToAdminQuestions,
+  type ClinicalIntakeTemplate,
+} from "../../../../lib/clinicalIntakeTemplates";
 
 type QuestionType = "text" | "choice" | "yes_no";
 
@@ -139,6 +144,16 @@ export function AdminQuestionnairePage() {
 
   const removeQuestion = (id: string) => {
     setQuestions(questions.filter((q) => q.id !== id));
+  };
+
+  const loadClinicalTemplate = (tpl: ClinicalIntakeTemplate) => {
+    setFormName(tpl.questionnaireName);
+    setQuestions(normalizeQuestions(templateToAdminQuestions(tpl)));
+    setPreviewAnswers({});
+    setPreviewComplete(false);
+    toast.success("Clinical template loaded", {
+      description: `${tpl.questionnaire.length} questions with video / block / show-if rules. Publish and link from Products.`,
+    });
   };
 
   const openNewForm = () => {
@@ -282,9 +297,27 @@ export function AdminQuestionnairePage() {
 
         <div className="flex min-h-0 flex-1 overflow-hidden">
           <div className="w-1/2 space-y-6 overflow-y-auto border-r border-slate-200 bg-slate-50/90 p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Form Builder</h2>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <select
+                  className="h-8 rounded-lg border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-700"
+                  defaultValue=""
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    if (!id) return;
+                    const tpl = CLINICAL_INTAKE_TEMPLATES.find((t) => t.questionnaireId === id);
+                    if (tpl) loadClinicalTemplate(tpl);
+                    e.target.value = "";
+                  }}
+                >
+                  <option value="">Load clinical template…</option>
+                  {CLINICAL_INTAKE_TEMPLATES.map((t) => (
+                    <option key={t.questionnaireId} value={t.questionnaireId}>
+                      {t.questionnaireName}
+                    </option>
+                  ))}
+                </select>
                 <Button variant="outline" size="sm" onClick={() => addQuestion("text")} className="h-8 text-xs rounded-lg gap-1.5">
                   <Plus className="h-3 w-3" /> Text
                 </Button>

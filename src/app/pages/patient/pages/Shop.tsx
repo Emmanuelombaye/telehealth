@@ -16,12 +16,18 @@ import {
   parseProductVideoRules,
   parseGlobalVideoStatesFromEnv,
   defaultSchedulingEmbedUrl,
-  requiresSyncVideoVisit,
   computeNumericBmi,
   computeAgeYears,
   type ConsultRoutingRuleRow,
   type ClinicalContext,
 } from "../../../../lib/videoConsultRules";
+import {
+  evaluateIntakeConditionalEffects,
+  getVisibleIntakeQuestions,
+  normalizeIntakeQuestions,
+} from "../../../../lib/intakeConditionalLogic";
+import { IntakeRoutingBanner } from "../../../components/patient/IntakeRoutingBanner";
+import { resolveProductIntakeFeatures } from "../../../../lib/clinicalIntakeTemplates";
 import { toSchedulingIframeSrc } from "../../../../lib/calendlyEmbed";
 import {
   ENROLLMENT_DRAFT_KEY,
@@ -184,22 +190,28 @@ export function PatientShopPage() {
       try {
         const { data, error } = await supabase.from('products').select('*').eq('active', true);
         if (error) throw error;
-        const mapped = data.map(p => ({
-          id: p.id,
-          name: p.name,
-          category: p.category,
-          tagline: p.tagline,
-          price: `$${p.price_usd}/mo`,
-          priceUSD: p.price_usd,
-          rating: p.features?.rating || 4.9,
-          reviews: p.features?.reviews || 1000,
-          badge: p.features?.badge || null,
-          image: p.image_url,
-          description: p.description,
-          questionnaire: withoutCosmeticAppearanceQuestions(p.features?.questionnaire) as any[],
-          gateways: p.features?.gateways || ["stripe", "paypal", "apple_pay", "klarna"],
-          rawFeatures: p.features,
-        }));
+        const mapped = data.map((p) => {
+          const { questionnaire, rawFeatures } = resolveProductIntakeFeatures(
+            p.features,
+            p.category || ""
+          );
+          return {
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            tagline: p.tagline,
+            price: `$${p.price_usd}/mo`,
+            priceUSD: p.price_usd,
+            rating: (rawFeatures.rating as number) || p.features?.rating || 4.9,
+            reviews: (rawFeatures.reviews as number) || p.features?.reviews || 1000,
+            badge: (rawFeatures.badge as string) || p.features?.badge || null,
+            image: p.image_url,
+            description: p.description,
+            questionnaire: withoutCosmeticAppearanceQuestions(questionnaire) as any[],
+            gateways: (rawFeatures.gateways as string[]) || p.features?.gateways || ["stripe", "paypal", "apple_pay", "klarna"],
+            rawFeatures,
+          };
+        });
         setDbProducts(mapped);
       } catch (err) {
         console.error("Error fetching products:", err);
@@ -502,10 +514,36 @@ export function PatientShopPage() {
     };
   }, [state, selected, heightFt, heightIn, weight, dob, answers]);
 
-  const needsScheduledVideo = useMemo(() => {
-    if (!videoRules) return false;
-    return requiresSyncVideoVisit(videoRules, globalVideoStates, routingRulesFromDb, clinicalContext);
-  }, [videoRules, globalVideoStates, routingRulesFromDb, clinicalContext]);
+  const intakeQuestions = useMemo(
+    () => normalizeIntakeQuestions(selected?.questionnaire ?? []),
+    [selected?.questionnaire]
+  );
+
+  const visibleQuestions = useMemo(
+    () => getVisibleIntakeQuestions(intakeQuestions, answers),
+    [intakeQuestions, answers]
+  );
+
+  const intakeEffects = useMemo(() => {
+    if (!videoRules || !selected) return null;
+    return evaluateIntakeConditionalEffects(
+      videoRules,
+      globalVideoStates,
+      routingRulesFromDb,
+      clinicalContext,
+      intakeQuestions
+    );
+  }, [
+    videoRules,
+    selected,
+    globalVideoStates,
+    routingRulesFromDb,
+    clinicalContext,
+    intakeQuestions,
+  ]);
+
+  const needsScheduledVideo = intakeEffects?.requiresSyncVideo ?? false;
+  const intakeRouting = intakeEffects?.routing ?? null;
 
   const [schedulingRef, setSchedulingRef] = useState<string | null>(null);
   useEffect(() => {
@@ -513,8 +551,13 @@ export function PatientShopPage() {
     setSchedulingRef((r) => r ?? `SC-${crypto.randomUUID().replace(/-/g, "").slice(0, 20)}`);
   }, [needsScheduledVideo, selected]);
 
-  const totalQ = selected?.questionnaire?.length ?? 0;
-  const currentQ = totalQ > 0 ? selected?.questionnaire?.[qStep] : undefined;
+  const totalQ = visibleQuestions.length;
+  const currentQ = totalQ > 0 ? visibleQuestions[qStep] : undefined;
+
+  useEffect(() => {
+    if (qStep >= totalQ && totalQ > 0) setQStep(totalQ - 1);
+    else if (totalQ === 0 && qStep !== 0) setQStep(0);
+  }, [totalQ, qStep]);
 
   // Step 7/10: Resolve Dynamic Doctor Link for Embed
   const fetchEligibleDoctor = async () => {
@@ -642,7 +685,20 @@ export function PatientShopPage() {
   ]);
 
   const handleAnswer = (id: string, val: string) => {
-    setAnswers(a => ({ ...a, [id]: val }));
+    setAnswers((a) => ({ ...a, [id]: val }));
+  };
+
+  const handleCheckboxAnswer = (id: string, option: string, checked: boolean) => {
+    setAnswers((a) => {
+      const prev = a[id];
+      const list = Array.isArray(prev) ? [...prev.map(String)] : prev ? [String(prev)] : [];
+      const next = checked
+        ? list.includes(option)
+          ? list
+          : [...list, option]
+        : list.filter((x) => x !== option);
+      return { ...a, [id]: next };
+    });
   };
 
   const handleCompleteSetup = async () => {
@@ -737,14 +793,43 @@ export function PatientShopPage() {
       }
 
       const rules = parseProductVideoRules(selected.rawFeatures);
-      const needsVideo = requiresSyncVideoVisit(rules, globalVideoStates, routingRulesFromDb, {
+      const submitCtx: ClinicalContext = {
         patientState: state,
         productCategory: selected.category,
         productId: selected.id,
         bmi: computeNumericBmi(heightFt, heightIn, weight),
         age: computeAgeYears(dob) ?? (dob ? new Date().getFullYear() - new Date(dob).getFullYear() : null),
         answers,
-      });
+      };
+      const submitEffects = evaluateIntakeConditionalEffects(
+        rules,
+        globalVideoStates,
+        routingRulesFromDb,
+        submitCtx,
+        normalizeIntakeQuestions(selected.questionnaire ?? [])
+      );
+      if (submitEffects.blockSubmit) {
+        throw new Error(
+          submitEffects.blockSubmitMessage ||
+            "Based on your intake answers, we cannot complete enrollment online."
+        );
+      }
+      const visibleAtSubmit = getVisibleIntakeQuestions(
+        normalizeIntakeQuestions(selected.questionnaire ?? []),
+        answers
+      );
+      for (const q of visibleAtSubmit) {
+        if (!q.required) continue;
+        const raw = answers[q.id];
+        const empty =
+          raw == null ||
+          raw === "" ||
+          (Array.isArray(raw) && raw.length === 0);
+        if (empty) {
+          throw new Error(`Please answer: ${q.label || "required question"}`);
+        }
+      }
+      const needsVideo = submitEffects.requiresSyncVideo;
       if (needsVideo && !bookingAttestation) {
         throw new Error("Please book a time in the calendar above and confirm before continuing.");
       }
@@ -802,10 +887,17 @@ export function PatientShopPage() {
         intake_notes:      `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
         intake_answers:    {
           ...answers,
+          _intake_conditional: {
+            requires_video: needsVideo,
+            flag_manual_review: submitEffects.flagManualReview,
+            warnings: submitEffects.warnings,
+            matched_triggers: submitEffects.matchedAnswerTriggers.map((t) => t.questionId),
+          },
           ...(needsVideo
             ? { _scheduling: { external_calendar: true, acknowledged_booking: bookingAttestation } }
             : {}),
         },
+        ...(submitEffects.flagManualReview ? { urgent: true } : {}),
         patient_vitals:    patientVitals,
         consultation_time: needsVideo ? (consultationTime || null) : null,
         enrollment_video_required: needsVideo,
@@ -1773,12 +1865,25 @@ export function PatientShopPage() {
           </div>
           {totalQ > 0 && (
             <div className="flex gap-1">
-              {selected.questionnaire.map((_, i) => (
+              {visibleQuestions.map((_, i) => (
                 <div key={i} className={cn("h-1.5 flex-1 rounded-full transition-all", i <= qStep ? "bg-primary" : "bg-muted")} />
               ))}
             </div>
           )}
         </div>
+        {intakeRouting ? <IntakeRoutingBanner routing={intakeRouting} /> : null}
+        {(intakeEffects?.warnings.length ?? 0) > 0 ? (
+          <div className="space-y-2">
+            {intakeEffects!.warnings.map((w) => (
+              <div
+                key={w}
+                className="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950"
+              >
+                {w}
+              </div>
+            ))}
+          </div>
+        ) : null}
         {currentQ && (
         <Card>
           <CardContent className="p-5 space-y-4">
@@ -1813,12 +1918,23 @@ export function PatientShopPage() {
                 <span className="text-sm">{o}</span>
               </label>
             ))}
-            {currentQ.type === "checkbox" && currentQ.options?.map(o => (
+            {currentQ.type === "checkbox" && currentQ.options?.map(o => {
+              const selectedVals = answers[currentQ.id];
+              const checked = Array.isArray(selectedVals)
+                ? selectedVals.includes(o)
+                : selectedVals === o;
+              return (
               <label key={o} className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer hover:bg-accent">
-                <input type="checkbox" className="h-4 w-4 accent-primary" />
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary"
+                  checked={checked}
+                  onChange={(e) => handleCheckboxAnswer(currentQ.id, o, e.target.checked)}
+                />
                 <span className="text-sm">{o}</span>
               </label>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
         )}
