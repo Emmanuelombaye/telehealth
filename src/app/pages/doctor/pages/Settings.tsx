@@ -117,13 +117,21 @@ export function DoctorSettingsPage() {
     );
   };
 
+  const handleDiscard = () => {
+    if (!profile) return;
+    setForm({ ...profile, notificationPrefs: { ...profile.notificationPrefs } });
+    toast.message("Changes discarded.");
+  };
+
   const handleSave = async () => {
     if (!user || !form) return;
     setSaving(true);
     try {
       await saveDoctorProfile(user, form);
       await saveDoctorSchedulePrefs(user.id, form, scheduleSnap);
-      setProfile(form);
+      const saved = { ...form, notificationPrefs: { ...form.notificationPrefs } };
+      setProfile(saved);
+      setForm(saved);
       toast.success("Profile saved successfully.");
     } catch (err) {
       console.error(err);
@@ -179,18 +187,26 @@ export function DoctorSettingsPage() {
         description="Manage your professional identity, licensing, scheduling links, notification preferences, and account security."
       >
         {dirty && (
-          <Badge className="bg-amber-400/90 text-[#0A2E1F] border-amber-500 text-[10px] font-black uppercase">
-            Unsaved changes
-          </Badge>
+          <>
+            <button
+              type="button"
+              onClick={handleDiscard}
+              disabled={saving}
+              className="rounded-xl border border-amber-400/60 bg-amber-400/20 px-3 py-2 text-[10px] font-black uppercase text-amber-100 hover:bg-amber-400/35 transition-colors"
+              title="Revert all edits on this page"
+            >
+              Unsaved changes · Discard
+            </button>
+            <Button
+              className="rounded-xl bg-[#D4AF37]/90 text-[#0A2E1F] hover:bg-[#D4AF37] font-bold"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Save changes
+            </Button>
+          </>
         )}
-        <Button
-          className="rounded-xl bg-[#D4AF37]/90 text-[#0A2E1F] hover:bg-[#D4AF37] font-bold"
-          onClick={handleSave}
-          disabled={saving || !dirty}
-        >
-          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-          Save changes
-        </Button>
       </DoctorPageHeader>
 
       {/* Identity hero */}
@@ -357,7 +373,7 @@ export function DoctorSettingsPage() {
                 <BadgeCheck className="h-5 w-5 text-emerald-600 shrink-0" />
                 <p className="text-xs text-slate-600 leading-relaxed">
                   These fields sync to the <code className="text-[10px] bg-slate-100 px-1 rounded">profiles</code> table. If columns are missing in your Supabase project, run{" "}
-                  <code className="text-[10px] bg-slate-100 px-1 rounded">supabase_verify_doctor_invitations.sql</code>.
+                  <code className="text-[10px] bg-slate-100 px-1 rounded">scripts/sql/RUN_IN_SUPABASE_profiles_settings_columns.sql</code>.
                 </p>
               </div>
             </SettingsSection>
@@ -485,7 +501,15 @@ export function DoctorSettingsPage() {
           )}
 
           {dirty && (
-            <div className="sticky bottom-4 flex justify-end">
+            <div className="sticky bottom-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                className="rounded-xl border-slate-300 bg-white font-bold"
+                onClick={handleDiscard}
+                disabled={saving}
+              >
+                Discard
+              </Button>
               <Button
                 className="rounded-xl shadow-lg bg-[#0A2E1F] hover:bg-emerald-900 font-bold px-6"
                 onClick={handleSave}

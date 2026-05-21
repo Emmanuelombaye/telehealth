@@ -88,9 +88,9 @@ export function mergeDoctorProfile(user: User, row: Record<string, unknown> | nu
     lastName,
     email: (row?.email as string) || user.email || "",
     phone: (row?.phone as string) || (meta.phone as string) || "",
-    address: (row?.address as string) || "",
-    dateOfBirth: (row?.date_of_birth as string) || "",
-    language: (row?.language as string) || "English",
+    address: (row?.address as string) || (meta.address as string) || "",
+    dateOfBirth: (row?.date_of_birth as string) || (meta.date_of_birth as string) || "",
+    language: (row?.language as string) || (meta.language as string) || "English",
     timezone: (meta.timezone as string) || "America/New_York",
     npiNumber: (row?.npi_number as string) || "",
     specialty: (row?.specialty as string) || (meta.specialty as string) || "",
@@ -127,6 +127,24 @@ export async function fetchDoctorSchedule(userId: string): Promise<DoctorSchedul
   };
 }
 
+/** Strip columns PostgREST reports missing (PGRST204) and retry upsert. */
+async function upsertProfileRow(row: Record<string, unknown>): Promise<void> {
+  let payload = { ...row };
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const { error } = await supabase.from("profiles").upsert(payload);
+    if (!error) return;
+    const missing =
+      error.code === "PGRST204" &&
+      typeof error.message === "string" &&
+      /Could not find the '(\w+)' column/.exec(error.message);
+    if (missing?.[1] && missing[1] in payload) {
+      delete payload[missing[1]];
+      continue;
+    }
+    throw error;
+  }
+}
+
 export async function saveDoctorProfile(user: User, form: DoctorProfileForm): Promise<void> {
   const fullName =
     form.fullName.trim() ||
@@ -137,10 +155,10 @@ export async function saveDoctorProfile(user: User, form: DoctorProfileForm): Pr
     id: user.id,
     full_name: fullName,
     email: form.email || user.email,
-    phone: form.phone,
-    address: form.address,
-    date_of_birth: form.dateOfBirth,
-    language: form.language,
+    phone: form.phone || null,
+    address: form.address || null,
+    date_of_birth: form.dateOfBirth || null,
+    language: form.language || null,
     updated_at: new Date().toISOString(),
     npi_number: form.npiNumber || null,
     specialty: form.specialty || null,
@@ -150,18 +168,7 @@ export async function saveDoctorProfile(user: User, form: DoctorProfileForm): Pr
     avatar_url: form.avatarUrl || null,
   };
 
-  const { error: profileError } = await supabase.from("profiles").upsert(row);
-  if (profileError) {
-    const fallback = { ...row };
-    delete fallback.npi_number;
-    delete fallback.specialty;
-    delete fallback.credentials;
-    delete fallback.licensed_states;
-    delete fallback.calendly_url;
-    delete fallback.avatar_url;
-    const { error: retry } = await supabase.from("profiles").upsert(fallback);
-    if (retry) throw retry;
-  }
+  await upsertProfileRow(row);
 
   const { error: authError } = await supabase.auth.updateUser({
     data: {
@@ -169,6 +176,9 @@ export async function saveDoctorProfile(user: User, form: DoctorProfileForm): Pr
       last_name: form.lastName,
       full_name: fullName,
       phone: form.phone,
+      address: form.address,
+      date_of_birth: form.dateOfBirth,
+      language: form.language,
       specialty: form.specialty,
       timezone: form.timezone,
       doctor_notification_prefs: form.notificationPrefs,
