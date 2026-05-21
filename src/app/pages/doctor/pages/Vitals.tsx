@@ -481,12 +481,12 @@ export function DoctorVitalsPage() {
                         <CardTitle className="text-sm font-black text-[#0A2E1F] flex items-center gap-2">
                           <AlertTriangle className="h-4 w-4 text-amber-600" />
                           Vitals completeness
+                          {missingVitals.length > 0 && (
+                            <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                              {missingVitals.length} missing
+                            </span>
+                          )}
                         </CardTitle>
-                        <p className="text-xs text-slate-600 font-medium mt-1">
-                          {missingVitals.length > 0
-                            ? `${missingVitals.length} vital sign${missingVitals.length === 1 ? "" : "s"} not on file — document at visit or request an update from the patient.`
-                            : "Some vitals have baseline data only; trend charts update when monitored readings sync."}
-                        </p>
                       </CardHeader>
                       <CardContent className="grid gap-2 sm:grid-cols-2">
                         {vitalCompleteness.map((item) => {
@@ -514,12 +514,24 @@ export function DoctorVitalsPage() {
                                       : "text-slate-400",
                                 )}
                               />
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
                                 <p className="text-xs font-black">{item.label}</p>
-                                <p className="text-[10px] font-semibold opacity-80 mt-0.5">{item.detail}</p>
-                                <p className="text-[9px] mt-1 font-bold uppercase tracking-wide opacity-60">
-                                  {item.hasIntake ? "Baseline" : "—"} · {item.hasReadings ? "Monitored" : "—"}
-                                </p>
+                                <span
+                                  className={cn(
+                                    "shrink-0 text-[10px] font-bold uppercase tracking-wide",
+                                    item.status === "complete"
+                                      ? "text-emerald-700"
+                                      : item.status === "partial"
+                                        ? "text-amber-700"
+                                        : "text-slate-500",
+                                  )}
+                                >
+                                  {item.status === "complete"
+                                    ? "Complete"
+                                    : item.status === "partial"
+                                      ? "Incomplete"
+                                      : "Missing"}
+                                </span>
                               </div>
                             </div>
                           );
