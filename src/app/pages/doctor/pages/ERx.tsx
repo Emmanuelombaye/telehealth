@@ -16,6 +16,11 @@ const FORMULARY = [
 
 type PatientRow = { user_id: string; patient_name: string; medication: string };
 
+/** Doctor eRx always uses light fields (readable in light + dark app theme). */
+const ERX_FIELD =
+  "w-full mt-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-[#0A0D14] shadow-sm placeholder:text-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/25 disabled:opacity-60";
+const ERX_CARD = "bg-white/95 border-emerald-100/80 shadow-sm";
+
 export function DoctorERxPage() {
   const { user } = useAuthStore();
   const [search, setSearch] = useState("");
@@ -87,10 +92,10 @@ export function DoctorERxPage() {
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Pill className="h-6 w-6 text-primary" /> Advanced E-Prescribing (eRx)
+          <h1 className="text-2xl font-bold flex items-center gap-2 text-[#0A2E1F]">
+            <Pill className="h-6 w-6 text-emerald-700" /> Advanced E-Prescribing (eRx)
           </h1>
-          <p className="text-sm text-muted-foreground">Secure prescription routing with real-time safety checks.</p>
+          <p className="text-sm text-slate-600">Secure prescription routing with real-time safety checks.</p>
         </div>
       </div>
 
@@ -104,19 +109,19 @@ export function DoctorERxPage() {
       )}
 
       <div className="grid md:grid-cols-2 gap-6">
-        <Card>
+        <Card className={ERX_CARD}>
           <CardHeader>
-            <CardTitle className="text-lg">Select Medication</CardTitle>
+            <CardTitle className="text-lg text-[#0A2E1F]">Select Medication</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search formulary..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:border-primary"
+                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-[#0A0D14] placeholder:text-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/25"
               />
             </div>
 
@@ -126,11 +131,13 @@ export function DoctorERxPage() {
                   key={med.name}
                   onClick={() => setSelectedMed(med)}
                   className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                    selectedMed?.name === med.name ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                    selectedMed?.name === med.name
+                      ? "border-emerald-600 bg-emerald-50 ring-1 ring-emerald-500/30"
+                      : "border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40"
                   }`}
                 >
-                  <p className="font-bold text-sm">{med.name}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{med.indication}</p>
+                  <p className="font-bold text-sm text-[#0A2E1F]">{med.name}</p>
+                  <p className="text-xs text-slate-600 mt-1">{med.indication}</p>
                 </div>
               ))}
               {filteredFormulary.length === 0 && (
@@ -141,9 +148,9 @@ export function DoctorERxPage() {
         </Card>
 
         <div className="space-y-6">
-          <Card>
+          <Card className={ERX_CARD}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-lg flex items-center gap-2 text-[#0A2E1F]">
                 <ShieldCheck className="h-5 w-5 text-emerald-500" /> Safety Checks
               </CardTitle>
             </CardHeader>
@@ -176,44 +183,47 @@ export function DoctorERxPage() {
             </CardContent>
           </Card>
 
-          <Card className={!selectedMed ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
+          <Card
+            className={`${ERX_CARD} ${!selectedMed ? "opacity-60 pointer-events-none" : ""} transition-opacity`}
+          >
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Prescription Details</CardTitle>
+              <CardTitle className="text-lg text-[#0A2E1F]">Prescription Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <label className="text-xs font-bold text-muted-foreground">Patient</label>
-                <select value={patientId} onChange={e => setPatientId(e.target.value)}
-                  className="w-full mt-1 border border-border rounded-xl px-3 py-2 text-sm bg-background focus:outline-none focus:border-primary">
-                  <option value="">Select patient...</option>
-                  {patients.map(p => <option key={p.user_id} value={p.user_id}>{p.patient_name}</option>)}
+                <label className="text-xs font-bold uppercase tracking-wide text-slate-600">Patient</label>
+                <select value={patientId} onChange={e => setPatientId(e.target.value)} className={ERX_FIELD}>
+                  <option value="" className="text-[#0A0D14] bg-white">Select patient...</option>
+                  {patients.map(p => (
+                    <option key={p.user_id} value={p.user_id} className="text-[#0A0D14] bg-white">
+                      {p.patient_name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-muted-foreground">Quantity</label>
-                  <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)}
-                    className="w-full mt-1 border border-border rounded-xl px-3 py-2 text-sm bg-background" />
+                  <label className="text-xs font-bold uppercase tracking-wide text-slate-600">Quantity</label>
+                  <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} className={ERX_FIELD} />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-muted-foreground">Refills</label>
-                  <input type="number" value={refills} onChange={e => setRefills(e.target.value)}
-                    className="w-full mt-1 border border-border rounded-xl px-3 py-2 text-sm bg-background" />
+                  <label className="text-xs font-bold uppercase tracking-wide text-slate-600">Refills</label>
+                  <input type="number" value={refills} onChange={e => setRefills(e.target.value)} className={ERX_FIELD} />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-muted-foreground">Frequency</label>
-                <input type="text" value={frequency} onChange={e => setFrequency(e.target.value)}
-                  className="w-full mt-1 border border-border rounded-xl px-3 py-2 text-sm bg-background" />
+                <label className="text-xs font-bold uppercase tracking-wide text-slate-600">Frequency</label>
+                <input type="text" value={frequency} onChange={e => setFrequency(e.target.value)} className={ERX_FIELD} />
               </div>
               <div>
-                <label className="text-xs font-bold text-muted-foreground">Pharmacy</label>
-                <input type="text" value={pharmacy} onChange={e => setPharmacy(e.target.value)}
-                  className="w-full mt-1 border border-border rounded-xl px-3 py-2 text-sm bg-background" />
+                <label className="text-xs font-bold uppercase tracking-wide text-slate-600">Pharmacy</label>
+                <input type="text" value={pharmacy} onChange={e => setPharmacy(e.target.value)} className={ERX_FIELD} />
               </div>
-              <Button className="w-full rounded-xl mt-4 bg-primary hover:bg-primary/90"
+              <Button
+                className="w-full rounded-xl mt-4 bg-[#0A2E1F] text-white hover:bg-emerald-900 disabled:bg-slate-300 disabled:text-slate-500"
                 disabled={submitting || !patientId || !selectedMed}
-                onClick={handleSend}>
+                onClick={handleSend}
+              >
                 {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                 {submitting ? "Sending..." : "Send Prescription"}
               </Button>

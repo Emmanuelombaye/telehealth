@@ -101,7 +101,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize: async (initialSession) => {
     try {
-      const session = initialSession !== undefined ? initialSession : (await supabase.auth.getSession()).data.session;
+      let session: Session | null = initialSession !== undefined ? initialSession : null;
+      if (initialSession === undefined) {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          const msg = error.message?.toLowerCase() ?? "";
+          if (msg.includes("refresh token") || msg.includes("invalid")) {
+            await supabase.auth.signOut();
+            set({ session: null, user: null, role: null, brandId: null, isLoading: false });
+            return;
+          }
+          console.warn("[auth-store] getSession:", error.message);
+        }
+        session = data.session;
+      }
 
       if (session?.user) {
         const jwtRB = getRoleFromSession(session);
@@ -115,7 +128,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ session: null, user: null, role: null, brandId: null, isLoading: false });
       }
 
-      supabase.auth.onAuthStateChange((_event, newSession) => {
+      supabase.auth.onAuthStateChange((event, newSession) => {
+        if (event === "TOKEN_REFRESHED" && !newSession) {
+          void get().signOut();
+          return;
+        }
         if (newSession?.user) {
           const jwtRB = getRoleFromSession(newSession);
           set({ session: newSession, user: newSession.user, role: jwtRB.role, brandId: jwtRB.brandId, isLoading: false });

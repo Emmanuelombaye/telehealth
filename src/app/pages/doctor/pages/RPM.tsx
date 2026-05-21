@@ -3,6 +3,7 @@ import { HeartPulse, Activity, AlertCircle, Watch, Smartphone, RefreshCw, Loader
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared.tsx";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { supabase } from "../../../../lib/supabaseClient";
+import { isMissingTableError } from "../../../../lib/supabaseTableError";
 
 type Reading = {
   id: string;
@@ -35,7 +36,7 @@ export function DoctorRPMPage() {
         .order('recorded_at', { ascending: false })
         .limit(500);
       if (error) {
-        if (error.code === '42P01') { setMissingTable(true); setReadings([]); return; }
+        if (isMissingTableError(error)) { setMissingTable(true); setReadings([]); return; }
         throw error;
       }
       setReadings(data || []);

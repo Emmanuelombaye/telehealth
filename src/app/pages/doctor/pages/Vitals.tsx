@@ -40,6 +40,7 @@ import {
   type VitalReading,
   type VitalCardModel,
 } from "../../../../lib/vitalsClinical";
+import { isMissingTableError } from "../../../../lib/supabaseTableError";
 
 type PatientOption = {
   key: string;
@@ -150,15 +151,22 @@ export function DoctorVitalsPage() {
 
       let rows: VitalReading[] = [];
       if (readingsRes.error) {
-        if (readingsRes.error.code === "42P01") {
+        if (isMissingTableError(readingsRes.error)) {
           setMissingTable(true);
+          setReadings([]);
+        } else if (readingsRes.error.code === "PGRST303" || readingsRes.error.message?.toLowerCase().includes("jwt")) {
+          setReadings([]);
         } else {
-          console.error("Vitals readings error:", readingsRes.error);
+          console.warn("[Vitals] readings fetch:", readingsRes.error.message);
         }
       } else {
         setMissingTable(false);
         rows = (readingsRes.data || []) as VitalReading[];
         setReadings(rows);
+      }
+
+      if (ordersRes.error && !isMissingTableError(ordersRes.error)) {
+        console.warn("[Vitals] orders fetch:", ordersRes.error.message);
       }
 
       const map = new Map<string, PatientOption>();
@@ -205,6 +213,10 @@ export function DoctorVitalsPage() {
 
   useEffect(() => {
     fetchAll();
+  }, [fetchAll]);
+
+  useEffect(() => {
+    if (missingTable) return;
     const ch = supabase
       .channel("doctor-vitals-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "vital_readings" }, fetchAll)
@@ -212,7 +224,7 @@ export function DoctorVitalsPage() {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [fetchAll]);
+  }, [fetchAll, missingTable]);
 
   const selectedPatient = patients.find((p) => p.key === selectedKey) ?? null;
 
@@ -315,7 +327,7 @@ export function DoctorVitalsPage() {
           <CardContent className="p-4 text-sm text-amber-950">
             <p className="font-bold mb-1">Device telemetry table not provisioned</p>
             <p>
-              Apply <code className="font-mono bg-white px-2 py-0.5 rounded text-xs">supabase_vital_readings.sql</code> in Supabase to enable live RPM streams. Intake vitals from enrollment still appear below.
+              Run <code className="font-mono bg-white px-2 py-0.5 rounded text-xs">scripts/sql/RUN_IN_SUPABASE_backfill_patient_vitals.sql</code> in the Supabase SQL Editor (creates <code className="font-mono">vital_readings</code> and seeds data). Enrollment vitals from <code className="font-mono">orders.patient_vitals</code> still appear below until then.
             </p>
           </CardContent>
         </Card>
