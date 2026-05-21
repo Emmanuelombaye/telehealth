@@ -43,6 +43,7 @@ import {
   STATUS_STYLES,
   type VitalReading,
 } from "../../../../lib/vitalsClinical";
+import { filterClinicalPatientOrders } from "../../../../lib/clinicalTestData";
 import {
   buildBpTrend,
   buildRpmRoster,
@@ -107,8 +108,9 @@ export function DoctorRPMPage() {
       }
 
       if (!ordersRes.error) {
+        const rows = filterClinicalPatientOrders(ordersRes.data || []);
         setOrders(
-          (ordersRes.data || []).map((o) => ({
+          rows.map((o) => ({
             id: o.id,
             user_id: o.user_id,
             patient_name: o.patient_name,

@@ -3,6 +3,7 @@
  */
 
 import { buildDoctorIntakeReview, orderToIntakeSource } from "./doctorIntakeReview";
+import { filterClinicalPatientOrders } from "./clinicalTestData";
 import { parseIntakeVitals, type IntakeVitals } from "./vitalsClinical";
 
 export type PatientRisk = "low" | "medium" | "high";
@@ -16,6 +17,7 @@ export type DoctorPatientRecord = {
   /** Latest order id — used for `/patients/:id` route */
   primaryOrderId: string;
   name: string;
+  subBrand: string | null;
   age: number | null;
   email: string | null;
   phone: string | null;
@@ -42,6 +44,7 @@ export type RawOrderRow = {
   patient_phone?: string | null;
   category?: string | null;
   medication?: string | null;
+  sub_brand?: string | null;
   status?: string | null;
   urgent?: boolean | null;
   intake_complete?: boolean | null;
@@ -121,6 +124,7 @@ export function buildPatientRegistry(rows: RawOrderRow[]): DoctorPatientRecord[]
       userId: latest.user_id ?? null,
       primaryOrderId: latest.id,
       name: latest.patient_name || "Unknown patient",
+      subBrand: latest.sub_brand?.trim() || null,
       age: latest.patient_age ?? null,
       email: latest.patient_email ?? null,
       phone: latest.patient_phone ?? null,

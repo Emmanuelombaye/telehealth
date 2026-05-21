@@ -15,10 +15,10 @@ async function testSuperAdminLogic() {
     console.log(`📡 [STEP 1] Injecting test data for ${brands.length} different brands...`);
     
     for (const brand of brands) {
-      const orderRef = `SA-TEST-${brand.toUpperCase()}-${Math.random().toString(36).substring(7)}`;
+      const orderRef = `SA-TEST-${brand.toUpperCase().replace(/\s+/g, '-')}-${Math.random().toString(36).substring(7)}`;
       await supabase.from('orders').insert([{
         order_number: orderRef,
-        patient_name: `Patient for ${brand}`,
+        patient_name: `Audit Revenue Seed (${brand})`,
         sub_brand: brand,
         medication: "Audit Medication",
         amount: Math.floor(Math.random() * 500) + 100,

@@ -50,7 +50,7 @@ export function DoctorPatientsPage() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id, user_id, order_number, patient_name, patient_age, patient_email, category, medication, status, urgent, intake_complete, enrollment_video_required, patient_vitals, intake_answers, created_at",
+          "id, user_id, order_number, patient_name, patient_age, patient_email, sub_brand, category, medication, status, urgent, intake_complete, enrollment_video_required, patient_vitals, intake_answers, created_at",
         )
         .order("created_at", { ascending: false })
         .limit(500);
@@ -95,6 +95,7 @@ export function DoctorPatientsPage() {
       if (!q) return true;
       return (
         p.name.toLowerCase().includes(q) ||
+        p.subBrand?.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q) ||
         p.medication.toLowerCase().includes(q) ||
         p.email?.toLowerCase().includes(q)
@@ -252,6 +253,11 @@ export function DoctorPatientsPage() {
                           {p.medication} · {p.category}
                         </p>
                         <div className="flex flex-wrap gap-1.5 mt-2">
+                          {p.subBrand && (
+                            <Badge className="text-[9px] font-black uppercase border bg-violet-50 text-violet-900 border-violet-200">
+                              {p.subBrand}
+                            </Badge>
+                          )}
                           <Badge className={cn("text-[9px] font-black uppercase border", care.badge)}>
                             {care.label}
                           </Badge>

@@ -9,6 +9,7 @@ import {
 } from './prescriptions';
 export type { PrescriptionRecord } from './prescriptions';
 import { applyOrdersBrandScope, ordersSelectForMode, resolveOrdersFetchMode } from './adminScope';
+import { isAuditPlaceholderOrder } from './clinicalTestData';
 
 // Centralized reactive Zustand store for the global state (Patient/Doctor/Admin).
 // Source of truth for: brand config, active order pipeline, doctor availability.
@@ -430,9 +431,17 @@ export const usePatientStore = create<AppState>()(
             doctor_id: d.doctor_id,
             created_at: d.created_at
           }));
+          const clinicalOrders = mappedOrders.filter(
+            (o) =>
+              !isAuditPlaceholderOrder({
+                patient_name: o.patientName,
+                order_number: o.id,
+                medication: o.medication,
+              }),
+          );
           const prev = get().orders;
-          if (ordersListFingerprint(prev) !== ordersListFingerprint(mappedOrders)) {
-            set({ orders: mappedOrders });
+          if (ordersListFingerprint(prev) !== ordersListFingerprint(clinicalOrders)) {
+            set({ orders: clinicalOrders });
           }
         } catch (error) {
           console.error('Error fetching orders from Supabase:', error);
