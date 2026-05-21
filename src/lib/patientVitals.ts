@@ -307,12 +307,12 @@ export function assessVitalCompleteness(
 
     const detail =
       status === "complete"
-        ? "Intake + readings on chart"
+        ? "Baseline and monitored values on file"
         : status === "partial"
           ? hasIntake
-            ? "Intake only — no device trend yet"
-            : "Readings only — not in enrollment snapshot"
-          : "Not captured — ask patient or sync device";
+            ? "Baseline recorded; monitored readings pending"
+            : "Monitored readings on file; baseline not documented"
+          : "Not on file — record at visit or request from patient";
 
     return {
       key: cat.key,

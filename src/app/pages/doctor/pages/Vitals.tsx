@@ -484,8 +484,8 @@ export function DoctorVitalsPage() {
                         </CardTitle>
                         <p className="text-xs text-slate-600 font-medium mt-1">
                           {missingVitals.length > 0
-                            ? `${missingVitals.length} not captured — patient can add at enrollment or you can request a reading.`
-                            : "Some metrics have intake only; device trends will appear after sync."}
+                            ? `${missingVitals.length} vital sign${missingVitals.length === 1 ? "" : "s"} not on file — document at visit or request an update from the patient.`
+                            : "Some vitals have baseline data only; trend charts update when monitored readings sync."}
                         </p>
                       </CardHeader>
                       <CardContent className="grid gap-2 sm:grid-cols-2">
@@ -518,7 +518,7 @@ export function DoctorVitalsPage() {
                                 <p className="text-xs font-black">{item.label}</p>
                                 <p className="text-[10px] font-semibold opacity-80 mt-0.5">{item.detail}</p>
                                 <p className="text-[9px] mt-1 font-bold uppercase tracking-wide opacity-60">
-                                  {item.hasIntake ? "Intake" : "—"} · {item.hasReadings ? "Readings" : "—"}
+                                  {item.hasIntake ? "Baseline" : "—"} · {item.hasReadings ? "Monitored" : "—"}
                                 </p>
                               </div>
                             </div>
