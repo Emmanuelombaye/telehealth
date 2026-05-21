@@ -9,8 +9,9 @@ import {
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { useAuthStore } from "../../../../lib";
-import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
+import { doctorMessagesHref, useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { supabase } from "../../../../lib/supabaseClient";
+import { approveAndDispatchPrescription } from "../../../../lib/prescriptions";
 import { getOrderVideoRail } from "../../../../lib/orderVideoRail";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -462,18 +463,18 @@ export function DoctorConsultPage() {
         if (preErr) throw new Error(`Order update error: ${preErr.message}`);
       }
 
-      // Bypassing Edge Function since pharmacy integration is simulated
-      const { error: dispatchError } = await supabase.from('orders').update({
-        status: "rx_sent",
-        dosage_instructions: dos,
-        doctor_note: soapNotes.plan,
-        pharmacy_name: pharmacySlugFromOrder(order.pharmacy),
-        rx_dispatched: true,
-        pharmacy_dispatched_at: new Date().toISOString()
-      }).eq('id', order.id);
+      const dispatch = await approveAndDispatchPrescription({
+        orderKey: order.id,
+        patientId: order.user_id,
+        medication: med,
+        dosageInstructions: dos,
+        doctorNote: soapNotes.plan,
+        pharmacy: pharmacySlugFromOrder(order.pharmacy_name || order.pharmacy),
+        refillsRemaining: 3,
+      });
 
-      if (dispatchError) {
-        showToast("error", `Pharmacy dispatch failed: ${dispatchError.message}`);
+      if (!dispatch.ok) {
+        showToast("error", `Pharmacy dispatch failed: ${dispatch.error}`);
         return;
       }
 
@@ -490,33 +491,22 @@ export function DoctorConsultPage() {
         console.warn("visit_summaries insert failed (table may not exist):", e);
       }
 
-      const { error: rxError } = await supabase.from('prescriptions').insert([{
-        patient_id: order.user_id,
-        medication: med,
-        dosage: dos,
-        frequency: soapNotes.plan,
-        status: 'active',
-        refills_remaining: 3,
-        doctor_id: currentUser?.id,
-        pharmacy_name: order.pharmacy || "VIALSRX EXPRESS"
-      }]);
-      if (rxError) throw new Error(`Prescription error: ${rxError.message}`);
-
       const { error: orderError } = await supabase
         .from('orders')
         .update({
           medication: med,
           dosage_instructions: dos,
-          doctor: doctorName,
-          doctor_note: soapNotes.plan,
-          doctor_id: currentUser?.id,
-          last_approved_at: new Date().toISOString(),
           consultation_live: false,
         })
         .eq('id', order.id);
       if (orderError) throw new Error(`Order update error: ${orderError.message}`);
 
-      showToast('success', `✓ Prescription dispatched to pharmacy for ${order.patient_name}`);
+      showToast(
+        'success',
+        dispatch.usedFallback
+          ? `✓ Prescription recorded for ${order.patient_name}`
+          : `✓ Prescription dispatched to pharmacy for ${order.patient_name}`,
+      );
       setTimeout(() => navigate(`${doctorBase}/queue`), 1500);
     } catch (err: any) {
       console.error("Finalize error:", err);
@@ -926,7 +916,7 @@ export function DoctorConsultPage() {
 
                 <div className="h-6 w-px bg-white/20 mx-2 shrink-0" />
 
-                <Link to={`${doctorBase}/messages?userId=${order.user_id}`} className="shrink-0">
+                <Link to={doctorMessagesHref(doctorBase, order.user_id || order.userId)} className="shrink-0">
                   <button className="h-10 w-10 bg-white/20 text-white hover:bg-white/30 rounded-xl flex items-center justify-center transition-all">
                     <MessageSquare className="h-4 w-4" />
                   </button>

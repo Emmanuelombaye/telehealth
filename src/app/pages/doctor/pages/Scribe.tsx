@@ -1,426 +1,629 @@
-import { useState, useEffect, useRef } from "react";
-import { Mic, MicOff, Save, RefreshCw, FileText, Bot, CheckCircle2, Sparkles, Activity, ShieldCheck, Database, Trash2, ArrowRight, Waves, Zap, Shield, Microscope, ClipboardList } from "lucide-react";
-import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router";
+import {
+  Mic,
+  MicOff,
+  RefreshCw,
+  FileText,
+  Bot,
+  Sparkles,
+  Loader2,
+  Search,
+  Copy,
+  Stethoscope,
+  User,
+  ClipboardList,
+  BookOpen,
+  Save,
+  Trash2,
+  ChevronRight,
+  Filter,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, cn } from "../../../components/ui/shared.tsx";
+import { DoctorPageHeader } from "../../../components/doctor/DoctorPageHeader";
+import { doctorPageContainer, doctorSurfaceCard } from "../../../../lib/doctorPortalUi";
+import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
-import * as FramerMotion from "framer-motion";
-const { motion, AnimatePresence } = FramerMotion;
+import { isMissingTableError } from "../../../../lib/supabaseTableError";
+import {
+  buildIntakePrefill,
+  emptySoapNote,
+  formatFullSoapText,
+  formatNoteDate,
+  mapSavedNotes,
+  NOTE_TEMPLATES,
+  serializeSoapToDiagnosis,
+  SOAP_SECTIONS,
+  soapWordCount,
+  type SavedClinicalNote,
+  type SoapNote,
+} from "../../../../lib/doctorClinicalNotes";
 import { toast } from "sonner";
 
-// Extend window for Speech Recognition
-declare global {
-  interface Window {
-    webkitSpeechRecognition: any;
-    SpeechRecognition: any;
-  }
-}
+type SpeechRecInstance = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: { resultIndex: number; results: { length: number; [i: number]: { [j: number]: { transcript: string } } } }) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+};
+
+type EncounterOption = {
+  id: string;
+  order_number: string;
+  user_id: string | null;
+  patient_name: string;
+  category: string;
+  medication: string;
+  intake_notes?: string | null;
+  patient_age?: number | null;
+  patient_vitals?: unknown;
+  intake_answers?: Record<string, unknown> | null;
+};
+
+type HubTab = "compose" | "library" | "templates";
 
 export function DoctorScribePage() {
+  const doctorBase = useDoctorPortalBase();
   const { user } = useAuthStore();
+  const [hubTab, setHubTab] = useState<HubTab>("compose");
+  const [encounters, setEncounters] = useState<EncounterOption[]>([]);
+  const [selectedEncounterId, setSelectedEncounterId] = useState<string>("");
+  const [soapNote, setSoapNote] = useState<SoapNote>(emptySoapNote());
+  const [transcript, setTranscript] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [transcript, setTranscript] = useState("");
-  const [soapNote, setSoapNote] = useState({
-    subjective: "",
-    objective: "",
-    assessment: "",
-    plan: ""
-  });
+  const [saving, setSaving] = useState(false);
+  const [savedNotes, setSavedNotes] = useState<SavedClinicalNote[]>([]);
+  const [notesLoading, setNotesLoading] = useState(true);
+  const [notesMissing, setNotesMissing] = useState(false);
+  const [noteSearch, setNoteSearch] = useState("");
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const recognitionRef = useRef<SpeechRecInstance | null>(null);
 
-  const recognitionRef = useRef<any>(null);
+  const selectedEncounter = encounters.find((e) => e.id === selectedEncounterId) ?? null;
+
+  const fetchEncounters = useCallback(async () => {
+    const { data } = await supabase
+      .from("orders")
+      .select("id, order_number, user_id, patient_name, category, medication, intake_notes, patient_age, patient_vitals, intake_answers")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    const list = (data || []) as EncounterOption[];
+    setEncounters(list);
+    setSelectedEncounterId((prev) => prev || list[0]?.id || "");
+  }, []);
+
+  const fetchSavedNotes = useCallback(async () => {
+    setNotesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("visit_summaries")
+        .select("*")
+        .order("date", { ascending: false })
+        .limit(100);
+      if (error) {
+        if (isMissingTableError(error)) setNotesMissing(true);
+        setSavedNotes([]);
+        return;
+      }
+      setNotesMissing(false);
+      const nameMap = new Map<string, string>();
+      for (const e of encounters) {
+        if (e.user_id) nameMap.set(e.user_id, e.patient_name);
+      }
+      const { data: orderRows } = await supabase.from("orders").select("user_id, patient_name").limit(500);
+      for (const o of orderRows?.data || []) {
+        if (o.user_id && o.patient_name) nameMap.set(o.user_id, o.patient_name);
+      }
+      setSavedNotes(mapSavedNotes((data || []) as Record<string, unknown>[], nameMap));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setNotesLoading(false);
+    }
+  }, [encounters]);
 
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-US';
+    fetchEncounters();
+  }, [fetchEncounters]);
 
-      recognitionRef.current.onresult = (event: any) => {
-        let currentTranscript = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          currentTranscript += event.results[i][0].transcript;
-        }
-        setTranscript(currentTranscript);
-      };
+  useEffect(() => {
+    fetchSavedNotes();
+  }, [fetchSavedNotes]);
 
-      recognitionRef.current.onerror = (event: any) => {
-        console.error("Speech Recognition Error:", event.error);
-        setIsRecording(false);
-        toast.error(`Mic Error: ${event.error}`);
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsRecording(false);
-      };
-    } else {
-      toast.error("Speech Recognition not supported in this browser.");
-    }
-
-    return () => {
-      if (recognitionRef.current) recognitionRef.current.stop();
+  useEffect(() => {
+    const Win = window as Window & { SpeechRecognition?: new () => SpeechRecInstance; webkitSpeechRecognition?: new () => SpeechRecInstance };
+    const Ctor = Win.SpeechRecognition || Win.webkitSpeechRecognition;
+    if (!Ctor) return;
+    const rec = new Ctor();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = "en-US";
+    rec.onresult = (event) => {
+      let text = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        text += event.results[i][0].transcript;
+      }
+      setTranscript(text);
     };
+    rec.onerror = () => setIsRecording(false);
+    rec.onend = () => setIsRecording(false);
+    recognitionRef.current = rec;
+    return () => rec.stop();
   }, []);
 
   const handleToggleRecording = async () => {
     if (isRecording) {
       recognitionRef.current?.stop();
       setIsRecording(false);
+      if (!transcript.trim()) {
+        toast.error("No audio captured.");
+        return;
+      }
       setIsProcessing(true);
-      toast.success("Consultation captured. AI structuring note...");
-      
       try {
-        // CALL REAL AI EDGE FUNCTION
-        const { data, error } = await supabase.functions.invoke('ai-medical-scribe', {
-          body: { transcript: transcript }
+        const { data, error } = await supabase.functions.invoke("ai-medical-scribe", {
+          body: { transcript },
         });
-
         if (error) throw error;
-
         setSoapNote({
           subjective: data.subjective || transcript,
           objective: data.objective || "",
           assessment: data.assessment || "",
-          plan: data.plan || ""
+          plan: data.plan || "",
         });
-        
-        if (data.is_fallback) {
-          toast.info("Clinical Heuristic Engine processed your consultation.");
-        } else {
-          toast.success("GPT-4o successfully structured your clinical note.");
-        }
-      } catch (e) {
-        console.error("AI Sync Error:", e);
-        toast.error("AI Structuring failed. Reverting to baseline simulation.");
-        // Fallback to manual simulation if edge function fails
+        toast.success(data.is_fallback ? "Note structured (clinical engine)." : "AI structured your SOAP note.");
+      } catch {
         setSoapNote({
-          subjective: transcript || "Patient reports general symptoms.",
-          objective: "Vitals stable.",
-          assessment: "Clinical consultation.",
-          plan: "Follow up as needed."
+          subjective: transcript,
+          objective: selectedEncounter ? buildIntakePrefill(selectedEncounter).objective : "",
+          assessment: "Clinical consultation — see subjective.",
+          plan: "Follow up per protocol.",
         });
+        toast.info("AI unavailable — transcript placed in Subjective.");
       } finally {
         setIsProcessing(false);
       }
     } else {
       setTranscript("");
-      setSoapNote({subjective:"", objective:"", assessment:"", plan:""});
       recognitionRef.current?.start();
       setIsRecording(true);
-      toast.info("Ambient room listening active...");
+      toast.info("Listening… speak clearly, then stop to generate SOAP.");
     }
+  };
+
+  const handlePrefillFromIntake = () => {
+    if (!selectedEncounter) {
+      toast.error("Select a patient encounter first.");
+      return;
+    }
+    setSoapNote(buildIntakePrefill(selectedEncounter));
+    toast.success("Prefilled from enrollment intake.");
   };
 
   const handleSave = async () => {
     if (!user) return;
-    if (!soapNote.assessment) {
-      toast.error("No note data to save.");
+    if (!soapNote.assessment.trim() && !soapNote.subjective.trim()) {
+      toast.error("Add at least Subjective or Assessment before saving.");
       return;
     }
-
+    const patientId = selectedEncounter?.user_id;
+    if (!patientId) {
+      toast.error("Selected encounter has no patient user_id — choose another encounter.");
+      return;
+    }
+    setSaving(true);
     try {
-      const { error } = await supabase.from('visit_summaries').insert({
-        patient_id: user.id, 
+      const meta = user.user_metadata || {};
+      const doctorName = meta.first_name
+        ? `Dr. ${meta.first_name} ${meta.last_name || ""}`.trim()
+        : "Attending physician";
+      const { error } = await supabase.from("visit_summaries").insert({
+        patient_id: patientId,
         doctor_id: user.id,
-        diagnosis: soapNote.assessment,
-        treatment_plan: soapNote.plan,
-        notes: `Subjective: ${soapNote.subjective}\nObjective: ${soapNote.objective}`,
-        date: new Date().toISOString()
+        doctor_name: doctorName,
+        specialty: selectedEncounter?.category || "Telehealth",
+        diagnosis: serializeSoapToDiagnosis(soapNote),
+        type: "video",
+        date: new Date().toISOString(),
       });
       if (error) throw error;
-      toast.success("Synchronized with EHR Clinical Database.");
-      setSoapNote({subjective:"", objective:"", assessment:"", plan:""});
-      setTranscript("");
-    } catch (e) {
-      console.error(e);
-      toast.error("Sync Failure: Clinical data could not be saved.");
+      toast.success("Clinical note saved to chart.");
+      await fetchSavedNotes();
+      setHubTab("library");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not save — check visit_summaries table and RLS.");
+    } finally {
+      setSaving(false);
     }
   };
 
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(formatFullSoapText(soapNote));
+    toast.success("SOAP note copied.");
+  };
+
+  const filteredNotes = useMemo(() => {
+    const q = noteSearch.trim().toLowerCase();
+    return savedNotes.filter(
+      (n) =>
+        !q ||
+        n.patientName.toLowerCase().includes(q) ||
+        n.assessmentPreview.toLowerCase().includes(q) ||
+        n.doctor_name?.toLowerCase().includes(q),
+    );
+  }, [savedNotes, noteSearch]);
+
+  const selectedSaved = filteredNotes.find((n) => n.id === selectedNoteId) ?? filteredNotes[0] ?? null;
+
+  const stats = useMemo(
+    () => ({
+      total: savedNotes.length,
+      today: savedNotes.filter((n) => {
+        const d = new Date(n.date);
+        const t = new Date();
+        return d.toDateString() === t.toDateString();
+      }).length,
+      words: soapWordCount(soapNote),
+    }),
+    [savedNotes, soapNote],
+  );
+
   return (
-    <div className="max-w-[1500px] mx-auto space-y-8 pb-24 animate-in fade-in duration-1000">
-      
-      {/* ── LUXURY COMMAND CENTER HEADER ────────────────────────────────────────── */}
-      <div className="bg-[#0A2E1F] rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
-        <div className="absolute -right-40 -top-40 w-96 h-96 bg-emerald-500/20 rounded-full blur-[100px]" />
-        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-emerald-400/10 rounded-full blur-[80px]" />
-        
-        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10">
-          <div className="space-y-4 text-center lg:text-left">
-            <div className="flex items-center justify-center lg:justify-start gap-3">
-               <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.8)] animate-pulse" />
-               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-400">
-                 Authorized Clinical Command Center
-               </span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight uppercase leading-none">
-              AI Medical <span className="text-emerald-400 italic font-serif lowercase tracking-tighter">scribe.</span>
-            </h1>
-            <p className="text-emerald-100/60 text-sm font-medium max-w-xl leading-relaxed">
-              Proprietary ambient room capture technology. Your voice is instantly structured into a high-fidelity clinical SOAP record with sub-millisecond EHR latency.
-            </p>
-          </div>
-          
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <div className="hidden sm:flex items-center gap-6 px-8 py-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl">
-               <div className="text-center">
-                  <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Latency</p>
-                  <p className="text-lg font-mono font-bold text-white leading-none">12ms</p>
-               </div>
-               <div className="h-8 w-px bg-white/10" />
-               <div className="text-center">
-                  <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Privacy</p>
-                  <ShieldCheck className="h-4 w-4 text-white mx-auto" />
-               </div>
-            </div>
-            <Button 
-              className="h-16 px-10 rounded-[2rem] bg-emerald-500 hover:bg-emerald-400 text-[#0A2E1F] font-black uppercase tracking-[0.2em] text-[12px] gap-3 shadow-[0_20px_50px_rgba(16,185,129,0.3)] transition-all hover:scale-105 active:scale-95"
-              onClick={handleSave}
-            >
-              <Database className="h-5 w-5" /> Synchronize EHR
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className={cn(doctorPageContainer, "space-y-6 pb-16 animate-in fade-in duration-500")}>
+      <DoctorPageHeader
+        variant="hero"
+        eyebrow="Documentation"
+        title="SOAP Notes & Clinical Notes"
+        description="Ambient AI scribe, structured S.O.A.P editor, templates, and a searchable library synced to visit_summaries."
+      >
+        <Button
+          variant="outline"
+          className="rounded-xl border-white/25 bg-white/10 text-white hover:bg-white/20"
+          onClick={() => {
+            fetchEncounters();
+            fetchSavedNotes();
+          }}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+        <Link
+          to={`${doctorBase}/consult${selectedEncounter ? `?orderId=${encodeURIComponent(selectedEncounter.order_number || selectedEncounter.id)}` : ""}`}
+          className="inline-flex items-center rounded-xl border border-[#D4AF37]/40 bg-[#D4AF37]/15 px-4 py-2 text-sm font-semibold text-[#D4AF37] hover:bg-[#D4AF37]/25"
+        >
+          <Stethoscope className="h-4 w-4 mr-2" />
+          Case workspace
+        </Link>
+      </DoctorPageHeader>
 
-      <div className="grid xl:grid-cols-12 gap-10 items-start">
-        
-        {/* ── LEFT: BIOMETRIC AUDIO CAPTURE ─────────────────────────────────────────── */}
-        <div className="xl:col-span-4 space-y-8">
-          <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] rounded-[3.5rem] bg-white overflow-hidden relative">
-             <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500" />
-             
-             <CardContent className="p-12 flex flex-col items-center">
-                <div className="w-full flex items-center justify-between mb-12">
-                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Biometric Stream</span>
-                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100">
-                      <div className={cn("h-1.5 w-1.5 rounded-full", isRecording ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
-                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
-                        {isRecording ? "Live Captured" : "Standby"}
-                      </span>
-                   </div>
-                </div>
+      {notesMissing && (
+        <Card className="border-amber-300 bg-amber-50/90">
+          <CardContent className="p-4 text-sm text-amber-950">
+            Run <code className="font-mono text-xs bg-white px-1 rounded">supabase/fix_visit_summaries_rls.sql</code> in Supabase to enable saving and loading clinical notes.
+          </CardContent>
+        </Card>
+      )}
 
-                <div className="relative mb-12">
-                   <AnimatePresence>
-                     {isRecording && (
-                       <motion.div 
-                         initial={{ opacity: 0 }}
-                         animate={{ opacity: 1 }}
-                         exit={{ opacity: 0 }}
-                         className="absolute -inset-10 pointer-events-none"
-                       >
-                         {[1, 2, 3].map((i) => (
-                           <motion.div
-                             key={i}
-                             initial={{ scale: 1, opacity: 0.5 }}
-                             animate={{ scale: 2, opacity: 0 }}
-                             transition={{ repeat: Infinity, duration: 2, delay: i * 0.6 }}
-                             className="absolute inset-0 rounded-full border-2 border-emerald-500/20"
-                           />
-                         ))}
-                       </motion.div>
-                     )}
-                   </AnimatePresence>
-                   
-                   <motion.button 
-                     whileHover={{ scale: 1.05 }}
-                     whileTap={{ scale: 0.95 }}
-                     onClick={handleToggleRecording}
-                     className={cn(
-                       "h-40 w-40 rounded-[3rem] flex flex-col items-center justify-center transition-all relative z-10 shadow-2xl group",
-                       isRecording 
-                        ? "bg-red-600 shadow-red-200" 
-                        : isProcessing 
-                          ? "bg-amber-500 shadow-amber-200" 
-                          : "bg-[#0A2E1F] hover:bg-[#062015] shadow-emerald-200"
-                     )}
-                   >
-                     <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[3rem]" />
-                     {isRecording ? (
-                        <MicOff className="h-16 w-16 text-white mb-2" />
-                     ) : (
-                        <Mic className="h-16 w-16 text-white mb-2" />
-                     )}
-                     <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
-                        {isRecording ? "Stop" : "Record"}
-                     </span>
-                   </motion.button>
-                </div>
-
-                {/* VISUALIZER MONITOR */}
-                <div className="w-full bg-[#0A0D14] rounded-[2.5rem] p-8 border border-white/5 shadow-2xl relative overflow-hidden group/mon">
-                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
-                   <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-xl bg-white/5 flex items-center justify-center">
-                           <Waves className={cn("h-4 w-4 text-emerald-400", isRecording && "animate-pulse")} />
-                        </div>
-                        <div>
-                           <p className="text-[10px] font-black text-white uppercase tracking-[0.2em] leading-none">Matrix Stream</p>
-                           <p className="text-[8px] font-bold text-emerald-400/40 uppercase tracking-widest mt-1">Encrypted capture</p>
-                        </div>
-                      </div>
-                      <Zap className={cn("h-3 w-3", isRecording ? "text-yellow-400 animate-bounce" : "text-slate-700")} />
-                   </div>
-
-                   <div className="h-32 overflow-y-auto custom-scrollbar pr-2">
-                      <p className={cn(
-                        "text-[12px] font-mono leading-relaxed transition-all duration-700",
-                        transcript ? "text-emerald-50 opacity-100" : "text-slate-600 italic opacity-40"
-                      )}>
-                        {transcript || "// System standing by. Click record to initiate clinical ambient Room-Listening capture..."}
-                      </p>
-                   </div>
-                   
-                   {isRecording && (
-                     <div className="mt-4 flex items-center gap-1.5 h-1">
-                        {[1,2,3,4,5,6,7,8,9,10,11,12].map(i => (
-                           <motion.div 
-                              key={i}
-                              animate={{ height: [4, Math.random()*20, 4] }}
-                              transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.05 }}
-                              className="w-1 bg-emerald-500/30 rounded-full"
-                           />
-                        ))}
-                     </div>
-                   )}
-                </div>
-             </CardContent>
-          </Card>
-          
-          <div className="bg-slate-50 rounded-[2.5rem] p-8 flex items-center gap-6 border border-slate-100">
-             <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center shrink-0">
-                <Shield className="h-6 w-6 text-emerald-600" />
-             </div>
-             <div>
-                <p className="text-xs font-black text-[#0A2E1F] uppercase tracking-widest">Authorized Clinical Portal</p>
-                <p className="text-[10px] font-medium text-slate-400">AES-256 Bit Encryption in transit and at rest.</p>
-             </div>
-          </div>
-        </div>
-
-        {/* ── RIGHT: HIGH-FIDELITY SOAP DOCUMENTATION ────────────────────────────────────────── */}
-        <div className="xl:col-span-8">
-           <Card className="border-none shadow-[0_48px_96px_-24px_rgba(0,0,0,0.12)] rounded-[3.5rem] bg-white overflow-hidden flex flex-col min-h-[850px] relative">
-              <div className="px-12 py-10 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between bg-white relative z-10">
-                 <div className="space-y-1 text-center md:text-left mb-6 md:mb-0">
-                    <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
-                       <ClipboardList className="h-5 w-5 text-emerald-600" />
-                       <h3 className="text-lg font-black text-[#0A2E1F] uppercase tracking-tight">Clinical Documentation</h3>
-                    </div>
-                    <p className="text-xs font-semibold text-slate-400">Automated Patient Visit Structure (S.O.A.P Protocol)</p>
-                 </div>
-                 <div className="flex items-center gap-4">
-                    <Badge variant="outline" className="rounded-2xl px-5 py-2.5 bg-slate-50 border-slate-100 text-[#0A2E1F] text-[10px] font-black uppercase tracking-widest">
-                       Status: <span className="ml-1 text-emerald-600">{soapNote.assessment ? "Validated" : "Drafting"}</span>
-                    </Badge>
-                    <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest">
-                       <Activity className="h-3.5 w-3.5" /> Real-time Sync
-                    </div>
-                 </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[
+          { label: "Saved notes", value: stats.total, icon: FileText },
+          { label: "Saved today", value: stats.today, icon: BookOpen },
+          { label: "Draft word count", value: stats.words, icon: Bot },
+        ].map((s) => (
+          <Card key={s.label} className={doctorSurfaceCard}>
+            <CardContent className="flex items-center gap-4 p-5">
+              <s.icon className="h-6 w-6 text-emerald-700" />
+              <div>
+                <p className="text-[11px] font-bold uppercase text-slate-500">{s.label}</p>
+                <p className="text-2xl font-black text-[#0A2E1F]">{s.value}</p>
               </div>
-
-              <CardContent className="p-0 flex-1 flex flex-col relative z-10">
-                 <div className="grid md:grid-cols-2 divide-x divide-y divide-slate-50 border-b border-slate-50 flex-1">
-                    {[
-                      { key: 'subjective', label: 'Subjective', icon: 'S', desc: 'Patient history & reported symptoms', color: 'text-blue-600', bg: 'bg-blue-50/50', border: 'border-blue-100' },
-                      { key: 'objective', label: 'Objective', icon: 'O', desc: 'Clinical findings & vitals', color: 'text-amber-600', bg: 'bg-amber-50/50', border: 'border-amber-100' },
-                      { key: 'assessment', label: 'Assessment', icon: 'A', desc: 'Differential diagnosis & severity', color: 'text-purple-600', bg: 'bg-purple-50/50', border: 'border-purple-100' },
-                      { key: 'plan', label: 'Plan', icon: 'P', desc: 'Pharmacology & follow-up protocols', color: 'text-emerald-600', bg: 'bg-emerald-50/50', border: 'border-emerald-100' },
-                    ].map((item, idx) => (
-                      <div key={item.key} className="p-12 group hover:bg-slate-50/50 transition-all relative">
-                         <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-4">
-                               <div className={cn("h-14 w-14 rounded-[1.25rem] flex items-center justify-center font-black text-xl shadow-sm transition-transform group-hover:scale-110", item.bg, item.color, "border", item.border)}>
-                                  {item.icon}
-                               </div>
-                               <div>
-                                  <label className="text-[12px] font-black text-[#0A2E1F] uppercase tracking-[0.2em] leading-none block mb-1">
-                                    {item.label}
-                                  </label>
-                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.desc}</p>
-                               </div>
-                            </div>
-                            <Sparkles className="h-4 w-4 text-slate-100 group-hover:text-emerald-400 transition-colors" />
-                         </div>
-                         
-                         <div className="relative">
-                            <AnimatePresence>
-                               {!soapNote[item.key as keyof typeof soapNote] && !isProcessing && (
-                                  <motion.div 
-                                     initial={{ opacity: 0 }}
-                                     animate={{ opacity: 1 }}
-                                     exit={{ opacity: 0 }}
-                                     className="absolute inset-0 pointer-events-none"
-                                  >
-                                     <div className="space-y-4">
-                                        <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
-                                           <motion.div 
-                                              animate={{ x: ["-100%", "100%"] }}
-                                              transition={{ repeat: Infinity, duration: 2, delay: idx * 0.2 }}
-                                              className="h-full w-1/3 bg-slate-100"
-                                           />
-                                        </div>
-                                        <div className="h-2 w-2/3 bg-slate-50 rounded-full" />
-                                        <div className="h-2 w-1/2 bg-slate-50 rounded-full" />
-                                     </div>
-                                  </motion.div>
-                               )}
-                            </AnimatePresence>
-                            
-                            <textarea
-                              value={soapNote[item.key as keyof typeof soapNote]}
-                              onChange={(e) => setSoapNote(s => ({ ...s, [item.key]: e.target.value }))}
-                              placeholder={isProcessing ? "AI generating high-fidelity note..." : "Waiting for Room-Listening capture..."}
-                              className="w-full bg-transparent border-0 focus:ring-0 p-0 text-[15px] font-medium leading-relaxed min-h-[180px] resize-none text-slate-700 placeholder:text-slate-200 outline-none relative z-10"
-                            />
-                         </div>
-                      </div>
-                    ))}
-                 </div>
-                 
-                 {/* Footer metadata */}
-                 <div className="p-10 bg-slate-50/30 flex flex-col sm:flex-row items-center justify-between gap-6 mt-auto">
-                    <div className="flex items-center gap-4 opacity-40">
-                       <div className="flex items-center gap-2">
-                          <Microscope className="h-4 w-4 text-slate-600" />
-                          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Clinical Accuracy Check: Pass</span>
-                       </div>
-                       <div className="h-4 w-px bg-slate-200" />
-                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2">
-                          <ShieldCheck className="h-4 w-4" /> HIPAA Compliant Architecture
-                       </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                       <Button 
-                          variant="outline" 
-                          onClick={() => { setSoapNote({subjective:"", objective:"", assessment:"", plan:""}); setTranscript(""); }}
-                          className="h-12 px-6 rounded-2xl border-slate-100 text-slate-400 font-bold uppercase tracking-widest text-[9px] hover:bg-red-50 hover:text-red-600 transition-all"
-                       >
-                          Discard Draft
-                       </Button>
-                       <div className="flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-white shadow-sm border border-slate-100">
-                          <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                          <span className="text-[10px] font-black text-[#0A2E1F] uppercase tracking-widest">Matrix AI Engine Online</span>
-                       </div>
-                    </div>
-                 </div>
-              </CardContent>
-           </Card>
-        </div>
-
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 20px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.4); }
-      `}} />
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            { id: "compose", label: "Compose note" },
+            { id: "library", label: "Note library" },
+            { id: "templates", label: "Templates" },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setHubTab(t.id)}
+            className={cn(
+              "rounded-xl px-4 py-2 text-xs font-black uppercase border",
+              hubTab === t.id ? "bg-[#0A2E1F] text-white border-[#0A2E1F]" : "bg-white text-slate-600 border-slate-200",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
+      {hubTab === "compose" && (
+        <div className="grid gap-6 xl:grid-cols-12">
+          <div className="xl:col-span-4 space-y-4">
+            <Card className={doctorSurfaceCard}>
+              <CardHeader>
+                <CardTitle className="text-sm font-black uppercase text-[#0A2E1F]">Patient encounter</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <select
+                  value={selectedEncounterId}
+                  onChange={(e) => setSelectedEncounterId(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
+                >
+                  <option value="">Select encounter…</option>
+                  {encounters.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.patient_name} — {e.medication}
+                    </option>
+                  ))}
+                </select>
+                {selectedEncounter && (
+                  <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 text-xs space-y-1">
+                    <p className="font-bold text-[#0A2E1F]">{selectedEncounter.patient_name}</p>
+                    <p className="text-slate-600">{selectedEncounter.medication}</p>
+                    <p className="text-slate-500">{selectedEncounter.category}</p>
+                  </div>
+                )}
+                <Button variant="outline" className="w-full rounded-xl text-xs font-bold" onClick={handlePrefillFromIntake}>
+                  <ClipboardList className="h-3.5 w-3.5 mr-2" />
+                  Prefill from intake
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className={doctorSurfaceCard}>
+              <CardHeader>
+                <CardTitle className="text-sm font-black uppercase text-[#0A2E1F] flex items-center gap-2">
+                  <Mic className="h-4 w-4" />
+                  AI ambient scribe
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <button
+                  type="button"
+                  onClick={handleToggleRecording}
+                  disabled={isProcessing}
+                  className={cn(
+                    "w-full rounded-2xl py-8 flex flex-col items-center gap-2 font-black uppercase text-xs transition-all",
+                    isRecording
+                      ? "bg-red-600 text-white shadow-lg"
+                      : isProcessing
+                        ? "bg-amber-500 text-white"
+                        : "bg-[#0A2E1F] text-white hover:bg-emerald-900",
+                  )}
+                >
+                  {isProcessing ? (
+                    <Loader2 className="h-10 w-10 animate-spin" />
+                  ) : isRecording ? (
+                    <MicOff className="h-10 w-10" />
+                  ) : (
+                    <Mic className="h-10 w-10" />
+                  )}
+                  {isProcessing ? "Structuring…" : isRecording ? "Stop & generate SOAP" : "Start recording"}
+                </button>
+                <div className="rounded-xl bg-slate-900 p-4 max-h-[160px] overflow-y-auto custom-scrollbar">
+                  <p className="text-[11px] font-mono text-emerald-100/90 leading-relaxed">
+                    {transcript || "// Transcript appears here…"}
+                  </p>
+                </div>
+                <p className="text-[10px] text-slate-500">
+                  Uses <code className="text-xs">ai-medical-scribe</code> edge function when configured; falls back to clinical heuristics.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="xl:col-span-8 space-y-4">
+            <Card className={doctorSurfaceCard}>
+              <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-3">
+                <div>
+                  <CardTitle className="text-base font-black text-[#0A2E1F]">SOAP documentation</CardTitle>
+                  <p className="text-xs text-slate-500 mt-0.5">{stats.words} words · {soapNote.assessment ? "Ready to sign" : "Draft"}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" className="rounded-xl" onClick={handleCopy}>
+                    <Copy className="h-3.5 w-3.5 mr-1" />
+                    Copy
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() => {
+                      setSoapNote(emptySoapNote());
+                      setTranscript("");
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    Clear
+                  </Button>
+                  <Button
+                    className="rounded-xl bg-[#0A2E1F] hover:bg-emerald-900 text-white font-bold"
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-1" />}
+                    Save to chart
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {SOAP_SECTIONS.map((section) => (
+                    <div
+                      key={section.key}
+                      className={cn("rounded-2xl border p-4", section.color)}
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <span
+                          className={cn(
+                            "h-10 w-10 rounded-xl flex items-center justify-center font-black text-lg border bg-white",
+                            section.accent,
+                          )}
+                        >
+                          {section.short}
+                        </span>
+                        <div>
+                          <p className="text-sm font-black text-[#0A2E1F]">{section.label}</p>
+                          <p className="text-[10px] text-slate-500">{section.hint}</p>
+                        </div>
+                        <Sparkles className="h-4 w-4 text-slate-300 ml-auto" />
+                      </div>
+                      <textarea
+                        value={soapNote[section.key]}
+                        onChange={(e) => setSoapNote((s) => ({ ...s, [section.key]: e.target.value }))}
+                        placeholder={isProcessing ? "AI generating…" : `Enter ${section.label.toLowerCase()}…`}
+                        className="w-full min-h-[140px] rounded-xl border border-white/80 bg-white/90 px-3 py-2 text-sm text-[#0A0D14] resize-y focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className={cn(doctorSurfaceCard, "border-dashed")}>
+              <CardContent className="p-4">
+                <p className="text-[10px] font-black uppercase text-slate-500 mb-2">Preview (export format)</p>
+                <pre className="text-xs font-mono text-slate-700 whitespace-pre-wrap bg-slate-50 rounded-xl p-4 max-h-[200px] overflow-y-auto custom-scrollbar">
+                  {formatFullSoapText(soapNote)}
+                </pre>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {hubTab === "library" && (
+        <div className="grid gap-6 lg:grid-cols-12">
+          <Card className={cn(doctorSurfaceCard, "lg:col-span-4")}>
+            <CardContent className="p-4 space-y-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  value={noteSearch}
+                  onChange={(e) => setNoteSearch(e.target.value)}
+                  placeholder="Search notes…"
+                  className="pl-9 rounded-xl"
+                />
+              </div>
+              <div className="max-h-[520px] overflow-y-auto space-y-2 custom-scrollbar">
+                {notesLoading ? (
+                  <div className="py-12 flex justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+                  </div>
+                ) : filteredNotes.length === 0 ? (
+                  <p className="text-sm text-slate-500 py-8 text-center">No saved notes yet.</p>
+                ) : (
+                  filteredNotes.map((n) => {
+                    const active = selectedSaved?.id === n.id;
+                    return (
+                      <button
+                        key={n.id}
+                        type="button"
+                        onClick={() => setSelectedNoteId(n.id)}
+                        className={cn(
+                          "w-full text-left rounded-xl border p-3 transition-all",
+                          active ? "border-[#0A2E1F] bg-[#0A2E1F] text-white" : "border-slate-100 bg-white hover:border-emerald-200",
+                        )}
+                      >
+                        <p className="font-bold text-sm truncate">{n.patientName}</p>
+                        <p className={cn("text-[10px] mt-1 line-clamp-2", active ? "text-emerald-100" : "text-slate-600")}>
+                          {n.assessmentPreview}
+                        </p>
+                        <p className={cn("text-[10px] mt-1", active ? "text-emerald-200" : "text-slate-400")}>
+                          {formatNoteDate(n.date)} · {n.doctor_name || "—"}
+                        </p>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="lg:col-span-8">
+            {selectedSaved ? (
+              <Card className={doctorSurfaceCard}>
+                <CardHeader className="flex flex-row justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg font-black text-[#0A2E1F]">{selectedSaved.patientName}</CardTitle>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {formatNoteDate(selectedSaved.date)} · {selectedSaved.specialty || "Telehealth"}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="rounded-xl font-bold"
+                    onClick={() => {
+                      setSoapNote(selectedSaved.soap);
+                      setHubTab("compose");
+                      toast.success("Loaded into editor.");
+                    }}
+                  >
+                    Edit in composer
+                  </Button>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                  {SOAP_SECTIONS.map((s) => (
+                    <div key={s.key} className={cn("rounded-xl border p-3", s.color)}>
+                      <p className="text-[10px] font-black uppercase text-slate-500 mb-1">{s.label}</p>
+                      <p className="text-sm text-[#0A2E1F] whitespace-pre-wrap leading-relaxed">
+                        {selectedSaved.soap[s.key] || "—"}
+                      </p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className={doctorSurfaceCard}>
+                <CardContent className="py-16 text-center text-slate-500">Select a saved note to review.</CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
+
+      {hubTab === "templates" && (
+        <div className="grid gap-4 md:grid-cols-3">
+          {NOTE_TEMPLATES.map((tpl) => (
+            <Card key={tpl.id} className={doctorSurfaceCard}>
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-emerald-700" />
+                  <p className="font-black text-[#0A2E1F]">{tpl.label}</p>
+                </div>
+                <p className="text-xs text-slate-600 line-clamp-4">{tpl.soap.assessment}</p>
+                <Button
+                  className="w-full rounded-xl bg-[#0A2E1F] text-white font-bold text-xs"
+                  onClick={() => {
+                    setSoapNote(tpl.soap);
+                    setHubTab("compose");
+                    toast.success(`Applied template: ${tpl.label}`);
+                  }}
+                >
+                  Use template
+                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Pill, AlertTriangle, ShieldCheck, Search, Send, FileCheck, Loader2, Che
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
+import { approveAndDispatchPrescription, insertPrescriptionRecord } from "../../../../lib/prescriptions";
 
 const FORMULARY = [
   { name: "Lisinopril 10 mg",   indication: "Hypertension",     interactsWith: ["Ibuprofen", "NSAID"] },
@@ -14,7 +15,14 @@ const FORMULARY = [
   { name: "Semaglutide 0.25 mg", indication: "Weight management", interactsWith: ["Insulin", "Sulfonylureas"] },
 ];
 
-type PatientRow = { user_id: string; patient_name: string; medication: string };
+type PatientRow = {
+  user_id: string;
+  patient_name: string;
+  medication: string;
+  order_id?: string;
+  order_number?: string;
+  order_status?: string;
+};
 
 /** Doctor eRx always uses light fields (readable in light + dark app theme). */
 const ERX_FIELD =
@@ -38,14 +46,28 @@ export function DoctorERxPage() {
     (async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('user_id, patient_name, medication')
+        .select('id, order_number, user_id, patient_name, medication, status')
         .order('created_at', { ascending: false });
       if (error) { console.error("ERx patient fetch:", error); return; }
       const seen = new Set<string>();
-      const list = (data || []).filter((r: any) => {
+      const list = (data || []).filter((r: { user_id?: string }) => {
         if (!r.user_id || seen.has(r.user_id)) return false;
         seen.add(r.user_id); return true;
-      }) as PatientRow[];
+      }).map((r: {
+        id: string;
+        order_number: string;
+        user_id: string;
+        patient_name: string;
+        medication: string;
+        status: string;
+      }) => ({
+        user_id: r.user_id,
+        patient_name: r.patient_name,
+        medication: r.medication,
+        order_id: r.id,
+        order_number: r.order_number,
+        order_status: r.status,
+      })) as PatientRow[];
       setPatients(list);
     })();
   }, []);
@@ -68,21 +90,46 @@ export function DoctorERxPage() {
     if (!user || !patientId || !selectedMed) return;
     setSubmitting(true); setSuccess(null);
     try {
-      const { error } = await supabase.from('prescriptions').insert({
-        patient_id: patientId,
-        doctor_id: user.id,
-        medication: selectedMed.name,
-        dosage: `${quantity} units`,
-        frequency,
-        refills_remaining: parseInt(refills, 10) || 0,
-        pharmacy_name: pharmacy,
-        status: 'active',
-      });
-      if (error) throw error;
-      setSuccess(`Sent ${selectedMed.name} to ${patients.find(p => p.user_id === patientId)?.patient_name}.`);
+      const patient = patients.find(p => p.user_id === patientId);
+      const dosageSig = `${quantity} units · ${frequency}`;
+      const canDispatchOrder =
+        patient?.order_id &&
+        ["order_submitted", "medical_review", "intake_completed", "refill_eligible"].includes(
+          patient.order_status || "",
+        );
+
+      if (canDispatchOrder && patient?.order_id) {
+        const dispatch = await approveAndDispatchPrescription({
+          orderKey: patient.order_id,
+          patientId,
+          medication: selectedMed.name,
+          dosageInstructions: dosageSig,
+          doctorNote: `eRx: ${selectedMed.indication}`,
+          pharmacy: "truepill",
+          refillsRemaining: parseInt(refills, 10) || 0,
+        });
+        if (!dispatch.ok) throw new Error(dispatch.error || "Dispatch failed");
+        setSuccess(
+          `Dispatched ${selectedMed.name} to pharmacy for ${patient.patient_name}.` +
+            (dispatch.usedFallback ? " (local fallback)" : ""),
+        );
+      } else {
+        const ins = await insertPrescriptionRecord({
+          patientId,
+          doctorId: user.id,
+          medication: selectedMed.name,
+          dosage: dosageSig,
+          sig: selectedMed.indication,
+          pharmacyName: pharmacy,
+          refillsRemaining: parseInt(refills, 10) || 0,
+        });
+        if (!ins.ok) throw new Error(ins.error || "Insert failed");
+        setSuccess(`Prescription recorded for ${patient?.patient_name || "patient"}.`);
+      }
       setSelectedMed(null);
-    } catch (err: any) {
-      setSuccess(`Failed: ${err.message || 'Unknown error'}`);
+    } catch (err: unknown) {
+      const m = err instanceof Error ? err.message : "Unknown error";
+      setSuccess(`Failed: ${m}`);
     } finally {
       setSubmitting(false);
     }

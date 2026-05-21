@@ -12,7 +12,7 @@ import { DoctorPageHeader } from "../../components/doctor/DoctorPageHeader";
 import { getOrderVideoRail } from "../../../lib/orderVideoRail";
 import { doctorPageContainer, doctorSurfaceCard } from "../../../lib/doctorPortalUi";
 import { useI18n, getGreeting, usePatientStore, useAuthStore } from "../../../lib";
-import { useDoctorPortalBase } from "../../../lib/doctorPortalBase";
+import { doctorMessagesHref, useDoctorPortalBase } from "../../../lib/doctorPortalBase";
 import { Link, useNavigate } from "react-router";
 import * as FramerMotion from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -370,10 +370,13 @@ export function DoctorDashboard() {
               </ResponsiveContainer>
             </div>
             
-            <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between cursor-pointer group">
-              <span className="text-sm font-bold text-emerald-600 group-hover:text-emerald-700 transition-colors">View full clinical reports</span>
+            <Link
+              to={`${doctorBase}/analytics`}
+              className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between group"
+            >
+              <span className="text-sm font-bold text-emerald-600 group-hover:text-emerald-700 transition-colors">View analytics & insights</span>
               <ChevronRight className="h-4 w-4 text-emerald-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
-            </div>
+            </Link>
           </Card>
         </div>
 
@@ -432,7 +435,7 @@ export function DoctorDashboard() {
             </div>
             <CardContent className="p-4 grid grid-cols-2 gap-3">
               {[
-                { label: "Messages", icon: MessageSquare, href: `${doctorBase}/messages` },
+                { label: "Messages", icon: MessageSquare, href: doctorMessagesHref(doctorBase) },
                 { label: "Lab Results", icon: FlaskConical, href: `${doctorBase}/labs` },
                 { label: "E-Prescribe", icon: Pill, href: `${doctorBase}/erx` },
                 { label: "AI Scribe", icon: Bot, href: `${doctorBase}/scribe` },

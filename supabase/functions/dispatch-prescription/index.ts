@@ -82,10 +82,11 @@ serve(async (req: Request) => {
       });
     }
 
-    const { order_id, dosage_instructions, doctor_note, pharmacy = "truepill" } = body;
+    const { order_id, order_number, dosage_instructions, doctor_note, pharmacy = "truepill" } = body;
+    const orderKey = order_id || order_number;
 
-    if (!order_id) {
-      return new Response(JSON.stringify({ error: "Missing required parameter: order_id" }), {
+    if (!orderKey) {
+      return new Response(JSON.stringify({ error: "Missing required parameter: order_id or order_number" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -97,19 +98,13 @@ serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Fetch full clinical order details
-    const { data: order, error: fetchErr } = await serviceClient
-      .from("orders")
-      .select(`
-        *,
-        profiles:patient_id (
-          full_name,
-          email,
-          date_of_birth
-        )
-      `)
-      .eq("id", order_id)
-      .single();
+    const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let orderQuery = serviceClient.from("orders").select("*");
+    orderQuery = uuidLike.test(String(orderKey))
+      ? orderQuery.eq("id", orderKey)
+      : orderQuery.eq("order_number", orderKey);
+
+    const { data: order, error: fetchErr } = await orderQuery.single();
 
     if (fetchErr || !order) {
       console.error("dispatch-prescription: order not found", fetchErr);
@@ -120,13 +115,14 @@ serve(async (req: Request) => {
     }
 
     // --------------- 3. Dispatch to Approved Pharmacy API ---------------
+    const patientFullName = order.patient_name ?? "";
     const pharmacyPayload = {
       external_ref: order.order_number,
       patient: {
-        first_name: (order.profiles?.full_name ?? "").split(" ")[0],
-        last_name:  (order.profiles?.full_name ?? "").split(" ").slice(1).join(" "),
-        email:      order.profiles?.email ?? order.patientEmail ?? "",
-        date_of_birth: order.profiles?.date_of_birth ?? "",
+        first_name: patientFullName.split(" ")[0] || "Patient",
+        last_name:  patientFullName.split(" ").slice(1).join(" ") || "",
+        email:      order.patient_email ?? "",
+        date_of_birth: order.patient_dob ?? "",
         address: {
           line1:   order.shipping_address_line1 ?? "",
           line2:   order.shipping_address_line2 ?? "",
@@ -194,7 +190,7 @@ serve(async (req: Request) => {
         pharmacy_dispatched_at:    new Date().toISOString(),
         rx_dispatched:             pharmacyDispatchSuccess,
       })
-      .eq("id", order_id);
+      .eq("id", order.id);
 
     if (updateErr) {
       console.error("dispatch-prescription: DB update error", updateErr);
@@ -208,9 +204,9 @@ serve(async (req: Request) => {
       brand_scope: order.brand_id || 'Global',
       action: `Prescription Authorized: ${order.medication}`,
       target_type: "Patient Chart",
-      target_id: order.patient_id,
+      target_id: order.user_id,
       detail: {
-        order_id,
+        order_id: order.id,
         pharmacy,
         confirmation_id: pharmacyConfirmationId,
         authorized_by_doctor: user.email

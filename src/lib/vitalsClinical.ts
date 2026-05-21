@@ -3,6 +3,8 @@
  * Reads from `vital_readings` metrics; intake baseline from `orders.patient_vitals`.
  */
 
+import { parsePatientVitals } from "./patientVitals";
+
 export type VitalStatus = "normal" | "elevated" | "high" | "low" | "alert" | "unknown";
 
 export type VitalReading = {
@@ -25,6 +27,14 @@ export type IntakeVitals = {
   dob?: string;
   allergies?: string;
   currentMeds?: string;
+  bp_sys?: number;
+  bp_dia?: number;
+  hr?: number;
+  spo2?: number;
+  temp_f?: number;
+  glucose?: number;
+  resp_rate?: number;
+  captured_at?: string;
 };
 
 export type VitalCardModel = {
@@ -52,20 +62,10 @@ export function statusLabel(s: VitalStatus): string {
 }
 
 export function parseIntakeVitals(raw: unknown): IntakeVitals | null {
-  if (!raw || typeof raw !== "object") return null;
-  const o = raw as Record<string, unknown>;
-  return {
-    height: o.height != null ? String(o.height) : undefined,
-    weight: o.weight != null ? String(o.weight) : undefined,
-    bmi: o.bmi != null ? (typeof o.bmi === "number" ? o.bmi : String(o.bmi)) : undefined,
-    sex: o.sex != null ? String(o.sex) : undefined,
-    dob: o.dob != null ? String(o.dob) : undefined,
-    allergies: o.allergies != null ? String(o.allergies) : undefined,
-    currentMeds: o.currentMeds != null ? String(o.currentMeds) : undefined,
-  };
+  return parsePatientVitals(raw);
 }
 
-function readingStatus(metric: string, value: number, flagged?: boolean | null): VitalStatus {
+export function readingStatus(metric: string, value: number, flagged?: boolean | null): VitalStatus {
   if (flagged) return "alert";
   switch (metric) {
     case "bp_sys":
@@ -164,45 +164,64 @@ export function buildVitalCards(
         )
       : "unknown";
 
+  const iSys = intake?.bp_sys;
+  const iDia = intake?.bp_dia;
+  const intakeBpStatus =
+    iSys != null && iDia != null
+      ? worstStatus(readingStatus("bp_sys", iSys), readingStatus("bp_dia", iDia))
+      : "unknown";
+
   const cards: VitalCardModel[] = [
     {
       id: "bp",
       label: "Blood Pressure",
-      current: sys && dia ? `${sys.value}/${dia.value} mmHg` : "—",
-      status: bpStatus,
-      statusLabel: statusLabel(bpStatus),
-      source: sys?.source || dia?.source || "—",
-      recordedAt: sys?.recorded_at || dia?.recorded_at || null,
+      current: sys && dia ? `${sys.value}/${dia.value} mmHg` : iSys != null && iDia != null ? `${iSys}/${iDia} mmHg` : "—",
+      status: sys && dia ? bpStatus : intakeBpStatus,
+      statusLabel: sys && dia ? statusLabel(bpStatus) : iSys != null && iDia != null ? `${statusLabel(intakeBpStatus)} (intake)` : "No data",
+      source: sys?.source || dia?.source || (intake ? "enrollment intake" : "—"),
+      recordedAt: sys?.recorded_at || dia?.recorded_at || intake?.captured_at || null,
       sparkline: trendSeries(readings, "bp_sys", 10),
     },
     {
       id: "hr",
       label: "Heart Rate",
-      current: hr ? `${hr.value} bpm` : "—",
-      status: hr ? readingStatus("hr", Number(hr.value), hr.flagged) : "unknown",
-      statusLabel: hr ? statusLabel(readingStatus("hr", Number(hr.value), hr.flagged)) : "No data",
-      source: hr?.source || "—",
-      recordedAt: hr?.recorded_at || null,
+      current: hr ? `${hr.value} bpm` : intake?.hr != null ? `${intake.hr} bpm` : "—",
+      status: hr ? readingStatus("hr", Number(hr.value), hr.flagged) : intake?.hr != null ? readingStatus("hr", intake.hr) : "unknown",
+      statusLabel: hr
+        ? statusLabel(readingStatus("hr", Number(hr.value), hr.flagged))
+        : intake?.hr != null
+          ? `${statusLabel(readingStatus("hr", intake.hr))} (intake)`
+          : "No data",
+      source: hr?.source || (intake?.hr != null ? "enrollment intake" : "—"),
+      recordedAt: hr?.recorded_at || intake?.captured_at || null,
       sparkline: trendSeries(readings, "hr", 10),
     },
     {
       id: "spo2",
       label: "Oxygen (SpO₂)",
-      current: spo2 ? `${spo2.value}%` : "—",
-      status: spo2 ? readingStatus("spo2", Number(spo2.value), spo2.flagged) : "unknown",
-      statusLabel: spo2 ? statusLabel(readingStatus("spo2", Number(spo2.value), spo2.flagged)) : "No data",
-      source: spo2?.source || "—",
-      recordedAt: spo2?.recorded_at || null,
+      current: spo2 ? `${spo2.value}%` : intake?.spo2 != null ? `${intake.spo2}%` : "—",
+      status: spo2 ? readingStatus("spo2", Number(spo2.value), spo2.flagged) : intake?.spo2 != null ? readingStatus("spo2", intake.spo2) : "unknown",
+      statusLabel: spo2
+        ? statusLabel(readingStatus("spo2", Number(spo2.value), spo2.flagged))
+        : intake?.spo2 != null
+          ? `${statusLabel(readingStatus("spo2", intake.spo2))} (intake)`
+          : "No data",
+      source: spo2?.source || (intake?.spo2 != null ? "enrollment intake" : "—"),
+      recordedAt: spo2?.recorded_at || intake?.captured_at || null,
       sparkline: trendSeries(readings, "spo2", 10),
     },
     {
       id: "temp",
       label: "Temperature",
-      current: temp ? `${temp.value}°F` : "—",
-      status: temp ? readingStatus("temp", Number(temp.value), temp.flagged) : "unknown",
-      statusLabel: temp ? statusLabel(readingStatus("temp", Number(temp.value), temp.flagged)) : "No data",
-      source: temp?.source || "—",
-      recordedAt: temp?.recorded_at || null,
+      current: temp ? `${temp.value}°F` : intake?.temp_f != null ? `${intake.temp_f}°F` : "—",
+      status: temp ? readingStatus("temp", Number(temp.value), temp.flagged) : intake?.temp_f != null ? readingStatus("temp", intake.temp_f) : "unknown",
+      statusLabel: temp
+        ? statusLabel(readingStatus("temp", Number(temp.value), temp.flagged))
+        : intake?.temp_f != null
+          ? `${statusLabel(readingStatus("temp", intake.temp_f))} (intake)`
+          : "No data",
+      source: temp?.source || (intake?.temp_f != null ? "enrollment intake" : "—"),
+      recordedAt: temp?.recorded_at || intake?.captured_at || null,
       sparkline: trendSeries(readings, temp?.metric || "temp", 10),
     },
     {
@@ -224,21 +243,37 @@ export function buildVitalCards(
     {
       id: "glucose",
       label: "Blood Glucose",
-      current: glucose ? `${glucose.value} ${glucose.unit || "mg/dL"}` : "—",
-      status: glucose ? readingStatus("glucose", Number(glucose.value), glucose.flagged) : "unknown",
-      statusLabel: glucose ? statusLabel(readingStatus("glucose", Number(glucose.value), glucose.flagged)) : "No data",
-      source: glucose?.source || "—",
-      recordedAt: glucose?.recorded_at || null,
+      current: glucose ? `${glucose.value} ${glucose.unit || "mg/dL"}` : intake?.glucose != null ? `${intake.glucose} mg/dL` : "—",
+      status: glucose
+        ? readingStatus("glucose", Number(glucose.value), glucose.flagged)
+        : intake?.glucose != null
+          ? readingStatus("glucose", intake.glucose)
+          : "unknown",
+      statusLabel: glucose
+        ? statusLabel(readingStatus("glucose", Number(glucose.value), glucose.flagged))
+        : intake?.glucose != null
+          ? `${statusLabel(readingStatus("glucose", intake.glucose))} (intake)`
+          : "No data",
+      source: glucose?.source || (intake?.glucose != null ? "enrollment intake" : "—"),
+      recordedAt: glucose?.recorded_at || intake?.captured_at || null,
       sparkline: trendSeries(readings, "glucose", 10),
     },
     {
       id: "resp",
       label: "Respiratory Rate",
-      current: resp ? `${resp.value} /min` : "—",
-      status: resp ? readingStatus(resp.metric, Number(resp.value), resp.flagged) : "unknown",
-      statusLabel: resp ? statusLabel(readingStatus(resp.metric, Number(resp.value), resp.flagged)) : "No data",
-      source: resp?.source || "—",
-      recordedAt: resp?.recorded_at || null,
+      current: resp ? `${resp.value} /min` : intake?.resp_rate != null ? `${intake.resp_rate} /min` : "—",
+      status: resp
+        ? readingStatus(resp.metric, Number(resp.value), resp.flagged)
+        : intake?.resp_rate != null
+          ? readingStatus("resp_rate", intake.resp_rate)
+          : "unknown",
+      statusLabel: resp
+        ? statusLabel(readingStatus(resp.metric, Number(resp.value), resp.flagged))
+        : intake?.resp_rate != null
+          ? `${statusLabel(readingStatus("resp_rate", intake.resp_rate))} (intake)`
+          : "No data",
+      source: resp?.source || (intake?.resp_rate != null ? "enrollment intake" : "—"),
+      recordedAt: resp?.recorded_at || intake?.captured_at || null,
       sparkline: trendSeries(readings, resp?.metric || "resp_rate", 10),
     },
   ];
@@ -290,4 +325,5 @@ export const SOURCE_LABEL: Record<string, string> = {
   cuff: "BP Cuff",
   manual: "Manual entry",
   enrollment: "Enrollment intake",
+  enrollment_intake: "Enrollment intake",
 };

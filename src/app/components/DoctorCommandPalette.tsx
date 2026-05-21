@@ -25,6 +25,9 @@ import {
   Command,
   Radio,
   Search,
+  FolderOpen,
+  BarChart3,
+  Settings,
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { useDoctorClinicalMetrics } from "../../lib/doctorClinicalMetrics";
@@ -42,21 +45,25 @@ type Cmd = {
 const COMMANDS: Cmd[] = [
   { id: "dash", label: "Overview", to: "/doctor", icon: LayoutDashboard, section: "Clinical" },
   { id: "queue", label: "Clinical queue", hint: "Triage & e-prescribe", to: "/doctor/queue", icon: ClipboardList, section: "Clinical" },
+  { id: "intake", label: "Clinical intake", hint: "Questionnaires & risk flags", to: "/doctor/intake", icon: ClipboardList, section: "Clinical" },
   { id: "consult", label: "Case workspace", hint: "SOAP, video, approve, refund", to: "/doctor/consult", icon: Stethoscope, section: "Clinical" },
   { id: "patients", label: "Patient roster", to: "/doctor/patients", icon: Users, section: "Clinical" },
-  { id: "messages", label: "Secure messages", to: "/doctor/messages", icon: MessageSquare, section: "Coordination" },
+  { id: "messages", label: "Secure messaging", hint: "HIPAA inbox + patient roster", to: "/doctor/messages", icon: MessageSquare, section: "Coordination" },
   { id: "schedule", label: "Calendar embed", to: "/doctor/schedule", icon: Calendar, section: "Coordination" },
   { id: "availability", label: "On-call availability", to: "/doctor/availability", icon: Activity, section: "Coordination" },
-  { id: "notif", label: "Notifications", to: "/doctor/notifications", icon: Bell, section: "Coordination" },
+  { id: "notif", label: "Alerts & notifications", hint: "Inbox + clinical signals", to: "/doctor/notifications", icon: Bell, section: "Coordination" },
   { id: "labs", label: "Lab requests", to: "/doctor/labs", icon: FlaskConical, section: "Diagnostics" },
+  { id: "documents", label: "Medical documents", hint: "Uploads, labs & visit PDFs", to: "/doctor/documents", icon: FolderOpen, section: "Diagnostics" },
   { id: "vitals", label: "Vitals", hint: "BP, SpO₂, trends & alerts", to: "/doctor/vitals", icon: HeartPulse, section: "Diagnostics" },
   { id: "imaging", label: "Imaging", to: "/doctor/imaging", icon: ImageIcon, section: "Diagnostics" },
   { id: "scribe", label: "AI scribe", to: "/doctor/scribe", icon: Bot, section: "Diagnostics" },
   { id: "erx", label: "e-Prescribing", to: "/doctor/erx", icon: Pill, section: "Diagnostics" },
+  { id: "analytics", label: "Analytics & insights", hint: "KPIs, trends, clinical intelligence", to: "/doctor/analytics", icon: BarChart3, section: "Programs" },
   { id: "rpm", label: "Remote monitoring", to: "/doctor/rpm", icon: Radio, section: "Programs" },
   { id: "referrals", label: "Referrals", to: "/doctor/referrals", icon: ArrowRightLeft, section: "Programs" },
   { id: "billing", label: "Billing & encounters", to: "/doctor/billing", icon: CreditCard, section: "Programs" },
   { id: "education", label: "Patient education", to: "/doctor/education", icon: BookOpen, section: "Programs" },
+  { id: "settings", label: "Settings & profile", hint: "Credentials, security, prefs", to: "/doctor/settings", icon: Settings, section: "Account" },
 ];
 
 export function DoctorCommandPalette() {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   Activity,
   AlertTriangle,
@@ -15,6 +15,12 @@ import {
   Scale,
   Watch,
   Radio,
+  Filter,
+  User,
+  BookOpen,
+  CheckCircle2,
+  CircleDashed,
+  MinusCircle,
 } from "lucide-react";
 import {
   Area,
@@ -34,20 +40,25 @@ import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { supabase } from "../../../../lib/supabaseClient";
 import {
   buildVitalCards,
-  parseIntakeVitals,
   SOURCE_LABEL,
   STATUS_STYLES,
   type VitalReading,
   type VitalCardModel,
 } from "../../../../lib/vitalsClinical";
 import { isMissingTableError } from "../../../../lib/supabaseTableError";
-
-type PatientOption = {
-  key: string;
-  patient_id: string | null;
-  patient_name: string;
-  intake: ReturnType<typeof parseIntakeVitals>;
-};
+import {
+  buildBpTrendData,
+  buildSingleVitalTrend,
+  buildVitalsRoster,
+  CLINICAL_THRESHOLDS,
+  readingsForVitalsPatient,
+  timeAgoVitals,
+  vitalsHubStats,
+  VITAL_METRIC_CHARTS,
+  type VitalsTimeRange,
+} from "../../../../lib/doctorVitals";
+import type { RpmTimeRange } from "../../../../lib/doctorRpm";
+import { assessVitalCompleteness } from "../../../../lib/patientVitals";
 
 const CARD_ICONS: Record<string, typeof Heart> = {
   bp: Heart,
@@ -59,13 +70,8 @@ const CARD_ICONS: Record<string, typeof Heart> = {
   resp: Radio,
 };
 
-function timeAgo(iso: string | null): string {
-  if (!iso) return "—";
-  const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  if (mins < 60) return `${mins}m ago`;
-  if (mins < 1440) return `${Math.round(mins / 60)}h ago`;
-  return `${Math.round(mins / 1440)}d ago`;
-}
+type RosterFilter = "all" | "alerts" | "device" | "baseline";
+type PatientTab = "overview" | "trends" | "history";
 
 function VitalMetricCard({ card }: { card: VitalCardModel }) {
   const Icon = CARD_ICONS[card.id] ?? HeartPulse;
@@ -73,13 +79,7 @@ function VitalMetricCard({ card }: { card: VitalCardModel }) {
   const hasTrend = card.sparkline && card.sparkline.length > 1;
 
   return (
-    <Card
-      className={cn(
-        doctorSurfaceCard,
-        "overflow-hidden transition-shadow hover:shadow-md ring-1",
-        styles.ring,
-      )}
-    >
+    <Card className={cn(doctorSurfaceCard, "overflow-hidden transition-shadow hover:shadow-md ring-1", styles.ring)}>
       <CardContent className="p-0">
         <div className="flex items-start justify-between gap-3 border-b border-emerald-100/60 bg-gradient-to-br from-white to-emerald-50/30 px-5 py-4">
           <div className="flex items-center gap-3 min-w-0">
@@ -91,16 +91,14 @@ function VitalMetricCard({ card }: { card: VitalCardModel }) {
               <p className="text-xl font-black tracking-tight text-[#0A2E1F] truncate">{card.current}</p>
             </div>
           </div>
-          <Badge className={cn("shrink-0 rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider", styles.badge)}>
+          <Badge className={cn("shrink-0 rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase", styles.badge)}>
             <span className={cn("mr-1.5 inline-block h-1.5 w-1.5 rounded-full", styles.dot)} />
             {card.statusLabel}
           </Badge>
         </div>
         <div className="px-5 py-3 flex items-center justify-between text-[11px] font-semibold text-slate-500">
-          <span className="truncate" title={card.source}>
-            {SOURCE_LABEL[card.source] || card.source}
-          </span>
-          <span>{timeAgo(card.recordedAt)}</span>
+          <span className="truncate">{SOURCE_LABEL[card.source] || card.source}</span>
+          <span>{timeAgoVitals(card.recordedAt)}</span>
         </div>
         {hasTrend && (
           <div className="h-[72px] px-2 pb-2">
@@ -124,85 +122,48 @@ function VitalMetricCard({ card }: { card: VitalCardModel }) {
 
 export function DoctorVitalsPage() {
   const doctorBase = useDoctorPortalBase();
+  const navigate = useNavigate();
   const [readings, setReadings] = useState<VitalReading[]>([]);
-  const [patients, setPatients] = useState<PatientOption[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [range, setRange] = useState<VitalsTimeRange>("7d");
+  const [rosterFilter, setRosterFilter] = useState<RosterFilter>("all");
+  const [patientTab, setPatientTab] = useState<PatientTab>("overview");
+  const [chartMetric, setChartMetric] = useState<(typeof VITAL_METRIC_CHARTS)[number]["id"]>("bp");
   const [loading, setLoading] = useState(true);
   const [missingTable, setMissingTable] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [ordersForRoster, setOrdersForRoster] = useState<
+    { id: string; user_id: string | null; patient_name: string; patient_vitals: unknown }[]
+  >([]);
 
   const fetchAll = useCallback(async () => {
     setRefreshing(true);
     try {
       const [readingsRes, ordersRes] = await Promise.all([
-        supabase
-          .from("vital_readings")
-          .select("*")
-          .order("recorded_at", { ascending: false })
-          .limit(800),
+        supabase.from("vital_readings").select("*").order("recorded_at", { ascending: false }).limit(1200),
         supabase
           .from("orders")
-          .select("user_id, patient_name, patient_vitals, created_at")
-          .not("patient_vitals", "is", null)
+          .select("id, user_id, patient_name, patient_vitals")
           .order("created_at", { ascending: false })
-          .limit(300),
+          .limit(500),
       ]);
 
-      let rows: VitalReading[] = [];
       if (readingsRes.error) {
         if (isMissingTableError(readingsRes.error)) {
           setMissingTable(true);
           setReadings([]);
-        } else if (readingsRes.error.code === "PGRST303" || readingsRes.error.message?.toLowerCase().includes("jwt")) {
-          setReadings([]);
         } else {
-          console.warn("[Vitals] readings fetch:", readingsRes.error.message);
+          console.warn("[Vitals] readings:", readingsRes.error.message);
         }
       } else {
         setMissingTable(false);
-        rows = (readingsRes.data || []) as VitalReading[];
-        setReadings(rows);
+        setReadings((readingsRes.data || []) as VitalReading[]);
       }
 
-      if (ordersRes.error && !isMissingTableError(ordersRes.error)) {
-        console.warn("[Vitals] orders fetch:", ordersRes.error.message);
+      if (!ordersRes.error && ordersRes.data) {
+        setOrdersForRoster(ordersRes.data as typeof ordersForRoster);
       }
-
-      const map = new Map<string, PatientOption>();
-
-      for (const r of rows) {
-        const key = r.patient_id || r.patient_name || "unknown";
-        if (!map.has(key)) {
-          map.set(key, {
-            key,
-            patient_id: r.patient_id,
-            patient_name: r.patient_name || "Unknown patient",
-            intake: null,
-          });
-        }
-      }
-
-      for (const o of ordersRes.data || []) {
-        const key = o.user_id || o.patient_name || "unknown";
-        if (!map.has(key)) {
-          map.set(key, {
-            key,
-            patient_id: o.user_id ?? null,
-            patient_name: o.patient_name || "Unknown patient",
-            intake: parseIntakeVitals(o.patient_vitals),
-          });
-        } else {
-          const existing = map.get(key)!;
-          if (!existing.intake) existing.intake = parseIntakeVitals(o.patient_vitals);
-        }
-      }
-
-      const list = Array.from(map.values()).sort((a, b) =>
-        a.patient_name.localeCompare(b.patient_name),
-      );
-      setPatients(list);
-      setSelectedKey((prev) => (prev && list.some((p) => p.key === prev) ? prev : list[0]?.key ?? null));
     } catch (err) {
       console.error("Vitals fetch error:", err);
     } finally {
@@ -226,67 +187,81 @@ export function DoctorVitalsPage() {
     };
   }, [fetchAll, missingTable]);
 
-  const selectedPatient = patients.find((p) => p.key === selectedKey) ?? null;
+  const fullRoster = useMemo(
+    () => buildVitalsRoster(readings, ordersForRoster, range),
+    [readings, ordersForRoster, range],
+  );
 
-  const patientReadings = useMemo(() => {
-    if (!selectedPatient) return [];
-    return readings.filter(
-      (r) =>
-        (selectedPatient.patient_id && r.patient_id === selectedPatient.patient_id) ||
-        (selectedPatient.patient_name && r.patient_name === selectedPatient.patient_name),
-    );
-  }, [readings, selectedPatient]);
+  const filteredRoster = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return fullRoster.filter((p) => {
+      if (rosterFilter === "alerts" && p.flaggedCount === 0) return false;
+      if (rosterFilter === "device" && !p.hasDeviceData) return false;
+      if (rosterFilter === "baseline" && (!p.intake || p.hasDeviceData)) return false;
+      if (!q) return true;
+      return p.patient_name.toLowerCase().includes(q);
+    });
+  }, [fullRoster, search, rosterFilter]);
+
+  const selectedPatient = fullRoster.find((p) => p.key === selectedKey) ?? filteredRoster[0] ?? null;
+
+  useEffect(() => {
+    if (selectedPatient && !selectedKey) setSelectedKey(selectedPatient.key);
+  }, [selectedPatient, selectedKey]);
+
+  const patientReadings = useMemo(
+    () => (selectedPatient ? readingsForVitalsPatient(readings, selectedPatient, range) : []),
+    [readings, selectedPatient, range],
+  );
 
   const vitalCards = useMemo(
     () => buildVitalCards(patientReadings, selectedPatient?.intake ?? null),
     [patientReadings, selectedPatient],
   );
 
-  const filteredPatients = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return patients;
-    return patients.filter((p) => p.patient_name.toLowerCase().includes(q));
-  }, [patients, search]);
-
-  const stats = useMemo(() => {
-    const since24h = Date.now() - 24 * 60 * 60 * 1000;
-    const recent = readings.filter((r) => new Date(r.recorded_at).getTime() > since24h);
-    const critical = recent.filter((r) => r.flagged).length;
-    const monitored = patients.length;
-    const abnormalCards = vitalCards.filter((c) => c.status === "alert" || c.status === "high").length;
-    return { monitored, critical, readings24h: recent.length, abnormalCards };
-  }, [readings, patients, vitalCards]);
-
-  const criticalQueue = useMemo(
-    () => readings.filter((r) => r.flagged).slice(0, 8),
-    [readings],
+  const vitalCompleteness = useMemo(
+    () => assessVitalCompleteness(selectedPatient?.intake ?? null, patientReadings),
+    [selectedPatient?.intake, patientReadings],
   );
 
-  const bpTrend = useMemo(() => {
-    const slice = patientReadings
-      .filter((r) => r.metric === "bp_sys" || r.metric === "bp_dia")
-      .slice()
-      .reverse();
-    const buckets: Record<string, { time: string; sys?: number; dia?: number }> = {};
-    for (const r of slice) {
-      const t = new Date(r.recorded_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-      buckets[t] ||= { time: t };
-      if (r.metric === "bp_sys") buckets[t].sys = Number(r.value);
-      else buckets[t].dia = Number(r.value);
-    }
-    return Object.values(buckets).slice(-16);
-  }, [patientReadings]);
+  const missingVitals = vitalCompleteness.filter((v) => v.status === "missing");
+  const partialVitals = vitalCompleteness.filter((v) => v.status === "partial");
 
-  const historyRows = useMemo(() => {
-    return patientReadings.slice(0, 12).map((r) => ({
-      id: r.id,
-      vital: r.metric.replace(/_/g, " ").toUpperCase(),
-      value: `${r.value}${r.unit ? ` ${r.unit}` : ""}`,
-      source: SOURCE_LABEL[r.source || ""] || r.source || "Device",
-      flagged: r.flagged,
-      at: new Date(r.recorded_at).toLocaleString(),
-    }));
-  }, [patientReadings]);
+  const stats = useMemo(() => {
+    const abnormal = vitalCards.filter((c) => c.status === "alert" || c.status === "high" || c.status === "low").length;
+    return vitalsHubStats(fullRoster, readings, range, abnormal);
+  }, [fullRoster, readings, range, vitalCards]);
+
+  const criticalQueue = useMemo(() => {
+    const start = range === "all" ? 0 : Date.now() - (range === "24h" ? 1 : range === "7d" ? 7 : 30) * 86400000;
+    return readings
+      .filter((r) => r.flagged && (start === 0 || new Date(r.recorded_at).getTime() >= start))
+      .slice(0, 12);
+  }, [readings, range]);
+
+  const bpTrend = useMemo(() => buildBpTrendData(patientReadings, 20), [patientReadings]);
+
+  const chartConfig = VITAL_METRIC_CHARTS.find((c) => c.id === chartMetric)!;
+  const singleTrend = useMemo(
+    () => (chartMetric !== "bp" ? buildSingleVitalTrend(patientReadings, [...chartConfig.metrics], 28) : []),
+    [patientReadings, chartMetric, chartConfig.metrics],
+  );
+
+  const historyRows = useMemo(
+    () =>
+      [...patientReadings]
+        .sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime())
+        .slice(0, 40)
+        .map((r) => ({
+          id: r.id,
+          vital: r.metric.replace(/_/g, " ").toUpperCase(),
+          value: `${r.value}${r.unit ? ` ${r.unit}` : ""}`,
+          source: SOURCE_LABEL[r.source || ""] || r.source || "Device",
+          flagged: r.flagged,
+          at: new Date(r.recorded_at).toLocaleString(),
+        })),
+    [patientReadings],
+  );
 
   if (loading) {
     return (
@@ -302,7 +277,7 @@ export function DoctorVitalsPage() {
         variant="hero"
         eyebrow="Clinical monitoring"
         title="Patient Vitals"
-        description="Real-time and historical health metrics — blood pressure, heart rate, oxygen, glucose, weight, and intake baselines. Abnormal readings surface as clinical alerts."
+        description="Blood pressure, heart rate, oxygen, glucose, weight, and respiratory metrics — with enrollment baselines, clinical thresholds, and device trends from vital_readings."
       >
         <Button
           variant="outline"
@@ -315,7 +290,7 @@ export function DoctorVitalsPage() {
         </Button>
         <Link
           to={`${doctorBase}/rpm`}
-          className="inline-flex items-center justify-center rounded-xl border border-[#D4AF37]/40 bg-[#D4AF37]/15 px-4 py-2 text-sm font-semibold text-[#D4AF37] hover:bg-[#D4AF37]/25 transition-colors"
+          className="inline-flex items-center rounded-xl border border-[#D4AF37]/40 bg-[#D4AF37]/15 px-4 py-2 text-sm font-semibold text-[#D4AF37] hover:bg-[#D4AF37]/25"
         >
           <Watch className="h-4 w-4 mr-2" />
           RPM devices
@@ -325,29 +300,49 @@ export function DoctorVitalsPage() {
       {missingTable && (
         <Card className="border-amber-300 bg-amber-50/90">
           <CardContent className="p-4 text-sm text-amber-950">
-            <p className="font-bold mb-1">Device telemetry table not provisioned</p>
+            <p className="font-bold mb-1">vital_readings table not provisioned</p>
             <p>
-              Run <code className="font-mono bg-white px-2 py-0.5 rounded text-xs">scripts/sql/RUN_IN_SUPABASE_backfill_patient_vitals.sql</code> in the Supabase SQL Editor (creates <code className="font-mono">vital_readings</code> and seeds data). Enrollment vitals from <code className="font-mono">orders.patient_vitals</code> still appear below until then.
+              Run{" "}
+              <code className="font-mono bg-white px-1.5 py-0.5 rounded text-xs">
+                scripts/sql/RUN_IN_SUPABASE_backfill_patient_vitals.sql
+              </code>{" "}
+              in Supabase SQL Editor. Intake baselines from <code className="font-mono">orders.patient_vitals</code> still show in the roster until device data syncs.
             </p>
           </CardContent>
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-[10px] font-black uppercase text-slate-500 mr-1">Range</span>
+        {(["24h", "7d", "30d", "all"] as RpmTimeRange[]).map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => setRange(r)}
+            className={cn(
+              "rounded-xl px-3 py-1.5 text-xs font-black uppercase border",
+              range === r ? "bg-[#0A2E1F] text-white border-[#0A2E1F]" : "bg-white text-slate-600 border-slate-200",
+            )}
+          >
+            {r === "all" ? "All" : r}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {[
-          { label: "Patients monitored", value: stats.monitored, icon: HeartPulse, accent: "text-emerald-600" },
-          { label: "Critical alerts (24h)", value: stats.critical, icon: AlertTriangle, accent: "text-red-600" },
-          { label: "Readings (24h)", value: stats.readings24h, icon: TrendingUp, accent: "text-violet-600" },
-          { label: "Abnormal (selected)", value: stats.abnormalCards, icon: Activity, accent: "text-amber-600" },
+          { label: "On chart", value: stats.monitored, icon: HeartPulse },
+          { label: "Device data", value: stats.withDeviceData, icon: Watch },
+          { label: "Intake baseline only", value: stats.intakeOnly, icon: BookOpen },
+          { label: "Flagged in range", value: stats.critical, icon: AlertTriangle },
+          { label: "Readings in range", value: stats.readingsInRange, icon: TrendingUp },
         ].map((s) => (
           <Card key={s.label} className={doctorSurfaceCard}>
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className={cn("rounded-2xl bg-emerald-50 p-3", s.accent)}>
-                <s.icon className="h-6 w-6" />
-              </div>
+            <CardContent className="flex items-center gap-3 p-4">
+              <s.icon className="h-5 w-5 text-emerald-700 shrink-0" />
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{s.label}</p>
-                <p className="text-2xl font-black text-[#0A2E1F]">{s.value}</p>
+                <p className="text-[10px] font-bold uppercase text-slate-500">{s.label}</p>
+                <p className="text-xl font-black text-[#0A2E1F]">{s.value}</p>
               </div>
             </CardContent>
           </Card>
@@ -365,21 +360,39 @@ export function DoctorVitalsPage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search roster..."
+                placeholder="Search…"
                 className="pl-9 rounded-xl border-emerald-100"
               />
             </div>
-            <div className="max-h-[420px] space-y-1 overflow-y-auto custom-scrollbar pr-1">
-              {filteredPatients.length === 0 ? (
-                <p className="py-8 text-center text-xs text-slate-500">No patients with vitals yet.</p>
+            <div className="flex flex-wrap gap-1">
+              {(
+                [
+                  { id: "all", label: "All" },
+                  { id: "alerts", label: "Flagged" },
+                  { id: "device", label: "Device" },
+                  { id: "baseline", label: "Baseline" },
+                ] as const
+              ).map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setRosterFilter(f.id)}
+                  className={cn(
+                    "rounded-lg px-2 py-1 text-[9px] font-black uppercase border",
+                    rosterFilter === f.id ? "bg-[#0A2E1F] text-white" : "bg-white text-slate-500 border-slate-200",
+                  )}
+                >
+                  <Filter className="h-2.5 w-2.5 inline mr-0.5 opacity-60" />
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <div className="max-h-[400px] space-y-1 overflow-y-auto custom-scrollbar pr-1">
+              {filteredRoster.length === 0 ? (
+                <p className="py-8 text-center text-xs text-slate-500">No patients match.</p>
               ) : (
-                filteredPatients.map((p) => {
+                filteredRoster.map((p) => {
                   const active = p.key === selectedKey;
-                  const hasAlert = readings.some(
-                    (r) =>
-                      r.flagged &&
-                      ((p.patient_id && r.patient_id === p.patient_id) || r.patient_name === p.patient_name),
-                  );
                   return (
                     <button
                       key={p.key}
@@ -387,22 +400,17 @@ export function DoctorVitalsPage() {
                       onClick={() => setSelectedKey(p.key)}
                       className={cn(
                         "w-full rounded-xl border px-3 py-2.5 text-left transition-all",
-                        active
-                          ? "border-[#0A2E1F] bg-[#0A2E1F] text-white shadow-md"
-                          : "border-slate-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/50",
+                        active ? "border-[#0A2E1F] bg-[#0A2E1F] text-white shadow-md" : "border-slate-100 bg-white hover:border-emerald-200",
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-bold truncate">{p.patient_name}</span>
-                        {hasAlert && (
-                          <span className="h-2 w-2 shrink-0 rounded-full bg-red-500 animate-pulse" />
-                        )}
+                        {p.flaggedCount > 0 && <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse shrink-0" />}
                       </div>
-                      {p.intake?.bmi && (
-                        <p className={cn("text-[10px] mt-0.5 font-semibold", active ? "text-emerald-200" : "text-slate-500")}>
-                          Intake BMI {p.intake.bmi}
-                        </p>
-                      )}
+                      <p className={cn("text-[10px] mt-0.5", active ? "text-emerald-200" : "text-slate-500")}>
+                        {p.hasDeviceData ? `${p.readingCount} readings` : "Intake baseline"}
+                        {p.intake?.bmi ? ` · BMI ${p.intake.bmi}` : ""}
+                      </p>
                     </button>
                   );
                 })
@@ -411,152 +419,311 @@ export function DoctorVitalsPage() {
           </CardContent>
         </Card>
 
-        <div className="lg:col-span-9 space-y-6">
+        <div className="lg:col-span-6 space-y-4">
           {selectedPatient ? (
             <>
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-black text-[#0A2E1F]">{selectedPatient.patient_name}</h2>
-                  <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                    {selectedPatient.intake?.sex && `${selectedPatient.intake.sex} · `}
-                    {selectedPatient.intake?.height && `H ${selectedPatient.intake.height} · `}
-                    {patientReadings.length} device readings on chart
+                  <p className="text-xs text-slate-500 font-semibold">
+                    {patientReadings.length} readings in range · Last {timeAgoVitals(selectedPatient.lastReadingAt)}
                   </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedPatient.order_id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl text-xs font-bold"
+                      onClick={() => navigate(`${doctorBase}/patients/${selectedPatient.order_id}`)}
+                    >
+                      <User className="h-3.5 w-3.5 mr-1" />
+                      Chart
+                    </Button>
+                  )}
+                  <Link
+                    to={`${doctorBase}/rpm`}
+                    className="inline-flex items-center rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-bold hover:bg-emerald-50"
+                  >
+                    <Radio className="h-3.5 w-3.5 mr-1" />
+                    RPM
+                  </Link>
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                {vitalCards.map((card) => (
-                  <VitalMetricCard key={card.id} card={card} />
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    { id: "overview", label: "Overview" },
+                    { id: "trends", label: "Trends" },
+                    { id: "history", label: "History" },
+                  ] as const
+                ).map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setPatientTab(t.id)}
+                    className={cn(
+                      "rounded-xl px-3 py-1.5 text-xs font-black uppercase border",
+                      patientTab === t.id ? "bg-[#0A2E1F] text-white" : "bg-white text-slate-600 border-slate-200",
+                    )}
+                  >
+                    {t.label}
+                  </button>
                 ))}
               </div>
 
-              <Card className={doctorSurfaceCard}>
-                <CardHeader>
-                  <CardTitle className="text-base font-black text-[#0A2E1F]">Current vitals summary</CardTitle>
-                </CardHeader>
-                <CardContent className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-emerald-100 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">
-                        <th className="pb-3 pr-4">Vital</th>
-                        <th className="pb-3 pr-4">Current</th>
-                        <th className="pb-3 pr-4">Status</th>
-                        <th className="pb-3 pr-4">Source</th>
-                        <th className="pb-3">Updated</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {vitalCards.map((row) => {
-                        const st = STATUS_STYLES[row.status];
-                        return (
-                          <tr key={row.id} className="border-b border-slate-50 last:border-0">
-                            <td className="py-3 pr-4 font-bold text-[#0A2E1F]">{row.label}</td>
-                            <td className="py-3 pr-4 font-mono font-semibold">{row.current}</td>
-                            <td className="py-3 pr-4">
-                              <Badge className={cn("rounded-md border text-[10px] font-black uppercase", st.badge)}>
-                                {row.statusLabel}
-                              </Badge>
-                            </td>
-                            <td className="py-3 pr-4 text-slate-600 text-xs">{SOURCE_LABEL[row.source] || row.source}</td>
-                            <td className="py-3 text-slate-500 text-xs">{timeAgo(row.recordedAt)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </CardContent>
-              </Card>
+              {patientTab === "overview" && (
+                <>
+                  {(missingVitals.length > 0 || partialVitals.length > 0) && (
+                    <Card className={cn(doctorSurfaceCard, "border-amber-200/80 bg-amber-50/30")}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-black text-[#0A2E1F] flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-600" />
+                          Vitals completeness
+                        </CardTitle>
+                        <p className="text-xs text-slate-600 font-medium mt-1">
+                          {missingVitals.length > 0
+                            ? `${missingVitals.length} not captured — patient can add at enrollment or you can request a reading.`
+                            : "Some metrics have intake only; device trends will appear after sync."}
+                        </p>
+                      </CardHeader>
+                      <CardContent className="grid gap-2 sm:grid-cols-2">
+                        {vitalCompleteness.map((item) => {
+                          const Icon =
+                            item.status === "complete"
+                              ? CheckCircle2
+                              : item.status === "partial"
+                                ? CircleDashed
+                                : MinusCircle;
+                          const tone =
+                            item.status === "complete"
+                              ? "border-emerald-200 bg-emerald-50/50 text-emerald-900"
+                              : item.status === "partial"
+                                ? "border-amber-200 bg-amber-50/60 text-amber-950"
+                                : "border-slate-200 bg-white text-slate-600";
+                          return (
+                            <div key={item.key} className={cn("rounded-xl border px-3 py-2.5 flex gap-2.5", tone)}>
+                              <Icon
+                                className={cn(
+                                  "h-4 w-4 shrink-0 mt-0.5",
+                                  item.status === "complete"
+                                    ? "text-emerald-600"
+                                    : item.status === "partial"
+                                      ? "text-amber-600"
+                                      : "text-slate-400",
+                                )}
+                              />
+                              <div className="min-w-0">
+                                <p className="text-xs font-black">{item.label}</p>
+                                <p className="text-[10px] font-semibold opacity-80 mt-0.5">{item.detail}</p>
+                                <p className="text-[9px] mt-1 font-bold uppercase tracking-wide opacity-60">
+                                  {item.hasIntake ? "Intake" : "—"} · {item.hasReadings ? "Readings" : "—"}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  )}
 
-              <div className="grid gap-6 xl:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {vitalCards.map((card) => (
+                      <VitalMetricCard key={card.id} card={card} />
+                    ))}
+                  </div>
+                  <Card className={doctorSurfaceCard}>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-black text-[#0A2E1F]">Vitals summary table</CardTitle>
+                    </CardHeader>
+                    <CardContent className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-[10px] font-black uppercase text-slate-500 border-b border-emerald-100">
+                            <th className="pb-2 pr-3">Vital</th>
+                            <th className="pb-2 pr-3">Value</th>
+                            <th className="pb-2 pr-3">Status</th>
+                            <th className="pb-2">Updated</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {vitalCards.map((row) => {
+                            const st = STATUS_STYLES[row.status];
+                            return (
+                              <tr key={row.id} className="border-b border-slate-50">
+                                <td className="py-2.5 font-bold text-[#0A2E1F]">{row.label}</td>
+                                <td className="py-2.5 font-mono font-semibold">{row.current}</td>
+                                <td className="py-2.5">
+                                  <Badge className={cn("text-[9px] font-black border", st.badge)}>{row.statusLabel}</Badge>
+                                </td>
+                                <td className="py-2.5 text-xs text-slate-500">{timeAgoVitals(row.recordedAt)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+
+              {patientTab === "trends" && (
                 <Card className={doctorSurfaceCard}>
-                  <CardHeader>
-                    <CardTitle className="text-base font-black text-[#0A2E1F]">Blood pressure trend</CardTitle>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-sm font-black text-[#0A2E1F]">Metric trends</CardTitle>
+                    <select
+                      value={chartMetric}
+                      onChange={(e) => setChartMetric(e.target.value as typeof chartMetric)}
+                      className="text-xs border rounded-lg px-2 py-1 bg-white"
+                    >
+                      {VITAL_METRIC_CHARTS.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
                   </CardHeader>
                   <CardContent>
-                    {bpTrend.length === 0 ? (
-                      <div className="flex h-[220px] flex-col items-center justify-center text-sm text-slate-500">
-                        <Heart className="mb-2 h-8 w-8 opacity-30" />
-                        No BP history for this patient yet.
-                      </div>
+                    {chartMetric === "bp" ? (
+                      bpTrend.length === 0 ? (
+                        <p className="text-sm text-slate-500 py-16 text-center">No BP data in range.</p>
+                      ) : (
+                        <div className="h-[260px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={bpTrend}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="time" tick={{ fontSize: 10 }} />
+                              <YAxis tick={{ fontSize: 10 }} domain={["dataMin - 8", "dataMax + 8"]} />
+                              <Tooltip />
+                              <Line type="monotone" dataKey="sys" name="Systolic" stroke="#ef4444" strokeWidth={2} dot={false} />
+                              <Line type="monotone" dataKey="dia" name="Diastolic" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )
+                    ) : singleTrend.length === 0 ? (
+                      <p className="text-sm text-slate-500 py-16 text-center">No data for this metric.</p>
                     ) : (
-                      <div className="h-[220px]">
+                      <div className="h-[260px]">
                         <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={bpTrend}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                          <AreaChart data={singleTrend}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="time" tick={{ fontSize: 10 }} />
-                            <YAxis tick={{ fontSize: 10 }} domain={["dataMin - 8", "dataMax + 8"]} />
-                            <Tooltip contentStyle={{ borderRadius: 12 }} />
-                            <Line type="monotone" dataKey="sys" name="Systolic" stroke="#ef4444" strokeWidth={2} dot={false} />
-                            <Line type="monotone" dataKey="dia" name="Diastolic" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                          </LineChart>
+                            <YAxis tick={{ fontSize: 10 }} />
+                            <Tooltip />
+                            <Area type="monotone" dataKey="value" stroke="#059669" fill="#10b98133" strokeWidth={2} />
+                          </AreaChart>
                         </ResponsiveContainer>
                       </div>
                     )}
                   </CardContent>
                 </Card>
+              )}
 
+              {patientTab === "history" && (
                 <Card className={doctorSurfaceCard}>
                   <CardHeader>
-                    <CardTitle className="text-base font-black text-[#0A2E1F]">Recent readings</CardTitle>
+                    <CardTitle className="text-sm font-black text-[#0A2E1F]">Full reading history</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="max-h-[420px] overflow-y-auto custom-scrollbar space-y-2">
                     {historyRows.length === 0 ? (
-                      <p className="text-sm text-slate-500 py-8 text-center">No device readings — showing intake baseline only.</p>
+                      <p className="text-sm text-slate-500 py-8 text-center">No device readings — intake baseline only.</p>
                     ) : (
-                      <div className="space-y-2 max-h-[220px] overflow-y-auto custom-scrollbar">
-                        {historyRows.map((h) => (
-                          <div
-                            key={h.id}
-                            className={cn(
-                              "flex items-center justify-between rounded-xl border px-3 py-2 text-xs",
-                              h.flagged ? "border-red-200 bg-red-50/80" : "border-slate-100 bg-slate-50/50",
-                            )}
-                          >
-                            <div>
-                              <span className="font-black text-[#0A2E1F]">{h.vital}</span>
-                              <span className="mx-2 text-slate-300">·</span>
-                              <span className="font-mono font-bold">{h.value}</span>
-                            </div>
-                            <span className="text-slate-500">{h.at}</span>
+                      historyRows.map((h) => (
+                        <div
+                          key={h.id}
+                          className={cn(
+                            "flex justify-between rounded-xl border px-3 py-2 text-xs",
+                            h.flagged ? "border-red-200 bg-red-50" : "border-slate-100 bg-slate-50/60",
+                          )}
+                        >
+                          <div>
+                            <span className="font-black">{h.vital}</span>
+                            <span className="mx-2 text-slate-300">·</span>
+                            <span className="font-mono font-bold">{h.value}</span>
+                            <p className="text-[10px] text-slate-500 mt-0.5">{h.source}</p>
                           </div>
-                        ))}
-                      </div>
+                          <span className="text-slate-500 shrink-0 ml-2">{h.at}</span>
+                        </div>
+                      ))
                     )}
                   </CardContent>
                 </Card>
-              </div>
+              )}
 
-              {selectedPatient.intake && (
-                <Card className={cn(doctorSurfaceCard, "border-dashed border-emerald-200/80")}>
+              {selectedPatient.intake && patientTab === "overview" && (
+                <Card className={cn(doctorSurfaceCard, "border-dashed border-emerald-200")}>
                   <CardHeader>
-                    <CardTitle className="text-sm font-black uppercase tracking-widest text-emerald-800">
-                      Enrollment intake baseline
-                    </CardTitle>
+                    <CardTitle className="text-[10px] font-black uppercase text-emerald-800">Enrollment baseline</CardTitle>
                   </CardHeader>
-                  <CardContent className="grid gap-3 sm:grid-cols-2 md:grid-cols-4 text-sm">
+                  <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                     {selectedPatient.intake.height && (
                       <div>
-                        <p className="text-[10px] font-bold uppercase text-slate-500">Height</p>
-                        <p className="font-bold text-[#0A2E1F]">{selectedPatient.intake.height}</p>
+                        <p className="text-[10px] text-slate-500 uppercase">Height</p>
+                        <p className="font-bold">{selectedPatient.intake.height}</p>
                       </div>
                     )}
                     {selectedPatient.intake.weight && (
                       <div>
-                        <p className="text-[10px] font-bold uppercase text-slate-500">Weight</p>
-                        <p className="font-bold text-[#0A2E1F]">{selectedPatient.intake.weight}</p>
+                        <p className="text-[10px] text-slate-500 uppercase">Weight</p>
+                        <p className="font-bold">{selectedPatient.intake.weight}</p>
                       </div>
                     )}
                     {selectedPatient.intake.bmi && (
                       <div>
-                        <p className="text-[10px] font-bold uppercase text-slate-500">BMI</p>
-                        <p className="font-bold text-[#0A2E1F]">{selectedPatient.intake.bmi}</p>
+                        <p className="text-[10px] text-slate-500 uppercase">BMI</p>
+                        <p className="font-bold">{selectedPatient.intake.bmi}</p>
+                      </div>
+                    )}
+                    {selectedPatient.intake.bp_sys != null && selectedPatient.intake.bp_dia != null && (
+                      <div>
+                        <p className="text-[10px] text-slate-500 uppercase">Blood pressure</p>
+                        <p className="font-bold font-mono">
+                          {selectedPatient.intake.bp_sys}/{selectedPatient.intake.bp_dia}
+                        </p>
+                      </div>
+                    )}
+                    {selectedPatient.intake.hr != null && (
+                      <div>
+                        <p className="text-[10px] text-slate-500 uppercase">Heart rate</p>
+                        <p className="font-bold">{selectedPatient.intake.hr} bpm</p>
+                      </div>
+                    )}
+                    {selectedPatient.intake.spo2 != null && (
+                      <div>
+                        <p className="text-[10px] text-slate-500 uppercase">SpO₂</p>
+                        <p className="font-bold">{selectedPatient.intake.spo2}%</p>
+                      </div>
+                    )}
+                    {selectedPatient.intake.temp_f != null && (
+                      <div>
+                        <p className="text-[10px] text-slate-500 uppercase">Temperature</p>
+                        <p className="font-bold">{selectedPatient.intake.temp_f}°F</p>
+                      </div>
+                    )}
+                    {selectedPatient.intake.glucose != null && (
+                      <div>
+                        <p className="text-[10px] text-slate-500 uppercase">Glucose</p>
+                        <p className="font-bold">{selectedPatient.intake.glucose} mg/dL</p>
+                      </div>
+                    )}
+                    {selectedPatient.intake.resp_rate != null && (
+                      <div>
+                        <p className="text-[10px] text-slate-500 uppercase">Respiratory</p>
+                        <p className="font-bold">{selectedPatient.intake.resp_rate} /min</p>
                       </div>
                     )}
                     {selectedPatient.intake.allergies && (
-                      <div className="sm:col-span-2">
-                        <p className="text-[10px] font-bold uppercase text-slate-500">Allergies</p>
-                        <p className="font-semibold text-slate-700">{selectedPatient.intake.allergies}</p>
+                      <div className="col-span-2">
+                        <p className="text-[10px] text-slate-500 uppercase">Allergies</p>
+                        <p className="font-semibold text-red-800">{selectedPatient.intake.allergies}</p>
+                      </div>
+                    )}
+                    {selectedPatient.intake.currentMeds && (
+                      <div className="col-span-2">
+                        <p className="text-[10px] text-slate-500 uppercase">Current meds</p>
+                        <p className="font-semibold">{selectedPatient.intake.currentMeds}</p>
                       </div>
                     )}
                   </CardContent>
@@ -566,50 +733,81 @@ export function DoctorVitalsPage() {
           ) : (
             <Card className={doctorSurfaceCard}>
               <CardContent className="py-20 text-center">
-                <HeartPulse className="mx-auto h-12 w-12 text-emerald-300 mb-4" />
-                <p className="font-bold text-[#0A2E1F]">Select a patient to view vitals</p>
-                <p className="text-sm text-slate-500 mt-1">Choose from the roster or connect RPM devices.</p>
+                <HeartPulse className="h-12 w-12 text-emerald-300 mx-auto mb-3" />
+                <p className="font-bold text-[#0A2E1F]">Select a patient</p>
               </CardContent>
             </Card>
           )}
         </div>
-      </div>
 
-      <Card className={doctorSurfaceCard}>
-        <CardHeader>
-          <CardTitle className="text-base font-black text-[#0A2E1F] flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
-            Platform-wide critical alerts
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {criticalQueue.length === 0 ? (
-            <p className="text-sm text-slate-500 py-6 text-center">No flagged readings in the last sync.</p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {criticalQueue.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => {
-                    const key = r.patient_id || r.patient_name || "unknown";
-                    setSelectedKey(key);
-                  }}
-                  className="rounded-xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-4 text-left hover:shadow-md transition-shadow"
-                >
-                  <p className="font-bold text-sm text-red-900">{r.patient_name || "Unknown"}</p>
-                  <p className="text-xs font-semibold text-red-700 mt-1 uppercase">{r.metric.replace(/_/g, " ")}</p>
-                  <p className="font-mono text-lg font-black text-red-600 mt-2">
-                    {r.value}
-                    {r.unit ? ` ${r.unit}` : ""}
+        <div className="lg:col-span-3 space-y-4">
+          <Card className={doctorSurfaceCard}>
+            <CardHeader>
+              <CardTitle className="text-xs font-black uppercase text-[#0A2E1F] flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                Critical alerts
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-[280px] overflow-y-auto custom-scrollbar space-y-2">
+              {criticalQueue.length === 0 ? (
+                <p className="text-xs text-slate-500 py-6 text-center">No flagged readings.</p>
+              ) : (
+                criticalQueue.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setSelectedKey(r.patient_id || r.patient_name || "unknown")}
+                    className="w-full text-left rounded-xl border border-red-200 bg-red-50 p-3 hover:shadow-sm"
+                  >
+                    <p className="font-bold text-xs text-red-900">{r.patient_name}</p>
+                    <p className="font-mono text-sm font-black text-red-600">
+                      {r.value}
+                      {r.unit ? ` ${r.unit}` : ""}
+                    </p>
+                    <p className="text-[10px] text-slate-500">{timeAgoVitals(r.recorded_at)}</p>
+                  </button>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className={doctorSurfaceCard}>
+            <CardHeader>
+              <CardTitle className="text-xs font-black uppercase text-slate-600">Clinical thresholds</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 max-h-[320px] overflow-y-auto custom-scrollbar">
+              {CLINICAL_THRESHOLDS.map((row) => (
+                <div key={row.metric} className="rounded-lg border border-slate-100 p-2.5 text-[10px]">
+                  <p className="font-black text-[#0A2E1F] mb-1">{row.metric}</p>
+                  <p className="text-slate-600">
+                    <span className="text-emerald-700 font-semibold">Normal:</span> {row.normal}
                   </p>
-                  <p className="text-[10px] text-slate-500 mt-2">{timeAgo(r.recorded_at)}</p>
-                </button>
+                  {"elevated" in row && (
+                    <p className="text-slate-600">
+                      <span className="text-amber-700 font-semibold">Elevated:</span> {row.elevated}
+                    </p>
+                  )}
+                  {"high" in row && (
+                    <p className="text-slate-600">
+                      <span className="text-red-700 font-semibold">High:</span> {row.high}
+                    </p>
+                  )}
+                  {"alert" in row && (
+                    <p className="text-slate-600">
+                      <span className="text-red-700 font-semibold">Alert:</span> {row.alert}
+                    </p>
+                  )}
+                  {"low" in row && (
+                    <p className="text-slate-600">
+                      <span className="text-sky-700 font-semibold">Low:</span> {row.low}
+                    </p>
+                  )}
+                </div>
               ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

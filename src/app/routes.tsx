@@ -45,6 +45,7 @@ const FamilyAccessPage = lazy(() => lazyRetry(() => import("./pages/patient/page
 const NotificationsPage = lazy(() => lazyRetry(() => import("./pages/patient/pages/Notifications").then(m => ({ default: m.NotificationsPage }))));
 const InsurancePage = lazy(() => lazyRetry(() => import("./pages/patient/pages/Insurance").then(m => ({ default: m.InsurancePage }))));
 const PatientConsultPage = lazy(() => lazyRetry(() => import("./pages/patient/pages/Consult").then(m => ({ default: m.PatientConsultPage }))));
+const PatientVitalsPage = lazy(() => lazyRetry(() => import("./pages/patient/pages/Vitals").then(m => ({ default: m.PatientVitalsPage }))));
 
 // Doctor Pages
 const DoctorDashboard = lazy(() => lazyRetry(() => import("./pages/doctor/Dashboard").then(m => ({ default: m.DoctorDashboard }))));
@@ -59,6 +60,8 @@ const DoctorLabsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/L
 const DoctorScribePage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Scribe").then(m => ({ default: m.DoctorScribePage }))));
 const DoctorRPMPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.DoctorRPMPage }))));
 const DoctorVitalsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Vitals").then(m => ({ default: m.DoctorVitalsPage }))));
+const DoctorClinicalIntakePage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/ClinicalIntake").then(m => ({ default: m.DoctorClinicalIntakePage }))));
+const DoctorMedicalDocumentsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/MedicalDocuments").then(m => ({ default: m.DoctorMedicalDocumentsPage }))));
 const DoctorERxPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/ERx").then(m => ({ default: m.DoctorERxPage }))));
 const DoctorImagingPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Imaging").then(m => ({ default: m.DoctorImagingPage }))));
 const DoctorReferralsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Referrals").then(m => ({ default: m.DoctorReferralsPage }))));
@@ -66,6 +69,8 @@ const DoctorBillingPage = lazy(() => lazyRetry(() => import("./pages/doctor/page
 const DoctorEducationPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Education").then(m => ({ default: m.DoctorEducationPage }))));
 const DoctorNotificationsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Notifications").then(m => ({ default: m.DoctorNotificationsPage }))));
 const DoctorWorkflowPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Workflow").then(m => ({ default: m.DoctorWorkflowPage }))));
+const DoctorAnalyticsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Analytics").then(m => ({ default: m.DoctorAnalyticsPage }))));
+const DoctorSettingsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Settings").then(m => ({ default: m.DoctorSettingsPage }))));
 
 // Admin Pages
 const AdminDashboard = lazy(() => lazyRetry(() => import("./pages/admin/Dashboard").then(m => ({ default: m.AdminDashboard }))));
@@ -175,6 +180,7 @@ export const router = createBrowserRouter([
               { path: "notifications", Component: NotificationsPage },
               { path: "insurance", Component: InsurancePage },
               { path: "consult", Component: PatientConsultPage },
+              { path: "vitals", Component: PatientVitalsPage },
             ],
           },
           
@@ -188,6 +194,8 @@ export const router = createBrowserRouter([
               { path: "patients", Component: DoctorPatientsPage },
               { path: "patients/:id", Component: DoctorPatientDetailPage },
               { path: "queue", Component: DoctorQueuePage },
+              { path: "intake", Component: DoctorClinicalIntakePage },
+              { path: "documents", Component: DoctorMedicalDocumentsPage },
               { path: "availability", Component: DoctorAvailabilityPage },
               { path: "schedule", Component: DoctorSchedulePage },
               { path: "messages", Component: DoctorMessagesPage },
@@ -201,6 +209,8 @@ export const router = createBrowserRouter([
               { path: "referrals", Component: DoctorReferralsPage },
               { path: "billing", Component: DoctorBillingPage },
               { path: "education", Component: DoctorEducationPage },
+              { path: "analytics", Component: DoctorAnalyticsPage },
+              { path: "settings", Component: DoctorSettingsPage },
               { path: "notifications", Component: DoctorNotificationsPage },
             ],
           },
@@ -215,6 +225,8 @@ export const router = createBrowserRouter([
               { path: "patients", Component: DoctorPatientsPage },
               { path: "patients/:id", Component: DoctorPatientDetailPage },
               { path: "queue", Component: DoctorQueuePage },
+              { path: "intake", Component: DoctorClinicalIntakePage },
+              { path: "documents", Component: DoctorMedicalDocumentsPage },
               { path: "availability", Component: DoctorAvailabilityPage },
               { path: "schedule", Component: DoctorSchedulePage },
               { path: "messages", Component: DoctorMessagesPage },
@@ -228,6 +240,8 @@ export const router = createBrowserRouter([
               { path: "referrals", Component: DoctorReferralsPage },
               { path: "billing", Component: DoctorBillingPage },
               { path: "education", Component: DoctorEducationPage },
+              { path: "analytics", Component: DoctorAnalyticsPage },
+              { path: "settings", Component: DoctorSettingsPage },
               { path: "notifications", Component: DoctorNotificationsPage },
             ],
           },

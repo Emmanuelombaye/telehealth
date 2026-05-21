@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   Users, Clock, Video, MessageSquare, FileText, ChevronRight,
@@ -10,13 +10,16 @@ import {
 import { Card, CardContent, Button, Badge, Input, cn } from "../../../components/ui/shared.tsx";
 import { DoctorPageHeader } from "../../../components/doctor/DoctorPageHeader";
 import { OrderStatus, Order, usePatientStore, useAuthStore } from "../../../../lib";
-import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
+import { doctorMessagesHref, useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { getOrderVideoRail } from "../../../../lib/orderVideoRail";
 import { doctorPageContainer, doctorSurfaceCard } from "../../../../lib/doctorPortalUi";
 import { supabase } from "../../../../lib/supabaseClient";
+import { approveAndDispatchPrescription } from "../../../../lib/prescriptions";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
 import { toast } from "sonner";
+import { DoctorIntakeReviewPanel } from "../../../components/doctor/DoctorIntakeReviewPanel";
+import { buildDoctorIntakeReview, orderToIntakeSource } from "../../../../lib/doctorIntakeReview";
 
 const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg: string; border: string }> = {
   order_submitted: { label: "Order Submitted", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" },
@@ -34,8 +37,7 @@ const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg:
 export function DoctorQueuePage() {
   const navigate = useNavigate();
   const doctorBase = useDoctorPortalBase();
-  const MotionButton = motion(Button);
-  const { orders, updateOrderStatus, fetchOrders, subscribeToOrders } = usePatientStore();
+  const { orders, updateOrderStatus, fetchOrders } = usePatientStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rxNote, setRxNote] = useState("");
   const [dosage, setDosage] = useState("");
@@ -48,64 +50,85 @@ export function DoctorQueuePage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isDispatching, setIsDispatching] = useState(false);
 
-  // Filter orders for the queue
-  const queue = orders.filter(o => {
-    const isActive = [
-      "order_submitted", "medical_review", "id_verified", 
-      "intake_completed"
-    ].includes(o.status);
-    const needsRefill = o.status === "refill_eligible" || (o.nextRefillAt && new Date(o.nextRefillAt) <= new Date());
-    
-    if (!isActive && !needsRefill) return false;
+  const queue = useMemo(() => {
+    return orders.filter((o) => {
+      const isActive = ["order_submitted", "medical_review", "id_verified", "intake_completed"].includes(
+        o.status,
+      );
+      const needsRefill =
+        o.status === "refill_eligible" || (o.nextRefillAt && new Date(o.nextRefillAt) <= new Date());
 
-    // Apply specific status filter if selected
-    if (statusFilter !== "all" && o.status !== statusFilter) {
-      if (statusFilter === "refill_eligible" && !needsRefill) return false;
-      if (statusFilter !== "refill_eligible" && o.status !== statusFilter) return false;
-    }
+      if (!isActive && !needsRefill) return false;
 
-    // Apply text search filter
-    if (searchQuery.trim() !== "") {
-      const q = searchQuery.toLowerCase();
-      const matchName = o.patientName?.toLowerCase().includes(q);
-      const matchMed = o.medication?.toLowerCase().includes(q);
-      const matchMRN = o.mrn?.toLowerCase().includes(q);
-      if (!matchName && !matchMed && !matchMRN) return false;
-    }
+      if (statusFilter !== "all" && o.status !== statusFilter) {
+        if (statusFilter === "refill_eligible" && !needsRefill) return false;
+        if (statusFilter !== "refill_eligible" && o.status !== statusFilter) return false;
+      }
 
-    return true;
-  });
-  
-  const selected = queue.find(o => o.id === selectedId) || null;
+      if (searchQuery.trim() !== "") {
+        const q = searchQuery.toLowerCase();
+        const matchName = o.patientName?.toLowerCase().includes(q);
+        const matchMed = o.medication?.toLowerCase().includes(q);
+        const matchMRN = o.mrn?.toLowerCase().includes(q);
+        if (!matchName && !matchMed && !matchMRN) return false;
+      }
 
-  useEffect(() => {
-    if (selected) {
-      setDosage(selected.dosageInstructions || "");
-      setRxNote("");
-      
-      setAiGenerating(true);
-      setAiSummary("");
-      
-      const intake = selected.intakeAnswers || {};
-      const risks = [];
-      const allergies = String(intake.allergies || '');
-      const currentMeds = String(intake.current_meds || '');
-      if (allergies && allergies.toLowerCase() !== 'none' && allergies.toLowerCase() !== 'none reported') risks.push(`Allergy alert: ${allergies}`);
-      if (currentMeds && currentMeds.toLowerCase() !== 'none') risks.push(`Current meds: ${currentMeds}`);
-      
-      const aiText = `PATIENT SUMMARY:\n- Comprehensive intake reviewed.\n- Primary Request: ${selected.medication}.\n- Risk Assessment: ${risks.length > 0 ? 'MODERATE' : 'LOW'}.\n${risks.length > 0 ? '- Flags: ' + risks.join(', ') : '- No contraindications detected.'}\n- Clearance: Safe to prescribe standard protocol.`;
-      
-      setTimeout(() => {
-        setAiSummary(aiText);
-        setAiGenerating(false);
-      }, 1200);
-    }
-  }, [selectedId, selected]);
+      return true;
+    });
+  }, [orders, statusFilter, searchQuery]);
+
+  const selected = useMemo(
+    () => (selectedId ? queue.find((o) => o.id === selectedId) ?? null : null),
+    [queue, selectedId],
+  );
+
+  const summaryOrderIdRef = useRef<string | null>(null);
+  const summaryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const unsubscribe = subscribeToOrders();
-    return () => unsubscribe();
-  }, [subscribeToOrders]);
+    if (!selectedId) {
+      summaryOrderIdRef.current = null;
+      return;
+    }
+    if (summaryOrderIdRef.current === selectedId) return;
+
+    const order = orders.find((o) => o.id === selectedId);
+    if (!order) return;
+
+    summaryOrderIdRef.current = selectedId;
+    setDosage(order.dosageInstructions || "");
+    setRxNote("");
+    setAiGenerating(true);
+    setAiSummary("");
+
+    if (summaryTimerRef.current) clearTimeout(summaryTimerRef.current);
+
+    const review = buildDoctorIntakeReview(orderToIntakeSource(order));
+    const flagLines = review.riskFlags.slice(0, 5).map((f) => `• ${f.title}: ${f.detail}`);
+    const aiText = [
+      `PATIENT SUMMARY — ${review.patientName}`,
+      `Questionnaire: ${review.questionnaireName}`,
+      `Overall risk: ${review.overallRisk.toUpperCase()}${review.requiresVideo ? " · Video required" : ""}`,
+      "",
+      `Symptoms: ${review.symptomsSummary}`,
+      flagLines.length ? `Flags:\n${flagLines.join("\n")}` : "Flags: None flagged from intake rules.",
+      "",
+      `Consent: ${review.consentStatus}`,
+    ].join("\n");
+
+    summaryTimerRef.current = setTimeout(() => {
+      setAiSummary(aiText);
+      setAiGenerating(false);
+    }, 600);
+
+    return () => {
+      if (summaryTimerRef.current) clearTimeout(summaryTimerRef.current);
+    };
+  }, [selectedId, orders]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -114,7 +137,7 @@ export function DoctorQueuePage() {
   };
 
   return (
-    <div className={cn(doctorPageContainer, "space-y-6 pb-12 animate-in fade-in duration-700")}>
+    <div className={cn(doctorPageContainer, "space-y-6 pb-12")}>
       <DoctorPageHeader
         eyebrow="Clinical queue · real-time sync"
         title="Active patient queue"
@@ -194,25 +217,15 @@ export function DoctorQueuePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              <AnimatePresence mode="popLayout">
                 {queue.map((order) => (
-                  <motion.tr
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    whileHover={{ 
-                      scale: 1.02, 
-                      backgroundColor: "#0A2E1F", 
-                      zIndex: 20,
-                      boxShadow: "0 10px 30px rgba(10, 46, 31, 0.2), 0 0 0 2px #D4AF37"
-                    }}
-                    whileTap={{ scale: 0.99 }}
+                  <tr
                     key={order.id}
                     onClick={() => setSelectedId(order.id)}
                     className={cn(
-                      "group cursor-pointer transition-all border-l-4 border-transparent relative",
-                      selectedId === order.id ? "bg-emerald-50/50 border-emerald-500 shadow-sm" : "hover:border-emerald-500"
+                      "group cursor-pointer transition-colors border-l-4 border-transparent",
+                      selectedId === order.id
+                        ? "bg-emerald-50/80 border-emerald-500"
+                        : "hover:bg-emerald-50/40 hover:border-emerald-300",
                     )}
                   >
                     <td className="px-6 py-4">
@@ -226,17 +239,17 @@ export function DoctorQueuePage() {
                           {order.patientName?.charAt(0) || "U"}
                         </div>
                         <div>
-                          <p className="font-bold text-[#0A2E1F] group-hover:text-white transition-colors">
+                          <p className="font-bold text-[#0A2E1F]">
                             {order.patientName}
                           </p>
-                          <p className="text-[10px] font-medium text-slate-500 mt-0.5 group-hover:text-emerald-200/60 transition-colors">MRN: {order.mrn || 'PENDING'}</p>
+                          <p className="text-[10px] font-medium text-slate-500 mt-0.5">MRN: {order.mrn || "PENDING"}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <p className="font-semibold text-slate-800 group-hover:text-emerald-50 transition-colors">{order.medication}</p>
-                        <p className="text-xs text-slate-500 mt-0.5 group-hover:text-emerald-200/40 transition-colors">{order.category || "General Wellness"}</p>
+                        <p className="font-semibold text-slate-800">{order.medication}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{order.category || "General Wellness"}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -247,14 +260,10 @@ export function DoctorQueuePage() {
                             title={rail.sub}
                             className={cn(
                               "inline-flex max-w-[160px] rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-wider",
-                              rail.kind === "async" &&
-                                "bg-slate-100 text-slate-600 group-hover:bg-white/20 group-hover:text-emerald-100",
-                              rail.kind === "enrollment_video" &&
-                                "bg-violet-100 text-violet-800 group-hover:bg-white/20 group-hover:text-emerald-100",
-                              rail.kind === "doctor_requested_video" &&
-                                "bg-amber-100 text-amber-900 group-hover:bg-white/20 group-hover:text-emerald-100",
-                              rail.kind === "video_confirmed" &&
-                                "bg-emerald-100 text-emerald-900 group-hover:bg-white/20 group-hover:text-emerald-950",
+                              rail.kind === "async" && "bg-slate-100 text-slate-600",
+                              rail.kind === "enrollment_video" && "bg-violet-100 text-violet-800",
+                              rail.kind === "doctor_requested_video" && "bg-amber-100 text-amber-900",
+                              rail.kind === "video_confirmed" && "bg-emerald-100 text-emerald-900",
                             )}
                           >
                             {rail.badge}
@@ -263,10 +272,12 @@ export function DoctorQueuePage() {
                       })()}
                     </td>
                     <td className="px-6 py-4">
-                      <motion.div className="flex items-center gap-2 text-slate-600 group-hover:text-emerald-100 transition-colors">
-                        <Clock className="h-4 w-4 text-slate-400 group-hover:text-emerald-300" />
-                        <span className="font-medium text-xs">{new Date(order.orderedDate || (order as any).ordered_date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
-                      </motion.div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Clock className="h-4 w-4 text-slate-400" />
+                        <span className="font-medium text-xs">
+                          {new Date(order.orderedDate || (order as { ordered_date?: string }).ordered_date || order.created_at || Date.now()).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                        <Badge variant="outline" className={cn(
@@ -279,15 +290,13 @@ export function DoctorQueuePage() {
                        </Badge>
                     </td>
                     <td className="px-6 py-4 text-right">
-                       <MotionButton 
-                         whileHover={{ scale: 1.1, backgroundColor: "#D4AF37", color: "#0A2E1F", borderColor: "#D4AF37" }}
-                         whileTap={{ scale: 0.9 }}
+                       <Button
                          variant="outline"
                          className={cn(
-                           "h-8 rounded-lg text-[10px] font-black uppercase tracking-widest px-4 transition-all shadow-sm",
-                           selectedId === order.id 
-                             ? "bg-emerald-600 text-white border-emerald-600" 
-                             : "bg-white border-slate-200 text-slate-700 group-hover:shadow-lg group-hover:shadow-emerald-500/10"
+                           "h-8 rounded-lg text-[10px] font-black uppercase tracking-widest px-4",
+                           selectedId === order.id
+                             ? "bg-emerald-600 text-white border-emerald-600"
+                             : "bg-white border-slate-200 text-slate-700",
                          )}
                          onClick={(e) => {
                            e.stopPropagation();
@@ -295,11 +304,10 @@ export function DoctorQueuePage() {
                          }}
                        >
                          Review
-                       </MotionButton>
+                       </Button>
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))}
-              </AnimatePresence>
             </tbody>
           </table>
 
@@ -361,15 +369,24 @@ export function DoctorQueuePage() {
                 </div>
               </div>
 
-              <div className="px-6 py-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 to-white flex gap-2">
+              <div className="px-6 py-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 to-white flex flex-wrap gap-2">
                 <Link
-                  to={`${doctorBase}/consult?orderId=${encodeURIComponent(selected.id)}`}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0A2E1F] text-white hover:bg-[#153e2d] h-10 text-xs font-bold shadow-md transition-colors"
+                  to={`${doctorBase}/consult?orderId=${encodeURIComponent(selected.order_number || selected.id)}`}
+                  className="inline-flex flex-1 min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#0A2E1F] text-white hover:bg-[#153e2d] h-10 text-xs font-bold shadow-md transition-colors"
                 >
                   <Stethoscope className="h-4 w-4" />
                   Open case workspace
                   <ChevronRight className="h-4 w-4 opacity-80" />
                 </Link>
+                {(selected.userId || selected.user_id) && (
+                  <Link
+                    to={doctorMessagesHref(doctorBase, selected.userId || selected.user_id)}
+                    className="inline-flex flex-1 min-w-[140px] items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white text-emerald-900 hover:bg-emerald-50 h-10 text-xs font-bold transition-colors"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Secure message
+                  </Link>
+                )}
               </div>
 
               {/* Sidebar Scrollable Content */}
@@ -418,13 +435,21 @@ export function DoctorQueuePage() {
                     <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap relative z-10">{aiSummary}</p>
                   )}
                   <div className="mt-4 pt-4 border-t border-indigo-100/50 relative z-10">
-                      <Button 
-                        variant="ghost" 
-                        onClick={() => setShowIntakeModal(true)}
-                        className="text-indigo-600 p-0 h-auto font-semibold text-sm hover:text-indigo-800"
-                     >
-                       View Full Intake Form <ArrowUpRight className="h-3 w-3 ml-1" />
-                     </Button>
+                      <div className="flex flex-wrap gap-3">
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => setShowIntakeModal(true)}
+                          className="text-indigo-600 p-0 h-auto font-semibold text-sm hover:text-indigo-800"
+                        >
+                          View intake review <ArrowUpRight className="h-3 w-3 ml-1" />
+                        </Button>
+                        <Link
+                          to={`${doctorBase}/intake`}
+                          className="text-indigo-600 font-semibold text-sm hover:text-indigo-800 inline-flex items-center"
+                        >
+                          Clinical intake hub <ArrowUpRight className="h-3 w-3 ml-1" />
+                        </Link>
+                      </div>
                   </div>
                 </div>
 
@@ -484,59 +509,28 @@ export function DoctorQueuePage() {
                   onClick={async () => {
                     setIsDispatching(true);
                     try {
-                      // Bypassing Edge Function since pharmacy integration is simulated
-                      const { error: dispatchError } = await supabase.from('orders').update({
-                        status: "rx_sent",
-                        dosage_instructions: dosage || selected.dosageInstructions,
-                        doctor_note: rxNote,
-                        pharmacy_name: selectedPharmacy,
-                        rx_dispatched: true,
-                        pharmacy_dispatched_at: new Date().toISOString()
-                      }).eq("order_number", selected.id);
+                      const rxDosage = dosage || selected.dosageInstructions || "As directed";
+                      const rxNoteFinal = rxNote || "Patient approved via clinical review.";
+                      const result = await approveAndDispatchPrescription({
+                        orderKey: selected.dbId || selected.id,
+                        patientId: selected.userId || selected.user_id,
+                        medication: selected.medication,
+                        dosageInstructions: rxDosage,
+                        doctorNote: rxNoteFinal,
+                        pharmacy: selectedPharmacy,
+                      });
 
-                      if (dispatchError) {
-                        toast.error(`Pharmacy dispatch failed: ${dispatchError.message}`);
+                      if (!result.ok) {
+                        toast.error(`Pharmacy dispatch failed: ${result.error}`);
                         return;
                       }
 
-                      const currentUser = useAuthStore.getState().user;
-                      const doctorName = currentUser?.user_metadata?.first_name
-                        ? `Dr. ${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name || ""}`.trim()
-                        : "Attending Physician";
-
-                      const { error: docErr } = await supabase
-                        .from("orders")
-                        .update({
-                          doctor: doctorName,
-                          doctor_id: currentUser?.id ?? null,
-                          last_approved_at: new Date().toISOString(),
-                        })
-                        .eq("order_number", selected.id);
-                      if (docErr) console.warn("[Queue] doctor attribution:", docErr.message);
-
-                      const rxDosage = dosage || selected.dosageInstructions || "As directed";
-                      const rxNoteFinal = rxNote || "Patient approved via clinical review.";
-                      const patientId = selected.userId || selected.user_id;
-                      if (patientId) {
-                        const { error: rxInsErr } = await supabase.from("prescriptions").insert([
-                          {
-                            patient_id: patientId,
-                            doctor_id: currentUser?.id,
-                            medication: selected.medication,
-                            dosage: rxDosage,
-                            frequency: rxNoteFinal,
-                            status: "active",
-                            refills_remaining: 5,
-                            pharmacy_name: selectedPharmacy || selected.pharmacy || "VIALSRX EXPRESS",
-                          },
-                        ]);
-                        if (rxInsErr) console.warn("[Queue] prescription insert:", rxInsErr.message);
-                      } else {
-                        console.warn("[Queue] missing patient id — skipped prescription row");
-                      }
-
                       await fetchOrders();
-                      toast.success(`Prescription dispatched to ${selectedPharmacy}.`);
+                      toast.success(
+                        result.usedFallback
+                          ? `Prescription recorded (local dispatch). Pharmacy: ${selectedPharmacy}.`
+                          : `Prescription dispatched to ${selectedPharmacy}.`,
+                      );
                       setSelectedId(null);
                     } catch (err: unknown) {
                       const m = err instanceof Error ? err.message : String(err);
@@ -629,18 +623,12 @@ export function DoctorQueuePage() {
                   <X className="h-5 w-5 text-slate-500" />
                 </Button>
               </div>
-              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-white">
-                <div className="grid gap-4">
-                  {selected.intakeAnswers && Object.entries(selected.intakeAnswers).map(([q, a], i) => (
-                    <div key={i} className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">{q.replace(/_/g, ' ')}</p>
-                      <p className="text-sm text-slate-900 font-medium">{Array.isArray(a) ? a.join(", ") : String(a)}</p>
-                    </div>
-                  ))}
-                  {(!selected.intakeAnswers || Object.keys(selected.intakeAnswers).length === 0) && (
-                    <div className="py-12 text-center text-slate-500">No intake answers available.</div>
-                  )}
-                </div>
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-50/50">
+                <DoctorIntakeReviewPanel
+                  order={orderToIntakeSource(selected)}
+                  doctorBase={doctorBase}
+                  showConsultLink={false}
+                />
               </div>
             </motion.div>
           </div>

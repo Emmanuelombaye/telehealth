@@ -18,6 +18,13 @@ export type EnrollmentDraftV1 = {
   heightFt: string;
   heightIn: string;
   weight: string;
+  bpSys?: string;
+  bpDia?: string;
+  restingHr?: string;
+  spo2?: string;
+  tempF?: string;
+  glucose?: string;
+  respRate?: string;
   allergies: string;
   currentMeds: string;
   address: string;

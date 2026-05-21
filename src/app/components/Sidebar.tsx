@@ -7,7 +7,7 @@ import {
   HelpCircle, Tag, Share2, BarChart3, Layers, Home,
   Bell, User, Heart, FolderOpen, Pill, TestTube, UserCheck, UserCog,
   FileCheck, Receipt, BookOpen, Building2, Truck,
-  Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse, ScrollText, Map
+  Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse, ScrollText, Map, Radio
 } from "lucide-react";
 import { cn } from "./ui/shared.tsx";
 import { useI18n } from "../../lib/i18n.tsx";
@@ -30,15 +30,21 @@ function buildDoctorMenu(base: "/doctor" | "/providers"): Array<DoctorNavItem & 
     { icon: Map, label: "Workflow map", href: p("/workflow") },
     { icon: Users, label: "Patients", href: p("/patients") },
     { icon: ClipboardList, label: "Patient Queue", href: p("/queue") },
+    { icon: FileText, label: "Clinical Intake", href: p("/intake") },
     { icon: HeartPulse, label: "Vitals", href: p("/vitals") },
+    { icon: Radio, label: "RPM", href: p("/rpm") },
     { icon: Calendar, label: "Schedule", href: p("/schedule") },
     { icon: Activity, label: "Availability", href: p("/availability") },
     { icon: MessageSquare, label: "Messages", href: p("/messages") },
+    { icon: Bell, label: "Alerts", href: p("/notifications") },
     { icon: Stethoscope, label: "Consultation", href: p("/consult") },
     { icon: FlaskConical, label: "Lab Requests", href: p("/labs") },
-    { icon: Bot, label: "AI Scribe", href: p("/scribe") },
+    { icon: FolderOpen, label: "Medical Documents", href: p("/documents") },
+    { icon: Bot, label: "Clinical Notes", href: p("/scribe") },
     { icon: Pill, label: "e-Prescribing", href: p("/erx") },
     { icon: BookOpen, label: "Education", href: p("/education") },
+    { icon: BarChart3, label: "Analytics", href: p("/analytics") },
+    { group: "BOTTOM", icon: Settings, label: "Settings", href: p("/settings") },
   ];
 }
 
@@ -75,6 +81,7 @@ const menuConfig: Record<Role, any[]> = {
     { icon: ClipboardList, label: "Visit Forms", href: "/patient/visit-forms" },
     { icon: MessageSquare, label: "Messages", href: "/patient/messages" },
     { icon: FileText, label: "Visit Summaries", href: "/patient/summaries" },
+    { icon: HeartPulse, label: "Vitals", href: "/patient/vitals" },
     { icon: Pill, label: "Prescriptions", href: "/patient/prescriptions" },
     { icon: TestTube, label: "Lab Results", href: "/patient/labs" },
     { icon: FolderOpen, label: "Documents", href: "/patient/documents" },

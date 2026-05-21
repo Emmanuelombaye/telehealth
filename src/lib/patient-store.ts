@@ -2,6 +2,12 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { supabase } from './supabaseClient';
 import { useAuthStore } from './auth-store';
+import {
+  approveAndDispatchPrescription,
+  fetchPatientPrescriptionsEnriched,
+  requestPrescriptionRefill,
+} from './prescriptions';
+export type { PrescriptionRecord } from './prescriptions';
 import { applyOrdersBrandScope, ordersSelectForMode, resolveOrdersFetchMode } from './adminScope';
 
 // Centralized reactive Zustand store for the global state (Patient/Doctor/Admin).
@@ -34,7 +40,10 @@ export const ORDER_STEPS: { key: OrderStatus; label: string; desc: string }[] = 
 ];
 
 export type Order = {
+  /** order_number (human-readable ref) */
   id: string;
+  /** Supabase orders.id UUID */
+  dbId?: string;
   patientName: string;
   patientAvatar: string;
   patientAge: number;
@@ -141,7 +150,7 @@ export const brand = {
 
 interface AppState {
   orders: Order[];
-  prescriptions: any[];
+  prescriptions: import("./prescriptions").PrescriptionRecord[];
   visitForms: any[];
   notifications: any[];
   doctorAvailability: DoctorAvailability[];
@@ -162,6 +171,7 @@ interface AppState {
   setIntakeFormData: (data: Record<string, unknown>) => void;
   updateDoctorAvailability: (doctorId: number, available: boolean) => Promise<void>;
   approveRefill: (orderId: string) => Promise<void>;
+  requestRefill: (orderNumber: string, note?: string) => Promise<{ ok: boolean; error?: string }>;
   resetStore: () => void;
 }
 
@@ -180,7 +190,14 @@ export const usePatientStore = create<AppState>()(
       visitFormsLoading: false,
 
       subscribeToOrders: () => {
-        const { user, role } = useAuthStore.getState();
+        let ordersDebounce: ReturnType<typeof setTimeout> | null = null;
+        const scheduleOrdersRefresh = () => {
+          if (ordersDebounce) clearTimeout(ordersDebounce);
+          ordersDebounce = setTimeout(() => {
+            get().fetchOrders();
+          }, 500);
+        };
+
         const channelId = `global-sync-${Math.random().toString(36).slice(2, 9)}`;
         
         const channel = supabase
@@ -189,8 +206,8 @@ export const usePatientStore = create<AppState>()(
             event: '*', 
             schema: 'public', 
             table: 'orders'
-          }, (payload) => {
-            get().fetchOrders();
+          }, () => {
+            scheduleOrdersRefresh();
           })
           .on('postgres_changes', { 
             event: '*', 
@@ -252,21 +269,19 @@ export const usePatientStore = create<AppState>()(
         try {
           const { user } = useAuthStore.getState();
           if (!user) return;
-          const { data, error } = await supabase
-            .from('prescriptions')
-            .select('*')
-            .eq('patient_id', user.id)
-            .order('created_at', { ascending: false });
-          if (error) {
-            if (error.code === 'PGRST303') console.warn("Session Expired: Please re-login to view prescriptions.");
-            throw error;
-          }
-          set({ prescriptions: data || [] });
-        } catch (error) {
+          const rows = await fetchPatientPrescriptionsEnriched(user.id);
+          set({ prescriptions: rows });
+        } catch (error: unknown) {
+          const err = error as { code?: string };
+          if (err?.code === 'PGRST303') console.warn("Session Expired: Please re-login to view prescriptions.");
           console.error('Error fetching prescriptions:', error);
         } finally {
           set({ prescriptionsLoading: false });
         }
+      },
+
+      requestRefill: async (orderNumber: string, note?: string) => {
+        return requestPrescriptionRefill(orderNumber, note);
       },
 
       fetchVisitForms: async () => {
@@ -358,6 +373,7 @@ export const usePatientStore = create<AppState>()(
 
           const mappedOrders: Order[] = rawRows.map(d => ({
             id: d.order_number,
+            dbId: d.id,
             userId: d.user_id,
             user_id: d.user_id,
             patientName: d.patient_name,
@@ -483,43 +499,15 @@ export const usePatientStore = create<AppState>()(
       updateOrderRx: async (orderId: string, medication: string, dosage: string, note: string) => {
         try {
           const orderToUpdate = get().orders.find(o => o.id === orderId);
-          const newTimeline = orderToUpdate ? [...orderToUpdate.timeline, { status: 'rx_sent', date: new Date().toLocaleString() }] : undefined;
-          const currentUser = useAuthStore.getState().user;
-          const doctorName = currentUser?.user_metadata?.first_name
-            ? `Dr. ${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}`
-            : "Attending Physician";
-
-          // 1. Update Order status
-          const { error: orderError } = await supabase
-            .from('orders')
-            .update({
-              status: 'rx_sent',
-              medication: medication,
-              dosage_instructions: dosage,
-              doctor_note: note,
-              doctor: doctorName,
-              doctor_id: currentUser?.id,
-              last_approved_at: new Date().toISOString(),
-              ...(newTimeline && { timeline: newTimeline })
-            })
-            .eq('order_number', orderId);
-            
-          if (orderError) throw orderError;
-
-          // 2. Create Prescription entry for Patient Portal
-          if (orderToUpdate) {
-            await supabase.from('prescriptions').insert([{
-              patient_id: orderToUpdate.userId || orderToUpdate.user_id,
-              doctor_id: currentUser?.id,
-              medication: medication,
-              dosage: dosage,
-              frequency: note,
-              status: 'active',
-              refills_remaining: 5,
-              pharmacy_name: orderToUpdate.pharmacy || "VIALSRX EXPRESS"
-            }]);
-          }
-
+          const result = await approveAndDispatchPrescription({
+            orderKey: orderToUpdate?.dbId || orderId,
+            patientId: orderToUpdate?.userId || orderToUpdate?.user_id,
+            medication,
+            dosageInstructions: dosage,
+            doctorNote: note,
+            pharmacy: orderToUpdate?.pharmacy || "truepill",
+          });
+          if (!result.ok) throw new Error(result.error || "Dispatch failed");
           await get().fetchOrders();
         } catch (error) {
           console.error("Failed to update rx:", error);
@@ -528,15 +516,17 @@ export const usePatientStore = create<AppState>()(
 
       approveRefill: async (orderId: string) => {
         try {
-          const { error } = await supabase
-            .from('orders')
-            .update({
-              status: 'rx_sent',
-              doctor_id: useAuthStore.getState().user?.id,
-              last_approved_at: new Date().toISOString()
-            })
-            .eq('order_number', orderId);
-          if (error) throw error;
+          const orderToUpdate = get().orders.find(o => o.id === orderId);
+          const result = await approveAndDispatchPrescription({
+            orderKey: orderToUpdate?.dbId || orderId,
+            patientId: orderToUpdate?.userId || orderToUpdate?.user_id,
+            medication: orderToUpdate?.medication || "Refill",
+            dosageInstructions: orderToUpdate?.dosageInstructions || "As directed",
+            doctorNote: "Refill approved by physician.",
+            pharmacy: orderToUpdate?.pharmacy || "truepill",
+            refillsRemaining: 3,
+          });
+          if (!result.ok) throw new Error(result.error || "Refill dispatch failed");
           await get().fetchOrders();
         } catch (error) {
           console.error("Failed to approve refill:", error);

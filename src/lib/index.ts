@@ -10,7 +10,13 @@ export {
   patientUser,
   usePatientStore,
 } from "./patient-store";
-export type { Order, OrderStatus, DoctorAvailability } from "./patient-store";
+export type { Order, OrderStatus, DoctorAvailability, PrescriptionRecord } from "./patient-store";
+export {
+  approveAndDispatchPrescription,
+  dispatchPrescription,
+  openPrescriptionPdf,
+  requestPrescriptionRefill,
+} from "./prescriptions";
 export {
   buildOrderFulfillmentRail,
   getOrderFulfillmentRailIndex,
