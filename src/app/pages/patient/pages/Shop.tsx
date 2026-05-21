@@ -38,6 +38,11 @@ import {
   type EnrollmentDraftV1,
 } from "../../../../lib/enrollmentDraft";
 import {
+  buildEnrollmentPatientVitals,
+  formatIntakeNotesLine,
+  syncEnrollmentVitalsToReadings,
+} from "../../../../lib/patientVitals";
+import {
   shopPathForStage,
   shopStageFromStepParam,
   type ShopFlowStage,
@@ -243,6 +248,13 @@ export function PatientShopPage() {
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [weight, setWeight] = useState("");
+  const [bpSys, setBpSys] = useState("");
+  const [bpDia, setBpDia] = useState("");
+  const [restingHr, setRestingHr] = useState("");
+  const [spo2, setSpo2] = useState("");
+  const [tempF, setTempF] = useState("");
+  const [glucose, setGlucose] = useState("");
+  const [respRate, setRespRate] = useState("");
   const [allergies, setAllergies] = useState("");
   const [currentMeds, setCurrentMeds] = useState("");
   const [address, setAddress] = useState("");
@@ -459,6 +471,13 @@ export function PatientShopPage() {
     setHeightFt(d.heightFt);
     setHeightIn(d.heightIn);
     setWeight(d.weight);
+    setBpSys(d.bpSys || "");
+    setBpDia(d.bpDia || "");
+    setRestingHr(d.restingHr || "");
+    setSpo2(d.spo2 || "");
+    setTempF(d.tempF || "");
+    setGlucose(d.glucose || "");
+    setRespRate(d.respRate || "");
     setAllergies(d.allergies);
     setCurrentMeds(d.currentMeds);
     setAddress(d.address);
@@ -619,6 +638,13 @@ export function PatientShopPage() {
         heightFt,
         heightIn,
         weight,
+        bpSys,
+        bpDia,
+        restingHr,
+        spo2,
+        tempF,
+        glucose,
+        respRate,
         allergies,
         currentMeds,
         address,
@@ -660,6 +686,13 @@ export function PatientShopPage() {
     heightFt,
     heightIn,
     weight,
+    bpSys,
+    bpDia,
+    restingHr,
+    spo2,
+    tempF,
+    glucose,
+    respRate,
     allergies,
     currentMeds,
     address,
@@ -715,22 +748,26 @@ export function PatientShopPage() {
     const resolvedLastName  = lastName  || meta.last_name  || '';
     const resolvedEmail     = email     || existingUser?.email || '';
 
-    const heightInches = (parseInt(heightFt || '0') * 12) + parseInt(heightIn || '0');
-    const weightNum    = parseFloat(weight || '0');
-    const bmi = heightInches > 0 && weightNum > 0
-      ? ((weightNum / (heightInches * heightInches)) * 703).toFixed(1)
-      : 'N/A';
     const age = dob ? new Date().getFullYear() - new Date(dob).getFullYear() : 30;
-    const patientVitals = {
-      dob, sex,
-      height: `${heightFt}'${heightIn}"`,
-      weight: `${weight} lbs`, bmi,
-      allergies: allergies || 'None',
-      currentMeds: currentMeds || 'None',
+    const patientVitals = buildEnrollmentPatientVitals({
+      heightFt,
+      heightIn,
+      weight,
+      dob,
+      sex,
+      allergies,
+      currentMeds,
       address: `${address}, ${city}, ${state} ${zip}`,
       phone,
       email: resolvedEmail,
-    };
+      bpSys,
+      bpDia,
+      restingHr,
+      spo2,
+      tempF,
+      glucose,
+      respRate,
+    });
 
     try {
       let userId: string | null = null;
@@ -884,7 +921,7 @@ export function PatientShopPage() {
         amount:            selected.priceUSD,
         user_id:           userId,
         intake_complete:   true,
-        intake_notes:      `H: ${patientVitals.height} | W: ${weight}lbs | BMI: ${bmi} | Sex: ${sex} | Allergies: ${allergies || 'None'} | Meds: ${currentMeds || 'None'}`,
+        intake_notes:      formatIntakeNotesLine(patientVitals),
         intake_answers:    {
           ...answers,
           _intake_conditional: {
@@ -913,6 +950,14 @@ export function PatientShopPage() {
 
 
       if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
+
+      if (userId) {
+        const patientLabel = `${resolvedFirstName} ${resolvedLastName}`.trim() || "Patient";
+        const sync = await syncEnrollmentVitalsToReadings(userId, patientLabel, patientVitals);
+        if (!sync.ok && sync.error) {
+          console.warn("[Shop] vital_readings sync:", sync.error);
+        }
+      }
 
       if (needsVideo && schedulingRef) {
         const { error: mergeErr } = await supabase.functions.invoke("merge-scheduling-pending", {
@@ -1097,6 +1142,41 @@ export function PatientShopPage() {
               BMI: {(((parseFloat(weight)) / Math.pow((parseInt(heightFt)*12 + parseInt(heightIn)), 2)) * 703).toFixed(1)} — auto-calculated for your clinician
             </div>
           )}
+        </div>
+
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground pt-2">Vital signs</p>
+        <p className="text-xs text-muted-foreground -mt-2">
+          Enter your latest readings if you have them — they sync to your chart and your doctor&apos;s vitals hub.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">BP systolic</label>
+            <input type="number" value={bpSys} onChange={e => setBpSys(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="120" min="70" max="220" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">BP diastolic</label>
+            <input type="number" value={bpDia} onChange={e => setBpDia(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="80" min="40" max="140" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Heart rate</label>
+            <input type="number" value={restingHr} onChange={e => setRestingHr(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="72" min="40" max="200" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">SpO₂ (%)</label>
+            <input type="number" value={spo2} onChange={e => setSpo2(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="98" min="80" max="100" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Temp (°F)</label>
+            <input type="number" step="0.1" value={tempF} onChange={e => setTempF(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="98.6" min="95" max="106" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Glucose (mg/dL)</label>
+            <input type="number" value={glucose} onChange={e => setGlucose(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="95" min="50" max="400" />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Respiratory rate (/min)</label>
+            <input type="number" value={respRate} onChange={e => setRespRate(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary" placeholder="16" min="8" max="40" />
+          </div>
         </div>
 
         {/* ─── SECTION 3: Medical History ─── */}
@@ -1837,6 +1917,11 @@ export function PatientShopPage() {
   if (stage === "questionnaire" && selected && (totalQ === 0 || currentQ)) {
     const onLastIntakeStep = totalQ === 0 || qStep === totalQ - 1;
     const showScheduler = needsScheduledVideo && onLastIntakeStep;
+    
+    const isCurrentQUnanswered = currentQ?.required && (() => {
+      const raw = answers[currentQ.id];
+      return raw == null || raw === "" || (Array.isArray(raw) && raw.length === 0);
+    })();
 
     return (
       <div className={cn("mx-auto space-y-5", showScheduler ? "max-w-lg" : "max-w-md")}>
@@ -2003,9 +2088,14 @@ export function PatientShopPage() {
             ⚠️ {error}
           </div>
         )}
+        {isCurrentQUnanswered && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 font-semibold text-center animate-in slide-in-from-bottom-2">
+            ⚠️ Please answer the required question to continue.
+          </div>
+        )}
         <Button
           className="w-full rounded-xl h-12 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isCurrentQUnanswered}
           onClick={() => {
             if (totalQ > 0 && qStep < totalQ - 1) {
               setQStep((s) => s + 1);

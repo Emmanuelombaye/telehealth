@@ -226,6 +226,19 @@ export function IntakeFormsPage() {
   }
 
   if (activeForm !== null) {
+    const missingFields: string[] = [];
+    if (step === 0) {
+      if (!fd.fullName) missingFields.push("Full Legal Name");
+      if (!fd.dob) missingFields.push("Date of Birth");
+      if (!fd.sex) missingFields.push("Biological Sex");
+      if (!fd.country) missingFields.push("Country of Residence");
+    } else if (step === 2) {
+      if (!fd.symptoms) missingFields.push("Symptom description");
+      if (!fd.duration) missingFields.push("Duration of symptoms");
+    } else if (step === 3) {
+      if (!fd.medName) missingFields.push("Medication name (or type 'None')");
+    }
+
     return (
       <div className="max-w-2xl mx-auto space-y-5">
         {/* Progress */}
@@ -387,11 +400,17 @@ export function IntakeFormsPage() {
           </CardContent>
         </Card>
 
+        {missingFields.length > 0 && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 space-y-1">
+            <p className="font-bold">Please complete the following to continue:</p>
+            {missingFields.map(m => <p key={m} className="flex items-center gap-1.5">• {m}</p>)}
+          </div>
+        )}
         <div className="flex gap-3">
           {step > 0 && <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setStep(s => s - 1)}>Back</Button>}
           {step < steps.length - 1
-            ? <Button className="flex-1 rounded-xl" onClick={() => setStep(s => s + 1)}>Continue</Button>
-            : <Button className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-600" onClick={handleSubmit} disabled={loading}>Submit Securely</Button>
+            ? <Button className="flex-1 rounded-xl" onClick={() => setStep(s => s + 1)} disabled={missingFields.length > 0}>Continue</Button>
+            : <Button className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-600" onClick={handleSubmit} disabled={loading || missingFields.length > 0}>Submit Securely</Button>
           }
         </div>
       </div>
