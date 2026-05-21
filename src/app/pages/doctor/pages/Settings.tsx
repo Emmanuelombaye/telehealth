@@ -176,7 +176,7 @@ export function DoctorSettingsPage() {
         variant="hero"
         eyebrow="Account & practice"
         title="Settings & Profile"
-        description="Manage your professional identity, licensing, scheduling links, notification preferences, and account security — synced to Supabase profiles and your auth session."
+        description="Manage your professional identity, licensing, scheduling links, notification preferences, and account security."
       >
         {dirty && (
           <Badge className="bg-amber-400/90 text-[#0A2E1F] border-amber-500 text-[10px] font-black uppercase">
