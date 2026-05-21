@@ -59,15 +59,15 @@ export function getOrderVideoRail(order: OrderVideoRailSource): OrderVideoRail {
     return {
       kind: "enrollment_video",
       badge: "Enrollment video",
-      sub: "Path A — required at patient step 8 (protocol/state/rules).",
+      sub: "Required at enrollment per protocol, state, and clinical rules.",
     };
   }
 
   if (!enroll && (zs === "requested" || zs === "rescheduled")) {
     return {
       kind: "doctor_requested_video",
-      badge: "Clinician video (5B)",
-      sub: "You (or workflow) requested video after async intake.",
+      badge: "Clinician-requested visit",
+      sub: "Live visit requested after async chart review.",
     };
   }
 

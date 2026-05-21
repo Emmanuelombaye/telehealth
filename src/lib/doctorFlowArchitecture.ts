@@ -1,6 +1,6 @@
 /**
  * Maps the cross-portal clinical operating model to concrete routes.
- * Enrollment video = patient step 8 (Path A); doctor-requested video = decision 5B (async → video).
+ * Enrollment video = required at checkout; clinician-requested video = optional live visit from consult.
  */
 
 import type { LucideIcon } from "lucide-react";
@@ -30,8 +30,8 @@ export type DoctorFlowStep = {
 };
 
 export const DOCTOR_FLOW_VIDEO_MODEL =
-  "Enrollment Path A schedules video at patient step 8 (drug/state/admin/BMI-age — not questionnaire). " +
-  "Decision 5B requests video when you need more context on an otherwise async case; both can use the same zoom_status pipeline.";
+  "Required enrollment video is set at checkout (protocol, state, and clinical rules). " +
+  "You can also request a live visit from the consult workspace when async review is not sufficient; both use the same visit status pipeline.";
 
 export function getDoctorFlowSteps(base: "/doctor" | "/providers"): DoctorFlowStep[] {
   const b = base;
@@ -62,7 +62,7 @@ export function getDoctorFlowSteps(base: "/doctor" | "/providers"): DoctorFlowSt
       href: `${b}/queue`,
       icon: ClipboardList,
       patientMirror: "Steps 1–7 complete; order in medical_review",
-      videoNote: "Queue badges separate enrollment video from clinician-requested (5B) video.",
+      videoNote: "Queue badges separate required enrollment video from clinician-requested visits.",
     },
     {
       id: "chart",
@@ -76,12 +76,12 @@ export function getDoctorFlowSteps(base: "/doctor" | "/providers"): DoctorFlowSt
     {
       id: "decision",
       phase: "Clinical",
-      title: "Decision 5A / 5B / 5C",
-      detail: "Prescribe, request video, follow-up, or disqualify with structured notes.",
+      title: "Case disposition",
+      detail: "Approve and prescribe, request a visit, flag follow-up, or disqualify with structured notes.",
       href: `${b}/consult`,
       icon: Stethoscope,
       patientMirror: "Patient waits for outcome + notifications",
-      videoNote: "5B is additive to Path A: Path A = scheduled at enrollment; 5B = you pull them into video from async.",
+      videoNote: "Enrollment video is scheduled at checkout; you can still request a visit from async cases.",
     },
     {
       id: "outcomes",

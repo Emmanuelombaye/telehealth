@@ -33,8 +33,8 @@ export function DoctorClinicalFlowMap({ base, variant = "compact" }: Props) {
               <div>
                 <h2 className="text-lg font-bold leading-tight text-[#0A2E1F] md:text-xl">Clinical operating model</h2>
                 <p className="mt-2 max-w-2xl text-xs font-medium leading-relaxed text-slate-600 md:text-[13px]">
-                  Mapped to routes in this portal — aligned with the patient journey and dual video rails (enrollment
-                  scheduling vs clinician decision&nbsp;5B).
+                  Mapped to routes in this portal — aligned with the patient journey and visit types (required
+                  enrollment video vs clinician-requested live visit).
                 </p>
               </div>
             </div>

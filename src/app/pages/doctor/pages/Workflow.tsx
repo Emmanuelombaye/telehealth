@@ -15,7 +15,7 @@ export function DoctorWorkflowPage() {
         variant="hero"
         eyebrow="Clinical operations blueprint"
         title="Workflow map"
-        description="Onboarding → queue → chart → decision (5A–5D) → pharmacy & notifications → refills — with patient-facing mirror notes so both portals speak the same language."
+        description="Onboarding → queue → chart → case disposition → pharmacy, notifications, and refills — aligned with the patient journey."
       >
         <Link to={base}>
           <Button

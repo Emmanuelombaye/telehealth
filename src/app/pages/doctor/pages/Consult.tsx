@@ -785,7 +785,7 @@ export function DoctorConsultPage() {
             <p className="text-sm font-bold text-[#0A2E1F]">{consultVideoRail.badge}</p>
             <p className="text-xs text-slate-600 mt-1 font-medium leading-relaxed">{consultVideoRail.sub}</p>
             <p className="text-[11px] text-violet-800/90 mt-2 font-medium leading-relaxed">
-              Enrollment video is determined at checkout (protocol / state / admin rules — not questionnaires). Decision 5B is for optional clinician-requested video on async cases.
+              Required enrollment video is set at checkout by protocol and state rules. You can also request a visit below when async review is not enough.
             </p>
           </div>
         </div>
@@ -1059,11 +1059,11 @@ export function DoctorConsultPage() {
       </div>
 
       <div className="w-full mt-2">
-        {/* STEP 5: DOCTOR DECISION MATRIX */}
+        {/* Case disposition — four outcomes (prescribe, video, follow-up, disqualify) */}
           <div className="lg:col-span-12">
-               <div className="flex items-center gap-3 mb-4">
-               <div className="h-8 w-8 rounded-full bg-[#0A2E1F] text-white flex items-center justify-center font-black text-sm">5</div>
-               <h2 className="text-lg font-bold text-[#0A2E1F] uppercase tracking-widest">Clinical decision (5A–5D)</h2>
+               <div className="mb-4">
+               <h2 className="text-lg font-bold text-[#0A2E1F]">Case disposition</h2>
+               <p className="text-sm text-slate-600 font-medium mt-1">Choose one outcome for this patient.</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -1078,7 +1078,7 @@ export function DoctorConsultPage() {
                      <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
                        <CheckCircle2 className="h-5 w-5" />
                      </div>
-                     <span className="font-black text-xs text-emerald-900 uppercase tracking-widest">5A · Approve &amp; prescribe</span>
+                     <span className="font-black text-xs text-emerald-900 uppercase tracking-widest">Approve &amp; prescribe</span>
                    </div>
                    <Badge className="bg-emerald-600 text-white border-none text-[9px]">RECOMMENDED</Badge>
                 </div>
@@ -1130,15 +1130,14 @@ export function DoctorConsultPage() {
                      <div className="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center text-white">
                        <Video className="h-4 w-4" />
                      </div>
-                     <span className="font-black text-xs text-amber-900 uppercase tracking-widest">5B · Request video visit</span>
+                     <span className="font-black text-xs text-amber-900 uppercase tracking-widest">Request video visit</span>
                    </div>
                 </div>
                 <CardContent className="p-5 space-y-4">
                   <ul className="space-y-2 mb-6">
                     {[
-                      "Clinician-initiated synchronous visit",
-                      "Use when async intake is insufficient",
-                      "Does not replace enrollment Path A (patient step 8)",
+                      "Schedule a live visit with the patient",
+                      "Use when the chart needs discussion beyond async intake",
                     ].map(li => (
                       <li key={li} className="flex items-center gap-2 text-xs font-bold text-slate-600">
                         <div className="h-1 w-1 rounded-full bg-amber-400" /> {li}
@@ -1174,7 +1173,7 @@ export function DoctorConsultPage() {
                      <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
                        <FileSignature className="h-4 w-4" />
                      </div>
-                     <span className="font-black text-xs text-blue-900 uppercase tracking-widest">5C · Follow-up required</span>
+                     <span className="font-black text-xs text-blue-900 uppercase tracking-widest">Follow-up required</span>
                    </div>
                 </div>
                 <CardContent className="p-5 space-y-4">
@@ -1187,9 +1186,6 @@ export function DoctorConsultPage() {
                   </ul>
 
                   <div className="pt-4 border-t border-slate-100">
-                    <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100 text-[11px] font-medium text-blue-900 leading-relaxed mb-4 italic">
-                      "Use the Plan field in SOAP notes above to write your follow-up message to the patient."
-                    </div>
                     <Button 
                       variant="outline"
                       onClick={handleFollowUp}
@@ -1213,7 +1209,7 @@ export function DoctorConsultPage() {
                      <div className="h-8 w-8 rounded-full bg-red-500 flex items-center justify-center text-white">
                        <XCircle className="h-5 w-5" />
                      </div>
-                     <span className="font-black text-xs text-red-900 uppercase tracking-widest">5D · Disqualify &amp; refund</span>
+                     <span className="font-black text-xs text-red-900 uppercase tracking-widest">Disqualify &amp; refund</span>
                    </div>
                 </div>
                 <CardContent className="p-5 space-y-4">
