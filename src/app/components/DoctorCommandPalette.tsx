@@ -49,6 +49,7 @@ const COMMANDS: Cmd[] = [
   { id: "availability", label: "On-call availability", to: "/doctor/availability", icon: Activity, section: "Coordination" },
   { id: "notif", label: "Notifications", to: "/doctor/notifications", icon: Bell, section: "Coordination" },
   { id: "labs", label: "Lab requests", to: "/doctor/labs", icon: FlaskConical, section: "Diagnostics" },
+  { id: "vitals", label: "Vitals", hint: "BP, SpO₂, trends & alerts", to: "/doctor/vitals", icon: HeartPulse, section: "Diagnostics" },
   { id: "imaging", label: "Imaging", to: "/doctor/imaging", icon: ImageIcon, section: "Diagnostics" },
   { id: "scribe", label: "AI scribe", to: "/doctor/scribe", icon: Bot, section: "Diagnostics" },
   { id: "erx", label: "e-Prescribing", to: "/doctor/erx", icon: Pill, section: "Diagnostics" },

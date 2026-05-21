@@ -13,6 +13,7 @@ const SEGMENT_LABEL: Record<string, string> = {
   messages: "Messages",
   consult: "Case workspace",
   labs: "Labs",
+  vitals: "Vitals",
   scribe: "AI scribe",
   rpm: "Remote monitoring",
   erx: "e-Prescribing",

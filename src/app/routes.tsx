@@ -58,6 +58,7 @@ const DoctorConsultPage = lazy(() => lazyRetry(() => import("./pages/doctor/page
 const DoctorLabsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Labs").then(m => ({ default: m.DoctorLabsPage }))));
 const DoctorScribePage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Scribe").then(m => ({ default: m.DoctorScribePage }))));
 const DoctorRPMPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.DoctorRPMPage }))));
+const DoctorVitalsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Vitals").then(m => ({ default: m.DoctorVitalsPage }))));
 const DoctorERxPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/ERx").then(m => ({ default: m.DoctorERxPage }))));
 const DoctorImagingPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Imaging").then(m => ({ default: m.DoctorImagingPage }))));
 const DoctorReferralsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Referrals").then(m => ({ default: m.DoctorReferralsPage }))));
@@ -192,6 +193,7 @@ export const router = createBrowserRouter([
               { path: "messages", Component: DoctorMessagesPage },
               { path: "consult", Component: DoctorConsultPage },
               { path: "labs", Component: DoctorLabsPage },
+              { path: "vitals", Component: DoctorVitalsPage },
               { path: "scribe", Component: DoctorScribePage },
               { path: "rpm", Component: DoctorRPMPage },
               { path: "erx", Component: DoctorERxPage },
@@ -218,6 +220,7 @@ export const router = createBrowserRouter([
               { path: "messages", Component: DoctorMessagesPage },
               { path: "consult", Component: DoctorConsultPage },
               { path: "labs", Component: DoctorLabsPage },
+              { path: "vitals", Component: DoctorVitalsPage },
               { path: "scribe", Component: DoctorScribePage },
               { path: "rpm", Component: DoctorRPMPage },
               { path: "erx", Component: DoctorERxPage },

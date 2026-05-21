@@ -30,6 +30,7 @@ function buildDoctorMenu(base: "/doctor" | "/providers"): Array<DoctorNavItem & 
     { icon: Map, label: "Workflow map", href: p("/workflow") },
     { icon: Users, label: "Patients", href: p("/patients") },
     { icon: ClipboardList, label: "Patient Queue", href: p("/queue") },
+    { icon: HeartPulse, label: "Vitals", href: p("/vitals") },
     { icon: Calendar, label: "Schedule", href: p("/schedule") },
     { icon: Activity, label: "Availability", href: p("/availability") },
     { icon: MessageSquare, label: "Messages", href: p("/messages") },
