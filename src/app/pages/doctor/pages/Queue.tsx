@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router";
 import {
   Users, Clock, Video, MessageSquare, FileText, ChevronRight,
@@ -133,6 +134,15 @@ export function DoctorQueuePage() {
 
     return () => {
       if (summaryTimerRef.current) clearTimeout(summaryTimerRef.current);
+    };
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
     };
   }, [selectedId]);
 
@@ -327,20 +337,22 @@ export function DoctorQueuePage() {
         </div>
       </Card>
 
-      {/* Selected Patient Detail Modal (Slide-in Sidebar) */}
-      <AnimatePresence>
-        {selectedId && (
-          <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/40 backdrop-blur-sm overflow-hidden">
-            <div className="absolute inset-0" onClick={() => setSelectedId(null)} />
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-              className="w-full max-w-2xl h-full bg-white shadow-2xl flex flex-col border-l border-slate-200 relative z-10"
-            >
+      {/* Selected Patient Detail — portaled so layout overflow/transform does not clip the drawer */}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {selectedId && (
+              <div className="fixed inset-0 z-[200] flex justify-end bg-slate-900/40 backdrop-blur-sm">
+                <div className="absolute inset-0" onClick={() => setSelectedId(null)} aria-hidden />
+                <motion.div
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="relative z-10 flex h-dvh max-h-dvh w-full max-w-2xl min-h-0 flex-col border-l border-slate-200 bg-white shadow-2xl"
+                >
               {/* Sidebar Header Navigation */}
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 sticky top-0 z-10">
+              <div className="shrink-0 p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <Button 
                   variant="ghost" 
                   onClick={() => setSelectedId(null)} 
@@ -402,7 +414,7 @@ export function DoctorQueuePage() {
               </div>
 
               {/* Sidebar Scrollable Content */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar bg-slate-50/30">
+              <div className="min-h-0 flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar bg-slate-50/30">
                 
                 {/* Clinical Request Info */}
                 <div>
@@ -513,7 +525,7 @@ export function DoctorQueuePage() {
               </div>
 
               {/* Sidebar Action Footer */}
-              <div className="p-6 bg-white border-t border-slate-200 space-y-3 sticky bottom-0 z-10">
+              <div className="shrink-0 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] bg-white border-t border-slate-200 space-y-3">
                 <Button
                   disabled={isDispatching}
                   onClick={async () => {
@@ -608,14 +620,18 @@ export function DoctorQueuePage() {
               </>
               )}
             </motion.div>
-          </div>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
 
       {/* Full Intake Modal (Triggered from AI Summary) */}
-      <AnimatePresence>
-        {showIntakeModal && selected && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 md:p-8 bg-slate-900/60 backdrop-blur-sm">
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {showIntakeModal && selected && (
+              <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 md:p-8 bg-slate-900/60 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -640,9 +656,11 @@ export function DoctorQueuePage() {
                 />
               </div>
             </motion.div>
-          </div>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
       
     </div>
   );
