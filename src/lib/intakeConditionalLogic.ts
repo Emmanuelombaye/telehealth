@@ -178,6 +178,14 @@ export function evaluateIntakeConditionalEffects(
   }
 
   const routing = evaluateEnrollmentVideoRouting(productRules, globalVideoStates, dbRules, ctx);
+  for (const q of questions) {
+    if (questionLevelRequiresVideo(q, ctx.answers)) {
+      requiresSyncVideo = true;
+      routing.reasons.push(
+        `Your answer to "${q.label || q.id}" requires a scheduled video visit with a clinician.`,
+      );
+    }
+  }
   if (requiresSyncVideo && !routing.requiresSyncVideo) {
     routing.requiresSyncVideo = true;
     routing.pathLabel = "video";
@@ -186,6 +194,7 @@ export function evaluateIntakeConditionalEffects(
       routing.reasons.push("Your intake answers require a live video visit with a clinician.");
     }
   }
+  routing.reasons = [...new Set(routing.reasons)];
 
   return {
     requiresSyncVideo,

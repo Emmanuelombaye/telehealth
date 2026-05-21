@@ -30,6 +30,10 @@ function clinicalVitalsConfigured(rules: ProductVideoRules): boolean {
   return c.bmiMin != null || c.ageMin != null;
 }
 
+function answerTriggersConfigured(rules: ProductVideoRules): boolean {
+  return (rules.clinical?.answerTriggers?.length ?? 0) > 0;
+}
+
 /** Describe routing from `products.features` JSON (no patient context). */
 export function getProductRoutingProfile(features: unknown): ProductRoutingProfile {
   const rules = parseProductVideoRules(features);
@@ -37,6 +41,7 @@ export function getProductRoutingProfile(features: unknown): ProductRoutingProfi
   const hasCalendarUrl = Boolean(rules.schedulingEmbedUrl);
   const hasStates = rules.videoRequiredStates.length > 0;
   const hasVitals = clinicalVitalsConfigured(rules);
+  const hasAnswerTriggers = answerTriggersConfigured(rules);
 
   if (rules.requiresVideoConsult) {
     return {
@@ -53,17 +58,27 @@ export function getProductRoutingProfile(features: unknown): ProductRoutingProfi
               rules.clinical?.ageMin != null ? `Age ≥ ${rules.clinical.ageMin}` : "",
             ].filter(Boolean)
           : []),
+        ...(hasAnswerTriggers
+          ? [`${rules.clinical!.answerTriggers!.length} intake answer trigger(s) on linked questionnaire`]
+          : []),
       ],
       hasCalendarUrl,
       rules,
     };
   }
 
-  if (hasStates || hasVitals) {
+  if (hasStates || hasVitals || hasAnswerTriggers) {
     const triggers: string[] = [];
     if (hasStates) triggers.push(`Video when ship-to state is: ${rules.videoRequiredStates.join(", ")}`);
     if (rules.clinical?.bmiMin != null) triggers.push(`Video when BMI ≥ ${rules.clinical.bmiMin}`);
     if (rules.clinical?.ageMin != null) triggers.push(`Video when age ≥ ${rules.clinical.ageMin}`);
+    if (hasAnswerTriggers) {
+      for (const t of rules.clinical!.answerTriggers!) {
+        triggers.push(
+          `Video when "${t.questionId}" is ${t.values.join(" or ")}${t.message ? ` — ${t.message}` : ""}`,
+        );
+      }
+    }
     return {
       mode: "path_a_conditional",
       badgeLabel: "Path A · Conditional",

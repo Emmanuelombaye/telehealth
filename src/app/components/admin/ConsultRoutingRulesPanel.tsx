@@ -14,6 +14,7 @@ const emptyForm = {
   match_product_ids: "",
   bmi_min: "",
   age_min: "",
+  answer_triggers_json: "",
   requires_sync_video: true,
   active: true,
 };
@@ -71,6 +72,29 @@ export function ConsultRoutingRulesPanel({ productOptions }: { productOptions: {
       const clinical_json: Record<string, unknown> = {};
       if (form.bmi_min.trim()) clinical_json.bmi_min = Number(form.bmi_min);
       if (form.age_min.trim()) clinical_json.age_min = Number(form.age_min);
+      if (form.answer_triggers_json.trim()) {
+        try {
+          const parsed = JSON.parse(form.answer_triggers_json) as unknown;
+          if (Array.isArray(parsed)) {
+            clinical_json.answer_triggers = parsed
+              .map((row) => {
+                if (!row || typeof row !== "object") return null;
+                const o = row as Record<string, unknown>;
+                const qid = (o.questionId ?? o.question_id) as string | undefined;
+                const vals = o.values;
+                if (!qid || !Array.isArray(vals)) return null;
+                return {
+                  question_id: String(qid),
+                  values: vals.map((v) => String(v)),
+                  message: typeof o.message === "string" ? o.message : undefined,
+                };
+              })
+              .filter(Boolean);
+          }
+        } catch {
+          throw new Error("Answer triggers must be valid JSON array.");
+        }
+      }
 
       const row = {
         label: form.label.trim() || null,
@@ -266,6 +290,21 @@ export function ConsultRoutingRulesPanel({ productOptions }: { productOptions: {
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    Intake answer triggers (JSON)
+                  </label>
+                  <textarea
+                    className="w-full min-h-[88px] rounded-xl border border-slate-200 px-3 py-2 text-xs font-mono text-slate-900"
+                    placeholder='[{"questionId":"q_heart","values":["Yes"],"message":"Cardiac history requires video"}]'
+                    value={form.answer_triggers_json}
+                    onChange={(e) => setForm((f) => ({ ...f, answer_triggers_json: e.target.value }))}
+                  />
+                  <p className="text-[10px] text-slate-500">
+                    When matched with Path A enabled, any intake answer here forces video scheduling (uses questionnaire question ids).
+                  </p>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Match product IDs (optional)</label>
                   <Input
                     placeholder="uuid, uuid…"
@@ -374,6 +413,11 @@ export function ConsultRoutingRulesPanel({ productOptions }: { productOptions: {
                       {rule.clinical_json?.age_min != null ? (
                         <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700">
                           Age ≥ {rule.clinical_json.age_min}
+                        </span>
+                      ) : null}
+                      {(rule.clinical_json?.answer_triggers?.length ?? 0) > 0 ? (
+                        <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700">
+                          {rule.clinical_json!.answer_triggers!.length} answer trigger(s)
                         </span>
                       ) : null}
                     </div>

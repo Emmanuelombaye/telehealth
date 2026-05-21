@@ -35,7 +35,7 @@ export function IntakeRoutingBanner({
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800/80">
-            {isVideo ? "Path A · Video visit required" : "Path B · Async clinical review"}
+            {isVideo ? "Step 5–6 · Path A · Video required" : "Step 5–6 · Path B · Async review"}
           </p>
           <p className="text-sm font-semibold leading-snug text-[#0A0D14]">{routing.headline}</p>
           {routing.reasons.length > 0 ? (

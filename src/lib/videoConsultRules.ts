@@ -23,6 +23,8 @@ import { defaultCalendlySchedulingUrl, toSchedulingIframeSrc } from "./calendlyE
 export type IntakeAnswerTrigger = {
   questionId: string;
   values: string[];
+  /** When false, match only applies block/manual-review flags — not video (default: true). */
+  requireVideo?: boolean;
   /** Patient-facing reason when this trigger requires video */
   message?: string;
   /** Block enrollment submit on medical-intake step */
@@ -109,6 +111,7 @@ function parseVideoClinicalRules(raw: unknown): VideoClinicalRules | undefined {
           return {
             questionId: String(qid),
             values: vals.map((v) => String(v)),
+            requireVideo: tr.requireVideo !== false && tr.require_video !== false,
             message,
             blockSubmit: tr.blockSubmit === true || tr.block_submit === true,
             flagManualReview:
@@ -191,6 +194,7 @@ function productClinicalRequiresVideo(clinical: VideoClinicalRules | undefined, 
   if (clinical.bmiMin != null && ctx.bmi != null && ctx.bmi >= clinical.bmiMin) return true;
   if (clinical.ageMin != null && ctx.age != null && ctx.age >= clinical.ageMin) return true;
   for (const t of clinical.answerTriggers || []) {
+    if (t.requireVideo === false) continue;
     if (answerMatchesValues(ctx.answers, t.questionId, t.values)) return true;
   }
   return false;
@@ -258,8 +262,8 @@ export function getMatchedProductAnswerTriggers(
   answers: Record<string, string | string[]>
 ): IntakeAnswerTrigger[] {
   if (!clinical?.answerTriggers?.length) return [];
-  return clinical.answerTriggers.filter((t) =>
-    answerMatchesValues(answers, t.questionId, t.values)
+  return clinical.answerTriggers.filter(
+    (t) => t.requireVideo !== false && answerMatchesValues(answers, t.questionId, t.values),
   );
 }
 

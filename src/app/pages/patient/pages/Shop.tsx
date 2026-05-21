@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router";
 import {
   ChevronRight, CheckCircle2, CreditCard,
   Star, Shield, ShieldCheck, Clock, Package, ArrowLeft, Globe, Zap, Loader2,
-  Calendar,
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
@@ -27,8 +26,10 @@ import {
   normalizeIntakeQuestions,
 } from "../../../../lib/intakeConditionalLogic";
 import { IntakeRoutingBanner } from "../../../components/patient/IntakeRoutingBanner";
+import { PatientSchedulingPanel } from "../../../components/patient/PatientSchedulingPanel";
 import { resolveProductIntakeFeatures } from "../../../../lib/clinicalIntakeTemplates";
-import { toSchedulingIframeSrc } from "../../../../lib/calendlyEmbed";
+import { DEFAULT_CALENDLY_BOOKING_URL, toSchedulingIframeSrc } from "../../../../lib/calendlyEmbed";
+import { pickEligibleSchedulingDoctor } from "../../../../lib/schedulingDoctorMatch";
 import {
   ENROLLMENT_DRAFT_KEY,
   DRAFT_MAX_AGE_MS,
@@ -579,20 +580,21 @@ export function PatientShopPage() {
   }, [totalQ, qStep]);
 
   // Step 7/10: Resolve Dynamic Doctor Link for Embed
+  useEffect(() => {
+    if (!needsScheduledVideo) setAssignedDoctorForScheduling(null);
+  }, [needsScheduledVideo, state]);
+
   const fetchEligibleDoctor = async () => {
     try {
-      const { data: doctors } = await supabase
-        .from('profiles')
-        .select('id, full_name, calendly_url, licensed_states')
-        .eq('role', 'doctor')
-        .eq('status', 'active');
-      
-      const eligible = (doctors || []).find(d => 
-        d.licensed_states?.split(',').map((s: string) => s.trim().toUpperCase())
-          .includes(state.toUpperCase())
-      );
-      
-      if (eligible) setAssignedDoctorForScheduling(eligible);
+      const { data: doctors, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, calendly_url, licensed_states, patients_count")
+        .eq("role", "doctor")
+        .eq("status", "active");
+
+      if (error) throw error;
+      const picked = pickEligibleSchedulingDoctor(doctors || [], state);
+      if (picked) setAssignedDoctorForScheduling(picked);
     } catch (err) {
       console.error("Error fetching doctor for scheduling:", err);
     }
@@ -601,7 +603,7 @@ export function PatientShopPage() {
   useEffect(() => {
     if (stage !== "questionnaire" || !needsScheduledVideo || !selected) return;
     if (totalQ > 0 && qStep !== totalQ - 1) return;
-    if (!assignedDoctorForScheduling) fetchEligibleDoctor();
+    if (!assignedDoctorForScheduling) void fetchEligibleDoctor();
   }, [stage, needsScheduledVideo, selected, qStep, totalQ, state, assignedDoctorForScheduling]);
 
   const schedulingEmbedSrc = useMemo(() => {
@@ -901,7 +903,7 @@ export function PatientShopPage() {
 
       // ── Insert order into Supabase ────────────────────────────────────────────
       const assigned = !!assignedDoctorForScheduling;
-      const { error: insertError } = await supabase.from('orders').insert([{
+      const orderPayload: Record<string, unknown> = {
         order_number:      freshOrderRef,
         mrn:               generateMRN(),
         doctor_id:         assignedDoctorForScheduling?.id || null,
@@ -926,9 +928,11 @@ export function PatientShopPage() {
           ...answers,
           _intake_conditional: {
             requires_video: needsVideo,
+            routing_reasons: submitEffects.routing.reasons,
             flag_manual_review: submitEffects.flagManualReview,
             warnings: submitEffects.warnings,
             matched_triggers: submitEffects.matchedAnswerTriggers.map((t) => t.questionId),
+            scheduling_doctor_id: assignedDoctorForScheduling?.id ?? null,
           },
           ...(needsVideo
             ? { _scheduling: { external_calendar: true, acknowledged_booking: bookingAttestation } }
@@ -938,6 +942,8 @@ export function PatientShopPage() {
         patient_vitals:    patientVitals,
         consultation_time: needsVideo ? (consultationTime || null) : null,
         enrollment_video_required: needsVideo,
+        requires_sync_video: needsVideo,
+        video_routing_reasons: submitEffects.routing.reasons,
         zoom_status: needsVideo ? "requested" : "not_requested",
         zoom_doctor_message:   null,
         zoom_rescheduled_time: null,
@@ -946,8 +952,17 @@ export function PatientShopPage() {
         payment_status:    stripePaymentIntentId ? "paid" : "pending",
         timeline: [{ status: "order_submitted", date: new Date().toLocaleDateString() }],
         scheduling_ref: needsVideo && schedulingRef ? schedulingRef : null,
-      }]);
+      };
 
+      let { error: insertError } = await supabase.from("orders").insert([orderPayload]);
+      if (
+        insertError &&
+        (insertError.message.includes("requires_sync_video") ||
+          insertError.message.includes("video_routing_reasons"))
+      ) {
+        const { requires_sync_video: _rsv, video_routing_reasons: _vrr, ...fallback } = orderPayload;
+        ({ error: insertError } = await supabase.from("orders").insert([fallback]));
+      }
 
       if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
 
@@ -1977,28 +1992,50 @@ export function PatientShopPage() {
               {currentQ.required && <span className="text-red-500 ml-1">*</span>}
             </p>
             {currentQ.type === "text" && (
-              <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
-                placeholder="Your answer..." onChange={e => handleAnswer(currentQ.id, e.target.value)} />
+              <input
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
+                placeholder="Your answer..."
+                value={typeof answers[currentQ.id] === "string" ? answers[currentQ.id] : ""}
+                onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
+              />
             )}
             {currentQ.type === "number" && (
-              <input type="number" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
-                placeholder="0" onChange={e => handleAnswer(currentQ.id, e.target.value)} />
+              <input
+                type="number"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
+                placeholder="0"
+                value={typeof answers[currentQ.id] === "string" ? answers[currentQ.id] : ""}
+                onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
+              />
             )}
             {currentQ.type === "textarea" && (
-              <textarea rows={4} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary resize-none"
-                placeholder="Describe in detail..." onChange={e => handleAnswer(currentQ.id, e.target.value)} />
+              <textarea
+                rows={4}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary resize-none"
+                placeholder="Describe in detail..."
+                value={typeof answers[currentQ.id] === "string" ? answers[currentQ.id] : ""}
+                onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
+              />
             )}
             {currentQ.type === "select" && (
-              <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
-                onChange={e => handleAnswer(currentQ.id, e.target.value)}>
+              <select
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm text-gray-900 focus:outline-none focus:border-primary"
+                value={typeof answers[currentQ.id] === "string" ? answers[currentQ.id] : ""}
+                onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
+              >
                 <option value="">Select an option...</option>
-                {currentQ.options?.map(o => <option key={o} value={o}>{o}</option>)}
+                {currentQ.options?.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
               </select>
             )}
             {currentQ.type === "radio" && currentQ.options?.map(o => (
               <label key={o} className={cn("flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all",
                 answers[currentQ.id] === o ? "border-primary bg-primary/5" : "border-border hover:bg-accent")}>
                 <input type="radio" name={currentQ.id} value={o} className="accent-primary"
+                  checked={answers[currentQ.id] === o}
                   onChange={() => handleAnswer(currentQ.id, o)} />
                 <span className="text-sm">{o}</span>
               </label>
@@ -2030,26 +2067,21 @@ export function PatientShopPage() {
             </CardContent>
           </Card>
         )}
-        {showScheduler && (
+        {showScheduler && schedulingEmbedSrc && (
           <>
-            <div>
-              <h2 className="text-base font-bold">Required clinician visit</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Based on your treatment and shipping state, a brief video visit is required. Use the scheduler below — your meeting link (Zoom or Google Meet) comes from the calendar tool once you pick a time.
-              </p>
-            </div>
-            <Card className="border-primary/25 overflow-hidden">
-              <CardContent className="p-0">
-                <div className="flex items-center gap-2 px-4 py-2 bg-muted/40 border-b border-border text-xs font-semibold text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5" /> Book with our clinical team
-                </div>
-                <iframe
-                  title="Schedule your video visit"
-                  src={schedulingEmbedSrc}
-                  className="w-full min-h-[620px] border-0 bg-white"
-                />
-              </CardContent>
-            </Card>
+            <PatientSchedulingPanel
+              embedSrc={schedulingEmbedSrc}
+              rawBookingUrl={
+                assignedDoctorForScheduling?.calendly_url ||
+                videoRules?.schedulingEmbedUrl ||
+                DEFAULT_CALENDLY_BOOKING_URL
+              }
+              doctorName={assignedDoctorForScheduling?.full_name}
+              doctorHint={state ? `Clinician licensed for ${state.toUpperCase()}` : undefined}
+              doctorMatchPending={!assignedDoctorForScheduling}
+              schedulingRefTail={schedulingRef ? schedulingRef.slice(-10) : null}
+              onCalendlyBookingConfirmed={() => setBookingAttestation(true)}
+            />
             <label className="flex items-start gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50/80 cursor-pointer">
               <input
                 type="checkbox"
@@ -2058,7 +2090,9 @@ export function PatientShopPage() {
                 onChange={(e) => setBookingAttestation(e.target.checked)}
               />
               <span className="text-sm text-amber-950">
-                I selected a time in the calendar above. I understand the video link will be sent by the scheduler (email/SMS) and may also appear in my Peak Health appointments.
+                {bookingAttestation
+                  ? "Booking detected — you can continue enrollment."
+                  : "Confirm you selected a time above, or wait for the calendar to register your booking automatically."}
               </span>
             </label>
             <div className="p-4 bg-muted/20 border border-border rounded-xl space-y-3">
