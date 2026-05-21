@@ -7,7 +7,6 @@ import {
   Sparkles, FlaskConical, Bot, Pill, CheckCircle2, AlertCircle, FileSignature, ArrowUp, ArrowDown, Stethoscope, ChevronDown
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Input, cn } from "../../components/ui/shared.tsx";
-import { DoctorClinicalFlowMap } from "../../components/doctor/DoctorClinicalFlowMap";
 import { DoctorPageHeader } from "../../components/doctor/DoctorPageHeader";
 import { getOrderVideoRail } from "../../../lib/orderVideoRail";
 import { doctorPageContainer, doctorSurfaceCard } from "../../../lib/doctorPortalUi";

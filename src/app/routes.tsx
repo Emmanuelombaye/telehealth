@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { AppLayout } from "./components/AppLayout";
 import { PublicLayout } from "./components/PublicLayout";
 import { lazyRetry } from "../lib/lazyRetry";
@@ -68,7 +68,6 @@ const DoctorReferralsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pa
 const DoctorBillingPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Billing").then(m => ({ default: m.DoctorBillingPage }))));
 const DoctorEducationPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Education").then(m => ({ default: m.DoctorEducationPage }))));
 const DoctorNotificationsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Notifications").then(m => ({ default: m.DoctorNotificationsPage }))));
-const DoctorWorkflowPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Workflow").then(m => ({ default: m.DoctorWorkflowPage }))));
 const DoctorAnalyticsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Analytics").then(m => ({ default: m.DoctorAnalyticsPage }))));
 const DoctorSettingsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Settings").then(m => ({ default: m.DoctorSettingsPage }))));
 
@@ -190,7 +189,7 @@ export const router = createBrowserRouter([
             element: <ProtectedRoute allowedRoles={['doctor', 'super_admin']} />,
             children: [
               { index: true, Component: DoctorDashboard },
-              { path: "workflow", Component: DoctorWorkflowPage },
+              { path: "workflow", element: <Navigate to=".." replace /> },
               { path: "patients", Component: DoctorPatientsPage },
               { path: "patients/:id", Component: DoctorPatientDetailPage },
               { path: "queue", Component: DoctorQueuePage },
@@ -221,7 +220,7 @@ export const router = createBrowserRouter([
             element: <ProtectedRoute allowedRoles={['doctor', 'super_admin']} />,
             children: [
               { index: true, Component: DoctorDashboard },
-              { path: "workflow", Component: DoctorWorkflowPage },
+              { path: "workflow", element: <Navigate to=".." replace /> },
               { path: "patients", Component: DoctorPatientsPage },
               { path: "patients/:id", Component: DoctorPatientDetailPage },
               { path: "queue", Component: DoctorQueuePage },

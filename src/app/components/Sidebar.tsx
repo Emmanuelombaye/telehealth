@@ -7,7 +7,7 @@ import {
   HelpCircle, Tag, Share2, BarChart3, Layers, Home,
   Bell, User, Heart, FolderOpen, Pill, TestTube, UserCheck, UserCog,
   FileCheck, Receipt, BookOpen, Building2, Truck,
-  Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse, ScrollText, Map, Radio
+  Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse, ScrollText, Radio
 } from "lucide-react";
 import { cn } from "./ui/shared.tsx";
 import { useI18n } from "../../lib/i18n.tsx";
@@ -27,7 +27,6 @@ function buildDoctorMenu(base: "/doctor" | "/providers"): Array<DoctorNavItem & 
   const p = (path: string) => `${base}${path}`;
   return [
     { icon: LayoutDashboard, label: "Dashboard", href: base },
-    { icon: Map, label: "Workflow map", href: p("/workflow") },
     { icon: Users, label: "Patients", href: p("/patients") },
     { icon: ClipboardList, label: "Patient Queue", href: p("/queue") },
     { icon: FileText, label: "Clinical Intake", href: p("/intake") },

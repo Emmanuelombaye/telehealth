@@ -5,7 +5,6 @@ import { DoctorCommandPalette } from "./DoctorCommandPalette";
 import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
 
 const SEGMENT_LABEL: Record<string, string> = {
-  workflow: "Workflow map",
   patients: "Patient roster",
   queue: "Clinical queue",
   intake: "Clinical intake",

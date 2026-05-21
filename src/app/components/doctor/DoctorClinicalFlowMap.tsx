@@ -1,6 +1,6 @@
 import { Link } from "react-router";
-import { Video, ArrowRight } from "lucide-react";
-import { Card, CardContent, Button, cn } from "../ui/shared.tsx";
+import { Video } from "lucide-react";
+import { Card, CardContent, cn } from "../ui/shared.tsx";
 import { getDoctorFlowSteps, DOCTOR_FLOW_VIDEO_MODEL } from "../../../lib/doctorFlowArchitecture";
 import { doctorSurfaceCard } from "../../../lib/doctorPortalUi";
 
@@ -39,17 +39,6 @@ export function DoctorClinicalFlowMap({ base, variant = "compact" }: Props) {
               </div>
             </div>
           </div>
-          {!isExpanded ? (
-            <Link to={`${base}/workflow`} className="shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-10 rounded-xl border-emerald-200/80 bg-white/90 font-semibold text-[#0A2E1F] shadow-sm gap-2 transition-all hover:border-emerald-300 hover:bg-emerald-50/60 whitespace-nowrap"
-              >
-                Expand map <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-              </Button>
-            </Link>
-          ) : null}
         </div>
       </div>
 
