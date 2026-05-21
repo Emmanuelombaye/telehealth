@@ -40,6 +40,7 @@ export function DoctorPatientsPage() {
   const [registry, setRegistry] = useState<DoctorPatientRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterTab>("all");
 
@@ -49,15 +50,19 @@ export function DoctorPatientsPage() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id, user_id, order_number, patient_name, patient_age, patient_email, patient_phone, category, medication, status, urgent, intake_complete, enrollment_video_required, patient_vitals, intake_answers, created_at",
+          "id, user_id, order_number, patient_name, patient_age, patient_email, category, medication, status, urgent, intake_complete, enrollment_video_required, patient_vitals, intake_answers, created_at",
         )
         .order("created_at", { ascending: false })
         .limit(500);
 
       if (error) throw error;
+      setFetchError(null);
       setRegistry(buildPatientRegistry((data || []) as RawOrderRow[]));
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not load patient registry";
       console.error("Patient registry fetch error:", err);
+      setFetchError(message);
+      setRegistry([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -187,12 +192,30 @@ export function DoctorPatientsPage() {
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600 mb-3" />
           <p className="text-sm font-bold uppercase tracking-widest">Loading patient registry…</p>
         </div>
+      ) : fetchError ? (
+        <Card className={cn(doctorSurfaceCard, "border-red-200/80 bg-red-50/30")}>
+          <CardContent className="py-16 text-center">
+            <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <p className="font-bold text-[#0A2E1F]">Could not load patients</p>
+            <p className="text-sm text-slate-600 mt-1 max-w-md mx-auto">{fetchError}</p>
+            <Button className="mt-4 rounded-xl" onClick={fetchPatients} disabled={refreshing}>
+              <RefreshCw className={cn("h-4 w-4 mr-2", refreshing && "animate-spin")} />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
       ) : filtered.length === 0 ? (
         <Card className={doctorSurfaceCard}>
           <CardContent className="py-16 text-center">
             <Users className="h-12 w-12 text-emerald-300 mx-auto mb-4" />
-            <p className="font-bold text-[#0A2E1F]">No patients match your filters</p>
-            <p className="text-sm text-slate-500 mt-1">Encounters from checkout will appear here automatically.</p>
+            <p className="font-bold text-[#0A2E1F]">
+              {registry.length === 0 ? "No patients on file yet" : "No patients match your filters"}
+            </p>
+            <p className="text-sm text-slate-500 mt-1">
+              {registry.length === 0
+                ? "Each checkout order in Supabase appears here as one chart (grouped by patient)."
+                : "Try a different filter or clear your search."}
+            </p>
           </CardContent>
         </Card>
       ) : (
