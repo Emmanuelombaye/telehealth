@@ -3,6 +3,10 @@
  * @see https://help.calendly.com/hc/en-us/articles/223147027-Embed-options-overview
  */
 
+/** Peak default event when no doctor/product/env URL is set. */
+export const DEFAULT_CALENDLY_BOOKING_URL =
+  "https://calendly.com/telelaunch/discoverycall";
+
 export type CalendlyEmbedOptions = {
   /** Prefill guest email (Calendly query: email) */
   email?: string;
@@ -47,6 +51,7 @@ export function toCalendlyInlineEmbedUrl(
   const primary = (opts.primaryColor || "0a2e1f").replace(/^#/, "");
 
   url.searchParams.set("embed_type", "Inline");
+  /** Suppress Calendly's in-iframe GDPR/cookie banner so enrollment scheduling is not blocked. */
   url.searchParams.set("hide_gdpr_banner", "1");
   url.searchParams.set("hide_event_type_details", "1");
   url.searchParams.set("hide_landing_page_details", "1");
@@ -93,8 +98,8 @@ export function defaultCalendlySchedulingUrl(): string {
     return toCalendlyInlineEmbedUrl(env, {}) || env;
   }
   return (
-    toCalendlyInlineEmbedUrl("https://calendly.com/peakhealth-medical/consultation", {}) ||
-    "https://calendly.com/peakhealth-medical/consultation?embed_type=Inline&hide_gdpr_banner=1&hide_event_type_details=1&hide_landing_page_details=1&primary_color=0a2e1f"
+    toCalendlyInlineEmbedUrl(DEFAULT_CALENDLY_BOOKING_URL, {}) ||
+    `${DEFAULT_CALENDLY_BOOKING_URL}?embed_type=Inline&hide_gdpr_banner=1&hide_event_type_details=1&hide_landing_page_details=1&primary_color=0a2e1f`
   );
 }
 
@@ -124,7 +129,7 @@ export function stripCalendlyEmbedParams(urlStr: string): string {
 export function defaultCalendlyBookingPageUrl(): string {
   const env = import.meta.env.VITE_CALENDLY_DEFAULT_URL as string | undefined;
   if (env && env.includes("calendly.com")) return stripCalendlyEmbedParams(env);
-  return "https://calendly.com/peakhealth-medical/consultation";
+  return DEFAULT_CALENDLY_BOOKING_URL;
 }
 
 export type SchedulingProvider = "calendly" | "calcom" | "unknown";

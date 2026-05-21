@@ -216,7 +216,7 @@ INSERT INTO public.products (
   jsonb_build_object(
     'requires_video_consult', true,
     'video_required_states', jsonb_build_array('CA', 'NY', 'TX'),
-    'scheduling_embed_url', 'https://calendly.com/peakhealth-medical/consultation',
+    'scheduling_embed_url', 'https://calendly.com/telelaunch/discoverycall',
     'gateways', jsonb_build_array('stripe', 'paypal', 'apple_pay', 'google_pay'),
     'questionnaire', jsonb_build_array(
       jsonb_build_object('id', 'gate_bmi', 'label', 'Approximate BMI category', 'type', 'select', 'required', true,
