@@ -109,6 +109,16 @@ export const generateMRN = () => {
 
 // Removed mock initialOrders to enforce strict backend data fetching
 
+/** Cheap fingerprint — skip Zustand updates when realtime refetch returns identical queue data. */
+function ordersListFingerprint(orders: Order[]): string {
+  return orders
+    .map(
+      (o) =>
+        `${o.id}:${o.status}:${o.zoomStatus ?? ""}:${o.enrollmentVideoRequired ? 1 : 0}:${o.urgent ? 1 : 0}:${o.medication ?? ""}`,
+    )
+    .join("|");
+}
+
 export function getStepIndex(status: OrderStatus) {
   return ORDER_STEPS.findIndex((s) => s.key === status);
 }
@@ -195,7 +205,7 @@ export const usePatientStore = create<AppState>()(
           if (ordersDebounce) clearTimeout(ordersDebounce);
           ordersDebounce = setTimeout(() => {
             get().fetchOrders();
-          }, 500);
+          }, 1500);
         };
 
         const channelId = `global-sync-${Math.random().toString(36).slice(2, 9)}`;
@@ -420,7 +430,10 @@ export const usePatientStore = create<AppState>()(
             doctor_id: d.doctor_id,
             created_at: d.created_at
           }));
-          set({ orders: mappedOrders });
+          const prev = get().orders;
+          if (ordersListFingerprint(prev) !== ordersListFingerprint(mappedOrders)) {
+            set({ orders: mappedOrders });
+          }
         } catch (error) {
           console.error('Error fetching orders from Supabase:', error);
         }

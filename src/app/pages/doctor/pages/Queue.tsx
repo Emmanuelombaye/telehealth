@@ -78,8 +78,8 @@ export function DoctorQueuePage() {
   }, [orders, statusFilter, searchQuery]);
 
   const selected = useMemo(
-    () => (selectedId ? queue.find((o) => o.id === selectedId) ?? null : null),
-    [queue, selectedId],
+    () => (selectedId ? orders.find((o) => o.id === selectedId) ?? null : null),
+    [orders, selectedId],
   );
 
   const summaryOrderIdRef = useRef<string | null>(null);
@@ -88,47 +88,53 @@ export function DoctorQueuePage() {
   useEffect(() => {
     if (!selectedId) {
       summaryOrderIdRef.current = null;
+      setAiSummary("");
+      setAiGenerating(false);
       return;
     }
     if (summaryOrderIdRef.current === selectedId) return;
 
-    const order = orders.find((o) => o.id === selectedId);
-    if (!order) return;
+    const buildSummary = () => {
+      const order = usePatientStore.getState().orders.find((o) => o.id === selectedId);
+      if (!order) return false;
 
-    summaryOrderIdRef.current = selectedId;
-    setDosage(order.dosageInstructions || "");
-    setRxNote("");
-    setAiGenerating(true);
-    setAiSummary("");
+      summaryOrderIdRef.current = selectedId;
+      setDosage(order.dosageInstructions || "");
+      setRxNote("");
+      setAiGenerating(true);
+      setAiSummary("");
 
-    if (summaryTimerRef.current) clearTimeout(summaryTimerRef.current);
+      if (summaryTimerRef.current) clearTimeout(summaryTimerRef.current);
 
-    const review = buildDoctorIntakeReview(orderToIntakeSource(order));
-    const flagLines = review.riskFlags.slice(0, 5).map((f) => `• ${f.title}: ${f.detail}`);
-    const aiText = [
-      `PATIENT SUMMARY — ${review.patientName}`,
-      `Questionnaire: ${review.questionnaireName}`,
-      `Overall risk: ${review.overallRisk.toUpperCase()}${review.requiresVideo ? " · Video required" : ""}`,
-      "",
-      `Symptoms: ${review.symptomsSummary}`,
-      flagLines.length ? `Flags:\n${flagLines.join("\n")}` : "Flags: None flagged from intake rules.",
-      "",
-      `Consent: ${review.consentStatus}`,
-    ].join("\n");
+      const review = buildDoctorIntakeReview(orderToIntakeSource(order));
+      const flagLines = review.riskFlags.slice(0, 5).map((f) => `• ${f.title}: ${f.detail}`);
+      const aiText = [
+        `PATIENT SUMMARY — ${review.patientName}`,
+        `Questionnaire: ${review.questionnaireName}`,
+        `Overall risk: ${review.overallRisk.toUpperCase()}${review.requiresVideo ? " · Video required" : ""}`,
+        "",
+        `Symptoms: ${review.symptomsSummary}`,
+        flagLines.length ? `Flags:\n${flagLines.join("\n")}` : "Flags: None flagged from intake rules.",
+        "",
+        `Consent: ${review.consentStatus}`,
+      ].join("\n");
 
-    summaryTimerRef.current = setTimeout(() => {
-      setAiSummary(aiText);
-      setAiGenerating(false);
-    }, 600);
+      summaryTimerRef.current = setTimeout(() => {
+        setAiSummary(aiText);
+        setAiGenerating(false);
+      }, 400);
+      return true;
+    };
+
+    if (!buildSummary()) {
+      const retry = setTimeout(buildSummary, 400);
+      return () => clearTimeout(retry);
+    }
 
     return () => {
       if (summaryTimerRef.current) clearTimeout(summaryTimerRef.current);
     };
-  }, [selectedId, orders]);
-
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+  }, [selectedId]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -141,7 +147,7 @@ export function DoctorQueuePage() {
       <DoctorPageHeader
         eyebrow="Clinical queue · real-time sync"
         title="Active patient queue"
-        description={`${queue.length} encounter${queue.length === 1 ? "" : "s"} in scope — prioritize by visit path (enrollment video vs async vs clinician request).`}
+        description="Prioritize by visit path (enrollment video vs async vs clinician request). Count updates silently in the table below."
       >
         <Badge
           variant="outline"
@@ -231,10 +237,10 @@ export function DoctorQueuePage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className={cn(
-                          "h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm transition-all group-hover:bg-emerald-500 group-hover:text-white",
+                          "h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm",
                           selectedId === order.id 
                             ? "bg-emerald-600 text-white" 
-                            : "bg-slate-100 text-slate-600"
+                            : "bg-slate-100 text-slate-600 group-hover:bg-emerald-100"
                         )}>
                           {order.patientName?.charAt(0) || "U"}
                         </div>
@@ -323,14 +329,14 @@ export function DoctorQueuePage() {
 
       {/* Selected Patient Detail Modal (Slide-in Sidebar) */}
       <AnimatePresence>
-        {selectedId && selected && (
+        {selectedId && (
           <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/40 backdrop-blur-sm overflow-hidden">
             <div className="absolute inset-0" onClick={() => setSelectedId(null)} />
             <motion.div
-              initial={{ x: "100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "100%", opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
               className="w-full max-w-2xl h-full bg-white shadow-2xl flex flex-col border-l border-slate-200 relative z-10"
             >
               {/* Sidebar Header Navigation */}
@@ -352,6 +358,12 @@ export function DoctorQueuePage() {
                 </Button>
               </div>
 
+              {!selected ? (
+                <div className="flex flex-1 items-center justify-center p-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                </div>
+              ) : (
+              <>
               {/* Patient Identity Header */}
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-4">
@@ -502,9 +514,7 @@ export function DoctorQueuePage() {
 
               {/* Sidebar Action Footer */}
               <div className="p-6 bg-white border-t border-slate-200 space-y-3 sticky bottom-0 z-10">
-                <MotionButton
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <Button
                   disabled={isDispatching}
                   onClick={async () => {
                     setIsDispatching(true);
@@ -546,12 +556,10 @@ export function DoctorQueuePage() {
                   ) : (
                     <><CheckCircle2 className="h-5 w-5" /> Approve & Dispatch Rx</>
                   )}
-                </MotionButton>
+                </Button>
                 
                 <div className="grid grid-cols-2 gap-3">
-                  <MotionButton 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <Button
                     variant="outline"
                     className="w-full border-slate-200 text-slate-700 h-11 rounded-xl font-semibold text-xs hover:bg-slate-50 transition-all gap-2"
                     onClick={async (e) => {
@@ -578,11 +586,9 @@ export function DoctorQueuePage() {
                     }}
                   >
                     <Video className="h-4 w-4" /> Require Consult
-                  </MotionButton>
+                  </Button>
 
-                  <MotionButton 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <Button
                     variant="outline"
                     className="w-full border-red-100 text-red-600 bg-red-50 hover:bg-red-100 hover:border-red-200 h-11 rounded-xl font-semibold text-xs transition-all gap-2"
                     onClick={async (e) => {
@@ -596,9 +602,11 @@ export function DoctorQueuePage() {
                     }}
                   >
                     <AlertCircle className="h-4 w-4" /> Reject/Refund
-                  </MotionButton>
+                  </Button>
                 </div>
               </div>
+              </>
+              )}
             </motion.div>
           </div>
         )}
@@ -608,10 +616,11 @@ export function DoctorQueuePage() {
       <AnimatePresence>
         {showIntakeModal && selected && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 md:p-8 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
               className="w-full max-w-4xl max-h-[85vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
             >
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">

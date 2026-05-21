@@ -29,31 +29,6 @@ export function AppLayout() {
   const unreadNotificationsCount = notifications.filter((n) => n?.unread).length;
   const totalNotifications = unreadMessagesCount + unreadNotificationsCount;
   
-  useEffect(() => {
-    fetchOrders();
-    fetchPrescriptions();
-    fetchVisitForms();
-    fetchNotifications();
-    fetchDoctorAvailability();
-    fetchUnreadMessages();
-    
-    // Global real-time telemetry subscription
-    const unsubscribe = subscribeToOrders();
-
-    const interval = setInterval(() => {
-      fetchOrders();
-      fetchPrescriptions();
-      fetchVisitForms();
-      fetchNotifications();
-      fetchUnreadMessages();
-    }, 60000);
-    
-    return () => {
-      clearInterval(interval);
-      unsubscribe();
-    };
-  }, [fetchOrders, fetchPrescriptions, fetchVisitForms, fetchNotifications, fetchDoctorAvailability, fetchUnreadMessages, subscribeToOrders]);
-
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname;
@@ -61,6 +36,42 @@ export function AppLayout() {
   const isPatientPortal = path.startsWith("/patient");
   const isSuperAdminPortal = path.startsWith("/superadmin");
   const isDoctorPortal = path.startsWith("/doctor") || path.startsWith("/providers");
+
+  useEffect(() => {
+    fetchOrders();
+    fetchPrescriptions();
+    fetchVisitForms();
+    fetchNotifications();
+    fetchDoctorAvailability();
+    fetchUnreadMessages();
+
+    const unsubscribe = subscribeToOrders();
+
+    const interval = setInterval(() => {
+      const onDoctor = path.startsWith("/doctor") || path.startsWith("/providers");
+      if (!onDoctor) {
+        fetchOrders();
+      }
+      fetchPrescriptions();
+      fetchVisitForms();
+      fetchNotifications();
+      fetchUnreadMessages();
+    }, 120000);
+
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
+  }, [
+    path,
+    fetchOrders,
+    fetchPrescriptions,
+    fetchVisitForms,
+    fetchNotifications,
+    fetchDoctorAvailability,
+    fetchUnreadMessages,
+    subscribeToOrders,
+  ]);
   /** Brand + platform ops: always light, high-contrast surface (see theme.css `.staff-admin-surface`). */
   const isStaffAdminPortal = path.startsWith("/admin") || path.startsWith("/superadmin");
 
