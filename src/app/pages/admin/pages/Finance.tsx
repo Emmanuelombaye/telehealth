@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { applyOrdersBrandScope } from "../../../../lib/adminScope";
 import { useLocation } from "react-router";
 import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice.tsx";
+import { downloadBrandedReportPdf } from "../../../../lib/brandedExport";
+import { toast } from "sonner";
 
 const tabs = ["Overview", "Invoices", "Contracts"];
 const invoiceFilters = ["All", "Paid", "Open", "Failed", "Processing", "Canceled"];
@@ -50,6 +52,36 @@ export function AdminFinancePage() {
     fetchInvoices();
   }, [role, brandId]);
 
+  const handleExportPdf = async () => {
+    const date = new Date().toISOString().slice(0, 10);
+    try {
+      await downloadBrandedReportPdf({
+        filename: `brand-finance-${date}.pdf`,
+        title: "Financial Insights Report",
+        subtitle: `${scopeVariant === "platform" ? "Platform" : "Brand"} scope · ${date}`,
+        sections: [
+          { kind: "heading", text: "Invoice ledger" },
+          {
+            kind: "table",
+            headers: ["Invoice", "Plan", "Amount", "Status", "Method", "Date"],
+            rows: invoices.map((inv) => [
+              inv.id,
+              inv.plan,
+              inv.amount,
+              inv.status,
+              inv.method,
+              inv.date,
+            ]),
+          },
+        ],
+      });
+      toast.success("Branded finance PDF downloaded.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not generate PDF.");
+    }
+  };
+
   return (
     <div className="max-w-[1600px] mx-auto space-y-8 pb-10 animate-in fade-in duration-1000">
       <AdminScopeNotice variant={scopeVariant} />
@@ -73,8 +105,13 @@ export function AdminFinancePage() {
            </p>
         </div>
         <div className="flex items-center gap-4">
-           <Button variant="outline" className="rounded-2xl h-14 px-8 border-slate-100 font-black uppercase tracking-widest text-[10px] text-slate-400 hover:bg-slate-50">
-             Export CSV <Download className="ml-2 h-4 w-4" />
+           <Button
+             variant="outline"
+             className="rounded-2xl h-14 px-8 border-slate-100 font-black uppercase tracking-widest text-[10px] text-slate-400 hover:bg-slate-50"
+             onClick={handleExportPdf}
+             disabled={loading || !invoices.length}
+           >
+             Export PDF <Download className="ml-2 h-4 w-4" />
            </Button>
            <Button className="rounded-2xl h-14 px-8 bg-[#0A2E1F] text-white font-black uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-900/10">
              Audit Reports

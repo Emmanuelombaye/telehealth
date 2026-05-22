@@ -46,7 +46,7 @@ import { usePatientStore } from "../../../../lib";
 import { isMissingTableError } from "../../../../lib/supabaseTableError";
 import {
   buildPhysicianAnalytics,
-  exportAnalyticsCsv,
+  exportAnalyticsPdf,
   RANGE_LABELS,
   rangeStart,
   type AnalyticsRange,
@@ -148,9 +148,14 @@ export function DoctorAnalyticsPage() {
     [orders, range, supplement, doctorBase],
   );
 
-  const handleExport = () => {
-    exportAnalyticsCsv(analytics);
-    toast.success("Insights report downloaded.");
+  const handleExport = async () => {
+    try {
+      await exportAnalyticsPdf(analytics);
+      toast.success("Branded insights PDF downloaded.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not generate PDF export.");
+    }
   };
 
   if (loading) {
@@ -201,7 +206,7 @@ export function DoctorAnalyticsPage() {
           onClick={handleExport}
         >
           <Download className="h-4 w-4 mr-2" />
-          Export CSV
+          Export PDF
         </Button>
       </DoctorPageHeader>
 

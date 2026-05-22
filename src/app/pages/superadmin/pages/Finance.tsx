@@ -89,57 +89,57 @@ export function SuperAdminFinancePage() {
   const pendingPayouts = brandFinancials.reduce((sum, b) => sum + (b.status === "pending" ? b.payout : 0), 0);
 
   const handleExport = async () => {
+    const { downloadBrandedReportPdf } = await import("../../../../lib/brandedExport");
+    const date = new Date().toISOString().slice(0, 10);
     await logAdminAudit({
-      action: "Exported Platform Finance CSV",
+      action: "Exported Platform Finance PDF",
       target_type: "finance_ledger",
-      detail: { brands_included: brandFinancials.length }
+      detail: { brands_included: brandFinancials.length },
     });
-
-    const rows: string[] = [];
-    const date = new Date().toLocaleDateString();
-
-    rows.push(`Peak Health — Financial Audit Report`);
-    rows.push(`Generated: ${date}`);
-    rows.push(``);
-
-    rows.push(`PLATFORM KPI SUMMARY`);
-    rows.push(`Platform MRR,$${totalPlatformMRR.toLocaleString()}`);
-    rows.push(`Aggregate ARR,$${(totalPlatformARR / 1_000_000).toFixed(2)}M`);
-    rows.push(`Global Commission (10%),$${totalCommission.toLocaleString()}`);
-    rows.push(``);
-
-    rows.push(`BRAND LEDGER`);
-    rows.push(`Brand,MRR,ARR,Commission (10%),Net Payout,Plan,Status`);
-    brandFinancials.forEach((b) => {
-      rows.push(
-        `${b.brand},$${b.mrr.toLocaleString()},$${b.arr.toLocaleString()},$${b.commission.toLocaleString()},$${b.payout.toLocaleString()},${b.plan},${b.status}`,
-      );
+    await downloadBrandedReportPdf({
+      filename: `peak-health-financial-report-${date}.pdf`,
+      title: "Platform Financial Audit Report",
+      subtitle: `Platform-wide ledger · ${date}`,
+      sections: [
+        { kind: "heading", text: "Platform KPI summary" },
+        {
+          kind: "kv",
+          rows: [
+            ["Platform MRR", `$${totalPlatformMRR.toLocaleString()}`],
+            ["Aggregate ARR", `$${(totalPlatformARR / 1_000_000).toFixed(2)}M`],
+            ["Global commission (10%)", `$${totalCommission.toLocaleString()}`],
+            ["Pending payouts", `$${pendingPayouts.toLocaleString()}`],
+          ],
+        },
+        { kind: "heading", text: "Brand ledger" },
+        {
+          kind: "table",
+          headers: ["Brand", "MRR", "ARR", "Commission", "Net payout", "Plan", "Status"],
+          rows: brandFinancials.map((b) => [
+            b.brand,
+            `$${b.mrr.toLocaleString()}`,
+            `$${b.arr.toLocaleString()}`,
+            `$${b.commission.toLocaleString()}`,
+            `$${b.payout.toLocaleString()}`,
+            b.plan,
+            b.status,
+          ]),
+        },
+        { kind: "heading", text: "Recent transactions" },
+        {
+          kind: "table",
+          headers: ["Order ID", "Brand", "Type", "Amount", "Date", "Status"],
+          rows: transactions.map((t) => [t.id, t.brand, t.type, t.amount, t.date, t.status]),
+        },
+      ],
     });
-    rows.push(``);
-
-    rows.push(`RECENT TRANSACTIONS`);
-    rows.push(`Order ID,Brand,Type,Amount,Date,Status`);
-    transactions.forEach((t) => {
-      rows.push(`${t.id},${t.brand},${t.type},${t.amount},${t.date},${t.status}`);
-    });
-
-    const csvContent = rows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `peak-health-financial-report-${date.replace(/\//g, "-")}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   return (
     <SuperAdminShell
       eyebrow="Finance"
       title="Platform finance"
-      description="Diagram D: platform revenue, fees, and payouts from non-clinical order data. CSV export matches on-screen aggregates."
+      description="Diagram D: platform revenue, fees, and payouts from non-clinical order data. Branded PDF export matches on-screen aggregates."
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
@@ -163,7 +163,7 @@ export function SuperAdminFinancePage() {
             className="h-9 gap-2 rounded-lg bg-emerald-600 px-3 text-xs font-medium text-white hover:bg-emerald-700"
           >
             <Download className="h-4 w-4" />
-            Export CSV
+            Export PDF
           </Button>
         </div>
       }

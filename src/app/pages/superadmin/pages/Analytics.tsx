@@ -146,24 +146,37 @@ export function SuperAdminAnalyticsPage() {
   ];
 
   const handleExport = async () => {
-    toast.success("Export generated", { description: "The analytics report has been downloaded." });
-    
+    const { downloadBrandedReportPdf } = await import("../../../../lib/brandedExport");
+    const date = new Date().toISOString().slice(0, 10);
     await logAdminAudit({
-      action: "Exported Platform Analytics CSV",
+      action: "Exported Platform Analytics PDF",
       target_type: "analytics_report",
-      detail: { records_included: platformRevenueData.length }
+      detail: { records_included: platformRevenueData.length },
     });
-
-    const rows = ["Month,Total Revenue"];
-    platformRevenueData.forEach((d: any) => {
-      rows.push(`${d.month},${d.total}`);
+    await downloadBrandedReportPdf({
+      filename: `platform-analytics-${date}.pdf`,
+      title: "Platform Analytics Report",
+      subtitle: `Cross-brand intelligence · ${date}`,
+      sections: [
+        { kind: "heading", text: "Fulfillment funnel" },
+        {
+          kind: "table",
+          headers: ["Stage", "Count", "% of total"],
+          rows: funnelData.map((f) => [f.stage, String(f.count), `${f.val}%`]),
+        },
+        { kind: "paragraph", text: `Approval rate: ${approvalRate}%` },
+        { kind: "heading", text: "Revenue by month" },
+        {
+          kind: "table",
+          headers: ["Month", "Total revenue"],
+          rows: platformRevenueData.map((d: { month: string; total: number }) => [
+            d.month,
+            `$${Number(d.total).toLocaleString()}`,
+          ]),
+        },
+      ],
     });
-    const blob = new Blob([rows.join("\n")], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `platform-analytics-${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
+    toast.success("Branded analytics PDF downloaded.");
   };
 
   if (!ready) {
@@ -181,7 +194,7 @@ export function SuperAdminAnalyticsPage() {
       description="Aggregated platform intelligence derived from live cross-brand ledger."
       actions={
         <Button onClick={handleExport} size="sm" className="h-9 gap-2 rounded-lg bg-[#0A2E1F] hover:bg-emerald-950 px-4 text-xs font-black uppercase tracking-widest text-white shadow-xl transition-all">
-          <Download className="h-4 w-4" /> Export CSV
+          <Download className="h-4 w-4" /> Export PDF
         </Button>
       }
     >

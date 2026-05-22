@@ -2,6 +2,7 @@
  * Physician analytics & insights — clinical KPIs from orders + supplemental tables.
  */
 
+import { downloadBrandedReportPdf } from "./brandedExport";
 import type { Order, OrderStatus } from "./patient-store";
 import { ORDER_STEPS } from "./patient-store";
 
@@ -378,32 +379,53 @@ function buildInsights(ctx: {
   return out.slice(0, 8);
 }
 
-export function exportAnalyticsCsv(analytics: PhysicianAnalytics): void {
-  const rows = [
-    ["Metric", "Value"],
-    ["Period", analytics.periodLabel],
-    ["Encounters", String(analytics.encounters)],
-    ["Unique patients", String(analytics.uniquePatients)],
-    ["Pending queue", String(analytics.pendingQueue)],
-    ["Clearance rate %", String(analytics.clearanceRatePct)],
-    ["Avg wait (min)", String(analytics.avgWaitMins)],
-    ["Video rate %", String(analytics.videoRatePct)],
-    ["Intake complete %", String(analytics.intakeCompletePct)],
-    ["Urgent cases", String(analytics.urgentCount)],
-    ["Flagged vitals", String(analytics.supplemental.flaggedVitals)],
-    ["Notes authored", String(analytics.supplemental.notesAuthored)],
-    ["Rx issued", String(analytics.supplemental.prescriptionsIssued)],
-    [],
-    ["Volume date", "Encounters", "Cleared", "Urgent"],
-    ...analytics.volumeSeries.map((p) => [p.label, String(p.encounters), String(p.cleared), String(p.urgent)]),
-  ];
-  const csv = rows.map((r) => r.join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `physician-insights-${analytics.range}-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+export async function exportAnalyticsPdf(analytics: PhysicianAnalytics): Promise<void> {
+  const date = new Date().toISOString().slice(0, 10);
+  await downloadBrandedReportPdf({
+    filename: `physician-insights-${analytics.range}-${date}.pdf`,
+    title: "Physician Insights Report",
+    subtitle: `${analytics.periodLabel} · ${analytics.range}`,
+    sections: [
+      { kind: "heading", text: "Clinical KPIs" },
+      {
+        kind: "kv",
+        rows: [
+          ["Encounters", String(analytics.encounters)],
+          ["Unique patients", String(analytics.uniquePatients)],
+          ["Pending queue", String(analytics.pendingQueue)],
+          ["Clearance rate", `${analytics.clearanceRatePct}%`],
+          ["Avg wait", `${analytics.avgWaitMins} min`],
+          ["Video rate", `${analytics.videoRatePct}%`],
+          ["Intake complete", `${analytics.intakeCompletePct}%`],
+          ["Urgent cases", String(analytics.urgentCount)],
+          ["Flagged vitals", String(analytics.supplemental.flaggedVitals)],
+          ["Notes authored", String(analytics.supplemental.notesAuthored)],
+          ["Prescriptions issued", String(analytics.supplemental.prescriptionsIssued)],
+        ],
+      },
+      { kind: "heading", text: "Encounter volume" },
+      {
+        kind: "table",
+        headers: ["Date", "Encounters", "Cleared", "Urgent"],
+        rows: analytics.volumeSeries.map((p) => [
+          p.label,
+          String(p.encounters),
+          String(p.cleared),
+          String(p.urgent),
+        ]),
+      },
+      ...(analytics.topMedications.length
+        ? [
+            { kind: "heading" as const, text: "Top medications" },
+            {
+              kind: "table" as const,
+              headers: ["Medication", "Count"],
+              rows: analytics.topMedications.map((m) => [m.name, String(m.value)]),
+            },
+          ]
+        : []),
+    ],
+  });
 }
 
 export const RANGE_LABELS: Record<AnalyticsRange, string> = {

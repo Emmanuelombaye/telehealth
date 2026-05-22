@@ -7,7 +7,7 @@ import {
   HelpCircle, Tag, Share2, BarChart3, Layers, Home,
   Bell, User, Heart, FolderOpen, Pill, TestTube, UserCheck, UserCog,
   FileCheck, Receipt, BookOpen, Building2, Truck,
-  Image as ImageIcon, ArrowRightLeft,   Bot, HeartPulse, ScrollText, Radio, ChevronRight, Sparkles, Receipt
+  Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse, ScrollText, Radio, ChevronRight, Sparkles
 } from "lucide-react";
 import { cn } from "./ui/shared.tsx";
 import { useI18n } from "../../lib/i18n.tsx";

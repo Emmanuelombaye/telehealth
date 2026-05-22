@@ -3,6 +3,7 @@ import {
   Download, Filter, Search, AlertTriangle, Info, AlertCircle, Lock, Loader2,
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { downloadBrandedReportPdf } from "../../../../lib/brandedExport";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib/auth-store";
 
@@ -102,30 +103,27 @@ export function AdminAuditPage() {
     );
   }, [logs, q]);
 
-  const exportCsv = () => {
-    const headers = "time,role,actor,action,target_type,target_id,brand\n";
-    const body = filtered
-      .map((r) =>
-        [
-          r.created_at,
-          r.role,
-          r.actor_email || "",
-          r.action,
-          r.target_type || "",
-          r.target_id || "",
-          r.brand_scope || "",
-        ]
-          .map((c) => `"${String(c).replace(/"/g, '""')}"`)
-          .join(",")
-      )
-      .join("\n");
-    const blob = new Blob([headers + body], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `admin-audit-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const exportPdf = async () => {
+    const date = new Date().toISOString().slice(0, 10);
+    await downloadBrandedReportPdf({
+      filename: `admin-audit-${date}.pdf`,
+      title: "Admin Audit Trail",
+      subtitle: `${filtered.length} events · ${date}`,
+      sections: [
+        {
+          kind: "table",
+          headers: ["Time", "Role", "Actor", "Action", "Target", "Brand"],
+          rows: filtered.map((r) => [
+            r.created_at ? new Date(r.created_at).toLocaleString() : "",
+            r.role || "",
+            r.actor_email || "",
+            r.action || "",
+            `${r.target_type || ""} ${r.target_id || ""}`.trim(),
+            r.brand_scope || "",
+          ]),
+        },
+      ],
+    });
   };
 
   const counts = useMemo(() => {
@@ -155,8 +153,8 @@ export function AdminAuditPage() {
             <span className="text-xs font-medium text-emerald-600">Non-clinical admin actions</span>
           </div>
         </div>
-        <Button size="sm" variant="outline" className="gap-1.5 rounded-xl text-xs" onClick={exportCsv} disabled={!filtered.length}>
-          <Download className="h-3.5 w-3.5" /> Export
+        <Button size="sm" variant="outline" className="gap-1.5 rounded-xl text-xs" onClick={exportPdf} disabled={!filtered.length}>
+          <Download className="h-3.5 w-3.5" /> Export PDF
         </Button>
       </div>
 

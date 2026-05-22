@@ -14,8 +14,7 @@ import {
 } from "recharts";
 import { usePatientStore } from "../../../../lib";
 import { cn } from "../../../components/ui/shared.tsx";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { downloadBrandedScreenshotPdf } from "../../../../lib/brandedExport";
 
 const COLORS = {
   emerald: "#10b981",
@@ -169,19 +168,12 @@ export function AdminAnalyticsPage() {
     if (!terminalRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(terminalRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff"
+      const date = new Date().toISOString().split("T")[0];
+      await downloadBrandedScreenshotPdf(terminalRef.current, {
+        filename: `PeakHealth_Intelligence_${timeRange}_${date}.pdf`,
+        title: "Brand Intelligence Report",
+        subtitle: `${timeRange} performance · ${date}`,
       });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`PeakHealth_Intelligence_${timeRange}_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
       console.error("PDF Export failed:", error);
     } finally {

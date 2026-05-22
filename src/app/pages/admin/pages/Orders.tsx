@@ -12,6 +12,7 @@ import { useAuthStore } from "../../../../lib/auth-store";
 import { supabase } from "../../../../lib/supabaseClient";
 import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope } from "../../../../lib/adminScope";
 import { logAdminAudit } from "../../../../lib/adminAudit";
+import { downloadBrandedReportPdf } from "../../../../lib/brandedExport";
 import { cn } from "../../../components/ui/utils";
 import { toast } from "sonner";
 import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice.tsx";
@@ -109,23 +110,32 @@ export function AdminOrdersPage() {
     }
   };
 
-  const handleExportCSV = async () => {
-    const headers = "Order #,Patient,Medication,Status,Amount\n";
-    const rows = orders.map(o => `${o.order_number},${o.patient_name},${o.medication},${o.status},${o.amount}`).join("\n");
-    const blob = new Blob([headers + rows], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `orders-export-${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
+  const handleExportPDF = async () => {
+    const date = new Date().toISOString().slice(0, 10);
+    await downloadBrandedReportPdf({
+      filename: `orders-ledger-${date}.pdf`,
+      title: "Operations Order Ledger",
+      subtitle: `${orders.length} orders · ${date}`,
+      sections: [
+        {
+          kind: "table",
+          headers: ["Order #", "Patient", "Medication", "Status", "Amount"],
+          rows: orders.map((o) => [
+            o.order_number || "",
+            o.patient_name || "",
+            o.medication || "",
+            o.status || "",
+            String(o.amount ?? ""),
+          ]),
+        },
+      ],
+    });
     await logAdminAudit({
-      action: "order.export_csv",
+      action: "order.export_pdf",
       targetType: "orders",
       detail: { row_count: orders.length },
     });
-    toast.info("Exporting operations ledger", {
-      description: "Your CSV file is being prepared for download.",
-    });
+    toast.success("Branded ledger PDF downloaded.");
   };
 
   useEffect(() => {
@@ -320,7 +330,7 @@ export function AdminOrdersPage() {
            <Button 
             variant="outline" 
             className="rounded-2xl border-slate-200 gap-3 h-14 px-8 text-[10px] font-black uppercase italic tracking-widest hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
-            onClick={handleExportCSV}
+            onClick={handleExportPDF}
            >
              <CloudDownload className="h-4 w-4" /> Export Ledger
            </Button>

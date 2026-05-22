@@ -2,6 +2,7 @@
  * Prescription dispatch, ledger rows, patient refill requests, and PDF export.
  */
 
+import { openBrandedPrintDocument } from "./brandedExport";
 import { supabase } from "./supabaseClient";
 import { useAuthStore } from "./auth-store";
 
@@ -260,36 +261,30 @@ export function openPrescriptionPdf(rx: PrescriptionRecord, doctorLabel?: string
     ? new Date(rx.created_at).toLocaleDateString("en-US", { dateStyle: "long" })
     : new Date().toLocaleDateString("en-US", { dateStyle: "long" });
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Prescription — ${rx.medication}</title>
-<style>
-  body { font-family: Georgia, serif; max-width: 640px; margin: 40px auto; color: #0A2E1F; }
-  h1 { font-size: 1.25rem; letter-spacing: 0.05em; text-transform: uppercase; }
-  .meta { font-size: 0.85rem; color: #475569; margin-bottom: 24px; }
-  .box { border: 1px solid #d1fae5; border-radius: 12px; padding: 20px; background: #f0fdf4; }
-  .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em; color: #64748b; }
-  .value { font-size: 1.1rem; font-weight: 700; margin: 4px 0 16px; }
-  footer { margin-top: 32px; font-size: 0.75rem; color: #94a3b8; }
-</style></head><body>
-  <h1>Peak Health — Prescription Record</h1>
-  <p class="meta">Issued ${issued} · Status: ${rx.status}</p>
-  <div class="box">
-    <p class="label">Medication</p><p class="value">${rx.medication}</p>
-    <p class="label">Dosage / Sig</p><p class="value">${rx.dosage}${rx.frequency ? ` · ${rx.frequency}` : ""}</p>
-    <p class="label">Pharmacy</p><p class="value">${rx.pharmacy_name || "Partner pharmacy"}</p>
-    <p class="label">Refills remaining</p><p class="value">${rx.refills_remaining ?? 0}</p>
-    <p class="label">Prescriber</p><p class="value">${doctor}</p>
+  const bodyHtml = `
+  <h2 style="font-size:1rem;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;">Prescription Record</h2>
+  <p style="font-size:0.85rem;color:#475569;margin-bottom:20px;">Issued ${issued} · Status: ${rx.status}</p>
+  <div style="border:1px solid #d1fae5;border-radius:12px;padding:20px;background:#f0fdf4;">
+    <p style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:#64748b;margin:0;">Medication</p>
+    <p style="font-size:1.1rem;font-weight:700;margin:4px 0 16px;">${rx.medication}</p>
+    <p style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:#64748b;margin:0;">Dosage / Sig</p>
+    <p style="font-size:1.1rem;font-weight:700;margin:4px 0 16px;">${rx.dosage}${rx.frequency ? ` · ${rx.frequency}` : ""}</p>
+    <p style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:#64748b;margin:0;">Pharmacy</p>
+    <p style="font-size:1.1rem;font-weight:700;margin:4px 0 16px;">${rx.pharmacy_name || "Partner pharmacy"}</p>
+    <p style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:#64748b;margin:0;">Refills remaining</p>
+    <p style="font-size:1.1rem;font-weight:700;margin:4px 0 16px;">${rx.refills_remaining ?? 0}</p>
+    <p style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:#64748b;margin:0;">Prescriber</p>
+    <p style="font-size:1.1rem;font-weight:700;margin:4px 0 0;">${doctor}</p>
   </div>
-  <footer>This document is for patient records. Not valid as a paper prescription without pharmacy verification.</footer>
-  <script>window.onload = () => { window.print(); }</script>
-</body></html>`;
+  <p style="margin-top:24px;font-size:0.75rem;color:#94a3b8;">For patient records. Not valid as a paper prescription without pharmacy verification.</p>`;
 
-  const w = window.open("", "_blank", "noopener,noreferrer,width=720,height=900");
-  if (!w) {
+  const ok = openBrandedPrintDocument({
+    documentTitle: `Prescription — ${rx.medication}`,
+    bodyHtml,
+  });
+  if (!ok) {
     alert("Allow pop-ups to download or print your prescription PDF.");
-    return;
   }
-  w.document.write(html);
-  w.document.close();
 }
 
 /** Enrich prescriptions with doctor names from profiles. */
