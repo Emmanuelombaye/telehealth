@@ -99,8 +99,13 @@ export function RpmProvider({ children }: { children: ReactNode }) {
   const [acked, setAcked] = useState<Set<string>>(() => loadAcknowledgedAlerts());
   const [escalated, setEscalated] = useState<Set<string>>(() => loadEscalatedPatients());
   const [drawerKey, setDrawerKey] = useState<string | null>(null);
+  const [selectedPatientKey, setSelectedPatientKey] = useState<string | null>(null);
   const [drawerPinned, setDrawerPinned] = useState(false);
   const [wallMode, setWallMode] = useState(false);
+
+  const selectPatient = useCallback((key: string) => {
+    setSelectedPatientKey(key);
+  }, []);
   const prefersHover = usePrefersHover();
   const drawerCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -123,6 +128,7 @@ export function RpmProvider({ children }: { children: ReactNode }) {
   const openPatientDrawer = useCallback(
     (key: string) => {
       cancelPatientDrawerClose();
+      setSelectedPatientKey(key);
       setDrawerPinned(true);
       setDrawerKey(key);
     },
@@ -143,6 +149,7 @@ export function RpmProvider({ children }: { children: ReactNode }) {
     cancelPatientDrawerClose();
     setDrawerKey(null);
     setDrawerPinned(false);
+    // Keep selectedPatientKey so inline charts stay visible
   }, [cancelPatientDrawerClose]);
 
   const setTheme = (t: RpmTheme) => {
