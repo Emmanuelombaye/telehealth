@@ -22,6 +22,11 @@ const SupportHubPage = lazy(() => lazyRetry(() => import("./pages/SupportHub").t
 const HowItWorksPage = lazy(() => lazyRetry(() => import("./pages/HowItWorks").then(m => ({ default: m.HowItWorksPage }))));
 const FrequentlyAskedQuestionsPage = lazy(() => lazyRetry(() => import("./pages/FAQ").then(m => ({ default: m.FrequentlyAskedQuestionsPage }))));
 const ExploreTreatmentsPage = lazy(() => lazyRetry(() => import("./pages/ExploreTreatments").then(m => ({ default: m.ExploreTreatmentsPage }))));
+const TermsOfServicePage = lazy(() => lazyRetry(() => import("./pages/legal/TermsOfService").then(m => ({ default: m.TermsOfServicePage }))));
+const PrivacyPolicyPage = lazy(() => lazyRetry(() => import("./pages/legal/PrivacyPolicy").then(m => ({ default: m.PrivacyPolicyPage }))));
+const RefundPolicyPage = lazy(() => lazyRetry(() => import("./pages/legal/RefundPolicy").then(m => ({ default: m.RefundPolicyPage }))));
+const ShippingPolicyPage = lazy(() => lazyRetry(() => import("./pages/legal/ShippingPolicy").then(m => ({ default: m.ShippingPolicyPage }))));
+const LlmsTxtPage = lazy(() => lazyRetry(() => import("./pages/legal/LlmsTxt").then(m => ({ default: m.LlmsTxtPage }))));
 
 // Quiz
 const SelectTreatmentPage = lazy(() => lazyRetry(() => import("./pages/quiz/SelectTreatment").then(m => ({ default: m.SelectTreatmentPage }))));
@@ -158,6 +163,13 @@ export const router = createBrowserRouter([
           { path: "explore-treatments", Component: ExploreTreatmentsPage },
           { path: "frequently-asked-questions", Component: FrequentlyAskedQuestionsPage },
           { path: "faq", Component: FrequentlyAskedQuestionsPage },
+
+          // Legal & policies (Public)
+          { path: "terms", Component: TermsOfServicePage },
+          { path: "privacy", Component: PrivacyPolicyPage },
+          { path: "refund", Component: RefundPolicyPage },
+          { path: "shipping", Component: ShippingPolicyPage },
+          { path: "llms", Component: LlmsTxtPage },
           
           // Bio-Optimizer Hubs (Public)
           { path: "bio", Component: BioOptimizerPage },

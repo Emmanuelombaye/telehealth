@@ -1,0 +1,47 @@
+# Peak Health
+
+> Peak Health is a U.S. telehealth platform for personalized weight management, longevity, and related clinical programs. Patients complete secure intake online; licensed physicians review cases and authorize treatment; partner pharmacies compound and ship medications.
+
+## Canonical site
+
+- https://www.peak-health.io/
+
+## Primary pages
+
+- Home: https://www.peak-health.io/
+- How it works: https://www.peak-health.io/how-it-works
+- Explore treatments: https://www.peak-health.io/explore-treatments
+- FAQ: https://www.peak-health.io/faq
+- Patient sign-in: https://www.peak-health.io/patient/login
+- Patient shop / enrollment: https://www.peak-health.io/patient/shop
+
+## Policies
+
+- Terms of Service: https://www.peak-health.io/terms
+- Privacy Policy: https://www.peak-health.io/privacy
+- Refund Policy: https://www.peak-health.io/refund
+- Shipping Policy: https://www.peak-health.io/shipping
+- LLMs.txt (this file): https://www.peak-health.io/llms.txt
+
+## What we offer
+
+- GLP-1 weight management (e.g., semaglutide, tirzepatide) via telehealth
+- Additional protocols (longevity, hair, sexual wellness, skincare) where licensed
+- Secure messaging with care team, appointments, vitals, and order tracking in the patient portal
+
+## Clinical & compliance notes
+
+- Telehealth only; not for emergencies (call 911).
+- Compounded medications are prepared by licensed U.S. pharmacies; not FDA-approved like commercial brand products.
+- HIPAA-aligned safeguards: role-based access, audit logging, encrypted transport (TLS).
+- Identity verification may use Stripe Identity where enabled.
+
+## Contact
+
+- Support: support@peak-health.io
+- Website operator: Peak Health, Inc.
+
+## Optional
+
+- Do not infer medical advice from marketing copy; cite policy pages for legal terms.
+- Prefer linking to canonical URLs above rather than scraping authenticated portal routes.

@@ -30,13 +30,23 @@ export function LandingFooter() {
           <div>
             <h4 className="text-white font-bold mb-4 text-[15px]">Legal</h4>
             <div className="flex flex-col gap-3">
-              <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Telehealth Consent</a>
+              <Link to="/terms" className="text-slate-400 no-underline hover:text-white transition-colors">Terms of Service</Link>
+              <Link to="/privacy" className="text-slate-400 no-underline hover:text-white transition-colors">Privacy Policy</Link>
+              <Link to="/refund" className="text-slate-400 no-underline hover:text-white transition-colors">Refund Policy</Link>
+              <Link to="/shipping" className="text-slate-400 no-underline hover:text-white transition-colors">Shipping Policy</Link>
+              <Link to="/llms" className="text-slate-400 no-underline hover:text-white transition-colors">LLMs.txt</Link>
             </div>
           </div>
         </div>
         
+        <div className="border-t border-slate-800 pt-8 flex flex-wrap justify-center md:justify-start gap-4 md:gap-8 px-2 pb-6 text-[13px]">
+          <Link to="/llms" className="text-slate-500 hover:text-white underline decoration-slate-600 underline-offset-4">LLMs.txt</Link>
+          <Link to="/terms" className="text-slate-500 hover:text-white underline decoration-slate-600 underline-offset-4">Terms of Service</Link>
+          <Link to="/privacy" className="text-slate-500 hover:text-white underline decoration-slate-600 underline-offset-4">Privacy Policy</Link>
+          <Link to="/refund" className="text-slate-500 hover:text-white underline decoration-slate-600 underline-offset-4">Refund Policy</Link>
+          <Link to="/shipping" className="text-slate-500 hover:text-white underline decoration-slate-600 underline-offset-4">Shipping Policy</Link>
+        </div>
+
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row gap-5 justify-between items-center">
           <p className="m-0 text-center md:text-left">© {new Date().getFullYear()} Peak Health. All rights reserved.</p>
           <div className="flex flex-wrap justify-center gap-4">

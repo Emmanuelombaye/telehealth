@@ -1238,7 +1238,15 @@ export function PatientShopPage() {
         <label className="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
           <span className="text-xs text-muted-foreground leading-relaxed">
-            I agree to Peak Health's <span className="text-primary font-semibold underline">Terms of Service</span> and <span className="text-primary font-semibold underline">HIPAA Privacy Policy</span>. I consent to telehealth services and electronic prescriptions.
+            I agree to Peak Health&apos;s{" "}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold underline">
+              Terms of Service
+            </a>{" "}
+            and{" "}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold underline">
+              Privacy Policy
+            </a>
+            . I consent to telehealth services and electronic prescriptions.
           </span>
         </label>
 
