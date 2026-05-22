@@ -51,6 +51,8 @@ import {
   type ShopFlowStage,
 } from "../../../../lib/patientShopRoutes";
 import { PatientEnrollmentStepper } from "../../../components/PatientEnrollmentStepper.tsx";
+import { PatientEnrollmentCatalogChrome } from "../../../components/patient/PatientEnrollmentCatalogChrome";
+import { PatientShopTopChrome } from "../../../components/patient/PatientShopTopChrome";
 import { EnrollmentFlowShell } from "../../../components/patient/EnrollmentFlowShell";
 // Stripe
 import { loadStripe } from "@stripe/stripe-js";
@@ -2165,39 +2167,9 @@ export function PatientShopPage() {
   }
 
   return (
-    <div className="patient-enrollment-surface min-h-[100dvh] bg-[#F8FAFC]">
-    <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-10 space-y-5 pb-20 pt-6">
-      <PatientEnrollmentStepper stage={stage} />
-      {/* Shop Header with Back button */}
-      <div className="flex items-center justify-between mb-2">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate('/patient')}
-          className="rounded-xl text-muted-foreground hover:text-foreground -ml-2"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Portal
-        </Button>
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Medical Dispensary</span>
-      </div>
-
-      {/* Yucca-style hero */}
-      <div className="relative overflow-hidden rounded-3xl p-6 md:p-8" style={{ background: "var(--brand-hero)" }}>
-        <div className="relative z-10">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--brand-lavender-900)]">Treatment Programs</p>
-          <h1 className="text-2xl md:text-3xl font-extrabold mt-1 text-foreground">
-            Care that actually works.<br />
-            <span className="text-[var(--brand-lavender-700)]">Shipped to your door.</span>
-          </h1>
-          <p className="text-sm text-foreground/70 mt-2 max-w-md">
-            Doctor-reviewed within hours · Custom-compounded by licensed pharmacies · 100% online from intake to refill.
-          </p>
-          <div className="flex flex-wrap items-center gap-2 mt-4 text-[11px] font-semibold">
-            <span className="px-2.5 py-1 rounded-full bg-white/70 text-[var(--brand-lavender-900)]">🇺🇸 USA Only</span>
-            <span className="px-2.5 py-1 rounded-full bg-white/70 text-[var(--brand-lavender-900)]">HIPAA Compliant</span>
-          </div>
-        </div>
-      </div>
+    <div className="patient-enrollment-surface min-h-[100dvh] bg-[#F4F7F5]">
+    <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-10 space-y-6 pb-20 pt-6 sm:pt-8">
+      <PatientEnrollmentCatalogChrome stage={stage} onBack={() => navigate("/patient")} />
 
       {resumeDraftAvailable && (
         <Card className="border-primary/30 bg-primary/5">
