@@ -30,26 +30,26 @@ export function PatientEnrollmentStepper({
   const pct = Math.round(((activeIdx + 1) / total) * 100);
 
   return (
-    <div className={cn("w-full space-y-4", className)}>
+    <div className={cn("w-full space-y-2.5", className)}>
       <div
         className={cn(
-          "flex flex-col gap-1",
+          "flex flex-col gap-0.5",
           align === "center" ? "items-center text-center" : "items-start text-left",
         )}
       >
-        <span className="inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-900">
+        <span className="inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-900">
           Step {activeIdx + 1} of {total}
         </span>
-        <h2 className="text-lg font-bold tracking-tight text-[#0A2E1F] sm:text-xl">{active.title}</h2>
-        <p className="text-sm text-slate-600 max-w-md">{active.subtitle}</p>
+        <h2 className="text-base font-bold tracking-tight text-[#0A2E1F] sm:text-lg leading-tight">{active.title}</h2>
+        <p className="text-xs text-slate-600 max-w-md leading-snug">{active.subtitle}</p>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-          <span>Your progress</span>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2 text-[9px] font-semibold uppercase tracking-wider text-slate-500">
+          <span>Progress</span>
           <span className="text-emerald-800">{pct}%</span>
         </div>
-        <div className="flex gap-1.5" role="progressbar" aria-valuenow={activeIdx + 1} aria-valuemin={1} aria-valuemax={total}>
+        <div className="flex gap-1" role="progressbar" aria-valuenow={activeIdx + 1} aria-valuemin={1} aria-valuemax={total}>
           {ENROLLMENT_JOURNEY_STEPS.map((s, i) => {
             const done = i < activeIdx;
             const current = i === activeIdx;
@@ -57,7 +57,7 @@ export function PatientEnrollmentStepper({
               <div
                 key={s.stage}
                 className={cn(
-                  "h-2 flex-1 rounded-full transition-all duration-300",
+                  "h-1.5 flex-1 rounded-full transition-all duration-300",
                   done && "bg-emerald-500",
                   current && "bg-[#0A2E1F] shadow-sm shadow-emerald-900/20",
                   !done && !current && "bg-slate-200/90",
@@ -72,7 +72,7 @@ export function PatientEnrollmentStepper({
       {showTrust ? (
         <div
           className={cn(
-            "flex flex-wrap gap-2 pt-1",
+            "flex flex-wrap gap-1.5",
             align === "center" ? "justify-center" : "justify-start",
           )}
         >
@@ -83,9 +83,9 @@ export function PatientEnrollmentStepper({
           ].map(({ icon: Icon, label }) => (
             <span
               key={label}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600"
+              className="inline-flex items-center gap-1 rounded-full border border-slate-200/90 bg-slate-50/80 px-2 py-0.5 text-[9px] font-semibold text-slate-600"
             >
-              <Icon className="h-3 w-3 text-emerald-600" />
+              <Icon className="h-2.5 w-2.5 text-emerald-600" />
               {label}
             </span>
           ))}

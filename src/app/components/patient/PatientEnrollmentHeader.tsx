@@ -20,16 +20,16 @@ export function PatientEnrollmentHeader({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-[1.25rem] border border-emerald-100/90 bg-white px-5 py-6 sm:px-8 sm:py-7 shadow-[0_8px_32px_-20px_rgba(10,46,31,0.12)]",
+        "overflow-hidden rounded-xl border border-emerald-100/90 bg-white px-4 py-3.5 sm:px-5 sm:py-4 shadow-[0_4px_20px_-14px_rgba(10,46,31,0.1)]",
         className,
       )}
     >
-      <div className="flex flex-col items-center text-center">
+      <div className="flex flex-col items-center text-center gap-2.5">
         <PatientBrandMark
-          size="hero"
-          className="w-full max-w-[min(100%,14rem)] sm:max-w-[18rem] md:max-w-[20rem]"
+          size="lg"
+          className="w-full max-w-[11rem] sm:max-w-[13rem]"
         />
-        <div className="mt-5 w-full">
+        <div className="w-full">
           <PatientEnrollmentStepper stage={stage} align="center" showTrust={showTrust} />
         </div>
       </div>

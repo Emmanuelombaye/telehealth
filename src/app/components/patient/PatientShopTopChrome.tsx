@@ -23,7 +23,7 @@ export function PatientShopTopChrome({
   showTrust = true,
 }: PatientShopTopChromeProps) {
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-1.5", className)}>
       <Button
         type="button"
         variant="ghost"
