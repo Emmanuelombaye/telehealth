@@ -30,22 +30,21 @@ export function PatientShopTopChrome({
         className,
       )}
     >
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
+      <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-2.5 sm:px-5">
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={onBack}
-          className="h-9 rounded-xl px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+          className="h-8 shrink-0 rounded-lg px-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
         >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+          <ArrowLeft className="mr-1 h-3.5 w-3.5" />
           {backLabel}
         </Button>
-        <PatientBrandMark size={brandSize} className="max-w-[10rem] sm:max-w-[12rem]" />
-        <div className="w-[4.5rem]" aria-hidden />
+        <PatientBrandMark size="sm" className="max-w-[7.5rem] opacity-90" />
       </div>
 
-      <div className="px-4 py-4 sm:px-5 sm:py-5">
+      <div className="px-4 py-3 sm:px-5 sm:py-4">
         <PatientEnrollmentStepper stage={stage} align="left" />
       </div>
     </div>
