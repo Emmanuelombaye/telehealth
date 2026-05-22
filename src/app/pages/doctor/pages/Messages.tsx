@@ -87,6 +87,7 @@ export function DoctorMessagesPage() {
         supabase
           .from("orders")
           .select("id, user_id, patient_name, order_number, status")
+          .eq("doctor_id", user.id)
           .not("user_id", "is", null)
           .order("created_at", { ascending: false })
           .limit(300),

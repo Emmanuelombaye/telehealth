@@ -18,6 +18,7 @@ import {
   getOrderFulfillmentRailIndex,
 } from "../../../lib";
 import { supabase } from "../../../lib/supabaseClient";
+import { patientMessagesHref } from "../../../lib/patientMessaging";
 
 const stepIcon: Record<string, any> = {
   order_submitted: FileText,
@@ -202,7 +203,12 @@ export function PatientDashboard() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { to: "/patient/shop", icon: ShoppingBag, label: "Shop", sub: "Plans" },
-          { to: "/patient/messages", icon: MessageSquare, label: "Messages", sub: "Inbox" },
+          {
+            to: patientMessagesHref(orders.find((o) => o.doctor_id)?.doctor_id),
+            icon: MessageSquare,
+            label: "Messages",
+            sub: "Inbox",
+          },
           { to: "/patient/labs", icon: Activity, label: "Labs", sub: "Results" },
           { to: "/patient/orders", icon: Truck, label: "Orders", sub: "Tracking" },
         ].map((item) => (

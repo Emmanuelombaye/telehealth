@@ -15,6 +15,7 @@ import { openPrescriptionPdf } from "../../../../lib/prescriptions";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { patientMessagesHref } from "../../../../lib/patientMessaging";
 
 export function PrescriptionsPage() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export function PrescriptionsPage() {
     const order = latestOrderForMed(rx.medication);
     if (!order) {
       toast.error("No linked order found. Message your care team to request a refill.");
-      navigate("/patient/messages");
+      navigate(patientMessagesHref());
       return;
     }
     if (order.status === "refill_eligible") {
@@ -265,7 +266,10 @@ export function PrescriptionsPage() {
           <Button
             size="sm"
             className="h-11 rounded-xl bg-white text-[#0A2E1F] hover:bg-emerald-50 font-black uppercase text-[9px] tracking-widest px-6 shadow-xl"
-            onClick={() => navigate("/patient/messages")}
+            onClick={() => {
+              const withDoctor = orders.find((o) => o.doctor_id);
+              navigate(patientMessagesHref(withDoctor?.doctor_id));
+            }}
           >
             Secure Message
           </Button>

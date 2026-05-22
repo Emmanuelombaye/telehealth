@@ -84,6 +84,8 @@ export function buildThreadsFromMessages(rows: RawMessageRow[], currentUserId: s
     const otherProfile = msg.sender_id === currentUserId ? msg.receiver : msg.sender;
     const otherId = msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id;
     if (!otherId) continue;
+    const role = (otherProfile?.role || "").toLowerCase();
+    if (role !== "patient") continue;
 
     if (!threadMap[otherId]) {
       threadMap[otherId] = {
