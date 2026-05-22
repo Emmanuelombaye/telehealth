@@ -9,10 +9,12 @@ type Props = {
   row: RpmLiveRow;
   onOpen: () => void;
   onEscalate: () => void;
+  onHoverStart?: () => void;
+  onHoverEnd?: () => void;
   compact?: boolean;
 };
 
-export function RpmMonitorCard({ row, onOpen, onEscalate, compact }: Props) {
+export function RpmMonitorCard({ row, onOpen, onEscalate, onHoverStart, onHoverEnd, compact }: Props) {
   const tone = RPM_STATUS_TONE[row.statusTone];
   const conn = CONNECTIVITY_STYLES[row.patient.connectivity];
 
@@ -21,6 +23,8 @@ export function RpmMonitorCard({ row, onOpen, onEscalate, compact }: Props) {
       role="button"
       tabIndex={0}
       onClick={onOpen}
+      onMouseEnter={onHoverStart}
+      onMouseLeave={onHoverEnd}
       onKeyDown={(e) => e.key === "Enter" && onOpen()}
       className={cn(
         rpmMonitorCard,

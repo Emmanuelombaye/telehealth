@@ -40,7 +40,7 @@ function PageHero({ title, subtitle, icon: Icon }: { title: string; subtitle: st
 }
 
 export function RpmPatientVitalsPage() {
-  const { filteredRows, setDrawerKey, escalatePatientKey, readings, range } = useRpmData();
+  const { filteredRows, openPatientDrawer, openPatientDrawerHover, schedulePatientDrawerClose, escalatePatientKey, readings, range } = useRpmData();
   const sample = filteredRows[0];
   const pr = sample ? readingsForPatient(readings, sample.patient, range) : [];
   const bp = buildBpTrend(pr, 24);
@@ -90,7 +90,9 @@ export function RpmPatientVitalsPage() {
             key={row.patient.key}
             row={row}
             compact
-            onOpen={() => setDrawerKey(row.patient.key)}
+            onOpen={() => openPatientDrawer(row.patient.key)}
+            onHoverStart={() => openPatientDrawerHover(row.patient.key)}
+            onHoverEnd={schedulePatientDrawerClose}
             onEscalate={() => escalatePatientKey(row.patient.key)}
           />
         ))}
@@ -111,7 +113,7 @@ export function RpmAlertsPage() {
 }
 
 export function RpmCriticalPage() {
-  const { filteredRows, setDrawerKey, escalatePatientKey } = useRpmData();
+  const { filteredRows, openPatientDrawer, openPatientDrawerHover, schedulePatientDrawerClose, escalatePatientKey } = useRpmData();
   const critical = filteredRows.filter((r) => r.statusTone === "critical" || r.statusTone === "emergency");
   return (
     <div className="space-y-4 pb-8">
@@ -121,7 +123,14 @@ export function RpmCriticalPage() {
           <p className={cn(rpmGlass, "p-8 text-center rpm-muted col-span-full")}>No critical cases in this window.</p>
         ) : (
           critical.map((row) => (
-            <RpmMonitorCard key={row.patient.key} row={row} onOpen={() => setDrawerKey(row.patient.key)} onEscalate={() => escalatePatientKey(row.patient.key)} />
+            <RpmMonitorCard
+              key={row.patient.key}
+              row={row}
+              onOpen={() => openPatientDrawer(row.patient.key)}
+              onHoverStart={() => openPatientDrawerHover(row.patient.key)}
+              onHoverEnd={schedulePatientDrawerClose}
+              onEscalate={() => escalatePatientKey(row.patient.key)}
+            />
           ))
         )}
       </div>
@@ -205,7 +214,7 @@ export function RpmCompliancePage() {
 }
 
 export function RpmAiRiskPage() {
-  const { filteredRows, readings, range, setDrawerKey } = useRpmData();
+  const { filteredRows, readings, range, openPatientDrawer } = useRpmData();
 
   return (
     <div className="space-y-4 pb-8">
@@ -219,7 +228,7 @@ export function RpmAiRiskPage() {
             <button
               key={row.patient.key}
               type="button"
-              onClick={() => setDrawerKey(row.patient.key)}
+              onClick={() => openPatientDrawer(row.patient.key)}
               className={cn(rpmGlass, "p-4 text-left hover:shadow-xl transition-all")}
             >
               <div className="flex justify-between">
@@ -287,7 +296,7 @@ export function RpmQueuePage() {
 }
 
 export function RpmEscalationsPage() {
-  const { filteredRows, escalated, setDrawerKey } = useRpmData();
+  const { filteredRows, escalated, openPatientDrawer } = useRpmData();
   const list = filteredRows.filter((r) => escalated.has(r.patient.key) || r.statusTone === "emergency");
   return (
     <div className="space-y-4 pb-8">
@@ -304,7 +313,7 @@ export function RpmEscalationsPage() {
             >
               <Badge className={RPM_STATUS_TONE.emergency.badge}>{RPM_STATUS_TONE.emergency.label}</Badge>
               <p className="font-black mt-2 rpm-text">{row.patient.patient_name}</p>
-              <Button className="mt-3 rounded-xl" size="sm" onClick={() => setDrawerKey(row.patient.key)}>
+              <Button className="mt-3 rounded-xl" size="sm" onClick={() => openPatientDrawer(row.patient.key)}>
                 Open chart
               </Button>
             </div>

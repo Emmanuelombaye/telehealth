@@ -16,7 +16,9 @@ export function RpmLiveMonitoring() {
     range,
     setRange,
     filteredRows,
-    setDrawerKey,
+    openPatientDrawer,
+    openPatientDrawerHover,
+    schedulePatientDrawerClose,
     escalatePatientKey,
     missingTable,
     setWallMode,
@@ -78,7 +80,9 @@ export function RpmLiveMonitoring() {
                   <RpmMonitorCard
                     key={row.patient.key}
                     row={row}
-                    onOpen={() => setDrawerKey(row.patient.key)}
+                    onOpen={() => openPatientDrawer(row.patient.key)}
+                    onHoverStart={() => openPatientDrawerHover(row.patient.key)}
+                    onHoverEnd={schedulePatientDrawerClose}
                     onEscalate={() => {
                       escalatePatientKey(row.patient.key);
                       toast.warning(`Escalated: ${row.patient.patient_name}`);

@@ -4,9 +4,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { usePrefersHover } from "./usePrefersHover";
 import { supabase } from "../../../../lib/supabaseClient";
 import { isMissingTableError } from "../../../../lib/supabaseTableError";
 import { type VitalReading } from "../../../../lib/vitalsClinical";
@@ -59,12 +61,19 @@ type RpmContextValue = {
   escalatePatientKey: (key: string) => void;
   drawerKey: string | null;
   setDrawerKey: (k: string | null) => void;
+  drawerPinned: boolean;
   wallMode: boolean;
   setWallMode: (v: boolean) => void;
   filteredRows: RpmLiveRow[];
   visibleAlerts: RpmAlert[];
   getTimeline: (row: RpmLiveRow) => ReturnType<typeof buildPatientTimeline>;
   getPatientReadings: (row: RpmLiveRow) => VitalReading[];
+  prefersHover: boolean;
+  openPatientDrawer: (key: string) => void;
+  openPatientDrawerHover: (key: string) => void;
+  schedulePatientDrawerClose: () => void;
+  cancelPatientDrawerClose: () => void;
+  closePatientDrawer: () => void;
 };
 
 const RpmContext = createContext<RpmContextValue | null>(null);
@@ -88,7 +97,51 @@ export function RpmProvider({ children }: { children: ReactNode }) {
   const [acked, setAcked] = useState<Set<string>>(() => loadAcknowledgedAlerts());
   const [escalated, setEscalated] = useState<Set<string>>(() => loadEscalatedPatients());
   const [drawerKey, setDrawerKey] = useState<string | null>(null);
+  const [drawerPinned, setDrawerPinned] = useState(false);
   const [wallMode, setWallMode] = useState(false);
+  const prefersHover = usePrefersHover();
+  const drawerCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelPatientDrawerClose = useCallback(() => {
+    if (drawerCloseTimer.current) {
+      clearTimeout(drawerCloseTimer.current);
+      drawerCloseTimer.current = null;
+    }
+  }, []);
+
+  const schedulePatientDrawerClose = useCallback(() => {
+    if (!prefersHover) return;
+    cancelPatientDrawerClose();
+    drawerCloseTimer.current = setTimeout(() => {
+      setDrawerKey(null);
+      setDrawerPinned(false);
+    }, 380);
+  }, [prefersHover, cancelPatientDrawerClose]);
+
+  const openPatientDrawer = useCallback(
+    (key: string) => {
+      cancelPatientDrawerClose();
+      setDrawerPinned(true);
+      setDrawerKey(key);
+    },
+    [cancelPatientDrawerClose],
+  );
+
+  const openPatientDrawerHover = useCallback(
+    (key: string) => {
+      if (!prefersHover) return;
+      cancelPatientDrawerClose();
+      setDrawerPinned(false);
+      setDrawerKey(key);
+    },
+    [prefersHover, cancelPatientDrawerClose],
+  );
+
+  const closePatientDrawer = useCallback(() => {
+    cancelPatientDrawerClose();
+    setDrawerKey(null);
+    setDrawerPinned(false);
+  }, [cancelPatientDrawerClose]);
 
   const setTheme = (t: RpmTheme) => {
     setThemeState(t);
@@ -229,12 +282,19 @@ export function RpmProvider({ children }: { children: ReactNode }) {
     escalatePatientKey,
     drawerKey,
     setDrawerKey,
+    drawerPinned,
+    closePatientDrawer,
     wallMode,
     setWallMode,
     filteredRows,
     visibleAlerts,
     getTimeline,
     getPatientReadings,
+    prefersHover,
+    openPatientDrawer,
+    openPatientDrawerHover,
+    schedulePatientDrawerClose,
+    cancelPatientDrawerClose,
   };
 
   return <RpmContext.Provider value={value}>{children}</RpmContext.Provider>;

@@ -23,7 +23,15 @@ type Props = {
 
 export function RpmAlertsStream({ filter = "all", max = 16, fullPage }: Props) {
   const doctorBase = useDoctorPortalBase();
-  const { visibleAlerts, acknowledgeAlert, setDrawerKey, escalatePatientKey, ordersLookup } = useRpmData();
+  const {
+    visibleAlerts,
+    acknowledgeAlert,
+    openPatientDrawer,
+    openPatientDrawerHover,
+    schedulePatientDrawerClose,
+    escalatePatientKey,
+    ordersLookup,
+  } = useRpmData();
 
   const list = visibleAlerts
     .filter((a) => filter === "all" || a.tier === filter)
@@ -70,13 +78,13 @@ export function RpmAlertsStream({ filter = "all", max = 16, fullPage }: Props) {
                 onClick={() => {
                   escalatePatientKey(a.patientKey);
                   toast.warning(`Escalated: ${a.patientName}`);
-                  setDrawerKey(a.patientKey);
+                  openPatientDrawer(a.patientKey);
                 }}
               >
                 <AlertTriangle className="h-3 w-3 mr-1" />
                 Escalate
               </Button>
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] font-bold" onClick={() => setDrawerKey(a.patientKey)}>
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] font-bold" onClick={() => openPatientDrawer(a.patientKey)}>
                 <Stethoscope className="h-3 w-3 mr-1" />
                 Chart
               </Button>

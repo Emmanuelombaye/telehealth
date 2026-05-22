@@ -41,18 +41,18 @@ export function RpmTopBar() {
     : user?.email?.split("@")[0] ?? "Physician";
 
   return (
-    <header className={cn(rpmGlass, "sticky top-0 z-30 mx-4 mt-4 mb-2 px-4 py-3 flex flex-wrap items-center gap-3")}>
-      <div className="flex items-center gap-2 min-w-[140px]">
+    <header className={cn(rpmGlass, "sticky top-0 z-30 mx-2 sm:mx-4 mt-2 sm:mt-4 mb-2 px-3 sm:px-4 py-2.5 sm:py-3 flex flex-wrap items-center gap-2 sm:gap-3")}>
+      <div className="flex items-center gap-2 min-w-0 sm:min-w-[140px]">
         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-900/20">
           <Radio className="h-4 w-4 text-white" />
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest rpm-muted">RPM Command</p>
-          <p className="text-sm font-black rpm-text">Peak Health</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest rpm-muted hidden sm:block">RPM Command</p>
+          <p className="text-sm font-black rpm-text truncate max-w-[120px] sm:max-w-none">Peak Health</p>
         </div>
       </div>
 
-      <div className="relative flex-1 min-w-[200px] max-w-md">
+      <div className="relative w-full order-3 sm:order-none sm:flex-1 min-w-0 sm:min-w-[200px] max-w-full sm:max-w-md basis-full sm:basis-auto">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 rpm-muted" />
         <Input
           value={search}

@@ -66,6 +66,10 @@ type Props = {
   onChartMetric: (id: (typeof RPM_METRIC_OPTIONS)[number]["id"]) => void;
   onEscalate: () => void;
   dark?: boolean;
+  /** True when opened via tap/click — shows backdrop */
+  pinned?: boolean;
+  onHoverEnter?: () => void;
+  onHoverLeave?: () => void;
 };
 
 export function RpmPatientDrawer({
@@ -82,6 +86,9 @@ export function RpmPatientDrawer({
   onChartMetric,
   onEscalate,
   dark = false,
+  pinned = true,
+  onHoverEnter,
+  onHoverLeave,
 }: Props) {
   if (!open || !row) return null;
 
@@ -99,16 +106,24 @@ export function RpmPatientDrawer({
       : [];
 
   const panel = (
-    <div className="fixed inset-0 z-[200] flex justify-end">
-      <button
-        type="button"
-        className="absolute inset-0 bg-[#0A2E1F]/40 backdrop-blur-sm"
-        aria-label="Close patient monitor"
-        onClick={onClose}
-      />
+    <div className="fixed inset-0 z-[200] flex justify-end pointer-events-none">
+      {pinned && (
+        <button
+          type="button"
+          className="absolute inset-0 bg-[#0A2E1F]/40 backdrop-blur-sm pointer-events-auto"
+          aria-label="Close patient monitor"
+          onClick={onClose}
+        />
+      )}
+      {!pinned && (
+        <div className="absolute inset-0 pointer-events-auto" aria-hidden onClick={onClose} />
+      )}
       <aside
+        onMouseEnter={onHoverEnter}
+        onMouseLeave={onHoverLeave}
         className={cn(
-          "relative flex h-dvh w-full max-w-xl flex-col border-l shadow-2xl animate-in slide-in-from-right duration-300",
+          "relative flex h-dvh w-full max-w-xl flex-col border-l shadow-2xl pointer-events-auto",
+          pinned ? "animate-in slide-in-from-right duration-300" : "transition-transform duration-200",
           dark
             ? "border-slate-700 bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 text-slate-100"
             : "border-emerald-900/10 bg-gradient-to-b from-white via-slate-50/80 to-white",

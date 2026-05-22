@@ -4,6 +4,7 @@ import { cn } from "../../../components/ui/shared.tsx";
 import { RpmProvider, useRpmData } from "./useRpmData";
 import { RpmTopBar } from "../../../components/doctor/rpm/RpmTopBar";
 import { RpmSubNav } from "../../../components/doctor/rpm/RpmSubNav";
+import { RpmMobileNav } from "../../../components/doctor/rpm/RpmMobileNav";
 import { RpmPatientDrawer } from "../../../components/doctor/rpm/RpmPatientDrawer";
 import { RpmMonitorCard } from "../../../components/doctor/rpm/RpmMonitorCard";
 import { rpmShellClass } from "../../../../lib/rpmEnterpriseUi";
@@ -21,7 +22,12 @@ function RpmShell() {
     setWallMode,
     filteredRows,
     drawerKey,
-    setDrawerKey,
+    drawerPinned,
+    closePatientDrawer,
+    openPatientDrawer,
+    openPatientDrawerHover,
+    schedulePatientDrawerClose,
+    cancelPatientDrawerClose,
     escalatePatientKey,
     getPatientReadings,
     getTimeline,
@@ -59,9 +65,10 @@ function RpmShell() {
   return (
     <div className={cn(rpmShellClass(theme === "dark"), theme === "dark" ? "rpm-dark" : "rpm-light")}>
       <RpmTopBar />
-      <div className="flex min-h-[calc(100dvh-4rem)]">
+      <RpmMobileNav />
+      <div className="flex min-h-0 flex-1">
         <RpmSubNav />
-        <div className="flex-1 min-w-0 pb-8">
+        <div className="flex-1 min-w-0 pb-6 md:pb-8">
           <Outlet />
         </div>
       </div>
@@ -84,7 +91,9 @@ function RpmShell() {
                 key={row.patient.key}
                 row={row}
                 compact
-                onOpen={() => setDrawerKey(row.patient.key)}
+                onOpen={() => openPatientDrawer(row.patient.key)}
+                onHoverStart={() => openPatientDrawerHover(row.patient.key)}
+                onHoverEnd={schedulePatientDrawerClose}
                 onEscalate={() => {
                   escalatePatientKey(row.patient.key);
                   toast.warning(`Escalated: ${row.patient.patient_name}`);
@@ -97,7 +106,10 @@ function RpmShell() {
 
       <RpmPatientDrawer
         open={!!drawerKey}
-        onClose={() => setDrawerKey(null)}
+        pinned={drawerPinned}
+        onClose={closePatientDrawer}
+        onHoverEnter={cancelPatientDrawerClose}
+        onHoverLeave={schedulePatientDrawerClose}
         row={drawerRow}
         order={drawerOrder}
         patientReadings={drawerReadings}
