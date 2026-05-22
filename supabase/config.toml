@@ -1,0 +1,5 @@
+# Edge Functions — browser clients send OPTIONS without Authorization.
+# dispatch-prescription validates the doctor JWT inside the function on POST.
+
+[functions.dispatch-prescription]
+verify_jwt = false

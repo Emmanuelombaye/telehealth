@@ -11,20 +11,25 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 const PHARMACY_API_URL = Deno.env.get("PHARMACY_API_URL") ?? "";
 const PHARMACY_API_KEY = Deno.env.get("PHARMACY_API_KEY") ?? "";
 
-const corsHeaders = {
+const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, prefer, x-region, x-brand-id",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-api-version, accept, accept-profile, prefer, x-region, x-brand-id",
   "Access-Control-Max-Age": "86400",
 };
 
+function jsonResponse(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 serve(async (req: Request) => {
-  // Handle CORS preflight
+  // CORS preflight — must return 2xx before POST (browser blocks on 401/404 from gateway)
   if (req.method === "OPTIONS") {
-    return new Response("ok", { 
-      status: 200, 
-      headers: corsHeaders 
-    });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
@@ -35,10 +40,7 @@ serve(async (req: Request) => {
     // --------------- 1. Authenticate Request & Enforce Clinical Roles ---------------
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Access Denied: Missing authorization headers" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Access Denied: Missing authorization headers" }, 401);
     }
 
     // Initialize user-scoped client to securely read their roles
@@ -50,10 +52,7 @@ serve(async (req: Request) => {
 
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized: Invalid clinical session" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Unauthorized: Invalid clinical session" }, 401);
     }
 
     // Retrieve verified account role from profiles
@@ -65,10 +64,10 @@ serve(async (req: Request) => {
 
     const allowedClinicalRoles = ["doctor", "super_admin"];
     if (profileError || !profile || !allowedClinicalRoles.includes(profile.role)) {
-      return new Response(JSON.stringify({ error: "Forbidden: Only clinical doctors and super-admins can authorize medical prescriptions" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(
+        { error: "Forbidden: Only clinical doctors and super-admins can authorize medical prescriptions" },
+        403,
+      );
     }
 
     // --------------- 2. Parse Clinical Intake Payload ---------------
@@ -76,20 +75,14 @@ serve(async (req: Request) => {
     try {
       body = await req.json();
     } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Invalid JSON body" }, 400);
     }
 
     const { order_id, order_number, dosage_instructions, doctor_note, pharmacy = "truepill" } = body;
     const orderKey = order_id || order_number;
 
     if (!orderKey) {
-      return new Response(JSON.stringify({ error: "Missing required parameter: order_id or order_number" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Missing required parameter: order_id or order_number" }, 400);
     }
 
     // Initialize service client with elevated keys to read full PHI order records
@@ -108,10 +101,7 @@ serve(async (req: Request) => {
 
     if (fetchErr || !order) {
       console.error("dispatch-prescription: order not found", fetchErr);
-      return new Response(JSON.stringify({ error: "Order not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Order not found" }, 404);
     }
 
     // --------------- 3. Dispatch to Approved Pharmacy API ---------------
@@ -213,24 +203,19 @@ serve(async (req: Request) => {
       }
     }]);
 
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         success: true,
         pharmacy_dispatched: pharmacyDispatchSuccess,
         pharmacy_confirmation_id: pharmacyConfirmationId,
         new_status: "rx_sent",
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
+      200,
     );
 
-  } catch (err: any) {
-    console.error(`[HIPAA Security Incident] Prescription dispatch failed: ${err.message}`);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal error";
+    console.error(`[HIPAA Security Incident] Prescription dispatch failed: ${message}`);
+    return jsonResponse({ error: message }, 500);
   }
 });

@@ -14,6 +14,8 @@ npx supabase link --project-ref YOUR_PROJECT_REF
 # Deploy both pharmacy functions
 npx supabase functions deploy pharmacy-webhook
 npx supabase functions deploy dispatch-prescription
+
+**CORS from peak-health.io:** `supabase/config.toml` sets `verify_jwt = false` for this function so browser OPTIONS preflight succeeds; the function still validates the doctor JWT on POST. Redeploy after any change to `index.ts` or `config.toml`.
 ```
 
 ## Step 2: Set Environment Variables in Supabase
