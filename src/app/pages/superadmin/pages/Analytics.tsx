@@ -150,7 +150,7 @@ export function SuperAdminAnalyticsPage() {
     const date = new Date().toISOString().slice(0, 10);
     await logAdminAudit({
       action: "Exported Platform Analytics PDF",
-      target_type: "analytics_report",
+      targetType: "analytics_report",
       detail: { records_included: platformRevenueData.length },
     });
     await downloadBrandedReportPdf({

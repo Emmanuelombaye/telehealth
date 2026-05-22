@@ -170,6 +170,7 @@ export const router = createBrowserRouter([
       },
 
       // Auth (Isolated)
+      { path: "login", element: <Navigate to="/patient/login" replace /> },
       { path: "patient/login", element: <AuthPage portal="patient" /> },
       { path: "doctor/login", element: <AuthPage portal="doctor" /> },
       { path: "providers/login", element: <AuthPage portal="doctor" /> },

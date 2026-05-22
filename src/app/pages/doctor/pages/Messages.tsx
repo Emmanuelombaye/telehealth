@@ -94,7 +94,7 @@ export function DoctorMessagesPage() {
       ]);
 
       if (msgRes.error) throw msgRes.error;
-      setThreads(buildThreadsFromMessages((msgRes.data || []) as RawMessageRow[], user.id));
+      setThreads(buildThreadsFromMessages((msgRes.data || []) as unknown as RawMessageRow[], user.id));
       const contacts = buildPatientContacts(ordersRes.data || []);
       setPatientContacts(contacts);
       const orderMap: Record<string, string> = {};
@@ -334,7 +334,7 @@ export function DoctorMessagesPage() {
         <Button
           variant="outline"
           className="rounded-xl border-white/25 bg-white/10 text-white hover:bg-white/20"
-          onClick={fetchThreads}
+          onClick={() => void fetchThreads()}
           disabled={refreshing}
         >
           <RefreshCw className={cn("h-4 w-4 mr-2", refreshing && "animate-spin")} />

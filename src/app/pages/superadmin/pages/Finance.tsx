@@ -93,7 +93,7 @@ export function SuperAdminFinancePage() {
     const date = new Date().toISOString().slice(0, 10);
     await logAdminAudit({
       action: "Exported Platform Finance PDF",
-      target_type: "finance_ledger",
+      targetType: "finance_ledger",
       detail: { brands_included: brandFinancials.length },
     });
     await downloadBrandedReportPdf({

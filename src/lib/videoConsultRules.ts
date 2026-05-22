@@ -118,7 +118,7 @@ function parseVideoClinicalRules(raw: unknown): VideoClinicalRules | undefined {
               tr.flagManualReview === true || tr.flag_manual_review === true,
           };
         })
-        .filter((x): x is IntakeAnswerTrigger => x != null)
+        .filter((x) => x != null) as IntakeAnswerTrigger[]
     : undefined;
   if (bmiMin == null && ageMin == null && (!answerTriggers || answerTriggers.length === 0)) return undefined;
   return { bmiMin, ageMin, answerTriggers };

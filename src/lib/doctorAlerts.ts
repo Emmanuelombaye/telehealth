@@ -68,7 +68,10 @@ const METRIC_LABEL: Record<string, string> = {
   glucose: "Glucose",
 };
 
-export function dbNotificationToFeedItem(n: DbNotification, doctorBase: string): AlertFeedItem {
+export function dbNotificationToFeedItem(
+  n: DbNotification,
+  doctorBase: "/doctor" | "/providers",
+): AlertFeedItem {
   const type = n.type || "other";
   let actionTo = `${doctorBase}/notifications`;
   let actionLabel = "View";
@@ -104,7 +107,7 @@ export function buildClinicalAlerts(
   orders: Order[],
   flaggedVitals: VitalFlagRow[],
   unreadMessages: number,
-  doctorBase: string,
+  doctorBase: "/doctor" | "/providers",
 ): AlertFeedItem[] {
   const items: AlertFeedItem[] = [];
   const seen = new Set<string>();
@@ -184,7 +187,7 @@ export function buildClinicalAlerts(
 export function mergeAlertFeed(
   notifications: DbNotification[],
   clinical: AlertFeedItem[],
-  doctorBase: string,
+  doctorBase: "/doctor" | "/providers",
 ): AlertFeedItem[] {
   const dbItems = notifications.map((n) => dbNotificationToFeedItem(n, doctorBase));
   const all = [...dbItems, ...clinical];

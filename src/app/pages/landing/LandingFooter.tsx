@@ -24,7 +24,7 @@ export function LandingFooter() {
               <Link to="/how-it-works" className="text-slate-400 no-underline hover:text-white transition-colors">How It Works</Link>
               <Link to="/faq" className="text-slate-400 no-underline hover:text-white transition-colors">FAQ</Link>
               <Link to="/support" className="text-slate-400 no-underline hover:text-white transition-colors">Support Hub</Link>
-              <Link to="/login" className="text-slate-400 no-underline hover:text-white transition-colors">Patient Portal</Link>
+              <Link to="/patient/login" className="text-slate-400 no-underline hover:text-white transition-colors">Patient Portal</Link>
             </div>
           </div>
           <div>

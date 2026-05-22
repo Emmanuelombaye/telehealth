@@ -15,12 +15,32 @@
  * Exit: 0 unless a hard failure (missing URLs, migration files when strict).
  * Strict: SCHEDULING_GATE_STRICT=1 — fail if no video-flagged product or missing scheduling migration file.
  */
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+function loadEnvLocal() {
+  const p = join(root, ".env.local");
+  if (!existsSync(p)) return {};
+  const out = {};
+  for (const line of readFileSync(p, "utf8").split("\n")) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) continue;
+    const i = t.indexOf("=");
+    if (i === -1) continue;
+    const k = t.slice(0, i).trim();
+    let v = t.slice(i + 1).trim();
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))
+      v = v.slice(1, -1);
+    out[k] = v;
+  }
+  return out;
+}
+
+Object.assign(process.env, loadEnvLocal(), process.env);
 const migrationsDir = join(root, "supabase", "migrations");
 
 const strict = process.env.SCHEDULING_GATE_STRICT === "1";

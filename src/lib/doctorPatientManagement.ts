@@ -83,13 +83,12 @@ export function deriveRisk(latest: RawOrderRow, orders: RawOrderRow[]): PatientR
   try {
     const review = buildDoctorIntakeReview(orderToIntakeSource({
       id: latest.id,
-      order_number: latest.order_number,
-      patient_name: latest.patient_name ?? undefined,
+      patientName: latest.patient_name ?? undefined,
       category: latest.category ?? undefined,
       medication: latest.medication ?? undefined,
-      intake_complete: latest.intake_complete ?? undefined,
+      intakeComplete: latest.intake_complete ?? undefined,
       intakeAnswers: latest.intake_answers ?? undefined,
-      enrollment_video_required: latest.enrollment_video_required ?? undefined,
+      enrollmentVideoRequired: latest.enrollment_video_required ?? undefined,
       urgent: latest.urgent ?? undefined,
     }));
     if (review.overallRisk === "critical" || review.overallRisk === "elevated") return "high";

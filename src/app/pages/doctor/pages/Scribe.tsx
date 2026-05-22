@@ -117,7 +117,7 @@ export function DoctorScribePage() {
         if (e.user_id) nameMap.set(e.user_id, e.patient_name);
       }
       const { data: orderRows } = await supabase.from("orders").select("user_id, patient_name").limit(500);
-      for (const o of orderRows?.data || []) {
+      for (const o of orderRows || []) {
         if (o.user_id && o.patient_name) nameMap.set(o.user_id, o.patient_name);
       }
       setSavedNotes(mapSavedNotes((data || []) as Record<string, unknown>[], nameMap));

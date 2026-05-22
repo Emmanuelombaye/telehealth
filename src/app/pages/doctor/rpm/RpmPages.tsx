@@ -303,7 +303,7 @@ export function RpmSettingsPage() {
             <p className="text-xs font-bold rpm-muted mb-2">Default time range</p>
             <div className="flex flex-wrap gap-2">
               {(["24h", "7d", "30d", "all"] as const).map((r) => (
-                <Button key={r} variant={range === r ? "default" : "outline"} size="sm" className="rounded-xl" onClick={() => setRange(r)}>
+                <Button key={r} variant={range === r ? "primary" : "outline"} size="sm" className="rounded-xl" onClick={() => setRange(r)}>
                   {r}
                 </Button>
               ))}

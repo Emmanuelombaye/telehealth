@@ -4,6 +4,32 @@
  *   CI=true VITE_SUPABASE_URL=... VITE_SUPABASE_ANON_KEY=... VITE_STRIPE_PUBLISHABLE_KEY=... node scripts/production-preflight.mjs
  * Or: load secrets in GitHub Actions then run npm run check:production
  */
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+function loadEnvLocal() {
+  const p = join(root, ".env.local");
+  if (!existsSync(p)) return {};
+  const out = {};
+  for (const line of readFileSync(p, "utf8").split("\n")) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) continue;
+    const i = t.indexOf("=");
+    if (i === -1) continue;
+    const k = t.slice(0, i).trim();
+    let v = t.slice(i + 1).trim();
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))
+      v = v.slice(1, -1);
+    out[k] = v;
+  }
+  return out;
+}
+
+Object.assign(process.env, loadEnvLocal(), process.env);
+
 const required = ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"];
 const requiredIfProd = ["VITE_STRIPE_PUBLISHABLE_KEY"];
 
