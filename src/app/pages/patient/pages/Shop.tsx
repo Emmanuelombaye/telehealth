@@ -51,6 +51,7 @@ import {
   type ShopFlowStage,
 } from "../../../../lib/patientShopRoutes";
 import { PatientEnrollmentStepper } from "../../../components/PatientEnrollmentStepper.tsx";
+import { EnrollmentFlowShell } from "../../../components/patient/EnrollmentFlowShell";
 // Stripe
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -1030,7 +1031,7 @@ export function PatientShopPage() {
 
   if (stage === "confirmed" && selected) {
     return (
-      <div className="max-w-md mx-auto text-center space-y-5 pt-8">
+      <EnrollmentFlowShell centered className="space-y-5 pt-8">
         <PatientEnrollmentStepper stage={stage} className="text-left mb-2" />
         <div className="flex justify-center mb-8">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
@@ -1069,7 +1070,7 @@ export function PatientShopPage() {
         <p className="text-xs text-muted-foreground">
           If you're prompted to log in, use <strong>{email}</strong> and the password you just created.
         </p>
-      </div>
+      </EnrollmentFlowShell>
     );
   }
 
@@ -1077,7 +1078,7 @@ export function PatientShopPage() {
 
   if (stage === "account_setup" && selected) {
     return (
-      <div className="max-w-md mx-auto space-y-6 pt-4">
+      <EnrollmentFlowShell className="space-y-6 pt-4">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
@@ -1280,13 +1281,13 @@ export function PatientShopPage() {
           }}>
           Continue to Phone Verification <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
-      </div>
+      </EnrollmentFlowShell>
     );
   }
 
   if (stage === "2fa" && selected) {
     return (
-      <div className="max-w-md mx-auto space-y-6 pt-8">
+      <EnrollmentFlowShell className="space-y-6 pt-8">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
@@ -1368,13 +1369,13 @@ export function PatientShopPage() {
             </button>
           </p>
         </div>
-      </div>
+      </EnrollmentFlowShell>
     );
   }
 
   if (stage === "identity" && selected) {
     return (
-      <div className="max-w-md mx-auto space-y-6 pt-8">
+      <EnrollmentFlowShell className="space-y-6 pt-8">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
@@ -1459,7 +1460,7 @@ export function PatientShopPage() {
         <p className="text-xs text-center text-muted-foreground mt-6 flex items-center justify-center gap-1.5">
            <Shield className="h-3.5 w-3.5 text-emerald-500" /> End-to-end encrypted · HIPAA compliant · Powered by Stripe
         </p>
-      </div>
+      </EnrollmentFlowShell>
     );
   }
 
@@ -1492,7 +1493,7 @@ export function PatientShopPage() {
 
     if (!paymentQualifiersPassed) {
       return (
-        <div className="max-w-md mx-auto space-y-5 pb-8">
+        <EnrollmentFlowShell className="space-y-5 pb-8">
           <PatientEnrollmentStepper stage={stage} />
           <div className="flex justify-center mb-4">
             <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
@@ -1630,13 +1631,13 @@ export function PatientShopPage() {
           >
             Continue to secure payment <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
-        </div>
+        </EnrollmentFlowShell>
       );
     }
 
     if (displayedGateways.length === 0) {
       return (
-        <div className="max-w-md mx-auto space-y-4 p-6 text-center">
+        <EnrollmentFlowShell centered className="space-y-4 p-6">
           <PatientEnrollmentStepper stage={stage} />
           <p className="text-sm text-muted-foreground">
             Card checkout is not configured for this product. Please contact support.
@@ -1644,12 +1645,12 @@ export function PatientShopPage() {
           <Button variant="outline" onClick={() => goToStage("catalog")}>
             Back to catalog
           </Button>
-        </div>
+        </EnrollmentFlowShell>
       );
     }
 
     return (
-      <div className="max-w-md mx-auto space-y-5 pb-10">
+      <EnrollmentFlowShell className="space-y-5 pb-10">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-4">
           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
@@ -1868,13 +1869,13 @@ export function PatientShopPage() {
         ) : null}
 
         {error && <p className="text-red-500 text-sm text-center font-semibold">{error}</p>}
-      </div>
+      </EnrollmentFlowShell>
     );
   }
 
   if (stage === "payment_confirmation" && selected) {
     return (
-      <div className="max-w-md mx-auto space-y-6 pt-6 pb-12 text-center">
+      <EnrollmentFlowShell className="space-y-6 pt-6 pb-12 text-center">
         <PatientEnrollmentStepper stage={stage} className="text-left" />
         <div className="flex justify-center mb-2">
           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
@@ -1930,7 +1931,7 @@ export function PatientShopPage() {
         >
           Continue <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
-      </div>
+      </EnrollmentFlowShell>
     );
   }
 
@@ -1945,7 +1946,7 @@ export function PatientShopPage() {
     })();
 
     return (
-      <div className={cn("mx-auto space-y-5", showScheduler ? "max-w-lg" : "max-w-md")}>
+      <EnrollmentFlowShell wide className="space-y-5">
         <PatientEnrollmentStepper stage={stage} />
         <div className="flex justify-center mb-6">
            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
@@ -1983,7 +1984,7 @@ export function PatientShopPage() {
             {intakeEffects!.warnings.map((w) => (
               <div
                 key={w}
-                className="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm"
               >
                 {w}
               </div>
@@ -1991,8 +1992,8 @@ export function PatientShopPage() {
           </div>
         ) : null}
         {currentQ && (
-        <Card>
-          <CardContent className="p-5 space-y-4">
+        <Card className="border-slate-200 bg-white shadow-sm">
+          <CardContent className="p-5 sm:p-6 space-y-4">
             <p className="font-semibold text-sm">
               {currentQ.label}
               {currentQ.required && <span className="text-red-500 ml-1">*</span>}
@@ -2088,21 +2089,21 @@ export function PatientShopPage() {
               schedulingRefTail={schedulingRef ? schedulingRef.slice(-10) : null}
               onCalendlyBookingConfirmed={() => setBookingAttestation(true)}
             />
-            <label className="flex items-start gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50/80 cursor-pointer">
+            <label className="flex items-start gap-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50/80 cursor-pointer">
               <input
                 type="checkbox"
-                className="mt-1 h-4 w-4 accent-primary shrink-0"
+                className="mt-1 h-4 w-4 accent-emerald-600 shrink-0"
                 checked={bookingAttestation}
                 onChange={(e) => setBookingAttestation(e.target.checked)}
               />
-              <span className="text-sm text-amber-950">
+              <span className="text-sm text-emerald-950">
                 {bookingAttestation
                   ? "Booking detected — you can continue enrollment."
                   : "Confirm you selected a time above, or wait for the calendar to register your booking automatically."}
               </span>
             </label>
-            <div className="p-4 bg-muted/20 border border-border rounded-xl space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">ID verification</p>
+            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">ID verification</p>
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
                    <ShieldCheck className="h-6 w-6 text-emerald-600" />
@@ -2159,12 +2160,13 @@ export function PatientShopPage() {
             </>
           )}
         </Button>
-      </div>
+      </EnrollmentFlowShell>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5 pb-20">
+    <div className="patient-enrollment-surface min-h-[100dvh] bg-[#F8FAFC]">
+    <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-10 space-y-5 pb-20 pt-6">
       <PatientEnrollmentStepper stage={stage} />
       {/* Shop Header with Back button */}
       <div className="flex items-center justify-between mb-2">
@@ -2320,6 +2322,7 @@ export function PatientShopPage() {
       <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
         <Globe className="h-3.5 w-3.5" /> Multi-currency checkout · Licensed in your jurisdiction
       </div>
+    </div>
     </div>
   );
 }

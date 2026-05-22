@@ -15,34 +15,32 @@ export function IntakeRoutingBanner({
   return (
     <motion.div
       className={cn(
-        "rounded-2xl border p-4 sm:p-5",
-        isVideo
-          ? "border-emerald-200/90 bg-gradient-to-br from-emerald-50/95 via-white to-emerald-50/40"
-          : "border-slate-200/90 bg-gradient-to-br from-slate-50/95 via-white to-slate-50/40",
+        "rounded-2xl border bg-white p-4 sm:p-5 shadow-sm",
+        isVideo ? "border-emerald-200/90" : "border-slate-200/90",
         className,
       )}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <motion.div className="flex gap-3">
+      <motion.div className="flex gap-3 sm:gap-4">
         <div
           className={cn(
             "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
-            isVideo ? "bg-emerald-600 text-white" : "bg-slate-700 text-white",
+            isVideo ? "bg-emerald-700 text-white" : "bg-slate-700 text-white",
           )}
         >
           {isVideo ? <Video className="h-5 w-5" aria-hidden /> : <FileText className="h-5 w-5" aria-hidden />}
         </div>
         <div className="min-w-0 flex-1 space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800/80">
-            {isVideo ? "Step 5–6 · Path A · Video required" : "Step 5–6 · Path B · Async review"}
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-800">
+            {isVideo ? "Video visit required" : "Clinical review"}
           </p>
-          <p className="text-sm font-semibold leading-snug text-[#0A0D14]">{routing.headline}</p>
+          <p className="text-sm font-semibold leading-snug text-slate-900">{routing.headline}</p>
           {routing.reasons.length > 0 ? (
-            <ul className="space-y-1 text-xs leading-relaxed text-slate-600">
+            <ul className="space-y-1.5 text-sm leading-relaxed text-slate-600">
               {routing.reasons.map((r) => (
                 <li key={r} className="flex gap-2">
-                  <span className="text-emerald-600" aria-hidden>
+                  <span className="text-emerald-600 shrink-0" aria-hidden>
                     •
                   </span>
                   <span>{r}</span>
@@ -51,12 +49,12 @@ export function IntakeRoutingBanner({
             </ul>
           ) : null}
           {isVideo ? (
-            <p className="text-[11px] text-slate-500">
-              Scheduling uses your clinician&apos;s Calendly or Cal.com calendar. Zoom or Google Meet links are
-              created automatically when you book.
+            <p className="text-xs text-slate-500">
+              Choose a time below. Your clinician&apos;s scheduler sends the Zoom or Google Meet link when you
+              confirm.
             </p>
           ) : (
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               You will receive updates in your patient portal when your case is reviewed — typically within a few
               hours.
             </p>

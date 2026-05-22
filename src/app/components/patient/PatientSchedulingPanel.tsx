@@ -98,42 +98,42 @@ export function PatientSchedulingPanel({
         </a>
       </div>
 
-      <ol className="grid gap-2 sm:grid-cols-3 text-xs text-muted-foreground">
-        <li className="flex gap-2 rounded-xl border border-border/80 bg-muted/30 px-3 py-2.5">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
+      <ol className="grid gap-2 md:grid-cols-3 text-xs text-slate-600">
+        <li className="flex gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-800">
             1
           </span>
           <span>
-            <span className="font-semibold text-foreground">Choose a time</span> in the calendar — your name and email
+            <span className="font-semibold text-slate-900">Choose a time</span> in the calendar — your name and email
             may be prefilled from enrollment.
           </span>
         </li>
-        <li className="flex gap-2 rounded-xl border border-border/80 bg-muted/30 px-3 py-2.5">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
+        <li className="flex gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-800">
             2
           </span>
           <span>
-            <span className="font-semibold text-foreground">Confirm</span> — the scheduler emails or texts your unique
+            <span className="font-semibold text-slate-900">Confirm</span> — the scheduler emails or texts your unique
             meeting link.
           </span>
         </li>
-        <li className="flex gap-2 rounded-xl border border-border/80 bg-muted/30 px-3 py-2.5">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
+        <li className="flex gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-800">
             3
           </span>
           <span>
-            <span className="font-semibold text-foreground">Check the box</span> below to confirm you booked before
+            <span className="font-semibold text-slate-900">Check the box</span> below to confirm you booked before
             submitting enrollment.
           </span>
         </li>
       </ol>
 
       {doctorMatchPending && (
-        <div className="flex items-center gap-2 rounded-xl border border-blue-200/80 bg-blue-50/70 px-3 py-2 text-xs text-blue-950 dark:border-blue-900/40 dark:bg-blue-950/25 dark:text-blue-100">
+        <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-950">
           <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
           <span>
             <span className="font-semibold">Matching your clinician…</span>{" "}
-            <span className="text-blue-900/85 dark:text-blue-200/90">
+            <span className="text-blue-800/90">
               You can start booking; the calendar may refresh if we assign a provider-specific link.
             </span>
           </span>
@@ -141,13 +141,13 @@ export function PatientSchedulingPanel({
       )}
 
       {(doctorName || doctorHint || schedulingRefTail) && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-200/60 bg-emerald-50/50 px-3 py-2 text-xs dark:border-emerald-900/40 dark:bg-emerald-950/25">
-          <Video className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400 shrink-0" />
-          <span className="text-emerald-950 dark:text-emerald-100">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
+          <Video className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
+          <span className="text-emerald-950">
             {doctorName ? (
               <>
                 <span className="font-semibold">{doctorName}</span>
-                {doctorHint ? <span className="text-emerald-800/90 dark:text-emerald-200/90"> — {doctorHint}</span> : null}
+                {doctorHint ? <span className="text-emerald-800/90"> — {doctorHint}</span> : null}
               </>
             ) : (
               <span className="font-medium">Clinical team calendar</span>
@@ -159,17 +159,17 @@ export function PatientSchedulingPanel({
         </div>
       )}
 
-      <Card className="border-primary/25 overflow-hidden shadow-md shadow-primary/5">
+      <Card className="border-slate-200 overflow-hidden shadow-md shadow-slate-200/60 bg-white">
         <CardContent className="p-0">
-          <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 bg-muted/50 border-b border-border text-xs">
-            <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
-            <span className="font-semibold text-foreground">Book with our clinical team</span>
-            <span className="hidden sm:inline text-muted-foreground">·</span>
-            <span className="text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs">
+            <Calendar className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
+            <span className="font-semibold text-slate-900">Book with our clinical team</span>
+            <span className="hidden sm:inline text-slate-400">·</span>
+            <span className="text-slate-600">
               Calendar opens in-page; meeting links are sent by your scheduler (Calendly, Cal.com, etc.).
             </span>
           </div>
-          <div className="relative w-full bg-white dark:bg-zinc-950 min-h-[min(72vh,720px)] sm:min-h-[640px]">
+          <div className="relative w-full bg-white min-h-[min(72vh,720px)] sm:min-h-[640px]">
             {!iframeLoaded && (
               <div
                 className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/85 backdrop-blur-[2px]"

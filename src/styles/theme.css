@@ -1,9 +1,18 @@
 /**
  * Dark mode applies under `html.dark`, except inside `.staff-admin-surface`
- * (brand admin + superadmin). Those portals always use light, high-contrast tokens
- * so tables, form builders, and inputs stay readable regardless of patient theme.
+ * (brand admin + superadmin) and `.patient-enrollment-surface` (shop checkout).
+ * Those areas always use light, high-contrast tokens.
  */
-@custom-variant dark (&:is(.dark *):not(:is(.staff-admin-surface, .staff-admin-surface *)));
+@custom-variant dark (
+  &:is(.dark *):not(
+    :is(
+      .staff-admin-surface,
+      .staff-admin-surface *,
+      .patient-enrollment-surface,
+      .patient-enrollment-surface *
+    )
+  )
+);
 
 :root {
   --font-size: 16px;
@@ -67,7 +76,8 @@
 }
 
 /* Re-assert light tokens on the subtree (overrides html.dark inheritance for variables). */
-.staff-admin-surface {
+.staff-admin-surface,
+.patient-enrollment-surface {
   color-scheme: light;
   --background: #ffffff;
   --foreground: #0A0D14;
