@@ -1,7 +1,8 @@
 import { lazy } from "react";
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { AppLayout } from "./components/AppLayout";
 import { PublicLayout } from "./components/PublicLayout";
+import { ScrollToTop } from "./components/ScrollToTop";
 import { lazyRetry } from "../lib/lazyRetry";
 
 // --- LAZY LOADED PAGES ---
@@ -142,6 +143,12 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 export const router = createBrowserRouter([
   {
     path: "/",
+    element: (
+      <>
+        <ScrollToTop />
+        <Outlet />
+      </>
+    ),
     errorElement: <ErrorBoundary />,
     children: [
       // --- PUBLIC PAGES (All use PublicLayout) ---
