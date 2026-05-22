@@ -50,7 +50,6 @@ import {
   shopStageFromStepParam,
   type ShopFlowStage,
 } from "../../../../lib/patientShopRoutes";
-import { PatientEnrollmentStepper } from "../../../components/PatientEnrollmentStepper.tsx";
 import { PatientEnrollmentCatalogChrome } from "../../../components/patient/PatientEnrollmentCatalogChrome";
 import { PatientShopTopChrome } from "../../../components/patient/PatientShopTopChrome";
 import { EnrollmentFlowShell } from "../../../components/patient/EnrollmentFlowShell";
@@ -1034,10 +1033,11 @@ export function PatientShopPage() {
   if (stage === "confirmed" && selected) {
     return (
       <EnrollmentFlowShell centered className="space-y-5 pt-8">
-        <PatientEnrollmentStepper stage={stage} className="text-left mb-2" />
-        <div className="flex justify-center mb-8">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
-        </div>
+        <PatientShopTopChrome
+          stage={stage}
+          onBack={() => navigate("/patient")}
+          backLabel="Back to portal"
+        />
         <div className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center mx-auto">
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
@@ -1081,17 +1081,11 @@ export function PatientShopPage() {
   if (stage === "account_setup" && selected) {
     return (
       <EnrollmentFlowShell className="space-y-6 pt-4">
-        <PatientEnrollmentStepper stage={stage} />
-        <div className="flex justify-center mb-4">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
-        </div>
-        <button
-          type="button"
-          onClick={() => goToStage("payment_confirmation")}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
+        <PatientShopTopChrome
+          stage={stage}
+          onBack={() => goToStage("payment_confirmation")}
+          backLabel="Back"
+        />
         <div>
           <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-100 mb-4">
             <CheckCircle2 className="h-3.5 w-3.5" /> Payment Successful
@@ -1290,17 +1284,11 @@ export function PatientShopPage() {
   if (stage === "2fa" && selected) {
     return (
       <EnrollmentFlowShell className="space-y-6 pt-8">
-        <PatientEnrollmentStepper stage={stage} />
-        <div className="flex justify-center mb-4">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
-        </div>
-        <button
-          type="button"
-          onClick={() => goToStage("account_setup")}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
+        <PatientShopTopChrome
+          stage={stage}
+          onBack={() => goToStage("account_setup")}
+          backLabel="Back"
+        />
         <div className="text-center">
           <div className="h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
              <ShieldCheck className="h-8 w-8 text-blue-500" />
@@ -1378,24 +1366,15 @@ export function PatientShopPage() {
   if (stage === "identity" && selected) {
     return (
       <EnrollmentFlowShell className="space-y-6 pt-8">
-        <PatientEnrollmentStepper stage={stage} />
-        <div className="flex justify-center mb-4">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
-        </div>
-        <button
-          type="button"
-          onClick={() => {
+        <PatientShopTopChrome
+          stage={stage}
+          onBack={() => {
             const currentUser = useAuthStore.getState().user;
-            if (currentUser) {
-              goToStage("payment_confirmation");
-            } else {
-              goToStage("2fa");
-            }
+            if (currentUser) goToStage("payment_confirmation");
+            else goToStage("2fa");
           }}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
+          backLabel="Back"
+        />
 
         <div className="bg-white border border-gray-200 rounded-[2rem] p-6 shadow-sm relative overflow-hidden">
            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
@@ -1496,17 +1475,11 @@ export function PatientShopPage() {
     if (!paymentQualifiersPassed) {
       return (
         <EnrollmentFlowShell className="space-y-5 pb-8">
-          <PatientEnrollmentStepper stage={stage} />
-          <div className="flex justify-center mb-4">
-            <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
-          </div>
-          <button
-            type="button"
-            onClick={() => goToStage("catalog")}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to Catalog
-          </button>
+          <PatientShopTopChrome
+            stage={stage}
+            onBack={() => goToStage("catalog")}
+            backLabel="Back to catalog"
+          />
 
           <Card>
             <CardContent className="p-4 flex items-center justify-between">
@@ -1640,7 +1613,11 @@ export function PatientShopPage() {
     if (displayedGateways.length === 0) {
       return (
         <EnrollmentFlowShell centered className="space-y-4 p-6">
-          <PatientEnrollmentStepper stage={stage} />
+          <PatientShopTopChrome
+            stage={stage}
+            onBack={() => goToStage("catalog")}
+            backLabel="Back to catalog"
+          />
           <p className="text-sm text-muted-foreground">
             Card checkout is not configured for this product. Please contact support.
           </p>
@@ -1653,17 +1630,11 @@ export function PatientShopPage() {
 
     return (
       <EnrollmentFlowShell className="space-y-5 pb-10">
-        <PatientEnrollmentStepper stage={stage} />
-        <div className="flex justify-center mb-4">
-          <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
-        </div>
-        <button
-          type="button"
-          onClick={() => goToStage("catalog")}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Catalog
-        </button>
+        <PatientShopTopChrome
+          stage={stage}
+          onBack={() => goToStage("catalog")}
+          backLabel="Back to catalog"
+        />
 
         <button
           type="button"
@@ -1878,10 +1849,11 @@ export function PatientShopPage() {
   if (stage === "payment_confirmation" && selected) {
     return (
       <EnrollmentFlowShell className="space-y-6 pt-6 pb-12 text-center">
-        <PatientEnrollmentStepper stage={stage} className="text-left" />
-        <div className="flex justify-center mb-2">
-          <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
-        </div>
+        <PatientShopTopChrome
+          stage={stage}
+          onBack={() => goToStage("payment")}
+          backLabel="Back"
+        />
         <div className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center mx-auto">
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
@@ -1949,20 +1921,14 @@ export function PatientShopPage() {
 
     return (
       <EnrollmentFlowShell wide className="space-y-5">
-        <PatientEnrollmentStepper stage={stage} />
-        <div className="flex justify-center mb-6">
-           <img src="/originallogo.png" alt="Peak Health" className="h-16 object-contain" />
-        </div>
-        <button
-          type="button"
-          onClick={() => {
+        <PatientShopTopChrome
+          stage={stage}
+          onBack={() => {
             if (totalQ > 0 && qStep > 0) setQStep((q) => q - 1);
             else goToStage("identity");
           }}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
+          backLabel={totalQ > 0 && qStep > 0 ? "Previous question" : "Back"}
+        />
         <div>
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-lg font-bold">{selected.name}</h1>
