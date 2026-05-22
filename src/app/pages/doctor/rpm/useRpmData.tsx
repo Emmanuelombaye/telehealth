@@ -61,6 +61,8 @@ type RpmContextValue = {
   escalatePatientKey: (key: string) => void;
   drawerKey: string | null;
   setDrawerKey: (k: string | null) => void;
+  selectedPatientKey: string | null;
+  selectPatient: (key: string) => void;
   drawerPinned: boolean;
   wallMode: boolean;
   setWallMode: (v: boolean) => void;
@@ -282,6 +284,8 @@ export function RpmProvider({ children }: { children: ReactNode }) {
     escalatePatientKey,
     drawerKey,
     setDrawerKey,
+    selectedPatientKey,
+    selectPatient,
     drawerPinned,
     closePatientDrawer,
     wallMode,

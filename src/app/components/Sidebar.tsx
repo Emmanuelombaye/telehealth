@@ -9,7 +9,6 @@ import {
   FileCheck, Receipt, BookOpen, Building2, Truck,
   Image as ImageIcon, ArrowRightLeft,   Bot, HeartPulse, ScrollText, Radio, ChevronRight, Sparkles, Receipt
 } from "lucide-react";
-import { doctorRpmSidebarChildren } from "../pages/doctor/rpm/rpmNav";
 import { cn } from "./ui/shared.tsx";
 import { useI18n } from "../../lib/i18n.tsx";
 import { brand } from "../../lib/patient-store";
@@ -41,12 +40,7 @@ function buildDoctorMenu(base: "/doctor" | "/providers"): DoctorNavItem[] {
     { icon: Users, label: "Patients", href: p("/patients") },
     { icon: Calendar, label: "Appointments", href: p("/schedule") },
     { icon: Stethoscope, label: "Consultations", href: p("/consult") },
-    {
-      icon: Radio,
-      label: "RPM Monitoring",
-      href: p("/rpm"),
-      children: doctorRpmSidebarChildren(base),
-    },
+    { icon: Radio, label: "RPM Monitoring", href: p("/rpm") },
     { icon: MessageSquare, label: "Messages", href: p("/messages") },
     { icon: Pill, label: "Prescriptions", href: p("/erx") },
     { icon: BarChart3, label: "Reports", href: p("/analytics") },

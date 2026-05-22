@@ -3,8 +3,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "../../../components/ui/shared.tsx";
 import { RpmProvider, useRpmData } from "./useRpmData";
 import { RpmTopBar } from "../../../components/doctor/rpm/RpmTopBar";
-import { RpmSubNav } from "../../../components/doctor/rpm/RpmSubNav";
-import { RpmMobileNav } from "../../../components/doctor/rpm/RpmMobileNav";
+import { RpmSectionTabs } from "../../../components/doctor/rpm/RpmSectionTabs";
 import { RpmPatientDrawer } from "../../../components/doctor/rpm/RpmPatientDrawer";
 import { RpmMonitorCard } from "../../../components/doctor/rpm/RpmMonitorCard";
 import { rpmShellClass } from "../../../../lib/rpmEnterpriseUi";
@@ -25,9 +24,7 @@ function RpmShell() {
     drawerPinned,
     closePatientDrawer,
     openPatientDrawer,
-    openPatientDrawerHover,
-    schedulePatientDrawerClose,
-    cancelPatientDrawerClose,
+    selectPatient,
     escalatePatientKey,
     getPatientReadings,
     getTimeline,
@@ -65,12 +62,9 @@ function RpmShell() {
   return (
     <div className={cn(rpmShellClass(theme === "dark"), theme === "dark" ? "rpm-dark" : "rpm-light")}>
       <RpmTopBar />
-      <RpmMobileNav />
-      <div className="flex min-h-0 flex-1">
-        <RpmSubNav />
-        <div className="flex-1 min-w-0 pb-6 md:pb-8">
-          <Outlet />
-        </div>
+      <RpmSectionTabs />
+      <div className="flex-1 min-w-0 pb-6 md:pb-8">
+        <Outlet />
       </div>
 
       {wallMode && (
@@ -91,9 +85,7 @@ function RpmShell() {
                 key={row.patient.key}
                 row={row}
                 compact
-                onOpen={() => openPatientDrawer(row.patient.key)}
-                onHoverStart={() => openPatientDrawerHover(row.patient.key)}
-                onHoverEnd={schedulePatientDrawerClose}
+                onOpen={() => selectPatient(row.patient.key)}
                 onEscalate={() => {
                   escalatePatientKey(row.patient.key);
                   toast.warning(`Escalated: ${row.patient.patient_name}`);
@@ -108,8 +100,6 @@ function RpmShell() {
         open={!!drawerKey}
         pinned={drawerPinned}
         onClose={closePatientDrawer}
-        onHoverEnter={cancelPatientDrawerClose}
-        onHoverLeave={schedulePatientDrawerClose}
         row={drawerRow}
         order={drawerOrder}
         patientReadings={drawerReadings}

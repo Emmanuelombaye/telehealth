@@ -27,8 +27,7 @@ export function RpmAlertsStream({ filter = "all", max = 16, fullPage }: Props) {
     visibleAlerts,
     acknowledgeAlert,
     openPatientDrawer,
-    openPatientDrawerHover,
-    schedulePatientDrawerClose,
+    selectPatient,
     escalatePatientKey,
     ordersLookup,
   } = useRpmData();
@@ -84,7 +83,15 @@ export function RpmAlertsStream({ filter = "all", max = 16, fullPage }: Props) {
                 <AlertTriangle className="h-3 w-3 mr-1" />
                 Escalate
               </Button>
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] font-bold" onClick={() => openPatientDrawer(a.patientKey)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-[10px] font-bold"
+                onClick={() => {
+                  selectPatient(a.patientKey);
+                  openPatientDrawer(a.patientKey);
+                }}
+              >
                 <Stethoscope className="h-3 w-3 mr-1" />
                 Chart
               </Button>
