@@ -13,6 +13,7 @@ import { supabase } from "../../../../lib/supabaseClient";
 import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope } from "../../../../lib/adminScope";
 import { logAdminAudit } from "../../../../lib/adminAudit";
 import { downloadBrandedReportPdf } from "../../../../lib/brandedExport";
+import { logPhiAccess } from "../../../../lib/phiAccessAudit";
 import { cn } from "../../../components/ui/utils";
 import { toast } from "sonner";
 import { AdminScopeNotice } from "../../../components/admin/AdminScopeNotice.tsx";
@@ -134,6 +135,11 @@ export function AdminOrdersPage() {
       action: "order.export_pdf",
       targetType: "orders",
       detail: { row_count: orders.length },
+    });
+    void logPhiAccess({
+      action: "export",
+      resourceType: "order",
+      detail: { row_count: orders.length, format: "pdf" },
     });
     toast.success("Branded ledger PDF downloaded.");
   };

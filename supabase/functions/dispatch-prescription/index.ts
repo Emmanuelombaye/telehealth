@@ -188,20 +188,42 @@ serve(async (req: Request) => {
     }
 
     // Secure operational audit log write
-    await serviceClient.from('admin_audit_logs').insert([{
-      actor_email: user.email,
-      role: profile.role,
-      brand_scope: order.brand_id || 'Global',
-      action: `Prescription Authorized: ${order.medication}`,
-      target_type: "Patient Chart",
-      target_id: order.user_id,
-      detail: {
-        order_id: order.id,
-        pharmacy,
-        confirmation_id: pharmacyConfirmationId,
-        authorized_by_doctor: user.email
-      }
-    }]);
+    await serviceClient.from("admin_audit_logs").insert([
+      {
+        actor_id: user.id,
+        actor_email: user.email,
+        role: profile.role,
+        brand_scope: order.brand_id || "Global",
+        action: `Prescription Authorized: ${order.medication}`,
+        target_type: "Patient Chart",
+        target_id: order.user_id,
+        detail: {
+          order_id: order.id,
+          pharmacy,
+          confirmation_id: pharmacyConfirmationId,
+          authorized_by_doctor: user.email,
+        },
+      },
+    ]);
+
+    await serviceClient.from("phi_access_logs").insert([
+      {
+        actor_id: user.id,
+        actor_email: user.email,
+        role: profile.role,
+        brand_scope: order.brand_id || null,
+        access_type: "staff",
+        action: "update",
+        resource_type: "prescription",
+        resource_id: order.order_number || order.id,
+        subject_user_id: order.user_id,
+        route_path: "edge/dispatch-prescription",
+        detail: {
+          pharmacy,
+          pharmacy_confirmation_id: pharmacyConfirmationId,
+        },
+      },
+    ]);
 
     return jsonResponse(
       {

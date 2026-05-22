@@ -15,6 +15,7 @@ import { LogoutConfirmation } from "./LogoutConfirmation";
 import { AuthLoadingScreen } from "./ProtectedRoute";
 import { motion, AnimatePresence } from "framer-motion";
 import { doctorPortalBackground, doctorMainBackground } from "../../lib/doctorPortalUi";
+import { PhiAccessRouteLogger } from "./PhiAccessRouteLogger";
 
 export function AppLayout() {
   const fetchOrders = usePatientStore(state => state.fetchOrders);
@@ -428,6 +429,7 @@ export function AppLayout() {
                     <div className="h-8 w-8 rounded-full border-4 border-slate-200 border-t-emerald-500 animate-spin" />
                   </div>
                 }>
+                  <PhiAccessRouteLogger />
                   <Outlet />
                 </Suspense>
               </div>

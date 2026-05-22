@@ -6,6 +6,7 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 import { downloadBrandedReportPdf } from "../../../../lib/brandedExport";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib/auth-store";
+import { PhiAccessAuditPanel } from "./PhiAccessAuditPanel";
 
 type AuditRow = {
   id: string;
@@ -37,6 +38,7 @@ function inferSeverity(action: string): keyof typeof severityConfig {
 export function AdminAuditPage() {
   const role = useAuthStore((s) => s.role);
   const brandId = useAuthStore((s) => s.brandId);
+  const [auditTab, setAuditTab] = useState<"admin" | "phi">("phi");
   const [logs, setLogs] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tableMissing, setTableMissing] = useState(false);
@@ -145,14 +147,36 @@ export function AdminAuditPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold">Audit Logs</h1>
+          <h1 className="text-xl font-bold">Compliance audit</h1>
           <div className="mt-0.5 flex items-center gap-1.5">
             <Lock className="h-3 w-3 text-emerald-500" />
-            <span className="text-xs font-medium text-emerald-600">Non-clinical admin actions</span>
+            <span className="text-xs font-medium text-emerald-600">PHI access + administrative actions</span>
           </div>
         </div>
+        <div className="flex rounded-xl border border-border bg-muted/40 p-1 gap-1">
+          {(["phi", "admin"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setAuditTab(t)}
+              className={cn(
+                "rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors",
+                auditTab === t ? "bg-white shadow-sm text-emerald-800" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t === "phi" ? "PHI access" : "Admin actions"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {auditTab === "phi" ? (
+        <PhiAccessAuditPanel />
+      ) : (
+        <>
+      <div className="flex justify-end">
         <Button size="sm" variant="outline" className="gap-1.5 rounded-xl text-xs" onClick={exportPdf} disabled={!filtered.length}>
           <Download className="h-3.5 w-3.5" /> Export PDF
         </Button>
@@ -245,6 +269,8 @@ export function AdminAuditPage() {
           );
         })}
       </div>
+        </>
+      )}
     </div>
   );
 }

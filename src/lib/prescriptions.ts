@@ -3,6 +3,7 @@
  */
 
 import { openBrandedPrintDocument } from "./brandedExport";
+import { logPhiAccess } from "./phiAccessAudit";
 import { supabase } from "./supabaseClient";
 import { useAuthStore } from "./auth-store";
 
@@ -277,6 +278,14 @@ export function openPrescriptionPdf(rx: PrescriptionRecord, doctorLabel?: string
     <p style="font-size:1.1rem;font-weight:700;margin:4px 0 0;">${doctor}</p>
   </div>
   <p style="margin-top:24px;font-size:0.75rem;color:#94a3b8;">For patient records. Not valid as a paper prescription without pharmacy verification.</p>`;
+
+  void logPhiAccess({
+    action: "print",
+    resourceType: "prescription",
+    resourceId: rx.id,
+    subjectUserId: rx.patient_id,
+    detail: { medication: rx.medication },
+  });
 
   const ok = openBrandedPrintDocument({
     documentTitle: `Prescription — ${rx.medication}`,
