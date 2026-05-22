@@ -28,6 +28,14 @@ import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { RpmWorkspace } from "./RpmWorkspace";
 import { RpmAlertsStream } from "../../../components/doctor/rpm/RpmAlertsStream";
 import { rpmGlass, RPM_STATUS_TONE, aiConfidencePct } from "../../../../lib/rpmEnterpriseUi";
+import {
+  RPM_CHART,
+  RpmChartGradients,
+  RpmChartTooltip,
+  rpmAxisProps,
+  rpmGridProps,
+  rpmChartCard,
+} from "../../../components/doctor/rpm/rpmChartUi";
 import { timeAgo } from "../../../../lib/rpmCommandCenter";
 import { RISK_STYLES, computeAiRisk } from "../../../../lib/rpmCommandCenter";
 import { readingsForPatient } from "../../../../lib/doctorRpm";
@@ -104,14 +112,16 @@ export function RpmCompliancePage() {
       subtitle="Adherence by patient — select for individual trends"
       icon={Shield}
       extra={
-        <div className={cn(rpmGlass, "p-4 h-[240px]")}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chart}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-              <XAxis dataKey="name" tick={{ fontSize: 9 }} />
-              <YAxis tick={{ fontSize: 9 }} />
-              <Tooltip />
-              <Bar dataKey="adherence" fill="#059669" radius={[6, 6, 0, 0]} />
+        <div className={cn(rpmChartCard, "h-[260px]")}>
+          <p className="text-sm font-bold text-slate-800 mb-3">Monthly adherence</p>
+          <ResponsiveContainer width="100%" height="85%">
+            <BarChart data={chart} margin={{ top: 4, left: -12 }}>
+              <RpmChartGradients />
+              <CartesianGrid {...rpmGridProps} />
+              <XAxis dataKey="name" {...rpmAxisProps} />
+              <YAxis {...rpmAxisProps} width={32} domain={[0, 100]} />
+              <Tooltip content={<RpmChartTooltip unit="%" />} />
+              <Bar dataKey="adherence" fill={RPM_CHART.primary} radius={[8, 8, 0, 0]} maxBarSize={32} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -168,14 +178,16 @@ export function RpmAnalyticsPage() {
       icon={TrendingUp}
       showKpis
       extra={
-        <div className={cn(rpmGlass, "p-4 h-[260px]")}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Bar dataKey="v" fill="#0A2E1F" radius={[8, 8, 0, 0]} />
+        <div className={cn(rpmChartCard, "h-[280px]")}>
+          <p className="text-sm font-bold text-slate-800 mb-3">RPM performance</p>
+          <ResponsiveContainer width="100%" height="88%">
+            <BarChart data={data} margin={{ top: 4, left: -8 }}>
+              <RpmChartGradients />
+              <CartesianGrid {...rpmGridProps} />
+              <XAxis dataKey="label" {...rpmAxisProps} />
+              <YAxis {...rpmAxisProps} width={36} />
+              <Tooltip content={<RpmChartTooltip />} />
+              <Bar dataKey="v" fill={RPM_CHART.primary} radius={[8, 8, 0, 0]} maxBarSize={52} />
             </BarChart>
           </ResponsiveContainer>
         </div>

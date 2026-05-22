@@ -14,14 +14,14 @@ import { rpmKpiCard } from "../../../../lib/rpmEnterpriseUi";
 import { sparklineFromReadings } from "../../../../lib/rpmCommandCenter";
 
 const ACCENTS = [
-  "from-emerald-500/20 to-teal-500/5",
-  "from-red-500/20 to-rose-500/5",
-  "from-violet-500/20 to-purple-500/5",
-  "from-orange-500/20 to-amber-500/5",
-  "from-sky-500/20 to-cyan-500/5",
-  "from-indigo-500/20 to-blue-500/5",
+  "from-violet-500/25 to-purple-500/5",
+  "from-violet-500/20 to-fuchsia-500/5",
+  "from-purple-500/25 to-violet-400/5",
+  "from-violet-600/20 to-purple-500/5",
+  "from-purple-400/20 to-violet-300/5",
+  "from-violet-500/22 to-indigo-500/5",
   "from-fuchsia-500/20 to-violet-500/5",
-  "from-amber-500/20 to-yellow-500/5",
+  "from-violet-500/18 to-purple-400/5",
 ];
 
 function MiniTrend({ values }: { values: number[] }) {
@@ -33,8 +33,8 @@ function MiniTrend({ values }: { values: number[] }) {
     .map((v, i) => `${(i / (values.length - 1)) * 56},${24 - ((v - min) / span) * 22}`)
     .join(" ");
   return (
-    <svg width={56} height={24} className="opacity-70">
-      <polyline fill="none" stroke="currentColor" strokeWidth="1.5" points={pts} />
+    <svg width={56} height={24} className="text-[#8B5CF6] opacity-90">
+      <polyline fill="none" stroke="currentColor" strokeWidth="2" points={pts} />
     </svg>
   );
 }

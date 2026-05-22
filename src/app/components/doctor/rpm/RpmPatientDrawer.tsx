@@ -11,17 +11,16 @@ import {
   Brain,
   Shield,
 } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+  RPM_CHART,
+  RpmChartGradients,
+  RpmChartTooltip,
+  rpmActiveDot,
+  rpmAxisProps,
+  rpmGridProps,
+  rpmChartCard,
+} from "./rpmChartUi";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, cn } from "../../ui/shared.tsx";
 import { doctorSurfaceCard } from "../../../../lib/doctorPortalUi";
 import { doctorMessagesHref } from "../../../../lib/doctorPortalBase";
@@ -250,16 +249,16 @@ export function RpmPatientDrawer({
             })}
           </div>
 
-          <Card className={doctorSurfaceCard}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-black text-[#0A2E1F] flex items-center gap-2">
-                <Activity className="h-4 w-4 text-emerald-700" />
+          <div className={cn(rpmChartCard, dark && "rpm-dark:border-slate-700")}>
+            <div className="flex flex-row items-center justify-between pb-2">
+              <p className="text-sm font-bold text-slate-800 rpm-dark:text-white flex items-center gap-2">
+                <Activity className="h-4 w-4 text-[#8B5CF6]" />
                 Vitals trend
-              </CardTitle>
+              </p>
               <select
                 value={chartMetric}
                 onChange={(e) => onChartMetric(e.target.value as typeof chartMetric)}
-                className="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white"
+                className="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white rpm-dark:bg-slate-800 rpm-dark:border-slate-600"
               >
                 {RPM_METRIC_OPTIONS.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -267,40 +266,40 @@ export function RpmPatientDrawer({
                   </option>
                 ))}
               </select>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[200px]">
-                {chartMetric === "bp" && bpTrend.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={bpTrend}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                      <XAxis dataKey="time" tick={{ fontSize: 9 }} />
-                      <YAxis tick={{ fontSize: 9 }} />
-                      <Tooltip contentStyle={{ borderRadius: 10, fontSize: 11 }} />
-                      <Area type="monotone" dataKey="sys" stroke="#ef4444" fill="#fecaca" fillOpacity={0.4} strokeWidth={2} />
-                      <Area type="monotone" dataKey="dia" stroke="#3b82f6" fill="#bfdbfe" fillOpacity={0.35} strokeWidth={2} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : metricTrend.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={metricTrend}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                      <XAxis dataKey="time" tick={{ fontSize: 9 }} />
-                      <YAxis tick={{ fontSize: 9 }} />
-                      <Tooltip contentStyle={{ borderRadius: 10, fontSize: 11 }} />
-                      <Line type="monotone" dataKey="value" stroke="#059669" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <p className="text-sm text-slate-500 text-center py-16">No trend data in range.</p>
-                )}
-              </div>
-              <p className="text-[10px] text-slate-500 mt-2">
-                Devices: {patient.deviceSources.map(sourceDisplay).join(" · ") || "None paired"}
-                {patient.lastSyncAt && ` · Last sync ${timeAgo(patient.lastSyncAt)}`}
-              </p>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="h-[220px]">
+              {chartMetric === "bp" && bpTrend.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={bpTrend} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                    <RpmChartGradients />
+                    <CartesianGrid {...rpmGridProps} />
+                    <XAxis dataKey="time" {...rpmAxisProps} />
+                    <YAxis {...rpmAxisProps} width={36} />
+                    <Tooltip content={<RpmChartTooltip />} />
+                    <Area type="monotone" dataKey="sys" stroke={RPM_CHART.primaryDark} strokeWidth={2} fill="url(#rpmAreaSys)" activeDot={rpmActiveDot} />
+                    <Area type="monotone" dataKey="dia" stroke={RPM_CHART.primaryLight} strokeWidth={2} fill="url(#rpmAreaDia)" activeDot={rpmActiveDot} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : metricTrend.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={metricTrend} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                    <RpmChartGradients />
+                    <CartesianGrid {...rpmGridProps} />
+                    <XAxis dataKey="time" {...rpmAxisProps} />
+                    <YAxis {...rpmAxisProps} width={36} />
+                    <Tooltip content={<RpmChartTooltip />} />
+                    <Area type="monotone" dataKey="value" stroke={RPM_CHART.primary} strokeWidth={2.5} fill="url(#rpmAreaPrimary)" activeDot={rpmActiveDot} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-sm text-slate-400 text-center py-16">No trend data in range.</p>
+              )}
+            </div>
+            <p className="text-[10px] text-slate-400 mt-2">
+              Devices: {patient.deviceSources.map(sourceDisplay).join(" · ") || "None paired"}
+              {patient.lastSyncAt && ` · Last sync ${timeAgo(patient.lastSyncAt)}`}
+            </p>
+          </div>
 
           <Card className={doctorSurfaceCard}>
             <CardHeader>

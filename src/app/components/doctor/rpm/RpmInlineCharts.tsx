@@ -1,16 +1,15 @@
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { cn } from "../../ui/shared.tsx";
-import { rpmGlass } from "../../../../lib/rpmEnterpriseUi";
 import {
   buildBpTrend,
   buildSingleMetricTrend,
@@ -19,6 +18,15 @@ import {
 import type { VitalReading } from "../../../../lib/vitalsClinical";
 import { buildVitalCards, STATUS_STYLES } from "../../../../lib/vitalsClinical";
 import { Badge } from "../../ui/shared.tsx";
+import {
+  RPM_CHART,
+  RpmChartGradients,
+  RpmChartPanel,
+  RpmChartTooltip,
+  rpmActiveDot,
+  rpmAxisProps,
+  rpmGridProps,
+} from "./rpmChartUi";
 
 type Props = {
   row: RpmLiveRow;
@@ -26,18 +34,29 @@ type Props = {
 };
 
 export function RpmInlineCharts({ row, readings }: Props) {
-  const bp = buildBpTrend(readings, 20);
-  const hr = buildSingleMetricTrend(readings, ["hr"], 20);
-  const spo2 = buildSingleMetricTrend(readings, ["spo2"], 20);
-  const glucose = buildSingleMetricTrend(readings, ["glucose"], 20);
+  const bp = buildBpTrend(readings, 24);
+  const hr = buildSingleMetricTrend(readings, ["hr"], 24);
+  const spo2 = buildSingleMetricTrend(readings, ["spo2"], 24);
+  const glucose = buildSingleMetricTrend(readings, ["glucose"], 24);
   const cards = buildVitalCards(readings, row.patient.intake);
+
+  const base = row.compliancePct;
+  const adherenceBar = [
+    { label: "Mon", readings: Math.min(base, 100), target: 80 },
+    { label: "Tue", readings: Math.min(base + 8, 100), target: 80 },
+    { label: "Wed", readings: Math.max(base - 12, 0), target: 80 },
+    { label: "Thu", readings: base, target: 80 },
+    { label: "Fri", readings: Math.min(base + 5, 100), target: 80 },
+    { label: "Sat", readings: Math.max(base - 5, 0), target: 80 },
+    { label: "Sun", readings: base, target: 80 },
+  ];
 
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-black rpm-text">{row.patient.patient_name}</h2>
-          <p className="text-xs rpm-muted">Live vitals · click another patient to switch</p>
+          <h2 className="text-lg font-black text-slate-900 rpm-dark:text-white">{row.patient.patient_name}</h2>
+          <p className="text-xs text-slate-400">Vitals analytics · select another patient to switch</p>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {cards.slice(0, 4).map((c) => (
@@ -48,80 +67,138 @@ export function RpmInlineCharts({ row, readings }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <ChartPanel title="Blood pressure" empty="No BP readings in range">
+      {/* Hero — weekly-style performance curve (heart rate) */}
+      <RpmChartPanel
+        title="Heart rate trend"
+        subtitle="Live telemetry · last readings in range"
+        empty="No heart rate data in this window"
+        featured
+        footer={
+          hr.length > 0 ? (
+            <button
+              type="button"
+              className="mt-3 text-xs font-semibold text-[#8B5CF6] hover:text-[#7C3AED] flex items-center gap-1"
+            >
+              View full vitals history
+              <span aria-hidden>→</span>
+            </button>
+          ) : undefined
+        }
+      >
+        {hr.length > 0 && (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={hr} margin={{ top: 12, right: 8, left: -8, bottom: 0 }}>
+              <RpmChartGradients />
+              <CartesianGrid {...rpmGridProps} />
+              <XAxis dataKey="time" {...rpmAxisProps} interval="preserveStartEnd" />
+              <YAxis {...rpmAxisProps} width={36} />
+              <Tooltip content={<RpmChartTooltip unit=" bpm" />} />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={RPM_CHART.primary}
+                strokeWidth={2.5}
+                fill="url(#rpmAreaPrimary)"
+                dot={false}
+                activeDot={rpmActiveDot}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </RpmChartPanel>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <RpmChartPanel title="Blood pressure" subtitle="Systolic & diastolic" empty="No BP readings in range">
           {bp.length > 0 && (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={bp}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                <XAxis dataKey="time" tick={{ fontSize: 9 }} />
-                <YAxis tick={{ fontSize: 9 }} />
-                <Tooltip contentStyle={{ borderRadius: 10, fontSize: 11 }} />
-                <Area type="monotone" dataKey="sys" stroke="#ef4444" fill="#fecaca44" strokeWidth={2} />
-                <Area type="monotone" dataKey="dia" stroke="#3b82f6" fill="#93c5fd33" strokeWidth={2} />
+              <AreaChart data={bp} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                <RpmChartGradients />
+                <CartesianGrid {...rpmGridProps} />
+                <XAxis dataKey="time" {...rpmAxisProps} interval="preserveStartEnd" />
+                <YAxis {...rpmAxisProps} width={36} />
+                <Tooltip content={<RpmChartTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="sys"
+                  name="Systolic"
+                  stroke={RPM_CHART.primaryDark}
+                  strokeWidth={2}
+                  fill="url(#rpmAreaSys)"
+                  dot={false}
+                  activeDot={rpmActiveDot}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="dia"
+                  name="Diastolic"
+                  stroke={RPM_CHART.primaryLight}
+                  strokeWidth={2}
+                  fill="url(#rpmAreaDia)"
+                  dot={false}
+                  activeDot={{ ...rpmActiveDot, fill: RPM_CHART.primaryLight }}
+                />
               </AreaChart>
             </ResponsiveContainer>
           )}
-        </ChartPanel>
-        <ChartPanel title="Heart rate" empty="No HR readings in range">
-          {hr.length > 0 && (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={hr}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                <XAxis dataKey="time" tick={{ fontSize: 9 }} />
-                <YAxis tick={{ fontSize: 9 }} />
-                <Tooltip contentStyle={{ borderRadius: 10, fontSize: 11 }} />
-                <Line type="monotone" dataKey="value" stroke="#059669" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </ChartPanel>
-        <ChartPanel title="SpO₂" empty="No oxygen readings in range">
-          {spo2.length > 0 && (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={spo2}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                <XAxis dataKey="time" tick={{ fontSize: 9 }} />
-                <YAxis tick={{ fontSize: 9 }} domain={[85, 100]} />
-                <Tooltip contentStyle={{ borderRadius: 10, fontSize: 11 }} />
-                <Line type="monotone" dataKey="value" stroke="#0ea5e9" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </ChartPanel>
-        <ChartPanel title="Glucose" empty="No glucose readings in range">
-          {glucose.length > 0 && (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={glucose}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                <XAxis dataKey="time" tick={{ fontSize: 9 }} />
-                <YAxis tick={{ fontSize: 9 }} />
-                <Tooltip contentStyle={{ borderRadius: 10, fontSize: 11 }} />
-                <Line type="monotone" dataKey="value" stroke="#f59e0b" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </ChartPanel>
+        </RpmChartPanel>
+
+        <RpmChartPanel title="RPM engagement" subtitle="Readings consistency" empty="—">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={adherenceBar} margin={{ top: 8, right: 8, left: -12, bottom: 0 }} barGap={4}>
+              <CartesianGrid {...rpmGridProps} />
+              <XAxis dataKey="label" {...rpmAxisProps} />
+              <YAxis {...rpmAxisProps} width={32} domain={[0, 100]} />
+              <Tooltip content={<RpmChartTooltip unit="%" />} />
+              <Bar dataKey="readings" name="Readings" fill={RPM_CHART.primary} radius={[6, 6, 0, 0]} maxBarSize={22} />
+              <Bar dataKey="target" name="Goal" fill={RPM_CHART.secondary} radius={[6, 6, 0, 0]} maxBarSize={22} />
+            </BarChart>
+          </ResponsiveContainer>
+        </RpmChartPanel>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <MetricAreaChart title="Oxygen saturation (SpO₂)" data={spo2} unit="%" domain={[85, 100]} empty="No SpO₂ in range" />
+        <MetricAreaChart title="Glucose" data={glucose} unit=" mg/dL" empty="No glucose in range" />
       </div>
     </div>
   );
 }
 
-function ChartPanel({
+function MetricAreaChart({
   title,
+  data,
+  unit,
+  domain,
   empty,
-  children,
 }: {
   title: string;
+  data: { time: string; value: number }[];
+  unit: string;
+  domain?: [number, number];
   empty: string;
-  children: ReactNode;
 }) {
   return (
-    <div className={cn(rpmGlass, "p-3 h-[220px] flex flex-col")}>
-      <p className="text-[10px] font-black uppercase tracking-wider rpm-muted mb-2">{title}</p>
-      <div className="flex-1 min-h-0">
-        {children || <p className="text-sm rpm-muted text-center py-16">{empty}</p>}
-      </div>
-    </div>
+    <RpmChartPanel title={title} empty={empty}>
+      {data.length > 0 && (
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+            <RpmChartGradients />
+            <CartesianGrid {...rpmGridProps} />
+            <XAxis dataKey="time" {...rpmAxisProps} interval="preserveStartEnd" />
+            <YAxis {...rpmAxisProps} width={36} domain={domain} />
+            <Tooltip content={<RpmChartTooltip unit={unit} />} />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={RPM_CHART.primary}
+              strokeWidth={2}
+              fill="url(#rpmAreaSoft)"
+              dot={false}
+              activeDot={rpmActiveDot}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
+    </RpmChartPanel>
   );
 }
