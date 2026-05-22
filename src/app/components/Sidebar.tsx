@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router";
 import {
   LayoutDashboard, Users, Calendar, MessageSquare, ClipboardList,
@@ -7,8 +7,9 @@ import {
   HelpCircle, Tag, Share2, BarChart3, Layers, Home,
   Bell, User, Heart, FolderOpen, Pill, TestTube, UserCheck, UserCog,
   FileCheck, Receipt, BookOpen, Building2, Truck,
-  Image as ImageIcon, ArrowRightLeft, Bot, HeartPulse, ScrollText, Radio
+  Image as ImageIcon, ArrowRightLeft,   Bot, HeartPulse, ScrollText, Radio, ChevronRight, Sparkles, Receipt
 } from "lucide-react";
+import { doctorRpmSidebarChildren } from "../pages/doctor/rpm/rpmNav";
 import { cn } from "./ui/shared.tsx";
 import { useI18n } from "../../lib/i18n.tsx";
 import { brand } from "../../lib/patient-store";
@@ -18,31 +19,48 @@ import { LogoutConfirmation } from "./LogoutConfirmation";
 import { motion, AnimatePresence } from "framer-motion";
 import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
 
+type DoctorNavChild = {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
 type DoctorNavItem = {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
+  href: string;
+  children?: DoctorNavChild[];
+  group?: string;
+  badge?: number;
 };
 
-function buildDoctorMenu(base: "/doctor" | "/providers"): Array<DoctorNavItem & { href: string }> {
+function buildDoctorMenu(base: "/doctor" | "/providers"): DoctorNavItem[] {
   const p = (path: string) => `${base}${path}`;
   return [
     { icon: LayoutDashboard, label: "Dashboard", href: base },
     { icon: Users, label: "Patients", href: p("/patients") },
-    { icon: ClipboardList, label: "Patient Queue", href: p("/queue") },
-    { icon: FileText, label: "Clinical Intake", href: p("/intake") },
-    { icon: HeartPulse, label: "Vitals", href: p("/vitals") },
-    { icon: Radio, label: "RPM", href: p("/rpm") },
-    { icon: Calendar, label: "Schedule", href: p("/schedule") },
-    { icon: Activity, label: "Availability", href: p("/availability") },
+    { icon: Calendar, label: "Appointments", href: p("/schedule") },
+    { icon: Stethoscope, label: "Consultations", href: p("/consult") },
+    {
+      icon: Radio,
+      label: "RPM Monitoring",
+      href: p("/rpm"),
+      children: doctorRpmSidebarChildren(base),
+    },
     { icon: MessageSquare, label: "Messages", href: p("/messages") },
-    { icon: Bell, label: "Alerts", href: p("/notifications") },
-    { icon: Stethoscope, label: "Consultation", href: p("/consult") },
-    { icon: FlaskConical, label: "Lab Requests", href: p("/labs") },
-    { icon: FolderOpen, label: "Medical Documents", href: p("/documents") },
-    { icon: Bot, label: "Clinical Notes", href: p("/scribe") },
-    { icon: Pill, label: "e-Prescribing", href: p("/erx") },
-    { icon: BookOpen, label: "Education", href: p("/education") },
-    { icon: BarChart3, label: "Analytics", href: p("/analytics") },
+    { icon: Pill, label: "Prescriptions", href: p("/erx") },
+    { icon: BarChart3, label: "Reports", href: p("/analytics") },
+    { icon: Receipt, label: "Billing", href: p("/billing") },
+    { icon: Sparkles, label: "AI Insights", href: p("/rpm/ai-risk") },
+    { group: "CLINICAL", icon: ClipboardList, label: "Patient Queue", href: p("/queue") },
+    { group: "CLINICAL", icon: HeartPulse, label: "Vitals", href: p("/vitals") },
+    { group: "CLINICAL", icon: FileText, label: "Clinical Intake", href: p("/intake") },
+    { group: "CLINICAL", icon: Bell, label: "Alerts", href: p("/notifications") },
+    { group: "CLINICAL", icon: FlaskConical, label: "Lab Requests", href: p("/labs") },
+    { group: "CLINICAL", icon: FolderOpen, label: "Medical Documents", href: p("/documents") },
+    { group: "CLINICAL", icon: Bot, label: "Clinical Notes", href: p("/scribe") },
+    { group: "CLINICAL", icon: Activity, label: "Availability", href: p("/availability") },
+    { group: "CLINICAL", icon: BookOpen, label: "Education", href: p("/education") },
     { group: "BOTTOM", icon: Settings, label: "Settings", href: p("/settings") },
   ];
 }
@@ -161,6 +179,12 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
     (o) => o.status === "order_submitted" || o.status === "medical_review"
   ).length;
   const unreadNotificationsCount = notifications.filter((n) => n?.unread).length;
+  const onRpm = doctorBase != null && location.pathname.startsWith(`${doctorBase}/rpm`);
+  const [rpmOpen, setRpmOpen] = useState(onRpm);
+
+  useEffect(() => {
+    if (onRpm) setRpmOpen(true);
+  }, [onRpm]);
 
   const fullName = user?.user_metadata?.first_name
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`.trim()
@@ -219,72 +243,138 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
               {isBottom && <div className="h-px my-4 mx-3 bg-slate-50" />}
               
               <motion.div whileHover={{ x: 4 }} whileTap={{ scale: 0.98 }} className="mb-1">
-                <NavLink
-                  to={item.href}
-                  end={navLinkEndsAtExact(role, doctorBase, item.href)}
-                  onClick={onMobileClose}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 transition-all duration-200 group relative overflow-hidden",
-                      isStaffOps ? "text-[13px]" : "rounded-2xl px-4 py-3.5 text-[13px] font-black duration-300",
-                      isActive
-                        ? isStaffOps
-                          ? "bg-[#0A2E1F] text-white shadow-md border-l-[3px] border-emerald-400/90"
-                          : "bg-[#0A2E1F] text-white shadow-[0_10px_28px_-6px_rgba(10,46,31,0.45)] border-l-4 border-[#D4AF37]"
-                        : role === "doctor"
-                          ? "text-slate-600 hover:text-[#0A2E1F] hover:bg-white/85 hover:border-l-emerald-300/90 border-l-4 border-transparent hover:shadow-sm"
-                          : isStaffOps
-                            ? "text-slate-600 hover:bg-slate-100/90 border-l-[3px] border-transparent"
-                            : "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80 border-l-4 border-transparent",
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <div className="flex items-center gap-3 min-w-0 relative z-10">
-                        <item.icon className={cn(
-                          "h-5 w-5 shrink-0 transition-all duration-300",
-                          isActive
-                            ? isStaffOps
-                              ? "text-emerald-300 scale-105"
-                              : "text-[#D4AF37] scale-110"
-                            : "text-slate-400 group-hover:text-[#0A2E1F] group-hover:scale-110",
-                        )} />
-                        <span
-                          title={item.label}
-                          className={cn(
-                            "min-w-0 text-left",
-                            isStaffOps
-                              ? "line-clamp-2 text-[12.5px] font-semibold leading-snug tracking-tight normal-case"
-                              : "truncate font-black uppercase tracking-tight",
-                          )}
-                        >
-                          {item.label}
-                        </span>
+                {item.children && item.children.length > 0 ? (
+                  <div>
+                    <div className="flex items-center gap-0.5">
+                      <NavLink
+                        to={item.href}
+                        end={false}
+                        onClick={onMobileClose}
+                        className={({ isActive }) =>
+                          cn(
+                            "flex flex-1 items-center justify-between gap-2 rounded-xl px-3 py-2.5 transition-all duration-200 group",
+                            isStaffOps ? "text-[13px]" : "text-[13px] font-black",
+                            isActive || onRpm
+                              ? "bg-[#0A2E1F] text-white shadow-md border-l-4 border-[#D4AF37]"
+                              : "text-slate-600 hover:bg-white/85 border-l-4 border-transparent",
+                          )
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <item.icon className={cn("h-5 w-5 shrink-0", (isActive || onRpm) ? "text-[#D4AF37]" : "text-slate-400")} />
+                              <span className="truncate uppercase tracking-tight text-[12px]">{item.label}</span>
+                            </div>
+                          </>
+                        )}
+                      </NavLink>
+                      <button
+                        type="button"
+                        aria-label="Toggle RPM submenu"
+                        onClick={() => setRpmOpen((o) => !o)}
+                        className={cn(
+                          "p-2 rounded-lg mr-1",
+                          onRpm ? "text-white hover:bg-white/10" : "text-slate-500 hover:bg-slate-100",
+                        )}
+                      >
+                        <ChevronRight className={cn("h-4 w-4 transition-transform", rpmOpen && "rotate-90")} />
+                      </button>
+                    </div>
+                    {rpmOpen && (
+                      <div className="ml-3 mt-1 mb-2 space-y-0.5 border-l-2 border-emerald-200/80 pl-2">
+                        {item.children.map((child) => (
+                          <NavLink
+                            key={child.href}
+                            to={child.href}
+                            end={child.href === item.href}
+                            onClick={onMobileClose}
+                            className={({ isActive }) =>
+                              cn(
+                                "flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors",
+                                isActive ? "bg-emerald-100 text-[#0A2E1F]" : "text-slate-500 hover:text-[#0A2E1F] hover:bg-white/80",
+                              )
+                            }
+                          >
+                            <child.icon className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                            <span className="truncate">{child.label}</span>
+                          </NavLink>
+                        ))}
                       </div>
-                      {(() => {
-                        let badgeCount = item.badge;
-                        if (item.label === "Patient Queue") badgeCount = pendingCount;
-                        if (item.label === "Notifications") badgeCount = unreadNotificationsCount;
-                        if (badgeCount && badgeCount > 0) {
-                          return (
-                            <span className={cn(
-                              "h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 shadow-sm relative z-10",
+                    )}
+                  </div>
+                ) : (
+                  <NavLink
+                    to={item.href}
+                    end={navLinkEndsAtExact(role, doctorBase, item.href)}
+                    onClick={onMobileClose}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 transition-all duration-200 group relative overflow-hidden",
+                        isStaffOps ? "text-[13px]" : "rounded-2xl px-4 py-3.5 text-[13px] font-black duration-300",
+                        isActive
+                          ? isStaffOps
+                            ? "bg-[#0A2E1F] text-white shadow-md border-l-[3px] border-emerald-400/90"
+                            : "bg-[#0A2E1F] text-white shadow-[0_10px_28px_-6px_rgba(10,46,31,0.45)] border-l-4 border-[#D4AF37]"
+                          : role === "doctor"
+                            ? "text-slate-600 hover:text-[#0A2E1F] hover:bg-white/85 hover:border-l-emerald-300/90 border-l-4 border-transparent hover:shadow-sm"
+                            : isStaffOps
+                              ? "text-slate-600 hover:bg-slate-100/90 border-l-[3px] border-transparent"
+                              : "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80 border-l-4 border-transparent",
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <div className="flex items-center gap-3 min-w-0 relative z-10">
+                          <item.icon
+                            className={cn(
+                              "h-5 w-5 shrink-0 transition-all duration-300",
                               isActive
                                 ? isStaffOps
-                                  ? "bg-emerald-400/25 text-white"
-                                  : "bg-[#D4AF37] text-[#0A2E1F]"
-                                : "bg-emerald-100 text-[#0A2E1F]",
-                            )}>
-                              {badgeCount}
-                            </span>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </>
-                  )}
-                </NavLink>
+                                  ? "text-emerald-300 scale-105"
+                                  : "text-[#D4AF37] scale-110"
+                                : "text-slate-400 group-hover:text-[#0A2E1F] group-hover:scale-110",
+                            )}
+                          />
+                          <span
+                            title={item.label}
+                            className={cn(
+                              "min-w-0 text-left",
+                              isStaffOps
+                                ? "line-clamp-2 text-[12.5px] font-semibold leading-snug tracking-tight normal-case"
+                                : "truncate font-black uppercase tracking-tight",
+                            )}
+                          >
+                            {item.label}
+                          </span>
+                        </div>
+                        {(() => {
+                          let badgeCount = item.badge;
+                          if (item.label === "Patient Queue") badgeCount = pendingCount;
+                          if (item.label === "Alerts") badgeCount = unreadNotificationsCount;
+                          if (badgeCount && badgeCount > 0) {
+                            return (
+                              <span
+                                className={cn(
+                                  "h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 shadow-sm relative z-10",
+                                  isActive
+                                    ? isStaffOps
+                                      ? "bg-emerald-400/25 text-white"
+                                      : "bg-[#D4AF37] text-[#0A2E1F]"
+                                    : "bg-emerald-100 text-[#0A2E1F]",
+                                )}
+                              >
+                                {badgeCount}
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </>
+                    )}
+                  </NavLink>
+                )}
               </motion.div>
             </div>
           );

@@ -65,6 +65,7 @@ type Props = {
   chartMetric: (typeof RPM_METRIC_OPTIONS)[number]["id"];
   onChartMetric: (id: (typeof RPM_METRIC_OPTIONS)[number]["id"]) => void;
   onEscalate: () => void;
+  dark?: boolean;
 };
 
 export function RpmPatientDrawer({
@@ -80,6 +81,7 @@ export function RpmPatientDrawer({
   chartMetric,
   onChartMetric,
   onEscalate,
+  dark = false,
 }: Props) {
   if (!open || !row) return null;
 
@@ -104,8 +106,20 @@ export function RpmPatientDrawer({
         aria-label="Close patient monitor"
         onClick={onClose}
       />
-      <aside className="relative flex h-dvh w-full max-w-xl flex-col border-l border-emerald-900/10 bg-gradient-to-b from-white via-slate-50/80 to-white shadow-2xl animate-in slide-in-from-right duration-300">
-        <header className="shrink-0 border-b border-slate-200/80 bg-white/90 px-5 py-4 backdrop-blur-md">
+      <aside
+        className={cn(
+          "relative flex h-dvh w-full max-w-xl flex-col border-l shadow-2xl animate-in slide-in-from-right duration-300",
+          dark
+            ? "border-slate-700 bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 text-slate-100"
+            : "border-emerald-900/10 bg-gradient-to-b from-white via-slate-50/80 to-white",
+        )}
+      >
+        <header
+          className={cn(
+            "shrink-0 border-b px-5 py-4 backdrop-blur-md",
+            dark ? "border-slate-700 bg-slate-900/90" : "border-slate-200/80 bg-white/90",
+          )}
+        >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Patient monitor</p>

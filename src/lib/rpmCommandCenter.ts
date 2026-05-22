@@ -59,13 +59,19 @@ export type RpmLiveRow = {
   bloodPressure: string;
   oxygen: string;
   glucose: string;
+  respiratoryRate: string;
+  temperature: string;
+  age: string;
   severity: RpmSeverity;
   severityLabel: string;
+  statusTone: import("./rpmEnterpriseUi").RpmStatusTone;
   risk: RpmRiskLevel;
   riskLabel: string;
+  aiScore: number;
   compliancePct: number;
   deviceLabel: string;
   lastReading: string;
+  ecgWaveform: number[];
 };
 
 export type RpmAlert = {
@@ -91,6 +97,8 @@ export type RpmCommandStats = {
   liveConsultations: number;
   syncsInRange: number;
   stablePct: number;
+  emergencyEscalationsToday: number;
+  aiPredictedRisks: number;
 };
 
 export type RpmDeviceFleetItem = {
@@ -220,6 +228,54 @@ export function computeAiRisk(
   return { level, reasons: reasons.slice(0, 4) };
 }
 
+const ESC_KEY = "peak_rpm_escalated";
+
+export function loadEscalatedPatients(): Set<string> {
+  try {
+    const raw = localStorage.getItem(ESC_KEY);
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw) as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+export function saveEscalatedPatients(ids: Set<string>): void {
+  try {
+    localStorage.setItem(ESC_KEY, JSON.stringify([...ids]));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function escalatePatient(key: string): void {
+  const s = loadEscalatedPatients();
+  s.add(key);
+  saveEscalatedPatients(s);
+}
+
+function parseAge(order: RpmOrderRow | undefined, intake: IntakeVitals | null): string {
+  const ans = order?.intake_answers || {};
+  const age = ans.age ?? ans.patient_age;
+  if (typeof age === "number") return `${age}`;
+  if (typeof age === "string" && age.trim()) return age.trim();
+  return "—";
+}
+
+export function computeStatusTone(
+  patient: RpmPatient,
+  patientReadings: VitalReading[],
+  risk: RpmRiskLevel,
+  escalated: Set<string>,
+): import("./rpmEnterpriseUi").RpmStatusTone {
+  if (escalated.has(patient.key)) return "emergency";
+  const sev = patientSeverity(patientReadings, patient);
+  if (sev === "critical") return "critical";
+  if (risk === "high" || risk === "critical") return "high";
+  if (sev === "warning") return "warning";
+  return "stable";
+}
+
 export function computeCompliance(patient: RpmPatient, range: RpmTimeRange): number {
   const days = range === "24h" ? 1 : range === "7d" ? 7 : range === "30d" ? 30 : 14;
   const expectedPerDay = 4;
@@ -233,7 +289,10 @@ export function buildLiveMonitoringRows(
   roster: RpmPatient[],
   readings: VitalReading[],
   range: RpmTimeRange,
+  ordersByKey?: Map<string, RpmOrderRow>,
+  escalated?: Set<string>,
 ): RpmLiveRow[] {
+  const esc = escalated ?? loadEscalatedPatients();
   return roster.map((patient) => {
     const pr = readingsForPatient(readings, patient, range);
     const hr = latestReading(pr, ["hr"]);
@@ -241,9 +300,18 @@ export function buildLiveMonitoringRows(
     const dia = latestReading(pr, ["bp_dia"]);
     const spo2 = latestReading(pr, ["spo2"]);
     const glucose = latestReading(pr, ["glucose"]);
+    const resp = latestReading(pr, ["resp_rate", "rr"]);
+    const temp = latestReading(pr, ["temp", "temperature"]);
     const severity = patientSeverity(pr, patient);
     const risk = computeAiRisk(patient, pr, range);
     const conn = CONNECTIVITY_STYLES[patient.connectivity];
+    const order =
+      (patient.order_id && ordersByKey?.get(`order:${patient.order_id}`)) ||
+      (patient.patient_id && ordersByKey?.get(`user:${patient.patient_id}`)) ||
+      undefined;
+    const statusTone = computeStatusTone(patient, pr, risk.level, esc);
+    const aiScore =
+      risk.level === "critical" ? 92 : risk.level === "high" ? 78 : risk.level === "moderate" ? 58 : 32;
 
     return {
       patient,
@@ -251,15 +319,30 @@ export function buildLiveMonitoringRows(
       bloodPressure: sys && dia ? `${sys.value}/${dia.value}` : sys ? `${sys.value}/—` : dia ? `—/${dia.value}` : "—",
       oxygen: spo2 ? `${spo2.value}%` : "—",
       glucose: glucose ? `${glucose.value} mg/dL` : "—",
+      respiratoryRate: resp ? `${resp.value} /min` : "—",
+      temperature: temp ? `${temp.value}°` : patient.intake?.temp_f != null ? `${patient.intake.temp_f}°F` : "—",
+      age: parseAge(order, patient.intake),
       severity,
       severityLabel: SEVERITY_STYLES[severity].label,
+      statusTone,
       risk: risk.level,
       riskLabel: RISK_STYLES[risk.level].label,
+      aiScore,
       compliancePct: computeCompliance(patient, range),
       deviceLabel: conn.label,
       lastReading: timeAgo(patient.lastSyncAt),
+      ecgWaveform: sparklineFromReadings(pr, "hr").length >= 2 ? sparklineFromReadings(pr, "hr") : [68, 72, 70, 75, 73, 78, 76, 74],
     };
   });
+}
+
+export function buildOrdersLookup(orders: RpmOrderRow[]): Map<string, RpmOrderRow> {
+  const m = new Map<string, RpmOrderRow>();
+  for (const o of orders) {
+    m.set(`order:${o.id}`, o);
+    if (o.user_id) m.set(`user:${o.user_id}`, o);
+  }
+  return m;
 }
 
 export function buildAlertsEngine(
@@ -361,6 +444,14 @@ export function computeCommandStats(
   const stablePatients = roster.filter((p) => p.alertCountInRange === 0 && p.readingsInRange > 0).length;
   const stablePct = roster.length ? Math.round((stablePatients / roster.length) * 100) : 100;
 
+  const escalated = loadEscalatedPatients();
+  const emergencyEscalationsToday = escalated.size;
+  const aiPredictedRisks = roster.filter((p) => {
+    const pr = readingsForPatient(readings, p, range);
+    const lvl = computeAiRisk(p, pr, range).level;
+    return lvl === "moderate" || lvl === "high" || lvl === "critical";
+  }).length;
+
   return {
     activePatients: roster.length,
     criticalAlerts,
@@ -370,6 +461,8 @@ export function computeCommandStats(
     liveConsultations,
     syncsInRange: scoped.length,
     stablePct,
+    emergencyEscalationsToday,
+    aiPredictedRisks,
   };
 }
 

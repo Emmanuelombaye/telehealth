@@ -36,6 +36,8 @@ export function AppLayout() {
   const isPatientPortal = path.startsWith("/patient");
   const isSuperAdminPortal = path.startsWith("/superadmin");
   const isDoctorPortal = path.startsWith("/doctor") || path.startsWith("/providers");
+  const isRpmCommandCenter =
+    path.includes("/doctor/rpm") || path.includes("/providers/rpm");
 
   useEffect(() => {
     fetchOrders();
@@ -405,13 +407,15 @@ export function AppLayout() {
                 isDoctorPortal && "relative isolate",
                 isPatientPortal
                   ? "max-w-[1240px] px-4 py-6 sm:px-6 md:px-10 md:py-10"
-                  : isDoctorPortal
-                    ? "max-w-[1600px] px-4 py-5 md:px-7 md:py-8"
+                  : isRpmCommandCenter
+                    ? "max-w-none px-0 py-0"
+                    : isDoctorPortal
+                      ? "max-w-[1600px] px-4 py-5 md:px-7 md:py-8"
                     : /** Brand admin & superadmin: same usable width — protocol tables span many columns */
                       "max-w-[1600px] p-6 md:p-10",
               )}
             >
-              {isDoctorPortal && (
+              {isDoctorPortal && !isRpmCommandCenter && (
                 <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
                   <div className="absolute -top-44 -right-24 h-[min(520px,70vw)] w-[min(520px,70vw)] rounded-full bg-emerald-300/18 blur-[100px]" />
                   <div className="absolute top-[22%] -left-32 h-[min(420px,55vw)] w-[min(420px,55vw)] rounded-full bg-teal-300/14 blur-[88px]" />

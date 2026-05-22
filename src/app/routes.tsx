@@ -58,7 +58,36 @@ const DoctorMessagesPage = lazy(() => lazyRetry(() => import("./pages/doctor/pag
 const DoctorConsultPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Consult").then(m => ({ default: m.DoctorConsultPage }))));
 const DoctorLabsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Labs").then(m => ({ default: m.DoctorLabsPage }))));
 const DoctorScribePage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Scribe").then(m => ({ default: m.DoctorScribePage }))));
-const DoctorRPMPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.DoctorRPMPage }))));
+const RpmLayout = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmLayout }))));
+const RpmLiveMonitoring = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmLiveMonitoring }))));
+const RpmPatientVitalsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmPatientVitalsPage }))));
+const RpmAlertsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmAlertsPage }))));
+const RpmCriticalPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmCriticalPage }))));
+const RpmDevicesPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmDevicesPage }))));
+const RpmCompliancePage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmCompliancePage }))));
+const RpmAiRiskPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmAiRiskPage }))));
+const RpmAnalyticsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmAnalyticsPage }))));
+const RpmQueuePage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmQueuePage }))));
+const RpmEscalationsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmEscalationsPage }))));
+const RpmReportsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmReportsPage }))));
+const RpmIntegrationsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmIntegrationsPage }))));
+const RpmSettingsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/RPM").then(m => ({ default: m.RpmSettingsPage }))));
+
+const rpmChildRoutes = [
+  { index: true, Component: RpmLiveMonitoring },
+  { path: "vitals", Component: RpmPatientVitalsPage },
+  { path: "alerts", Component: RpmAlertsPage },
+  { path: "critical", Component: RpmCriticalPage },
+  { path: "devices", Component: RpmDevicesPage },
+  { path: "compliance", Component: RpmCompliancePage },
+  { path: "ai-risk", Component: RpmAiRiskPage },
+  { path: "analytics", Component: RpmAnalyticsPage },
+  { path: "queue", Component: RpmQueuePage },
+  { path: "escalations", Component: RpmEscalationsPage },
+  { path: "reports", Component: RpmReportsPage },
+  { path: "integrations", Component: RpmIntegrationsPage },
+  { path: "settings", Component: RpmSettingsPage },
+];
 const DoctorVitalsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/Vitals").then(m => ({ default: m.DoctorVitalsPage }))));
 const DoctorClinicalIntakePage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/ClinicalIntake").then(m => ({ default: m.DoctorClinicalIntakePage }))));
 const DoctorMedicalDocumentsPage = lazy(() => lazyRetry(() => import("./pages/doctor/pages/MedicalDocuments").then(m => ({ default: m.DoctorMedicalDocumentsPage }))));
@@ -202,7 +231,7 @@ export const router = createBrowserRouter([
               { path: "labs", Component: DoctorLabsPage },
               { path: "vitals", Component: DoctorVitalsPage },
               { path: "scribe", Component: DoctorScribePage },
-              { path: "rpm", Component: DoctorRPMPage },
+              { path: "rpm", Component: RpmLayout, children: rpmChildRoutes },
               { path: "erx", Component: DoctorERxPage },
               { path: "imaging", Component: DoctorImagingPage },
               { path: "referrals", Component: DoctorReferralsPage },
@@ -233,7 +262,7 @@ export const router = createBrowserRouter([
               { path: "labs", Component: DoctorLabsPage },
               { path: "vitals", Component: DoctorVitalsPage },
               { path: "scribe", Component: DoctorScribePage },
-              { path: "rpm", Component: DoctorRPMPage },
+              { path: "rpm", Component: RpmLayout, children: rpmChildRoutes },
               { path: "erx", Component: DoctorERxPage },
               { path: "imaging", Component: DoctorImagingPage },
               { path: "referrals", Component: DoctorReferralsPage },

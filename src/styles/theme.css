@@ -357,3 +357,17 @@
   -ms-user-select: none !important;
   -moz-user-select: none !important;
 }
+
+/* Enterprise RPM command center */
+.rpm-light .rpm-text { color: #0f172a; }
+.rpm-light .rpm-muted { color: #64748b; }
+.rpm-light .rpm-border { border-color: rgba(148, 163, 184, 0.35); }
+.rpm-dark .rpm-text { color: #f1f5f9; }
+.rpm-dark .rpm-muted { color: #94a3b8; }
+.rpm-dark .rpm-border { border-color: rgba(71, 85, 105, 0.55); }
+.rpm-dark .rpm-ecg-line { filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.5)); }
+@keyframes rpm-pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+.rpm-live-pulse { animation: rpm-pulse-soft 2s ease-in-out infinite; }
