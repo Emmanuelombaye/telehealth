@@ -15,7 +15,7 @@ type PatientEnrollmentCatalogChromeProps = {
 };
 
 /**
- * Catalog header — compact: back link + single hero (logo, step, progress, copy).
+ * Catalog header — white surface, centered logo, emerald typography.
  */
 export function PatientEnrollmentCatalogChrome({
   stage,
@@ -39,42 +39,45 @@ export function PatientEnrollmentCatalogChrome({
         Back to portal
       </Button>
 
-      <div className="relative overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-[#0A2E1F] via-[#0d3d2a] to-[#059669] px-5 py-6 sm:px-7 sm:py-8 text-white shadow-lg shadow-emerald-950/20">
-        <div
-          className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-emerald-400/20 blur-3xl"
-          aria-hidden
-        />
+      <div className="overflow-hidden rounded-[1.25rem] border border-emerald-100/90 bg-white px-5 py-6 sm:px-8 sm:py-7 shadow-[0_8px_32px_-20px_rgba(10,46,31,0.12)]">
+        <div className="flex flex-col items-center text-center space-y-5">
+          <PatientBrandMark
+            size="hero"
+            className="w-full max-w-[min(100%,14rem)] sm:max-w-[18rem] md:max-w-[20rem]"
+          />
 
-        <div className="relative z-10 space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <PatientBrandMark size="sm" className="max-w-[9.5rem] brightness-0 invert opacity-95" />
-            <span className="inline-flex w-fit items-center rounded-full border border-white/25 bg-white/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-100">
-              Step {activeIdx + 1} of {total}
-            </span>
-          </div>
+          <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-900">
+            Step {activeIdx + 1} of {total}
+          </span>
 
-          <div className="flex gap-1" role="progressbar" aria-valuenow={activeIdx + 1} aria-valuemin={1} aria-valuemax={total}>
+          <div
+            className="flex w-full max-w-md gap-1.5"
+            role="progressbar"
+            aria-valuenow={activeIdx + 1}
+            aria-valuemin={1}
+            aria-valuemax={total}
+          >
             {ENROLLMENT_JOURNEY_STEPS.map((s, i) => (
               <div
                 key={s.stage}
                 className={cn(
-                  "h-1.5 flex-1 rounded-full",
-                  i <= activeIdx ? "bg-white/90" : "bg-white/20",
+                  "h-2 flex-1 rounded-full transition-colors",
+                  i <= activeIdx ? "bg-emerald-600" : "bg-emerald-100",
                 )}
                 title={s.title}
               />
             ))}
           </div>
 
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200/90">
+          <div className="w-full max-w-lg space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">
               {active.title}
             </p>
-            <h1 className="mt-1.5 text-xl font-extrabold leading-snug tracking-tight sm:text-2xl">
+            <h1 className="text-xl font-extrabold leading-snug tracking-tight text-[#0A2E1F] sm:text-2xl">
               Care that works.
-              <span className="text-emerald-200"> Shipped to your door.</span>
+              <span className="text-emerald-700"> Shipped to your door.</span>
             </h1>
-            <p className="mt-2 text-xs leading-relaxed text-white/80 sm:text-sm">
+            <p className="text-xs leading-relaxed text-emerald-900/70 sm:text-sm">
               {active.subtitle} · Physician-reviewed · Licensed pharmacies · HIPAA-aligned
             </p>
           </div>
