@@ -31,6 +31,11 @@ import {
   type PatientCareStatus,
   type RawOrderRow,
 } from "../../../../lib/doctorPatientManagement";
+import {
+  patientDocumentsHref,
+  patientRpmHref,
+  patientVitalsHref,
+} from "../../../../lib/doctorPatientDeepLinks";
 
 type FilterTab = "all" | PatientCareStatus | "high_risk";
 
@@ -316,9 +321,9 @@ export function DoctorPatientsPage() {
 
                   <div className="flex gap-1 px-3 pb-3 pt-1">
                     {[
-                      { icon: HeartPulse, to: `${doctorBase}/vitals`, label: "Vitals" },
-                      { icon: Radio, to: `${doctorBase}/rpm`, label: "RPM" },
-                      { icon: FolderOpen, to: `${doctorBase}/documents`, label: "Docs" },
+                      { icon: HeartPulse, to: patientVitalsHref(doctorBase, p), label: "Vitals" },
+                      { icon: Radio, to: patientRpmHref(doctorBase, p), label: "RPM" },
+                      { icon: FolderOpen, to: patientDocumentsHref(doctorBase, p), label: "Docs" },
                       ...(p.enrollmentVideoRequired
                         ? [{ icon: Video, to: `${doctorBase}/consult?orderId=${encodeURIComponent(consultId)}`, label: "Video" }]
                         : []),

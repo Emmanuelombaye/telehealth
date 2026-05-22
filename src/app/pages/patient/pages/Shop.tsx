@@ -43,6 +43,8 @@ import {
   formatIntakeNotesLine,
   syncEnrollmentVitalsToReadings,
 } from "../../../../lib/patientVitals";
+import { toCustomerMessage } from "../../../../lib/customerSafeError";
+import { insertPatientOrder } from "../../../../lib/insertPatientOrder";
 import {
   shopPathForStage,
   shopStageFromStepParam,
@@ -100,14 +102,14 @@ function StripePaymentForm({
         redirect: "if_required",
       });
       if (result.error) {
-        onError(result.error.message ?? "Payment failed.");
+        onError(toCustomerMessage(result.error, "payment"));
       } else if (result.paymentIntent?.status === "succeeded") {
         onSuccess(result.paymentIntent.id);
       } else {
         onError("Payment incomplete. Please try again.");
       }
-    } catch (e: any) {
-      onError(e.message);
+    } catch (e: unknown) {
+      onError(toCustomerMessage(e, "payment"));
     } finally {
       setPaying(false);
     }
@@ -345,8 +347,8 @@ export function PatientShopPage() {
         }
         setStripeClientSecret(data.clientSecret);
         setStripePaymentIntentId(data.paymentIntentId ?? null);
-      } catch (e: any) {
-        if (!cancelled) setError(e.message);
+      } catch (e: unknown) {
+        if (!cancelled) setError(toCustomerMessage(e, "payment"));
       }
     })();
     return () => {
@@ -911,7 +913,11 @@ export function PatientShopPage() {
         status:            assigned ? "medical_review" : "order_submitted",
         patient_name:      `${resolvedFirstName} ${resolvedLastName}`.trim() || "New Patient",
         patient_email:     resolvedEmail,
-        patient_state:     (state || "").trim().toUpperCase() || null,
+        shipping_state:          (state || "").trim().toUpperCase() || null,
+        shipping_address_line1:  (address || "").trim() || null,
+        shipping_city:           (city || "").trim() || null,
+        shipping_zip:            (zip || "").trim() || null,
+        patient_phone:           (phone || "").trim() || null,
         patient_avatar:    (resolvedFirstName[0] || "") + (resolvedLastName[0] || ""),
         patient_age:       age,
         patient_country:   "🇺🇸 US",
@@ -926,6 +932,12 @@ export function PatientShopPage() {
         intake_notes:      formatIntakeNotesLine(patientVitals),
         intake_answers:    {
           ...answers,
+          _shipping: {
+            state: (state || "").trim().toUpperCase() || null,
+            address_line1: (address || "").trim() || null,
+            city: (city || "").trim() || null,
+            zip: (zip || "").trim() || null,
+          },
           _intake_conditional: {
             requires_video: needsVideo,
             routing_reasons: submitEffects.routing.reasons,
@@ -954,17 +966,11 @@ export function PatientShopPage() {
         scheduling_ref: needsVideo && schedulingRef ? schedulingRef : null,
       };
 
-      let { error: insertError } = await supabase.from("orders").insert([orderPayload]);
-      if (
-        insertError &&
-        (insertError.message.includes("requires_sync_video") ||
-          insertError.message.includes("video_routing_reasons"))
-      ) {
-        const { requires_sync_video: _rsv, video_routing_reasons: _vrr, ...fallback } = orderPayload;
-        ({ error: insertError } = await supabase.from("orders").insert([fallback]));
+      const { error: insertError } = await insertPatientOrder(supabase, orderPayload);
+      if (insertError) {
+        console.error("[Shop] order insert:", insertError);
+        throw insertError;
       }
-
-      if (insertError) throw new Error(`Order submission failed: ${insertError.message}`);
 
       if (userId) {
         const patientLabel = `${resolvedFirstName} ${resolvedLastName}`.trim() || "Patient";
@@ -1014,9 +1020,9 @@ export function PatientShopPage() {
       setResumeDraftAvailable(false);
       goToStage("confirmed");
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[Enrollment error]", err);
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(toCustomerMessage(err, "enrollment"));
     } finally {
       setIsSubmitting(false);
     }
@@ -1425,8 +1431,8 @@ export function PatientShopPage() {
                     await new Promise((resolve) => setTimeout(resolve, 1500));
                     setIdentityStripeCompleted(true);
                     goToStage("questionnaire");
-                  } catch (e: any) {
-                    setError(e.message);
+                  } catch (e: unknown) {
+                    setError(toCustomerMessage(e));
                   } finally {
                     setIsVerifyingIdentity(false);
                   }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import {
   FolderOpen,
   FileText,
@@ -42,6 +42,7 @@ type ViewTab = "all" | "uploads" | "labs" | "visits";
 export function DoctorMedicalDocumentsPage() {
   const doctorBase = useDoctorPortalBase();
   const { user } = useAuthStore();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [tableMissing, setTableMissing] = useState<string | null>(null);
   const [docs, setDocs] = useState<UnifiedMedicalDoc[]>([]);
@@ -56,6 +57,25 @@ export function DoctorMedicalDocumentsPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadPatientId, setUploadPatientId] = useState("");
   const [uploadType, setUploadType] = useState<string>("Other");
+
+  useEffect(() => {
+    const patientId = searchParams.get("patientId");
+    const patientName = searchParams.get("patientName");
+    if (patientId) {
+      setPatientFilter(patientId);
+      return;
+    }
+    if (patientName) {
+      setPatientFilter("all");
+      setSearch(decodeURIComponent(patientName));
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const patientId = searchParams.get("patientId");
+    if (!patientId || patients.length === 0) return;
+    if (patients.some((p) => p.user_id === patientId)) setPatientFilter(patientId);
+  }, [searchParams, patients]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);

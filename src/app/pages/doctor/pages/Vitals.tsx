@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import {
   Activity,
   AlertTriangle,
@@ -123,6 +123,7 @@ function VitalMetricCard({ card }: { card: VitalCardModel }) {
 export function DoctorVitalsPage() {
   const doctorBase = useDoctorPortalBase();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [readings, setReadings] = useState<VitalReading[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -203,11 +204,24 @@ export function DoctorVitalsPage() {
     });
   }, [fullRoster, search, rosterFilter]);
 
-  const selectedPatient = fullRoster.find((p) => p.key === selectedKey) ?? filteredRoster[0] ?? null;
+  const urlPatientKey = searchParams.get("patient");
+
+  const selectedPatient =
+    fullRoster.find((p) => p.key === selectedKey) ??
+    (urlPatientKey ? fullRoster.find((p) => p.key === urlPatientKey) : null) ??
+    filteredRoster[0] ??
+    null;
 
   useEffect(() => {
+    if (!urlPatientKey || fullRoster.length === 0) return;
+    const key = decodeURIComponent(urlPatientKey);
+    if (fullRoster.some((p) => p.key === key)) setSelectedKey(key);
+  }, [urlPatientKey, fullRoster]);
+
+  useEffect(() => {
+    if (urlPatientKey) return;
     if (selectedPatient && !selectedKey) setSelectedKey(selectedPatient.key);
-  }, [selectedPatient, selectedKey]);
+  }, [selectedPatient, selectedKey, urlPatientKey]);
 
   const patientReadings = useMemo(
     () => (selectedPatient ? readingsForVitalsPatient(readings, selectedPatient, range) : []),

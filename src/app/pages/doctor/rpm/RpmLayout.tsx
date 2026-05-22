@@ -1,4 +1,4 @@
-import { Outlet } from "react-router";
+import { Outlet, useSearchParams } from "react-router";
 import { Loader2 } from "lucide-react";
 import { cn } from "../../../components/ui/shared.tsx";
 import { RpmProvider, useRpmData } from "./useRpmData";
@@ -8,12 +8,13 @@ import { RpmPatientDrawer } from "../../../components/doctor/rpm/RpmPatientDrawe
 import { RpmMonitorCard } from "../../../components/doctor/rpm/RpmMonitorCard";
 import { rpmShellClass } from "../../../../lib/rpmEnterpriseUi";
 import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RPM_METRIC_OPTIONS } from "../../../../lib/rpmCommandCenter";
 import { toast } from "sonner";
 
 function RpmShell() {
   const doctorBase = useDoctorPortalBase();
+  const [searchParams] = useSearchParams();
   const {
     loading,
     theme,
@@ -34,6 +35,15 @@ function RpmShell() {
     range,
   } = useRpmData();
   const [chartMetric, setChartMetric] = useState<(typeof RPM_METRIC_OPTIONS)[number]["id"]>("bp");
+
+  const urlPatientKey = searchParams.get("patient");
+
+  useEffect(() => {
+    if (loading || !urlPatientKey) return;
+    const key = decodeURIComponent(urlPatientKey);
+    const match = filteredRows.find((r) => r.patient.key === key);
+    if (match) selectPatient(key);
+  }, [loading, urlPatientKey, filteredRows, selectPatient]);
 
   const drawerRow = drawerKey ? filteredRows.find((r) => r.patient.key === drawerKey) ?? null : null;
   const drawerOrder = drawerRow?.patient.order_id
