@@ -1,17 +1,44 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Lock, Loader2, MessageSquare, Stethoscope } from "lucide-react";
+import { useSearchParams } from "react-router";
+import { Send, Lock, Loader2, MessageSquare, Stethoscope, Check, CheckCheck } from "lucide-react";
 import { Button, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore, usePatientStore } from "../../../../lib";
 import { getAssignedDoctor, type AssignedDoctor } from "../../../../lib/patientMessaging";
 
+type ChatMessage = {
+  id: string;
+  content: string;
+  created_at: string;
+  sender_id: string;
+  receiver_id: string;
+  is_read: boolean;
+};
+
+function ReadReceipt({ msg, isMine }: { msg: ChatMessage; isMine: boolean }) {
+  if (!isMine) return null;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5 ml-1 align-middle",
+        msg.is_read ? "text-white/90" : "text-white/50",
+      )}
+      title={msg.is_read ? "Read by your doctor" : "Sent"}
+      aria-label={msg.is_read ? "Read" : "Delivered"}
+    >
+      {msg.is_read ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+    </span>
+  );
+}
+
 export function MessagesPage() {
+  const [searchParams] = useSearchParams();
+  const deepLinkDoctorId = searchParams.get("userId");
   const { user } = useAuthStore();
   const orders = usePatientStore((s) => s.orders);
+  const unreadMessagesCount = usePatientStore((s) => s.unreadMessagesCount);
   const [doctor, setDoctor] = useState<AssignedDoctor | null>(null);
-  const [messages, setMessages] = useState<
-    { id: string; content: string; created_at: string; sender_id: string; receiver_id: string }[]
-  >([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -25,12 +52,21 @@ export function MessagesPage() {
 
     async function init() {
       setLoading(true);
-      const latest = orders.find((o) => o.doctor_id);
       let d: AssignedDoctor | null = null;
-      if (latest?.doctor_id) {
-        d = { id: latest.doctor_id, name: latest.doctor || "Your doctor" };
+
+      if (deepLinkDoctorId) {
+        const fromOrder = orders.find((o) => o.doctor_id === deepLinkDoctorId);
+        d = {
+          id: deepLinkDoctorId,
+          name: fromOrder?.doctor || "Your doctor",
+        };
       } else {
-        d = await getAssignedDoctor(user!.id);
+        const latest = orders.find((o) => o.doctor_id);
+        if (latest?.doctor_id) {
+          d = { id: latest.doctor_id, name: latest.doctor || "Your doctor" };
+        } else {
+          d = await getAssignedDoctor(user!.id);
+        }
       }
       setDoctor(d);
 
@@ -43,7 +79,7 @@ export function MessagesPage() {
           )
           .order("created_at", { ascending: true });
 
-        setMessages(data || []);
+        setMessages((data as ChatMessage[]) || []);
 
         const unread = (data || []).filter((m) => m.receiver_id === user!.id && !m.is_read).map((m) => m.id);
         if (unread.length) {
@@ -57,7 +93,7 @@ export function MessagesPage() {
     }
 
     void init();
-  }, [user?.id, orders]);
+  }, [user?.id, orders, deepLinkDoctorId]);
 
   useEffect(() => {
     if (!user?.id || !doctor?.id) return;
@@ -65,7 +101,7 @@ export function MessagesPage() {
     const channel = supabase
       .channel(`patient-doctor-${user.id}-${doctor.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-        const msg = payload.new as { sender_id: string; receiver_id: string; id: string; content: string; created_at: string };
+        const msg = payload.new as ChatMessage;
         const inThread =
           (msg.sender_id === user.id && msg.receiver_id === doctor.id) ||
           (msg.sender_id === doctor.id && msg.receiver_id === user.id);
@@ -73,9 +109,18 @@ export function MessagesPage() {
         setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
         if (msg.receiver_id === user.id) {
           supabase.from("messages").update({ is_read: true }).eq("id", msg.id).then(() => {
+            setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, is_read: true } : m)));
             usePatientStore.getState().fetchUnreadMessages();
           });
         }
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
+        const updated = payload.new as ChatMessage;
+        const inThread =
+          (updated.sender_id === user.id && updated.receiver_id === doctor.id) ||
+          (updated.sender_id === doctor.id && updated.receiver_id === user.id);
+        if (!inThread) return;
+        setMessages((prev) => prev.map((m) => (m.id === updated.id ? { ...m, is_read: updated.is_read } : m)));
       })
       .subscribe();
 
@@ -138,7 +183,10 @@ export function MessagesPage() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold truncate">{doctor.name}</p>
-          <p className="text-xs text-muted-foreground">Your doctor</p>
+          <p className="text-xs text-muted-foreground">
+            Your doctor
+            {unreadMessagesCount > 0 ? ` · ${unreadMessagesCount} unread elsewhere` : ""}
+          </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0 text-emerald-600">
           <Lock className="h-3.5 w-3.5" />
@@ -153,26 +201,30 @@ export function MessagesPage() {
             <p className="text-sm">Send a message to {doctor.name}</p>
           </div>
         ) : (
-          messages.map((msg) => (
-            <div key={msg.id} className={cn("flex", msg.sender_id === user?.id ? "justify-end" : "justify-start")}>
-              <div
-                className={cn(
-                  "max-w-[80%] px-4 py-2.5 rounded-2xl text-sm",
-                  msg.sender_id === user?.id ? "bg-primary text-white rounded-br-sm" : "bg-muted rounded-bl-sm",
-                )}
-              >
-                <p>{msg.content}</p>
-                <p
+          messages.map((msg) => {
+            const isMine = msg.sender_id === user?.id;
+            return (
+              <div key={msg.id} className={cn("flex", isMine ? "justify-end" : "justify-start")}>
+                <div
                   className={cn(
-                    "text-[10px] mt-1",
-                    msg.sender_id === user?.id ? "text-white/60 text-right" : "text-muted-foreground",
+                    "max-w-[80%] px-4 py-2.5 rounded-2xl text-sm",
+                    isMine ? "bg-primary text-white rounded-br-sm" : "bg-muted rounded-bl-sm",
                   )}
                 >
-                  {formatTime(msg.created_at)}
-                </p>
+                  <p>{msg.content}</p>
+                  <p
+                    className={cn(
+                      "text-[10px] mt-1 flex items-center justify-end gap-0.5",
+                      isMine ? "text-white/70" : "text-muted-foreground",
+                    )}
+                  >
+                    {formatTime(msg.created_at)}
+                    <ReadReceipt msg={msg} isMine={isMine} />
+                  </p>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
         <div ref={bottomRef} />
       </div>

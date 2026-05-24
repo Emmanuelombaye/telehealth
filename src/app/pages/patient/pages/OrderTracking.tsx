@@ -8,6 +8,7 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 import {
   buildOrderTrackingVerticalSteps,
   getOrderTrackingVerticalIndex,
+  getOrderStepDescription,
   type FulfillmentRailStep,
 } from "../../../../lib";
 import type { Order } from "../../../../lib";
@@ -52,6 +53,7 @@ function truncateOrderDisplayId(order: Record<string, unknown>, len = 8): string
 export function PatientOrderTrackingPage() {
   const [selected, setSelected] = useState<Order | null>(null);
   const [copied, setCopied] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [orders, setOrders] = useState<any[]>([]);
 
@@ -179,7 +181,9 @@ export function PatientOrderTrackingPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{step.desc}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {getOrderStepDescription(activeSelected, step)}
+                      </p>
                     </div>
                   </div>
                 );
@@ -376,8 +380,12 @@ export function PatientOrderTrackingPage() {
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input className="w-full pl-9 pr-4 py-2.5 bg-muted rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          placeholder="Search by order ID or product..." />
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-9 pr-4 py-2.5 bg-muted rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          placeholder="Search by order ID or product..."
+        />
       </div>
 
       <div className="space-y-3">
@@ -394,8 +402,28 @@ export function PatientOrderTrackingPage() {
               </Link>
             </CardContent>
           </Card>
-        ) : (
-          orders.map((order, idx) => {
+        ) : (() => {
+          const q = searchQuery.trim().toLowerCase();
+          const filteredOrders = q
+            ? orders.filter((order) => {
+                const id = String(order.order_number ?? order.id ?? "").toLowerCase();
+                const med = String(order.medication ?? "").toLowerCase();
+                const brand = String(order.sub_brand ?? order.subBrand ?? "").toLowerCase();
+                return id.includes(q) || med.includes(q) || brand.includes(q);
+              })
+            : orders;
+
+          if (filteredOrders.length === 0) {
+            return (
+              <Card className="border-dashed border-2 bg-muted/20">
+                <CardContent className="p-8 text-center text-sm text-muted-foreground">
+                  No orders match &ldquo;{searchQuery}&rdquo;
+                </CardContent>
+              </Card>
+            );
+          }
+
+          return filteredOrders.map((order, idx) => {
           const vSteps = buildOrderTrackingVerticalSteps(order);
           const vIdx = getOrderTrackingVerticalIndex(order);
           const cur = vSteps[vIdx];
@@ -441,8 +469,8 @@ export function PatientOrderTrackingPage() {
               </CardContent>
             </Card>
           );
-        })
-        )}
+        });
+        })()}
       </div>
     </div>
   );

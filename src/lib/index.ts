@@ -22,6 +22,7 @@ export {
   getOrderFulfillmentRailIndex,
   getOrderTrackingVerticalIndex,
   buildOrderTrackingVerticalSteps,
+  getOrderStepDescription,
   orderHasConsultationRail,
 } from "./orderFulfillmentRail";
 export type { FulfillmentRailStep } from "./orderFulfillmentRail";

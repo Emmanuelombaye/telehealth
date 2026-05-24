@@ -103,3 +103,62 @@ export function getOrderTrackingVerticalIndex(
   if (sti <= SHIPPED_IDX) return getOrderFulfillmentRailIndex(order);
   return steps.length - 1;
 }
+
+type OrderForStepCopy = Pick<
+  Order,
+  | "status"
+  | "zoom_status"
+  | "zoomStatus"
+  | "doctor_note"
+  | "doctorNote"
+  | "pharmacy_note"
+  | "pharmacyNote"
+  | "zoom_doctor_message"
+  | "consultation_time"
+  | "consultationTime"
+  | "zoom_rescheduled_time"
+  | "tracking_number"
+  | "tracking"
+  | "carrier"
+  | "estimatedDelivery"
+  | "intake_complete"
+> & {
+  timeline?: { status: string; date?: string; note?: string }[];
+};
+
+/** Per-order step copy for the vertical tracker (replaces static ORDER_STEPS.desc where possible). */
+export function getOrderStepDescription(order: OrderForStepCopy, step: FulfillmentRailStep): string {
+  const doctorNote = order.doctor_note || order.doctorNote;
+  const pharmacyNote = order.pharmacy_note || order.pharmacyNote;
+  const timelineNote = (order.timeline || []).find((t) => t.status === step.key)?.note;
+
+  if (step.key === "consultation") {
+    const z = zoomOf(order);
+    if (order.zoom_doctor_message) return order.zoom_doctor_message;
+    if (z === "confirmed")
+      return `Video visit confirmed${order.consultation_time || order.consultationTime ? ` · ${order.consultation_time || order.consultationTime}` : ""}.`;
+    if (z === "rescheduled")
+      return `Your visit was rescheduled${order.zoom_rescheduled_time ? ` to ${order.zoom_rescheduled_time}` : ""}. Open Appointments to confirm.`;
+    if (z === "requested") return "Your physician requested a live video visit. Book a time in Appointments.";
+    return step.desc;
+  }
+
+  if (step.key === "medical_review" && doctorNote) return doctorNote;
+  if (step.key === "follow_up" && doctorNote) return doctorNote;
+  if (step.key === "rx_sent" && pharmacyNote) return `Pharmacy: ${pharmacyNote}`;
+  if (step.key === "shipped") {
+    const tracking = order.tracking_number || order.tracking;
+    if (tracking) {
+      const carrier = order.carrier ? `${order.carrier} · ` : "";
+      const eta = order.estimatedDelivery ? ` · ETA ${order.estimatedDelivery}` : "";
+      return `${carrier}Tracking ${tracking}${eta}`;
+    }
+    if (pharmacyNote) return pharmacyNote;
+  }
+  if (step.key === "intake_completed" && order.intake_complete === false) {
+    return "Complete your intake questionnaire in the patient portal.";
+  }
+  if (timelineNote) return timelineNote;
+
+  return step.desc;
+}

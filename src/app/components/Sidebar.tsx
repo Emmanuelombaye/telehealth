@@ -346,7 +346,9 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                         {(() => {
                           let badgeCount = item.badge;
                           if (item.label === "Patient Queue") badgeCount = pendingCount;
-                          if (item.label === "Alerts") badgeCount = unreadNotificationsCount;
+                          if (item.label === "Alerts" || item.label === "Notifications") {
+                            badgeCount = unreadNotificationsCount;
+                          }
                           if (badgeCount && badgeCount > 0) {
                             return (
                               <span
