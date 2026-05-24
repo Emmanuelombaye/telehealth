@@ -480,9 +480,11 @@ export function PublicLayout() {
                   <li><Link to="/how-it-works" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">How It Works</Link></li>
                   <li><Link to="/patient/login" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Log In</Link></li>
                   <li><Link to="/explore-treatments" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Explore Treatments</Link></li>
-                  <li className="flex items-center gap-2">
-                     <span className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors cursor-pointer">Referral Program</span>
-                     <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>
+                  <li>
+                    <Link to="/affiliate/login" className="flex items-center gap-2 text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">
+                      Referral Program
+                      <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>
+                    </Link>
                   </li>
                   <li><Link to="/faq" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">FAQ</Link></li>
                   <li><Link to="/blog" className="text-[16px] text-slate-700 hover:text-emerald-600 transition-colors">Blog</Link></li>

@@ -28,6 +28,10 @@ const PrivacyPolicyPage = lazy(() => lazyRetry(() => import("./pages/legal/Priva
 const RefundPolicyPage = lazy(() => lazyRetry(() => import("./pages/legal/RefundPolicy").then(m => ({ default: m.RefundPolicyPage }))));
 const ShippingPolicyPage = lazy(() => lazyRetry(() => import("./pages/legal/ShippingPolicy").then(m => ({ default: m.ShippingPolicyPage }))));
 const LlmsTxtPage = lazy(() => lazyRetry(() => import("./pages/legal/LlmsTxt").then(m => ({ default: m.LlmsTxtPage }))));
+const SafetyInformationPage = lazy(() => lazyRetry(() => import("./pages/legal/SafetyInformation").then(m => ({ default: m.SafetyInformationPage }))));
+const ConsentToTelehealthPage = lazy(() => lazyRetry(() => import("./pages/legal/ConsentToTelehealth").then(m => ({ default: m.ConsentToTelehealthPage }))));
+const PhysicianCodeOfConductPage = lazy(() => lazyRetry(() => import("./pages/legal/PhysicianCodeOfConduct").then(m => ({ default: m.PhysicianCodeOfConductPage }))));
+const BlogPage = lazy(() => lazyRetry(() => import("./pages/Blog").then(m => ({ default: m.BlogPage }))));
 
 // Quiz
 const SelectTreatmentPage = lazy(() => lazyRetry(() => import("./pages/quiz/SelectTreatment").then(m => ({ default: m.SelectTreatmentPage }))));
@@ -177,6 +181,11 @@ export const router = createBrowserRouter([
           { path: "refund", Component: RefundPolicyPage },
           { path: "shipping", Component: ShippingPolicyPage },
           { path: "llms", Component: LlmsTxtPage },
+          { path: "safety", Component: SafetyInformationPage },
+          { path: "consent", Component: ConsentToTelehealthPage },
+          { path: "code-of-conduct", Component: PhysicianCodeOfConductPage },
+          { path: "blog", Component: BlogPage },
+          { path: "support", element: <Navigate to="/support-hub" replace /> },
           
           // Bio-Optimizer Hubs (Public)
           { path: "bio", Component: BioOptimizerPage },

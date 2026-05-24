@@ -256,6 +256,118 @@ export const shippingSections: LegalSection[] = [
   },
 ];
 
+export const safetySections: LegalSection[] = [
+  {
+    id: "overview",
+    heading: "1. Overview",
+    paragraphs: [
+      "This page summarizes important safety information for Peak Health telehealth programs. It is not a substitute for the medication guide, pharmacy labeling, or advice from your treating clinician.",
+      "Always follow your provider's instructions. Contact your clinician through the patient portal or call 911 for emergencies.",
+    ],
+  },
+  {
+    id: "glp1",
+    heading: "2. GLP-1 & Weight Management Medications",
+    list: [
+      "Common side effects may include nausea, vomiting, diarrhea, constipation, and decreased appetite.",
+      "Serious risks can include pancreatitis, gallbladder disease, kidney injury, and allergic reactions.",
+      "GLP-1 medications are not recommended during pregnancy or while breastfeeding.",
+      "Tell your clinician about all medications, supplements, and history of thyroid cancer (MEN2) or pancreatitis.",
+    ],
+  },
+  {
+    id: "compounded",
+    heading: "3. Compounded Medications",
+    paragraphs: [
+      "When prescribed, compounded products are prepared by licensed U.S. pharmacies. Compounded medications are not FDA-approved in the same manner as commercially available brand drugs and have not undergone FDA review for safety, effectiveness, or manufacturing quality.",
+      "Your clinician will discuss risks, benefits, and alternatives before treatment begins.",
+    ],
+  },
+  {
+    id: "reporting",
+    heading: "4. Reporting Side Effects",
+    paragraphs: [
+      "Message your care team immediately for concerning symptoms. You may also report adverse events to the FDA at 1-800-FDA-1088 or www.fda.gov/medwatch.",
+      "For urgent symptoms such as severe abdominal pain, difficulty breathing, or signs of allergic reaction, seek emergency care.",
+    ],
+  },
+];
+
+export const consentSections: LegalSection[] = [
+  {
+    id: "overview",
+    heading: "1. Consent to Telehealth",
+    paragraphs: [
+      "By using Peak Health, you consent to receive healthcare services via telehealth, including asynchronous review of intake forms, secure messaging, and video visits when clinically required.",
+      "Telehealth may limit the clinician's ability to perform a full physical examination. You agree to provide accurate health information and to follow up in person when your provider recommends it.",
+    ],
+  },
+  {
+    id: "scope",
+    heading: "2. Scope of Services",
+    list: [
+      "Clinical evaluation for eligible treatment programs offered in your state.",
+      "Electronic prescribing to licensed partner pharmacies when medically appropriate.",
+      "Secure storage of health records in our HIPAA-aligned patient portal.",
+      "The Services are not for emergency or life-threatening conditions.",
+    ],
+  },
+  {
+    id: "records",
+    heading: "3. Records & Communication",
+    paragraphs: [
+      "You consent to electronic communications regarding your care, including email, SMS, and portal notifications. Standard messaging rates may apply.",
+      "You may withdraw consent for non-essential communications in account settings, but some clinical notices are required for safe care.",
+    ],
+  },
+  {
+    id: "withdrawal",
+    heading: "4. Withdrawing Consent",
+    paragraphs: [
+      "You may stop using the Services at any time. Withdrawing telehealth consent may limit our ability to continue prescribing or coordinating pharmacy fulfillment.",
+      "Contact support@peak-health.io or use the patient portal to request account closure or care transfer.",
+    ],
+  },
+];
+
+export const codeOfConductSections: LegalSection[] = [
+  {
+    id: "overview",
+    heading: "1. Purpose",
+    paragraphs: [
+      "Peak Health clinicians and staff are held to the highest standards of medical ethics, professionalism, and patient-centered care. This Physician Code of Conduct applies to all licensed providers who deliver services through our platform.",
+    ],
+  },
+  {
+    id: "clinical",
+    heading: "2. Clinical Standards",
+    list: [
+      "Practice within scope of license and applicable state telehealth regulations.",
+      "Base treatment decisions on documented clinical evaluation, not patient preference alone.",
+      "Document encounters, prescriptions, and follow-up plans in the medical record.",
+      "Decline or discontinue care when a patient is not medically appropriate for the program.",
+    ],
+  },
+  {
+    id: "patient",
+    heading: "3. Patient Interaction",
+    list: [
+      "Treat all patients with dignity and without discrimination.",
+      "Respond to clinical messages within published service-level timeframes.",
+      "Protect patient privacy and access PHI only as needed for care.",
+      "Never guarantee specific weight-loss or clinical outcomes.",
+    ],
+  },
+  {
+    id: "compliance",
+    heading: "4. Compliance & Reporting",
+    paragraphs: [
+      "Providers must maintain active licensure, complete required training, and report conflicts of interest.",
+      "Suspected fraud, safety violations, or misconduct may be reported to compliance@peak-health.io. Peak Health may suspend platform access pending investigation.",
+    ],
+  },
+];
+
 export const LLMS_TXT_BODY = `# Peak Health
 
 > Peak Health is a U.S. telehealth platform for personalized weight management, longevity, and related clinical programs. Patients complete secure intake online; licensed physicians review cases and authorize treatment; partner pharmacies compound and ship medications.
