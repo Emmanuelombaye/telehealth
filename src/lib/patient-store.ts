@@ -140,7 +140,7 @@ export const patientUser = {
 };
 
 export type DoctorAvailability = {
-  id: number;
+  id: string;
   name: string;
   specialty: string;
   avatar: string;
@@ -180,7 +180,7 @@ interface AppState {
   updateOrderRx: (orderId: string, medication: string, dosage: string, note: string) => Promise<void>;
   subscribeToOrders: () => (() => void);
   setIntakeFormData: (data: Record<string, unknown>) => void;
-  updateDoctorAvailability: (doctorId: number, available: boolean) => Promise<void>;
+  updateDoctorAvailability: (doctorId: string, available: boolean) => Promise<void>;
   approveRefill: (orderId: string) => Promise<void>;
   requestRefill: (orderNumber: string, note?: string) => Promise<{ ok: boolean; error?: string }>;
   resetStore: () => void;
@@ -338,18 +338,36 @@ export const usePatientStore = create<AppState>()(
 
       fetchDoctorAvailability: async () => {
         try {
-          const { data, error } = await supabase.from('doctor_availability').select('*').order('id', { ascending: true });
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, full_name, first_name, last_name, specialty, avatar_url, status')
+            .eq('role', 'doctor')
+            .eq('status', 'active')
+            .order('full_name', { ascending: true });
           if (error) throw error;
-          
-          const mappedDocs = (data || []).map(d => ({
-            id: d.id,
-            name: d.name,
-            specialty: d.specialty,
-            avatar: d.avatar,
-            available: d.available,
-            wait: d.wait_time || '< 5 min',
-            nextSlot: d.next_slot || 'Available now'
-          }));
+
+          const mappedDocs: DoctorAvailability[] = (data || []).map((d) => {
+            const name =
+              d.full_name ||
+              [d.first_name, d.last_name].filter(Boolean).join(' ') ||
+              'Clinical provider';
+            const initials = name
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((s: string) => s[0])
+              .join('')
+              .toUpperCase();
+            return {
+              id: d.id,
+              name,
+              specialty: d.specialty || 'General Practice',
+              avatar: d.avatar_url || initials,
+              available: true,
+              wait: '< 15 min',
+              nextSlot: 'Book intake',
+            };
+          });
           set({ doctorAvailability: mappedDocs });
         } catch (error) {
           console.error('Error fetching doctors:', error);
@@ -557,17 +575,9 @@ export const usePatientStore = create<AppState>()(
 
       setIntakeFormData: (data) => set({ intakeFormData: data }),
 
-      updateDoctorAvailability: async (doctorId, available) => {
-        try {
-          const { error } = await supabase
-            .from('doctor_availability')
-            .update({ available })
-            .eq('id', doctorId);
-          if (error) throw error;
-          await get().fetchDoctorAvailability();
-        } catch (error) {
-          console.error('Error updating doctor availability:', error);
-        }
+      updateDoctorAvailability: async (_doctorId, _available) => {
+        // Legacy hook — availability is derived from active doctor profiles.
+        await get().fetchDoctorAvailability();
       },
 
       resetStore: () => set({ orders: [], intakeFormData: {} }),

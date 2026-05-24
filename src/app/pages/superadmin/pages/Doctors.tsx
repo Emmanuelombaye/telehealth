@@ -8,7 +8,7 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
 import { supabase } from "../../../../lib/supabaseClient";
-import { useAuthStore } from "../../../../lib/auth-store";
+import { inviteDoctor, updateDoctorProfile, normalizeLicensedStates } from "../../../../lib/doctorInvite";
 import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
 import { toast } from "sonner";
 
@@ -38,11 +38,15 @@ function initials(name: string) {
 }
 
 export function SuperAdminDoctorsPage() {
-  const user = useAuthStore(s => s.user);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [editDoc, setEditDoc] = useState<DoctorRow | null>(null);
   const [editCalUrl, setEditCalUrl] = useState("");
+  const [editStates, setEditStates] = useState("");
+  const [editSpecialty, setEditSpecialty] = useState("");
+  const [editNpi, setEditNpi] = useState("");
+  const [editCredentials, setEditCredentials] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const [provisionCredentials, setProvisionCredentials] = useState<{ email: string; temp_password?: string } | null>(null);
   const [search, setSearch] = useState("");
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,66 +163,102 @@ export function SuperAdminDoctorsPage() {
       toast.error("Please enter a valid email address.");
       return;
     }
+    if (!invStates.trim()) {
+      toast.error("Licensed states are required (e.g. TX, CA, NY).");
+      return;
+    }
     setSubmitting(true);
     try {
-      const invitePromise = supabase.from('doctor_invitations').insert([{
-        invited_by: user?.id || null,
-        email: invEmail.trim().toLowerCase(),
-        full_name: invFullName.trim(),
+      const result = await inviteDoctor({
+        email: invEmail,
+        full_name: invFullName,
         specialty: invSpecialty || null,
         npi_number: invNpi || null,
         credentials: invCredentials || null,
-        licensed_states: invStates || null,
+        licensed_states: invStates,
         calendly_url: invCalendly || null,
-        status: 'pending',
-      }]);
+      });
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Database request timed out. Please verify that the 'doctor_invitations' table exists and is not locked.")), 10000)
-      );
+      if (result.temp_password) {
+        setProvisionCredentials({ email: result.email, temp_password: result.temp_password });
+        toast.success(`Doctor account created for ${result.email}`);
+      } else if (result.already_existed) {
+        toast.success(`Updated existing doctor profile for ${result.email}`);
+      } else {
+        toast.success(`Doctor provisioned: ${result.email}`);
+      }
 
-      const { error } = await Promise.race([invitePromise, timeoutPromise]) as any;
-      if (error) throw error;
-      
-      toast.success(`Invitation sent to ${invEmail}`);
       resetInviteForm();
       setShowInviteModal(false);
       fetchDoctors();
     } catch (err: any) {
       console.error('[Doctors] invite failed:', err);
-      toast.error(err.message || "Failed to send invitation.");
+      toast.error(err.message || "Failed to provision doctor.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleSaveDoctorCalendar = async () => {
-    if (!editDoc || editSaving) return;
-    const url = editCalUrl.trim();
-    if (url && !/^https?:\/\//i.test(url)) {
-      toast.error("Calendar URL must start with http:// or https://");
+  const handleProvisionPending = async (doc: DoctorRow) => {
+    if (submitting || doc.source !== "invitation") return;
+    if (!doc.licensed_states?.trim()) {
+      toast.error("Add licensed states on the invitation row before provisioning.");
       return;
     }
+    setSubmitting(true);
+    try {
+      const result = await inviteDoctor({
+        email: doc.email,
+        full_name: doc.name,
+        specialty: doc.specialty,
+        npi_number: doc.npi,
+        credentials: doc.credentials,
+        licensed_states: doc.licensed_states,
+        calendly_url: doc.calendly_url ?? null,
+      });
+      if (result.temp_password) {
+        setProvisionCredentials({ email: result.email, temp_password: result.temp_password });
+      }
+      toast.success(`Account ready for ${doc.email}`);
+      fetchDoctors();
+    } catch (err: any) {
+      toast.error(err.message || "Could not provision account.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSaveDoctorProfile = async () => {
+    if (!editDoc || editSaving || editDoc.source !== "profile") return;
     setEditSaving(true);
     try {
-      const { error } = await supabase.from("profiles").update({ calendly_url: url || null }).eq("id", editDoc.id);
-      if (error) throw error;
-      toast.success("Calendar link updated.");
+      await updateDoctorProfile(editDoc.id, {
+        licensed_states: editStates,
+        specialty: editSpecialty || null,
+        npi_number: editNpi || null,
+        credentials: editCredentials || null,
+        calendly_url: editCalUrl.trim() || null,
+      });
+      toast.success("Doctor profile updated.");
       setEditDoc(null);
       fetchDoctors();
     } catch (err: any) {
-      toast.error(err.message || "Could not save calendar link.");
+      toast.error(err.message || "Could not save profile.");
     } finally {
       setEditSaving(false);
     }
   };
 
-  const openDoctorCalendarEditor = (doc: DoctorRow) => {
+  const openDoctorEditor = (doc: DoctorRow) => {
     if (doc.source !== "profile") {
-      toast.message("Pending invitations use the invite form. Accept the invite first, then edit the profile.");
+      toast.message("Use “Create account” on pending invitations, or invite again with licensed states.");
       return;
     }
     setEditCalUrl(doc.calendly_url?.trim() || "");
+    setEditStates(doc.licensed_states?.trim() || "");
+    setEditSpecialty(doc.specialty || "");
+    setEditNpi(doc.npi || "");
+    setEditCredentials(doc.credentials || "");
     setEditDoc(doc);
   };
 
@@ -250,7 +290,7 @@ export function SuperAdminDoctorsPage() {
       <SuperAdminShell
         eyebrow="Clinical network"
         title="Doctors & invitations"
-        description="Merged view of `profiles` (role doctor) and pending `doctor_invitations`. Revoke and invite handlers are unchanged."
+        description="Invite creates a live auth account plus doctor profile (not just an invitation row). Edit licensed states and Calendly after onboarding."
         actions={
           <Button
             type="button"
@@ -378,19 +418,30 @@ export function SuperAdminDoctorsPage() {
                         ) : doc.source === "profile" ? (
                           <p className="mt-2 text-[10px] text-amber-700">No Cal/Calendly link — add one so patients can book video visits.</p>
                         ) : null}
+                        {doc.source === "invitation" && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={submitting}
+                            onClick={() => void handleProvisionPending(doc)}
+                            className="mt-2 h-8 rounded-lg bg-emerald-600 px-3 text-xs text-white hover:bg-emerald-700"
+                          >
+                            Create account
+                          </Button>
+                        )}
                         <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
                           <span className="flex max-w-[55%] items-center gap-1 text-[11px] text-slate-500">
                             <Globe className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{doc.licensed_states || "—"}</span>
+                            <span className="truncate">{doc.licensed_states ? normalizeLicensedStates(doc.licensed_states) : "—"}</span>
                           </span>
                           <div className="flex gap-1">
                             <Button
                               size="sm"
                               variant="ghost"
                               type="button"
-                              onClick={() => openDoctorCalendarEditor(doc)}
+                              onClick={() => openDoctorEditor(doc)}
                               className="h-8 w-8 rounded-lg p-0 text-slate-500 hover:text-slate-900"
-                              aria-label="Edit calendar link"
+                              aria-label="Edit doctor profile"
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>
@@ -559,7 +610,7 @@ export function SuperAdminDoctorsPage() {
                 <div className="mt-8 p-6 bg-slate-50 rounded-3xl border border-slate-100 flex items-start gap-4">
                   <ShieldCheck className="h-5 w-5 text-[#0a2e1f] shrink-0 mt-0.5" />
                   <p className="text-[11px] leading-relaxed text-slate-500 font-medium">
-                    By inviting this professional, you confirm they are authorized to issue prescriptions under your clinical governance. Credentials will be verified against state records.
+                    This creates a Supabase auth user and doctor profile immediately. Share the one-time password with the clinician so they can sign in and change it. Licensed states are required for patient assignment.
                   </p>
                 </div>
 
@@ -579,7 +630,7 @@ export function SuperAdminDoctorsPage() {
                    >
                      {submitting ? (
                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Sending...</>
-                     ) : "Send Invitation"}
+                     ) : "Create doctor account"}
                    </Button>
                 </div>
               </div>
@@ -606,7 +657,7 @@ export function SuperAdminDoctorsPage() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Booking calendar</h3>
+                  <h3 className="text-lg font-semibold text-slate-900">Edit doctor</h3>
                   <p className="mt-1 text-sm text-slate-500">{editDoc.name}</p>
                 </div>
                 <button
@@ -619,18 +670,58 @@ export function SuperAdminDoctorsPage() {
                   <X className="h-5 w-5" />
                 </button>
               </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Licensed states</label>
+                  <input
+                    value={editStates}
+                    onChange={(e) => setEditStates(e.target.value.toUpperCase())}
+                    placeholder="TX, CA, NY"
+                    className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Specialty</label>
+                  <select
+                    value={editSpecialty}
+                    onChange={(e) => setEditSpecialty(e.target.value)}
+                    className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+                  >
+                    <option value="">—</option>
+                    {SPECIALTIES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wide text-slate-400">NPI</label>
+                  <input
+                    value={editNpi}
+                    onChange={(e) => setEditNpi(e.target.value.replace(/[^0-9]/g, "").slice(0, 10))}
+                    className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Credentials</label>
+                  <input
+                    value={editCredentials}
+                    onChange={(e) => setEditCredentials(e.target.value)}
+                    className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+                  />
+                </div>
+              </div>
               <label className="mt-4 block text-[10px] font-bold uppercase tracking-wide text-slate-400">
                 Cal.com or Calendly URL
               </label>
               <textarea
                 value={editCalUrl}
                 onChange={(e) => setEditCalUrl(e.target.value)}
-                rows={3}
+                rows={2}
                 placeholder="https://cal.com/your-org/video-intake"
                 className="mt-1 w-full resize-y rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-[#0a2e1f] focus:outline-none focus:ring-2 focus:ring-[#0a2e1f]/15"
               />
               <p className="mt-2 text-xs text-slate-500">
-                Paste the clinician&apos;s public booking link. Patients see this in enrollment and appointment emails when a video visit is required.
+                Licensed states drive checkout doctor matching. Calendar URL is used for video enrollment.
               </p>
               <div className="mt-6 flex justify-end gap-2">
                 <Button
@@ -645,10 +736,51 @@ export function SuperAdminDoctorsPage() {
                 <Button
                   type="button"
                   disabled={editSaving}
-                  onClick={() => void handleSaveDoctorCalendar()}
+                  onClick={() => void handleSaveDoctorProfile()}
                   className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
                 >
                   {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {provisionCredentials && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setProvisionCredentials(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="relative z-[111] w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold text-slate-900">Sign-in credentials</h3>
+              <p className="mt-2 text-sm text-slate-600">
+                Share this once with <span className="font-medium">{provisionCredentials.email}</span>. They should change the password after first login.
+              </p>
+              {provisionCredentials.temp_password ? (
+                <div className="mt-4 rounded-xl bg-slate-50 p-4 font-mono text-sm text-slate-900 ring-1 ring-slate-200">
+                  {provisionCredentials.temp_password}
+                </div>
+              ) : (
+                <p className="mt-4 text-sm text-amber-800">Account already existed — no new password was generated.</p>
+              )}
+              <div className="mt-6 flex justify-end">
+                <Button
+                  type="button"
+                  onClick={() => setProvisionCredentials(null)}
+                  className="rounded-xl bg-slate-900 text-white hover:bg-slate-800"
+                >
+                  Done
                 </Button>
               </div>
             </motion.div>
