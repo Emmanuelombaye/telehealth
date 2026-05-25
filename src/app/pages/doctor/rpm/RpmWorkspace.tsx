@@ -5,6 +5,7 @@ import { useRpmData } from "./useRpmData";
 import { RpmKpiStrip } from "../../../components/doctor/rpm/RpmKpiStrip";
 import { RpmPatientPicker } from "../../../components/doctor/rpm/RpmPatientPicker";
 import { RpmInlineCharts } from "../../../components/doctor/rpm/RpmInlineCharts";
+import { RpmMonitorCard } from "../../../components/doctor/rpm/RpmMonitorCard";
 import { rpmGlass } from "../../../../lib/rpmEnterpriseUi";
 import type { RpmLiveRow } from "../../../../lib/rpmCommandCenter";
 type Props = {
@@ -36,6 +37,7 @@ export function RpmWorkspace({
     getPatientReadings,
     missingTable,
     setWallMode,
+    escalatePatientKey,
   } = useRpmData();
 
   const rows = filterRows ? filterRows(allRows) : allRows;
@@ -83,6 +85,27 @@ export function RpmWorkspace({
       </div>
 
       {showKpis && <RpmKpiStrip />}
+
+      {showKpis && rows.length > 0 && (
+        <div className="px-2 sm:px-4">
+          <p className="text-[10px] font-black uppercase tracking-widest rpm-muted mb-2 px-1">Live patient monitors</p>
+          <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar snap-x snap-mandatory">
+            {rows.slice(0, 16).map((row) => (
+              <div key={row.patient.key} className="min-w-[220px] max-w-[240px] shrink-0 snap-start">
+                <RpmMonitorCard
+                  row={row}
+                  compact
+                  onOpen={() => {
+                    selectPatient(row.patient.key);
+                    openPatientDrawer(row.patient.key);
+                  }}
+                  onEscalate={() => escalatePatientKey(row.patient.key)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-3 lg:grid-cols-12 px-2 sm:px-4">
         <div className="lg:col-span-4 xl:col-span-3">

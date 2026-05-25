@@ -1,4 +1,4 @@
-import { ChevronRight, User } from "lucide-react";
+import { ChevronRight, User, Heart, Droplets } from "lucide-react";
 import { cn, Button } from "../../ui/shared.tsx";
 import { rpmGlass, RPM_STATUS_TONE, patientInitials } from "../../../../lib/rpmEnterpriseUi";
 import type { RpmLiveRow } from "../../../../lib/rpmCommandCenter";
@@ -48,8 +48,15 @@ export function RpmPatientPicker({ rows, selectedKey, onSelect, onOpenChart }: P
                     <p className={cn("text-sm font-bold truncate", active ? "text-white" : "rpm-text")}>
                       {row.patient.patient_name}
                     </p>
-                    <p className={cn("text-[10px] truncate", active ? "text-emerald-200" : "rpm-muted")}>
-                      {row.heartRate} · {row.bloodPressure}
+                    <p className={cn("text-[10px] truncate flex items-center gap-2", active ? "text-emerald-200" : "rpm-muted")}>
+                      <span className="inline-flex items-center gap-0.5">
+                        <Heart className={cn("h-2.5 w-2.5", active ? "text-rose-200" : "text-rose-500")} />
+                        {row.heartRate}
+                      </span>
+                      <span className="inline-flex items-center gap-0.5">
+                        <Droplets className={cn("h-2.5 w-2.5", active ? "text-sky-200" : "text-sky-500")} />
+                        {row.oxygen}
+                      </span>
                     </p>
                   </div>
                   <span className={cn("h-2 w-2 rounded-full shrink-0", tone.dot)} />

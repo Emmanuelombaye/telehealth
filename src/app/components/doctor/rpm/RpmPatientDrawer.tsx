@@ -50,6 +50,7 @@ import {
   type RpmTimelineEvent,
 } from "../../../../lib/rpmCommandCenter";
 import { CONNECTIVITY_STYLES } from "../../../../lib/doctorRpm";
+import { RpmEcgWave, parseBpmFromDisplay } from "./RpmEcgWave";
 
 type Props = {
   open: boolean;
@@ -192,6 +193,11 @@ export function RpmPatientDrawer({
         </header>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar px-5 py-4 space-y-5">
+          <div className="rounded-2xl border border-slate-200/80 bg-[#030712]/95 p-3 rpm-dark:border-slate-700/60">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2">Live cardiac rhythm</p>
+            <RpmEcgWave points={row.ecgWaveform} bpm={parseBpmFromDisplay(row.heartRate)} className="min-h-[40px]" />
+          </div>
+
           <section className="grid grid-cols-2 gap-3">
             <Card className={cn(doctorSurfaceCard, "col-span-2")}>
               <CardContent className="p-4 grid sm:grid-cols-3 gap-4 text-sm">

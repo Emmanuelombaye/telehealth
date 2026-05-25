@@ -44,7 +44,13 @@ export function RpmKpiStrip() {
   const trend = sparklineFromReadings(readings, "hr");
 
   const cards = [
-    { label: "Active RPM patients", value: stats.activePatients, icon: Users, pulse: false },
+    {
+      label: "Active RPM patients",
+      value: stats.activePatients,
+      icon: Users,
+      pulse: stats.activePatients > 0,
+      live: stats.activePatients > 0,
+    },
     { label: "Critical alerts", value: stats.criticalAlerts, icon: AlertTriangle, pulse: stats.criticalAlerts > 0 },
     { label: "Devices connected", value: stats.devicesConnected, icon: Watch, pulse: false },
     { label: "High-risk patients", value: stats.highRiskPatients, icon: Brain, pulse: stats.highRiskPatients > 0 },
@@ -71,9 +77,19 @@ export function RpmKpiStrip() {
             </div>
             <MiniTrend values={trend} />
           </div>
-          <p className="mt-3 text-[10px] font-bold uppercase tracking-wider rpm-muted">{c.label}</p>
-          <p className="text-2xl font-black rpm-text tracking-tight">{c.value}</p>
-          {c.pulse && <span className="absolute top-3 right-3 h-2 w-2 rounded-full bg-red-500 animate-ping" />}
+          <p className="mt-3 text-[10px] font-bold uppercase tracking-wider rpm-muted flex items-center gap-1.5">
+            {c.label}
+            {"live" in c && c.live && (
+              <span className="inline-flex items-center gap-0.5 text-[8px] font-black text-emerald-600 rpm-dark:text-emerald-400 normal-case tracking-normal">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 rpm-live-dot" />
+                Live
+              </span>
+            )}
+          </p>
+          <p className="text-2xl font-black rpm-text tracking-tight tabular-nums">{c.value}</p>
+          {c.pulse && !("live" in c && c.live) && (
+            <span className="absolute top-3 right-3 h-2 w-2 rounded-full bg-red-500 animate-ping" />
+          )}
         </div>
       ))}
     </div>

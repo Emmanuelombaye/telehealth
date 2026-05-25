@@ -22,7 +22,7 @@ export const rpmChartCard = cn(
   "rpm-dark:bg-slate-900/80 rpm-dark:border-slate-700/60",
 );
 
-export const rpmAxisTick = { fill: RPM_CHART.axis, fontSize: 10, fontWeight: 500 };
+export const rpmAxisTick = { fill: "var(--rpm-chart-axis, #94a3b8)", fontSize: 10, fontWeight: 500 };
 export const rpmAxisProps = {
   tick: rpmAxisTick,
   axisLine: false,
@@ -30,7 +30,7 @@ export const rpmAxisProps = {
   dy: 4,
 };
 export const rpmGridProps = {
-  stroke: RPM_CHART.grid,
+  stroke: "var(--rpm-chart-grid, #eef2f6)",
   vertical: false,
   strokeDasharray: "0",
 };
@@ -45,6 +45,14 @@ export function RpmChartGradients() {
       <linearGradient id="rpmAreaSoft" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#A78BFA" stopOpacity={0.35} />
         <stop offset="95%" stopColor="#A78BFA" stopOpacity={0} />
+      </linearGradient>
+      <linearGradient id="rpmAreaHeart" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#10b981" stopOpacity={0.5} />
+        <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+      </linearGradient>
+      <linearGradient id="rpmAreaTemp" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#f97316" stopOpacity={0.4} />
+        <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
       </linearGradient>
       <linearGradient id="rpmAreaSys" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.4} />
@@ -98,6 +106,7 @@ export function RpmChartPanel({
     <div
       className={cn(
         rpmChartCard,
+        "rpm-chart-panel",
         featured ? "min-h-[260px] lg:min-h-[280px]" : "min-h-[220px]",
       )}
     >
