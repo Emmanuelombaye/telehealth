@@ -18,7 +18,7 @@ import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 import { motion, AnimatePresence } from "framer-motion";
 
-type Role = "patient" | "doctor" | "admin" | "superadmin" | "affiliate";
+type Role = "patient" | "doctor" | "admin" | "superadmin" | "affiliate" | "pharmacy";
 
 interface SidebarProps {
   role: Role;
@@ -77,6 +77,9 @@ const menuConfig: Record<Role, any[]> = {
     { group: "SALES & CHANNELS", icon: CreditCard, label: "Finances", href: "/admin/finance" },
     { group: "SALES & CHANNELS", icon: Tag, label: "Discounts", href: "/admin/discounts" },
     { group: "SALES & CHANNELS", icon: Share2, label: "Affiliates", href: "/admin/affiliates" },
+    { group: "SALES & CHANNELS", icon: Users, label: "Users", href: "/admin/users" },
+    { group: "TOOLS & SERVICES", icon: Wrench, label: "Tools", href: "/admin/tools" },
+    { group: "BOTTOM", icon: Bell, label: "Notifications", href: "/admin/notifications" },
     { group: "BOTTOM", icon: Settings, label: "Settings", href: "/admin/settings" },
   ],
   superadmin: [
@@ -90,6 +93,7 @@ const menuConfig: Record<Role, any[]> = {
     { icon: CreditCard, label: "Finance", href: "/superadmin/finance" },
     { icon: ScrollText, label: "Audit Logs", href: "/superadmin/audit" },
     { icon: ShieldCheck, label: "Security", href: "/superadmin/security" },
+    { icon: Bell, label: "Notifications", href: "/superadmin/notifications" },
     { icon: Settings, label: "Platform Settings", href: "/superadmin/settings" },
   ],
   affiliate: [
@@ -99,6 +103,13 @@ const menuConfig: Record<Role, any[]> = {
     { icon: ImageIcon, label: "Marketing Assets", href: "/affiliate/assets" },
     { icon: User, label: "Profile", href: "/affiliate/settings" },
   ],
+  pharmacy: [
+    { icon: Home, label: "Overview", href: "/pharmacy" },
+    { icon: Package, label: "Orders", href: "/pharmacy/orders" },
+    { icon: Truck, label: "Shipping", href: "/pharmacy/shipping" },
+    { icon: FlaskConical, label: "Inventory", href: "/pharmacy/inventory" },
+    { icon: Settings, label: "Settings", href: "/pharmacy/settings" },
+  ],
 };
 
 const roleColors: Record<Role, string> = {
@@ -107,6 +118,7 @@ const roleColors: Record<Role, string> = {
   admin: "bg-emerald-800",
   superadmin: "bg-emerald-950",
   affiliate: "bg-[#0A2E1F]",
+  pharmacy: "bg-slate-800",
 };
 
 export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {

@@ -7,8 +7,8 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "node scripts/vercel-build.mjs",
-    "dev": "vite",
+    "build": "node init && node scripts/vercel-build.mjs",
+    "dev": "node init && vite",
     "preview": "vite preview",
     "check:patient-e2e": "node scripts/patient-e2e-check.mjs",
     "check:engineering": "node scripts/engineering-check.mjs",
@@ -56,6 +56,7 @@
     "input-otp": "1.4.2",
     "jspdf": "^4.2.1",
     "lucide-react": "0.487.0",
+    "node-fetch": "^3.3.2",
     "pg": "^8.20.0",
     "react": "18.3.1",
     "react-day-picker": "8.10.1",

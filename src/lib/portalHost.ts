@@ -12,6 +12,7 @@ export const SUBDOMAIN_PORTAL_PATH: Record<string, string> = {
   doctor: "/doctor",
   patient: "/patient",
   affiliate: "/affiliate",
+  pharmacy: "/pharmacy",
 };
 
 export function shouldApplySubdomainPortalMap(hostname: string): boolean {
