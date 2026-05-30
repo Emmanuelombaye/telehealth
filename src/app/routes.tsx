@@ -86,6 +86,7 @@ import {
 
 import { NotFoundPage } from "./pages/NotFound";
 import { AuthPage } from "./pages/auth/AuthPage";
+import { OsRegisterRedirect } from "./pages/auth/OsRegisterRedirect";
 import { ResetPasswordPage } from "./pages/auth/ResetPassword";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -149,7 +150,9 @@ export const router = createBrowserRouter([
         ]
       },
 
-      // Auth (Isolated)
+      // Auth (Isolated) — /login and /auth/register match Peak Health OS marketing site
+      { path: "login", element: <AuthPage portal="patient" /> },
+      { path: "auth/register", element: <OsRegisterRedirect /> },
       { path: "patient/login", element: <AuthPage portal="patient" /> },
       { path: "doctor/login", element: <AuthPage portal="doctor" /> },
       { path: "providers/login", element: <AuthPage portal="doctor" /> },
