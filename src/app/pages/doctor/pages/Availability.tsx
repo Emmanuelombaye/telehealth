@@ -58,7 +58,11 @@ export function DoctorAvailabilityPage() {
           .from('doctor_schedules')
           .select('*')
           .eq('doctor_id', user.id)
-          .single();
+          .maybeSingle();
+
+        if (error && error.code !== 'PGRST116') {
+          console.warn('Schedule load error:', error);
+        }
 
         if (data) {
           const savedSchedule = data.schedule || defaultSchedule;
