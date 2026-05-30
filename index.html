@@ -30,20 +30,33 @@
       #root { height: 100%; }
       * { -webkit-tap-highlight-color: transparent; }
     </style>
-    <!-- GLOBAL CHUNK ERROR AUTO-RECOVERY -->
+    <!-- GLOBAL CHUNK ERROR AUTO-RECOVERY (stale deploy → HTML served as JS) -->
     <script>
+      function peakHealthMaybeReloadForChunkError(detail) {
+        var text = (detail && (detail.message || detail.reason || detail)) || '';
+        if (typeof text !== 'string') text = String(text);
+        var mimeFailure =
+          text.indexOf('MIME type') > -1 ||
+          text.indexOf('text/html') > -1 ||
+          text.indexOf('module script') > -1 ||
+          text.indexOf('dynamically imported module') > -1 ||
+          text.indexOf('ChunkLoadError') > -1 ||
+          text.indexOf('Importing a module script failed') > -1;
+        if (!mimeFailure) return;
+        var storageKey = 'chunk-reload-' + text.slice(0, 120);
+        if (window.sessionStorage.getItem(storageKey)) return;
+        console.warn('[Auto-Recovery] Build chunk mismatch — reloading…', text);
+        window.sessionStorage.setItem(storageKey, 'true');
+        window.location.reload();
+      }
+
       window.addEventListener('error', function(e) {
-        var msg = e.message || '';
-        if (msg.indexOf('Failed to fetch dynamically imported module') > -1 || msg.indexOf('ChunkLoadError') > -1) {
-          var chunkUrl = msg.split(': ').pop() || 'unknown-chunk';
-          var storageKey = 'chunk-reload-' + chunkUrl;
-          if (!window.sessionStorage.getItem(storageKey)) {
-            console.warn('[Auto-Recovery] Dynamic import failed, reloading page...', chunkUrl);
-            window.sessionStorage.setItem(storageKey, 'true');
-            window.location.reload();
-          }
-        }
+        peakHealthMaybeReloadForChunkError(e.message || e.error || '');
       }, true);
+
+      window.addEventListener('unhandledrejection', function(e) {
+        peakHealthMaybeReloadForChunkError(e.reason || '');
+      });
     </script>
   </head>
   <body>

@@ -1,30 +1,49 @@
 /**
- * Utility to handle dynamic import failures in production.
- * This usually happens when a new version is deployed and the user's browser
- * is still trying to load a hashed JS chunk from the old version.
+ * Handle dynamic import failures in production (stale hashed chunks after deploy).
+ * When a missing chunk 404s, Vercel SPA fallback can return index.html → MIME type error.
  */
-export function lazyRetry<T extends { default: any }>(componentImport: () => Promise<T>): Promise<T> {
-  return componentImport().catch((error) => {
-    // Check if the error is a "Failed to fetch" error (Chrome/Firefox/Safari vary slightly)
-    const errorMessage = error?.message || '';
-    const isChunkLoadError = 
-      error?.name === 'ChunkLoadError' || 
-      /failed to fetch/i.test(errorMessage) ||
-      /dynamically imported module/i.test(errorMessage);
+function isChunkLoadFailure(error: unknown): boolean {
+  const message =
+    error instanceof Error ? error.message : typeof error === "string" ? error : "";
+  const name = error instanceof Error ? error.name : "";
 
-    if (isChunkLoadError) {
-      // Extract the failed chunk URL or hash to key the reload once per unique asset
-      const chunkUrl = errorMessage.split(': ').pop() || 'unknown-chunk';
-      const storageKey = `chunk-reload-${chunkUrl}`;
-      const hasReloaded = window.sessionStorage.getItem(storageKey);
-      
-      if (!hasReloaded) {
-        console.warn("[lazyRetry] Chunk load failure detected. Reloading page to fetch latest build asset map...", chunkUrl);
-        window.sessionStorage.setItem(storageKey, 'true');
-        window.location.reload();
-      }
+  return (
+    name === "ChunkLoadError" ||
+    /failed to fetch dynamically imported module/i.test(message) ||
+    /failed to fetch/i.test(message) ||
+    /loading chunk/i.test(message) ||
+    /importing a module script failed/i.test(message) ||
+    /mime type/i.test(message) ||
+    /text\/html/i.test(message) ||
+    /expected a javascript-or-wasm module script/i.test(message)
+  );
+}
+
+function reloadOncePerChunk(error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  const chunkKey = message.slice(0, 200) || "unknown-chunk";
+  const storageKey = `chunk-reload-${chunkKey}`;
+  if (window.sessionStorage.getItem(storageKey)) return;
+
+  console.warn("[lazyRetry] Stale or missing build chunk — reloading for fresh asset map…", chunkKey);
+  window.sessionStorage.setItem(storageKey, "true");
+  window.location.reload();
+}
+
+export function lazyRetry<T extends { default: unknown }>(
+  componentImport: () => Promise<T>,
+): Promise<T> {
+  return componentImport().catch((error: unknown) => {
+    if (isChunkLoadFailure(error)) {
+      reloadOncePerChunk(error);
     }
-
     throw error;
   });
+}
+
+/** Global handler for script tag / dynamic import MIME failures (see index.html). */
+export function handleGlobalChunkFailure(reason: unknown): void {
+  if (isChunkLoadFailure(reason)) {
+    reloadOncePerChunk(reason);
+  }
 }

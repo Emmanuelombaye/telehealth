@@ -24,18 +24,55 @@
     },
     {
       "source": "/",
+      "has": [{ "type": "host", "value": "doctors\\.(?<domain>.+)" }],
+      "destination": "/providers",
+      "permanent": false
+    },
+    {
+      "source": "/",
       "has": [{ "type": "host", "value": "patient\\.(?<domain>.+)" }],
       "destination": "/patient",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "affiliate\\.(?<domain>.+)" }],
+      "destination": "/affiliate",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "pharmacy\\.(?<domain>.+)" }],
+      "destination": "/pharmacy/login",
       "permanent": false
     }
   ],
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "handle": "filesystem" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    },
     {
       "source": "/patient/(.*)",
       "headers": [
@@ -46,6 +83,14 @@
     },
     {
       "source": "/doctor/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "X-Portal", "value": "doctor" }
+      ]
+    },
+    {
+      "source": "/providers/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
         { "key": "Pragma", "value": "no-cache" },
@@ -77,9 +122,11 @@
       ]
     },
     {
-      "source": "/assets/(.*)",
+      "source": "/affiliate/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=3600" }
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "X-Portal", "value": "affiliate" }
       ]
     }
   ]
