@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from './supabaseClient';
 import { User, Session } from '@supabase/supabase-js';
 import { hasForcePatientPortalIntent } from './patientPortalIntent';
+import { clearDemoAuth, demoUserFromStorage, readStoredDemoAuth } from './staffDemoAuth';
 
 export type Role =
   | 'patient'
@@ -125,7 +126,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
         });
       } else {
-        set({ session: null, user: null, role: null, brandId: null, isLoading: false });
+        const demoUser = demoUserFromStorage();
+        if (demoUser) {
+          set({
+            session: null,
+            user: demoUser,
+            role: readStoredDemoAuth()?.role ?? null,
+            brandId: null,
+            isLoading: false,
+          });
+        } else {
+          set({ session: null, user: null, role: null, brandId: null, isLoading: false });
+        }
       }
 
       supabase.auth.onAuthStateChange((event, newSession) => {
@@ -142,7 +154,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             }
           });
         } else {
-          set({ session: null, user: null, role: null, brandId: null, isLoading: false });
+          const demoUser = demoUserFromStorage();
+          if (demoUser) {
+            set({
+              session: null,
+              user: demoUser,
+              role: readStoredDemoAuth()?.role ?? null,
+              brandId: null,
+              isLoading: false,
+            });
+          } else {
+            set({ session: null, user: null, role: null, brandId: null, isLoading: false });
+          }
         }
       });
     } catch (error) {
@@ -152,7 +175,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    localStorage.removeItem('peak_health_dev_role');
+    clearDemoAuth();
     await supabase.auth.signOut();
     set({ session: null, user: null, role: null, brandId: null });
   },

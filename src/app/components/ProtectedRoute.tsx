@@ -6,6 +6,7 @@ import {
   clearForcePatientPortalIntent,
   hasForcePatientPortalIntent,
 } from '../../lib/patientPortalIntent';
+import { readStoredDemoAuth } from '../../lib/staffDemoAuth';
 
 const portalLoginUrl = (path: string) => {
   if (path.startsWith('/doctor')) return '/doctor/login';
@@ -14,7 +15,8 @@ const portalLoginUrl = (path: string) => {
   if (path.startsWith('/admin')) return '/admin/login';
   if (path.startsWith('/superadmin')) return '/superadmin/login';
   if (path.startsWith('/affiliate')) return '/affiliate/login';
-  return '/patient/login';
+  if (path.startsWith('/patient')) return '/login';
+  return '/login';
 };
 
 export function AuthLoadingScreen() {
@@ -37,8 +39,9 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
   const redirected = useRef(false);
 
   const forcePatient = hasForcePatientPortalIntent();
-  const effectiveRole = forcePatient ? 'patient' : user ? role : null;
-  const isAuthenticated = !!user;
+  const demoAuth = readStoredDemoAuth();
+  const effectiveRole = forcePatient ? 'patient' : user ? role : demoAuth?.role ?? null;
+  const isAuthenticated = !!user || !!demoAuth?.role;
 
   // Memoize allowed roles check to prevent infinite loops from unstable array props
   const rolesKey = allowedRoles?.join(',') || '';

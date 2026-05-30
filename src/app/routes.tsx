@@ -25,6 +25,7 @@ const LongevityPage = lazy(() => lazyRetry(() => import("./pages/treatments").th
 const BioOptimizerPage = lazy(() => lazyRetry(() => import("./pages/treatments").then(m => ({ default: m.BioOptimizerPage }))));
 const ClinicalResearchPage = lazy(() => lazyRetry(() => import("./pages/authority/ClinicalResearch").then(m => ({ default: m.ClinicalResearchPage }))));
 const SupportHubPage = lazy(() => lazyRetry(() => import("./pages/SupportHub").then(m => ({ default: m.SupportHubPage }))));
+const PortalsPage = lazy(() => lazyRetry(() => import("./pages/Portals").then(m => ({ default: m.PortalsPage }))));
 const HowItWorksPage = lazy(() => lazyRetry(() => import("./pages/HowItWorks").then(m => ({ default: m.HowItWorksPage }))));
 const FrequentlyAskedQuestionsPage = lazy(() => lazyRetry(() => import("./pages/FAQ").then(m => ({ default: m.FrequentlyAskedQuestionsPage }))));
 const ExploreTreatmentsPage = lazy(() => lazyRetry(() => import("./pages/ExploreTreatments").then(m => ({ default: m.ExploreTreatmentsPage }))));
@@ -165,7 +166,8 @@ export const router = createBrowserRouter([
         element: <PublicLayout />,
         children: [
           { index: true, Component: LandingPage },
-          
+          { path: "portals", Component: PortalsPage },
+
           // Treatment Hubs (Public)
           { path: "treatments/weight-loss", Component: WeightLossPage },
           { path: "treatments/sexual-wellness", Component: SexualWellnessPage },
@@ -211,8 +213,8 @@ export const router = createBrowserRouter([
       { path: "admin/login", element: <AuthPage portal="admin" /> },
       { path: "superadmin/login", element: <AuthPage portal="superadmin" /> },
       { path: "affiliate/login", element: <AuthPage portal="affiliate" /> },
+      { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
       { path: "reset-password", Component: ResetPasswordPage },
-      // { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
 
       // Patient Shop flow (Standalone) — shareable steps: /patient/shop/checkout, /create-account, etc.
       { path: "patient/shop/:step", Component: PatientShopPage },

@@ -4,8 +4,13 @@ import { supabase } from "../../../lib/supabaseClient";
 import { useAuthStore, Role } from "../../../lib/auth-store";
 import { doctorPortalBaseFromPath } from "../../../lib/doctorPortalBase";
 import { Lock, Mail, AlertCircle, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import {
+  clearDemoAuth,
+  matchStaffDemo,
+  persistDemoAuth,
+} from "../../../lib/staffDemoAuth";
 
-type Portal = "patient" | "doctor" | "admin" | "superadmin" | "affiliate";
+type Portal = "patient" | "doctor" | "admin" | "superadmin" | "affiliate" | "pharmacy";
 
 export function AuthPage({ portal }: { portal: Portal }) {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot_password'>('login');
@@ -30,7 +35,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
     async function cleanup() {
       try {
-        localStorage.removeItem('peak_health_dev_role');
+        clearDemoAuth();
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
@@ -64,6 +69,8 @@ export function AuthPage({ portal }: { portal: Portal }) {
         return `/superadmin${buster}`;
       case 'affiliate':
         return `/affiliate${buster}`;
+      case 'pharmacy':
+        return `/pharmacy${buster}`;
       default:
         return `/patient${buster}`;
     }
@@ -115,11 +122,18 @@ export function AuthPage({ portal }: { portal: Portal }) {
         });
 
         if (signInError) {
+          const demo = matchStaffDemo(email, password);
+          if (demo) {
+            persistDemoAuth(demo);
+            await initialize();
+            navigate(portalTarget(portal), { replace: true });
+            return;
+          }
           throw signInError;
         }
         
         if (data.user) {
-          localStorage.removeItem('peak_health_dev_role');
+          clearDemoAuth();
 
           await initialize();
           const role = useAuthStore.getState().role;
@@ -145,9 +159,22 @@ export function AuthPage({ portal }: { portal: Portal }) {
             }
             if (
               portal === 'affiliate' &&
-              role !== 'affiliate'
+              role !== 'affiliate' &&
+              role !== 'super_admin'
             ) {
               setError("Access denied. Affiliate portal only.");
+              await supabase.auth.signOut();
+              await initialize();
+              return;
+            }
+            if (
+              portal === 'pharmacy' &&
+              role !== 'pharmacy' &&
+              role !== 'doctor' &&
+              role !== 'brand_admin' &&
+              role !== 'super_admin'
+            ) {
+              setError("Access denied. Pharmacy portal only.");
               await supabase.auth.signOut();
               await initialize();
               return;
