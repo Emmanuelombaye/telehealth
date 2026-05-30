@@ -1,3 +1,7 @@
+# =============================================================================
+# NOT FOR SUPABASE SQL EDITOR — this is a PowerShell terminal script.
+# Database fix SQL: scripts/sql/RUN_IN_SUPABASE_FIX_ALL_DATABASE.sql
+# =============================================================================
 # Deploy browser-invoked Supabase Edge Functions (fixes CORS preflight when verify_jwt=false in config.toml).
 # Requires: npx supabase login + project link, or SUPABASE_ACCESS_TOKEN + project ref.
 #
