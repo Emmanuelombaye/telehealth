@@ -1,5 +1,42 @@
-# Edge Functions — browser clients send OPTIONS without Authorization.
-# dispatch-prescription validates the doctor JWT inside the function on POST.
+# Browser clients send OPTIONS without Authorization.
+# With verify_jwt=true (default), Supabase gateway rejects preflight → CORS "not HTTP ok status".
+# Each function below validates the JWT inside the POST handler where required.
 
 [functions.dispatch-prescription]
+verify_jwt = false
+
+[functions.invite-doctor]
+verify_jwt = false
+
+[functions.assign-doctor]
+verify_jwt = false
+
+[functions.ai-medical-scribe]
+verify_jwt = false
+
+[functions.zoom-video-token]
+verify_jwt = false
+
+[functions.stripe-create-refund]
+verify_jwt = false
+
+[functions.create-payment-intent]
+verify_jwt = false
+
+[functions.send-otp]
+verify_jwt = false
+
+[functions.verify-otp]
+verify_jwt = false
+
+[functions.merge-scheduling-pending]
+verify_jwt = false
+
+[functions.stripe-attach-order]
+verify_jwt = false
+
+[functions.verify-identity]
+verify_jwt = false
+
+[functions.process-refund]
 verify_jwt = false

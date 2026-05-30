@@ -59,11 +59,17 @@ export async function inviteDoctor(payload: InviteDoctorPayload): Promise<Invite
     },
   });
 
+  const result = data as (InviteDoctorResult & { error?: string }) | null;
+
   if (error) {
-    throw new Error(error.message || "Could not provision doctor account.");
+    const fromBody = result?.error;
+    const msg =
+      fromBody ||
+      error.message ||
+      "Could not reach invite-doctor. Deploy the edge function and apply doctor_invites migration.";
+    throw new Error(msg);
   }
 
-  const result = data as InviteDoctorResult & { error?: string };
   if (result?.error) throw new Error(result.error);
   if (!result?.success) throw new Error("Doctor provisioning failed.");
 

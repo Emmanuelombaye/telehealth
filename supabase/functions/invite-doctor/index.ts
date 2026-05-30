@@ -4,20 +4,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-
-const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-api-version",
-};
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
+import { corsPreflightResponse, jsonResponse } from "../_shared/cors.ts";
 
 function normalizeLicensedStates(raw: string): string {
   return raw
@@ -36,12 +23,12 @@ function tempPassword(): string {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (req.method === "OPTIONS") return corsPreflightResponse();
+  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return json({ error: "Unauthorized" }, 401);
+    if (!authHeader) return jsonResponse({ error: "Unauthorized" }, 401);
 
     const userClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -53,7 +40,7 @@ serve(async (req) => {
       data: { user: caller },
       error: callerErr,
     } = await userClient.auth.getUser();
-    if (callerErr || !caller) return json({ error: "Unauthorized" }, 401);
+    if (callerErr || !caller) return jsonResponse({ error: "Unauthorized" }, 401);
 
     const { data: callerProfile } = await userClient
       .from("profiles")
@@ -61,8 +48,13 @@ serve(async (req) => {
       .eq("id", caller.id)
       .maybeSingle();
 
-    if (!callerProfile || callerProfile.role !== "super_admin") {
-      return json({ error: "Forbidden: super admin only" }, 403);
+    const callerRole =
+      callerProfile?.role ||
+      (caller.app_metadata as { role?: string } | undefined)?.role ||
+      (caller.user_metadata as { role?: string } | undefined)?.role;
+
+    if (callerRole !== "super_admin") {
+      return jsonResponse({ error: "Forbidden: super admin only" }, 403);
     }
 
     const body = await req.json();
@@ -73,26 +65,28 @@ serve(async (req) => {
     const licensed_states = normalizeLicensedStates(String(body.licensed_states || ""));
 
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      return json({ error: "Valid email is required" }, 400);
+      return jsonResponse({ error: "Valid email is required" }, 400);
     }
-    if (!full_name) return json({ error: "Full name is required" }, 400);
+    if (!full_name) return jsonResponse({ error: "Full name is required" }, 400);
     if (!licensed_states) {
-      return json({ error: "At least one licensed state is required (e.g. TX, CA)" }, 400);
+      return jsonResponse({ error: "At least one licensed state is required (e.g. TX, CA)" }, 400);
     }
 
     const calendly_url = body.calendly_url ? String(body.calendly_url).trim() : null;
     if (calendly_url && !/^https?:\/\//i.test(calendly_url)) {
-      return json({ error: "Calendar URL must start with http:// or https://" }, 400);
+      return jsonResponse({ error: "Calendar URL must start with http:// or https://" }, 400);
     }
 
     const specialty = body.specialty ? String(body.specialty).trim() : null;
     const npi_number = body.npi_number ? String(body.npi_number).trim() : null;
     const credentials = body.credentials ? String(body.credentials).trim() : null;
 
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    );
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    if (!serviceKey) {
+      return jsonResponse({ error: "Server misconfigured: missing service role key" }, 500);
+    }
+
+    const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", serviceKey);
 
     const { data: existingProfile } = await admin
       .from("profiles")
@@ -101,7 +95,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingProfile?.role && existingProfile.role !== "doctor") {
-      return json({ error: `Email already used by a ${existingProfile.role} account` }, 409);
+      return jsonResponse({ error: `Email already used by a ${existingProfile.role} account` }, 409);
     }
 
     let doctorId: string;
@@ -166,12 +160,17 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingInvite?.id) {
-      await admin.from("doctor_invitations").update(invitationPayload).eq("id", existingInvite.id);
+      const { error: updateErr } = await admin
+        .from("doctor_invitations")
+        .update(invitationPayload)
+        .eq("id", existingInvite.id);
+      if (updateErr) throw updateErr;
     } else {
-      await admin.from("doctor_invitations").insert(invitationPayload);
+      const { error: insertErr } = await admin.from("doctor_invitations").insert(invitationPayload);
+      if (insertErr) throw insertErr;
     }
 
-    return json({
+    return jsonResponse({
       success: true,
       doctor_id: doctorId,
       email,
@@ -180,6 +179,6 @@ serve(async (req) => {
     });
   } catch (err) {
     console.error("invite-doctor error:", err);
-    return json({ error: err instanceof Error ? err.message : "Internal error" }, 500);
+    return jsonResponse({ error: err instanceof Error ? err.message : "Internal error" }, 500);
   }
 });
