@@ -11,6 +11,7 @@ import {
   Zap,
 } from "lucide-react";
 import {
+  AFFILIATE_LOGIN_PATH,
   BRAND_LOGOS,
   CLINICAL_FLOW_STEPS,
   PLATFORM_FEATURES,
@@ -125,29 +126,44 @@ export function OsLandingSections() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {PLATFORM_FEATURES.map((feature) => (
-              <div
-                key={feature.title}
-                className="flex flex-col gap-2 overflow-hidden border group border-transparent bg-slate-50/50 hover:bg-white transition-all duration-500 rounded-[2rem] p-8"
-              >
-                <div className="p-0 space-y-6">
-                  <div
-                    className={`${feature.iconBg} w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}
-                  >
-                    <PlatformIcon type={feature.icon} />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-bold text-emerald-950">{feature.title}</h3>
-                    <p className="text-sm text-slate-500 font-light leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </div>
-                  <div className="pt-4 flex items-center text-xs font-bold uppercase tracking-widest text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Learn More <ChevronRight className="ml-1 h-3 w-3" />
+            {PLATFORM_FEATURES.map((feature) => {
+              const learnMore = feature.learnMoreHref.startsWith("#") ? (
+                <a
+                  href={feature.learnMoreHref}
+                  className="pt-4 flex items-center text-xs font-bold uppercase tracking-widest text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  Learn More <ChevronRight className="ml-1 h-3 w-3" />
+                </a>
+              ) : (
+                <Link
+                  to={feature.learnMoreHref}
+                  className="pt-4 flex items-center text-xs font-bold uppercase tracking-widest text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  Learn More <ChevronRight className="ml-1 h-3 w-3" />
+                </Link>
+              );
+              return (
+                <div
+                  key={feature.title}
+                  className="flex flex-col gap-2 overflow-hidden border group border-transparent bg-slate-50/50 hover:bg-white transition-all duration-500 rounded-[2rem] p-8"
+                >
+                  <div className="p-0 space-y-6">
+                    <div
+                      className={`${feature.iconBg} w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}
+                    >
+                      <PlatformIcon type={feature.icon} />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-bold text-emerald-950">{feature.title}</h3>
+                      <p className="text-sm text-slate-500 font-light leading-relaxed">
+                        {feature.description}
+                      </p>
+                    </div>
+                    {learnMore}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -216,13 +232,16 @@ export function OsLandingSections() {
                     Direct Sync
                   </p>
                 </div>
-                <div className="bg-emerald-400 p-6 rounded-3xl space-y-4 text-emerald-950">
+                <Link
+                  to={AFFILIATE_LOGIN_PATH}
+                  className="bg-emerald-400 p-6 rounded-3xl space-y-4 text-emerald-950 block hover:bg-emerald-300 transition-colors"
+                >
                   <Plus className="h-8 w-8" />
                   <h5 className="font-bold">Affiliate Hub</h5>
                   <p className="text-[10px] text-emerald-900/60 leading-relaxed uppercase tracking-widest font-black">
                     Growth Ready
                   </p>
-                </div>
+                </Link>
               </div>
             </div>
           </div>

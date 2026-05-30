@@ -1,7 +1,10 @@
+import { PORTAL_LOGINS } from "../../../lib/portalLinks";
+
 /** Default brand on the live Peak Health OS marketing site */
 export const DEFAULT_BRAND_ID = "a009d8db-c770-4287-a15e-cc82515437ef";
 
 export const REGISTER_PATH = `/auth/register?brandId=${DEFAULT_BRAND_ID}`;
+export const AFFILIATE_LOGIN_PATH = PORTAL_LOGINS.affiliate;
 
 export const BRAND_LOGOS = [
   { title: "Ro", src: "/images/brand/ro.png", alt: "Ro Logo" },
@@ -20,6 +23,7 @@ export const PLATFORM_FEATURES = [
     title: "Intake Engine",
     description:
       "Dynamic, rule-based questionnaires that adapt to patient data in real-time.",
+    learnMoreHref: REGISTER_PATH,
   },
   {
     icon: "stethoscope" as const,
@@ -27,6 +31,7 @@ export const PLATFORM_FEATURES = [
     title: "Clinical Triage",
     description:
       "Automated routing to licensed physicians based on state laws and medical markers.",
+    learnMoreHref: PORTAL_LOGINS.doctor,
   },
   {
     icon: "database" as const,
@@ -34,6 +39,7 @@ export const PLATFORM_FEATURES = [
     title: "Secure Records",
     description:
       "End-to-end encrypted medical data storage with full HIPAA compliance.",
+    learnMoreHref: "#security",
   },
 ] as const;
 

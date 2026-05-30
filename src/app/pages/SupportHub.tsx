@@ -6,6 +6,7 @@ import {
 import { Link } from "react-router";
 import { Button, Card, CardContent, Badge, cn } from "../components/ui/shared.tsx";
 import { Reveal } from "../components/ui/Reveal";
+import { PORTAL_LOGINS } from "../../lib/portalLinks";
 
 export function SupportHubPage() {
   const sections = [
@@ -22,7 +23,12 @@ export function SupportHubPage() {
       links: [
         { title: "Careers", icon: Briefcase, desc: "Join our team of medical and tech innovators." },
         { title: "Press & Media", icon: Newspaper, desc: "Resources for journalists and news outlets." },
-        { title: "Affiliate Program", icon: Share2, desc: "Partner with us to promote clinical wellness." },
+        {
+          title: "Affiliate Program",
+          icon: Share2,
+          desc: "Partner with us to promote clinical wellness.",
+          href: PORTAL_LOGINS.affiliate,
+        },
       ]
     },
     {
@@ -53,17 +59,37 @@ export function SupportHubPage() {
                    <div className="space-y-4">
                       {group.links.map((link, i) => (
                         <Reveal key={i} delay={0.1 * i} direction="up">
-                           <Card className="border-2 border-slate-50 hover:border-emerald-500 transition-all cursor-pointer group rounded-[32px]">
-                              <CardContent className="p-6 flex gap-4">
-                                 <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-50 transition-colors">
+                          {"href" in link && link.href ? (
+                            <Link to={link.href} className="block">
+                              <Card className="border-2 border-slate-50 hover:border-emerald-500 transition-all cursor-pointer group rounded-[32px]">
+                                <CardContent className="p-6 flex gap-4">
+                                  <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-50 transition-colors">
                                     <link.icon className="h-6 w-6 text-slate-400 group-hover:text-emerald-600 transition-colors" />
-                                 </div>
-                                 <div className="space-y-1">
-                                    <h4 className="font-black text-[#0A0D14] group-hover:text-emerald-600 transition-colors">{link.title}</h4>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <h4 className="font-black text-[#0A0D14] group-hover:text-emerald-600 transition-colors">
+                                      {link.title}
+                                    </h4>
                                     <p className="text-xs text-slate-400 font-medium leading-relaxed">{link.desc}</p>
-                                 </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </Link>
+                          ) : (
+                            <Card className="border-2 border-slate-50 hover:border-emerald-500 transition-all cursor-pointer group rounded-[32px]">
+                              <CardContent className="p-6 flex gap-4">
+                                <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-50 transition-colors">
+                                  <link.icon className="h-6 w-6 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                                </div>
+                                <div className="space-y-1">
+                                  <h4 className="font-black text-[#0A0D14] group-hover:text-emerald-600 transition-colors">
+                                    {link.title}
+                                  </h4>
+                                  <p className="text-xs text-slate-400 font-medium leading-relaxed">{link.desc}</p>
+                                </div>
                               </CardContent>
-                           </Card>
+                            </Card>
+                          )}
                         </Reveal>
                       ))}
                    </div>

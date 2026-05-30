@@ -1,18 +1,20 @@
 import { Link } from "react-router";
+import { AFFILIATE_LOGIN_PATH } from "./constants";
+import { MARKETING_PORTAL_LINKS } from "../../../lib/portalLinks";
 
 const platformLinks = [
   { label: "Infrastructure", href: "#how-it-works" },
   { label: "Intake Engine", href: "#platform" },
   { label: "E-Pharmacy", href: "#security" },
-  { label: "Affiliates", href: "#security" },
+  { label: "Affiliates", href: AFFILIATE_LOGIN_PATH, isRoute: true },
 ] as const;
 
 /** Footer labels match live site; platform items scroll to homepage sections. */
 export function OsFooter() {
   return (
     <footer className="py-20 px-6 bg-slate-50 border-t border-slate-200">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-        <div className="col-span-2 space-y-6">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
+        <div className="lg:col-span-2 space-y-6">
           <Link to="/" className="flex items-center gap-2 w-fit">
             <img src="/logo/portal-logo.png" alt="Logo" className="w-40" />
           </Link>
@@ -29,12 +31,30 @@ export function OsFooter() {
           <ul className="space-y-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
             {platformLinks.map((item) => (
               <li key={item.label}>
-                <a
-                  href={item.href}
-                  className="hover:text-emerald-600 transition-colors"
-                >
+                {"isRoute" in item && item.isRoute ? (
+                  <Link to={item.href} className="hover:text-emerald-600 transition-colors">
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a href={item.href} className="hover:text-emerald-600 transition-colors">
+                    {item.label}
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="space-y-6">
+          <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-800">
+            Portals
+          </h5>
+          <ul className="space-y-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
+            {MARKETING_PORTAL_LINKS.map((item) => (
+              <li key={item.label}>
+                <Link to={item.href} className="hover:text-emerald-600 transition-colors">
                   {item.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>

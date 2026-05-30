@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { AppLayout } from "./components/AppLayout";
 import { PublicLayout } from "./components/PublicLayout";
 import { LandingPage } from "./pages/Landing";
@@ -159,6 +159,8 @@ export const router = createBrowserRouter([
       { path: "admin/login", element: <AuthPage portal="admin" /> },
       { path: "superadmin/login", element: <AuthPage portal="superadmin" /> },
       { path: "affiliate/login", element: <AuthPage portal="affiliate" /> },
+      { path: "Affiliate", element: <Navigate to="/affiliate" replace /> },
+      { path: "Affiliate/*", element: <Navigate to="/affiliate" replace /> },
       { path: "reset-password", Component: ResetPasswordPage },
       // { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
 

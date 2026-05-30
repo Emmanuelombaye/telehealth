@@ -17,7 +17,10 @@ export const SUBDOMAIN_PORTAL_PATH: Record<string, string> = {
 export function shouldApplySubdomainPortalMap(hostname: string): boolean {
   const h = hostname.toLowerCase();
   if (h === "localhost" || h.startsWith("127.0.0.1")) return true;
-  return h.endsWith(".peak-health.io");
+  if (h.endsWith(".peak-health.io") || h === "peak-health.io") return true;
+  /** Vercel preview/production hosts (e.g. telehealth-ruby.vercel.app, affiliate.*.vercel.app). */
+  if (h.endsWith(".vercel.app")) return true;
+  return false;
 }
 
 /** If the user landed on a portal subdomain at `/`, rewrite the path before the router mounts. */

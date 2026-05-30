@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { 
   TrendingUp, Users, DollarSign, ExternalLink, 
   Copy, CheckCircle2, ChevronRight, BarChart3,
@@ -24,8 +25,25 @@ const chartData = [
   { name: 'Week 6', revenue: 11000, clicks: 4800 },
 ];
 
+type AffiliateTab = "overview" | "referrals" | "payouts" | "assets" | "settings";
+
+function tabFromPath(pathname: string): AffiliateTab {
+  if (pathname.includes("/referrals")) return "referrals";
+  if (pathname.includes("/payouts")) return "payouts";
+  if (pathname.includes("/assets")) return "assets";
+  if (pathname.includes("/settings")) return "settings";
+  return "overview";
+}
+
+function pathForTab(tab: AffiliateTab): string {
+  return tab === "overview" ? "/affiliate" : `/affiliate/${tab}`;
+}
+
 export function AffiliateDashboard() {
-  const [activeTab, setActiveTab] = useState<"overview" | "referrals" | "payouts" | "assets">("overview");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeTab = tabFromPath(location.pathname);
+  const setActiveTab = (tab: AffiliateTab) => navigate(pathForTab(tab));
   const [copied, setCopied] = useState(false);
 
   const copyRefLink = () => {
@@ -40,7 +58,7 @@ export function AffiliateDashboard() {
       {/* ── HIGH-FIDELITY NAVIGATION TABS ── */}
       <div className="flex items-center justify-between gap-4 flex-wrap border-b border-slate-100 pb-6">
         <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-[1.5rem] border border-slate-200/50 shadow-inner">
-           {(["overview", "referrals", "payouts", "assets"] as const).map(tab => (
+           {(["overview", "referrals", "payouts", "assets", "settings"] as const).map(tab => (
              <button 
                key={tab} 
                onClick={() => setActiveTab(tab)}
@@ -55,7 +73,8 @@ export function AffiliateDashboard() {
                 {tab === 'referrals' && <Users className="h-3.5 w-3.5" />}
                 {tab === 'payouts' && <Wallet className="h-3.5 w-3.5" />}
                 {tab === 'assets' && <Sparkles className="h-3.5 w-3.5" />}
-                {tab}
+                {tab === 'settings' && <Settings className="h-3.5 w-3.5" />}
+                {tab === 'settings' ? 'profile' : tab}
              </button>
            ))}
         </div>
@@ -65,7 +84,11 @@ export function AffiliateDashboard() {
               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Next Payout Cycle</p>
               <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">May 31, 2026</p>
            </div>
-           <Button className="h-12 px-6 rounded-xl bg-white border border-slate-200 text-[#0A2E1F] hover:bg-slate-50 font-black uppercase text-[10px] tracking-widest">
+           <Button
+             type="button"
+             onClick={() => setActiveTab("settings")}
+             className="h-12 px-6 rounded-xl bg-white border border-slate-200 text-[#0A2E1F] hover:bg-slate-50 font-black uppercase text-[10px] tracking-widest"
+           >
              <Settings className="h-4 w-4 mr-2" /> Settings
            </Button>
            <Button className="h-12 px-8 rounded-xl bg-[#0A2E1F] text-white font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-emerald-900/30">
@@ -353,6 +376,25 @@ export function AffiliateDashboard() {
                     </div>
                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em]">No historical payouts found for 2026 Q1</p>
                  </CardContent>
+              </Card>
+           </motion.div>
+        )}
+
+        {activeTab === 'settings' && (
+           <motion.div
+             key="settings"
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             className="max-w-xl mx-auto space-y-6 py-12"
+           >
+              <Card className="p-10 border-none shadow-xl shadow-slate-200/40 rounded-[3rem]">
+                 <CardTitle className="text-[10px] font-black text-[#0A2E1F] uppercase tracking-widest mb-6">
+                   Partner profile
+                 </CardTitle>
+                 <p className="text-sm text-slate-500 font-light leading-relaxed">
+                   Update payout details and referral branding from this panel. Contact platform admin to change your
+                   affiliate tier or commission rate.
+                 </p>
               </Card>
            </motion.div>
         )}

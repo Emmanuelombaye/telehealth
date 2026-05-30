@@ -27,6 +27,18 @@
       "has": [{ "type": "host", "value": "patient\\.(?<domain>.+)" }],
       "destination": "/patient",
       "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "affiliate\\.(?<domain>.+)" }],
+      "destination": "/affiliate",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "doctors\\.(?<domain>.+)" }],
+      "destination": "/providers",
+      "permanent": false
     }
   ],
   "rewrites": [
@@ -74,6 +86,22 @@
         { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
         { "key": "Pragma", "value": "no-cache" },
         { "key": "X-Portal", "value": "pharmacy" }
+      ]
+    },
+    {
+      "source": "/affiliate/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "X-Portal", "value": "affiliate" }
+      ]
+    },
+    {
+      "source": "/providers/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "X-Portal", "value": "doctor" }
       ]
     },
     {

@@ -4,6 +4,8 @@ import { supabase } from "../../../lib/supabaseClient";
 import { useAuthStore, Role } from "../../../lib/auth-store";
 import { doctorPortalBaseFromPath } from "../../../lib/doctorPortalBase";
 import { Lock, Mail, AlertCircle, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Link } from "react-router";
+import { MARKETING_PORTAL_LINKS } from "../../../lib/portalLinks";
 
 type Portal = "patient" | "doctor" | "admin" | "superadmin" | "affiliate";
 
@@ -118,6 +120,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
           'doctor@peakbodyco.com':   { role: 'doctor' },
           'admin@peakbodyco.com':    { role: 'brand_admin' },
           'brandon@peakbodyco.com':  { role: 'super_admin' },
+          'affiliate@peakbodyco.com': { role: 'affiliate' },
         };
         const staffEntry = staffAccounts[email.toLowerCase()];
 
@@ -217,6 +220,31 @@ export function AuthPage({ portal }: { portal: Portal }) {
     }
   };
 
+  const portalHeadline: Record<Portal, { title: string; subtitle: string }> = {
+    patient: {
+      title: "Welcome back",
+      subtitle: "Secure access for clinicians and patients.",
+    },
+    doctor: {
+      title: "Provider portal",
+      subtitle: "Licensed clinicians and care teams.",
+    },
+    admin: {
+      title: "Brand admin",
+      subtitle: "Operations, catalog, and clinical programs.",
+    },
+    superadmin: {
+      title: "Platform super admin",
+      subtitle: "Cross-brand control and security.",
+    },
+    affiliate: {
+      title: "Affiliate partner",
+      subtitle: "Referrals, payouts, and growth assets.",
+    },
+  };
+
+  const { title, subtitle } = portalHeadline[portal];
+
   if (!ready) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA]">
@@ -242,10 +270,10 @@ export function AuthPage({ portal }: { portal: Portal }) {
           <img src="/PeakHealthLogo.png" alt="Peak Health" className="w-[380px] h-auto object-contain -mb-12" />
           <div className="space-y-1.5 -mt-4">
             <h1 className="text-[32px] text-[#0A3622] font-medium tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>
-              Welcome back
+              {title}
             </h1>
             <p className="text-[14px] text-[#6A8074]">
-              Secure access for clinicians and patients.
+              {subtitle}
             </p>
           </div>
         </div>
@@ -401,6 +429,31 @@ export function AuthPage({ portal }: { portal: Portal }) {
             </div>
           )}
         </div>
+
+        {portal !== "patient" && (
+          <div className="text-center space-y-3 pt-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397]">
+              Other portals
+            </p>
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+              {MARKETING_PORTAL_LINKS.filter((p) => {
+                if (portal === "affiliate") return p.href !== "/affiliate/login";
+                if (portal === "doctor") return p.href !== "/providers/login";
+                if (portal === "admin") return p.href !== "/admin/login";
+                if (portal === "superadmin") return p.href !== "/superadmin/login";
+                return true;
+              }).map((p) => (
+                <Link
+                  key={p.href}
+                  to={p.href}
+                  className="text-[12px] font-semibold text-[#0A3622]/80 hover:text-[#0A3622] hover:underline"
+                >
+                  {p.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
