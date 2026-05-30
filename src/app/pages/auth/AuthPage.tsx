@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuthStore, Role } from "../../../lib/auth-store";
 import { doctorPortalBaseFromPath } from "../../../lib/doctorPortalBase";
-import { Lock, Mail, AlertCircle, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Lock, Mail, AlertCircle, Eye, EyeOff, ArrowLeft, Sparkles } from "lucide-react";
 import {
   clearDemoAuth,
   matchStaffDemo,
@@ -239,6 +239,14 @@ export function AuthPage({ portal }: { portal: Portal }) {
     );
   }
 
+  const portalTitle =
+    portal === "affiliate" ? "Affiliate partner login" : "Welcome back";
+
+  const portalSubtitle =
+    portal === "affiliate"
+      ? "Powered by Referly.so — referral links, tracking, and payouts."
+      : "Secure access for clinicians and patients.";
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA] p-4 overflow-auto font-sans">
       <a href="/" className="absolute top-6 left-6 flex items-center gap-2 text-xs font-bold text-[#8CA397] hover:text-[#0A3622] transition-colors">
@@ -249,16 +257,31 @@ export function AuthPage({ portal }: { portal: Portal }) {
         <div className="flex flex-col items-center text-center mb-6">
           <img src="/PeakHealthLogo.png" alt="Peak Health" className="w-[380px] h-auto object-contain -mb-12" />
           <div className="space-y-1.5 -mt-4">
+            {portal === "affiliate" && (
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-800 mb-2">
+                <Sparkles className="h-3 w-3" /> Referly.so
+              </div>
+            )}
             <h1 className="text-[32px] text-[#0A3622] font-medium tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>
-              Welcome back
+              {portalTitle}
             </h1>
             <p className="text-[14px] text-[#6A8074]">
-              Secure access for clinicians and patients.
+              {portalSubtitle}
             </p>
           </div>
         </div>
 
         <div className="bg-white rounded-[24px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60">
+          {portal === "affiliate" && mode === "login" && (
+            <div className="mb-5 rounded-[14px] border border-emerald-100 bg-emerald-50/80 p-4 text-left">
+              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-1">Demo partner account</p>
+              <p className="text-[13px] text-emerald-900 font-mono">affiliate@peakbodyco.com</p>
+              <p className="text-[13px] text-emerald-900 font-mono">password123</p>
+              <p className="text-[11px] text-emerald-700/80 mt-2 leading-relaxed">
+                Preview dashboard syncs with Referly on production once VITE_REFERLY_SITE_ID is set.
+              </p>
+            </div>
+          )}
           <form onSubmit={handleAuth} className="space-y-5">
             {error && (
               <div className="flex items-start gap-2 p-3 rounded-[14px] text-sm bg-red-50 border border-red-100 text-red-600">

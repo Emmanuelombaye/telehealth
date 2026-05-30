@@ -143,11 +143,11 @@ const SuperAdminDoctorsPage = lazy(() => lazyRetry(() => import("./pages/superad
 const SuperAdminFinancePage = lazy(() => lazyRetry(() => import("./pages/superadmin/pages/Finance").then(m => ({ default: m.SuperAdminFinancePage }))));
 const SuperAdminSecurityPage = lazy(() => lazyRetry(() => import("./pages/superadmin/pages/Security").then(m => ({ default: m.SuperAdminSecurityPage }))));
 
-// Affiliate — partners authenticate on Referly (white-label portal)
-const AffiliateReferlyRedirect = lazy(() =>
+// Affiliate — Referly-branded partner portal (demo data until live API sync)
+const AffiliateDashboard = lazy(() =>
   lazyRetry(() =>
-    import("./pages/affiliate/AffiliateReferlyRedirect").then((m) => ({
-      default: m.AffiliateReferlyRedirect,
+    import("./pages/affiliate/AffiliateDashboard").then((m) => ({
+      default: m.AffiliateDashboard,
     }))
   )
 );
@@ -218,8 +218,7 @@ export const router = createBrowserRouter([
       { path: "providers/login", element: <AuthPage portal="doctor" /> },
       { path: "admin/login", element: <AuthPage portal="admin" /> },
       { path: "superadmin/login", element: <AuthPage portal="superadmin" /> },
-      { path: "affiliate/login", Component: AffiliateReferlyRedirect },
-      { path: "affiliate/*", Component: AffiliateReferlyRedirect },
+      { path: "affiliate/login", element: <AuthPage portal="affiliate" /> },
       { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
       { path: "reset-password", Component: ResetPasswordPage },
 
@@ -390,6 +389,18 @@ export const router = createBrowserRouter([
           },
           */
 
+          // Affiliate Portal — Referly-branded preview (demo auth + mock Referly sync)
+          {
+            path: "affiliate",
+            element: <ProtectedRoute allowedRoles={['affiliate', 'super_admin']} />,
+            children: [
+              { index: true, Component: AffiliateDashboard },
+              { path: "referrals", Component: AffiliateDashboard },
+              { path: "payouts", Component: AffiliateDashboard },
+              { path: "assets", Component: AffiliateDashboard },
+              { path: "settings", Component: AffiliateDashboard },
+            ],
+          },
         ],
       },
 

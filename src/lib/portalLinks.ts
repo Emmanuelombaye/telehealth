@@ -27,7 +27,7 @@ export const MARKETING_PORTAL_LINKS = [
   { label: "Patient Portal", href: PORTAL_LOGINS.patient, description: "Orders, intake, messages, prescriptions" },
   { label: "Provider Portal", href: PORTAL_LOGINS.doctor, description: "Clinical queue, consults, eRx, labs" },
   { label: "Admin Portal", href: PORTAL_LOGINS.admin, description: "Brand operations, products, orders" },
-  { label: "Affiliate Portal", href: PORTAL_LOGINS.affiliate, description: "Referly partner dashboard — links, conversions, payouts" },
+  { label: "Affiliate Portal", href: PORTAL_LOGINS.affiliate, description: "Referly partner dashboard — links, conversions, payouts (demo)" },
   { label: "Super Admin", href: PORTAL_LOGINS.superadmin, description: "Cross-brand platform control" },
   { label: "Pharmacy Portal", href: PORTAL_LOGINS.pharmacy, description: "Fulfillment, inventory, shipping" },
 ] as const;
