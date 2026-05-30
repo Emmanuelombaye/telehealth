@@ -1,14 +1,11 @@
 -- =============================================================================
--- PEAK HEALTH — FIX ALL DATABASE (ONE FILE)
+-- PEAK HEALTH — FIX ALL DATABASE (SUPABASE SQL EDITOR ONLY)
 -- =============================================================================
--- HOW TO RUN:
---   1. Open Supabase Dashboard → SQL Editor → New query
---   2. Paste this ENTIRE file
---   3. Click RUN (wait ~30–90 seconds)
---   4. Scroll to bottom — verification rows should show ok = true
+-- WHERE: Supabase Dashboard → SQL Editor → New query → paste ALL of this → RUN
+-- DO NOT paste deploy-browser-edge-functions.ps1 here (that is not SQL).
 --
--- SAFE TO RE-RUN: idempotent (IF NOT EXISTS, DROP POLICY IF EXISTS, etc.)
--- Does NOT delete patient orders or auth users.
+-- After RUN: scroll down — every verification row should show ok = true
+-- SAFE TO RE-RUN: idempotent. Does NOT delete orders or auth users.
 -- =============================================================================
 
 BEGIN;
@@ -760,3 +757,11 @@ UNION ALL
 SELECT 'increment_patients_count()', EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'increment_patients_count');
 
 SELECT 'FIX ALL DATABASE complete — review ok column above' AS status;
+
+-- =============================================================================
+-- AFTER SQL (still in Supabase Dashboard — not terminal):
+-- Edge Functions → invite-doctor → if missing, create it from repo code
+--   supabase/functions/invite-doctor/index.ts
+-- Turn OFF "Enforce JWT Verification" for invite-doctor (fixes browser CORS preflight).
+-- Click Deploy. Secrets: SUPABASE_SERVICE_ROLE_KEY is auto on hosted projects.
+-- =============================================================================
