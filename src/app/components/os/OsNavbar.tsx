@@ -18,7 +18,7 @@ export function OsNavbar() {
         <div className="flex items-center gap-3">
           <Link
             to="/"
-            className="transition-transform hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
+            className="transition-transform hover:scale-102 active:scale-98 flex items-center gap-2"
             onClick={() => setMobileOpen(false)}
           >
             <img src="/logo/portal-logo.png" alt="Logo" className="w-36 sm:w-40" />

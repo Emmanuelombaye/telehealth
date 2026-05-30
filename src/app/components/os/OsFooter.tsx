@@ -1,11 +1,21 @@
+import { Link } from "react-router";
+
+const platformLinks = [
+  { label: "Infrastructure", href: "#how-it-works" },
+  { label: "Intake Engine", href: "#platform" },
+  { label: "E-Pharmacy", href: "#security" },
+  { label: "Affiliates", href: "#security" },
+] as const;
+
+/** Footer labels match live site; platform items scroll to homepage sections. */
 export function OsFooter() {
   return (
     <footer className="py-20 px-6 bg-slate-50 border-t border-slate-200">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
         <div className="col-span-2 space-y-6">
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 w-fit">
             <img src="/logo/portal-logo.png" alt="Logo" className="w-40" />
-          </div>
+          </Link>
           <p className="text-sm text-slate-400 max-w-xs font-light leading-relaxed">
             The definitive infrastructure for specialized medical care and performance protocols.
             HIPAA compliant, physician led, and pharmacy integrated.
@@ -17,10 +27,16 @@ export function OsFooter() {
             Platform
           </h5>
           <ul className="space-y-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
-            <li className="hover:text-emerald-600 cursor-pointer">Infrastructure</li>
-            <li className="hover:text-emerald-600 cursor-pointer">Intake Engine</li>
-            <li className="hover:text-emerald-600 cursor-pointer">E-Pharmacy</li>
-            <li className="hover:text-emerald-600 cursor-pointer">Affiliates</li>
+            {platformLinks.map((item) => (
+              <li key={item.label}>
+                <a
+                  href={item.href}
+                  className="hover:text-emerald-600 transition-colors"
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
 
@@ -29,7 +45,11 @@ export function OsFooter() {
             Compliance
           </h5>
           <ul className="space-y-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
-            <li className="hover:text-emerald-600 cursor-pointer">HIPAA Security</li>
+            <li>
+              <a href="#security" className="hover:text-emerald-600 transition-colors">
+                HIPAA Security
+              </a>
+            </li>
             <li className="hover:text-emerald-600 cursor-pointer">Privacy Policy</li>
             <li className="hover:text-emerald-600 cursor-pointer">Terms of Service</li>
             <li className="hover:text-emerald-600 cursor-pointer">Clinical Safety</li>
