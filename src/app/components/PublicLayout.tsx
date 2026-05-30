@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { Outlet } from "react-router";
-import { AuthLoadingScreen } from "./ProtectedRoute";
 import { PageErrorBoundary } from "./PageErrorBoundary";
 import { OsNavbar } from "./os/OsNavbar";
 import { OsFooter } from "./os/OsFooter";
+import { OsClinicalSyncLoader } from "./os/OsClinicalSyncLoader";
 
 /** Public marketing shell — matches Peak Health OS (telehealth-ruby.vercel.app) */
 export function PublicLayout() {
@@ -12,7 +12,7 @@ export function PublicLayout() {
       <OsNavbar />
       <main>
         <PageErrorBoundary>
-          <Suspense fallback={<AuthLoadingScreen />}>
+          <Suspense fallback={<OsClinicalSyncLoader />}>
             <Outlet />
           </Suspense>
         </PageErrorBoundary>

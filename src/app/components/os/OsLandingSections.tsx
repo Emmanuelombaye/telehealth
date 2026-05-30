@@ -112,7 +112,7 @@ export function OsLandingSections() {
         </div>
       </section>
 
-      <section id="platform" className="py-32 bg-white">
+      <section id="platform" className="py-32 bg-white scroll-mt-28">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center space-y-4 mb-20">
             <h2 className="text-4xl md:text-6xl font-serif text-emerald-950 tracking-tight">
@@ -154,12 +154,9 @@ export function OsLandingSections() {
 
       <section
         id="how-it-works"
-        className="py-32 bg-emerald-950 text-white rounded-[4rem] mx-4 overflow-hidden relative"
+        className="py-32 bg-emerald-950 text-white rounded-[4rem] mx-4 overflow-hidden relative scroll-mt-28"
       >
-        <div
-          id="security"
-          className="absolute top-0 right-0 w-1/2 h-full bg-emerald-900/20 blur-[120px] -z-0 pointer-events-none"
-        />
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-emerald-900/20 blur-[120px] -z-0 pointer-events-none" />
         <div className="max-w-6xl mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div className="space-y-10">
@@ -194,7 +191,7 @@ export function OsLandingSections() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div id="security" className="grid grid-cols-1 sm:grid-cols-2 gap-4 scroll-mt-28">
               <div className="space-y-4 sm:pt-12">
                 <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-3xl space-y-4">
                   <Lock className="h-8 w-8 text-emerald-400" />
