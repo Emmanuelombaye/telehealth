@@ -9,6 +9,11 @@ import { lazyRetry } from "../lib/lazyRetry";
 // Base & Auth
 const LandingPage = lazy(() => lazyRetry(() => import("./pages/Landing").then(m => ({ default: m.LandingPage }))));
 const AuthPage = lazy(() => lazyRetry(() => import("./pages/auth/AuthPage").then(m => ({ default: m.AuthPage }))));
+const OsRegisterRedirect = lazy(() =>
+  lazyRetry(() =>
+    import("./pages/auth/OsRegisterRedirect").then((m) => ({ default: m.OsRegisterRedirect }))
+  )
+);
 const ResetPasswordPage = lazy(() => lazyRetry(() => import("./pages/auth/ResetPassword").then(m => ({ default: m.ResetPasswordPage }))));
 const NotFoundPage = lazy(() => lazyRetry(() => import("./pages/NotFound").then(m => ({ default: m.NotFoundPage }))));
 
@@ -197,8 +202,9 @@ export const router = createBrowserRouter([
         ]
       },
 
-      // Auth (Isolated)
-      { path: "login", element: <Navigate to="/patient/login" replace /> },
+      // Auth (Isolated) — paths match live Peak Health OS deployment
+      { path: "login", element: <AuthPage portal="patient" /> },
+      { path: "auth/register", Component: OsRegisterRedirect },
       { path: "patient/login", element: <AuthPage portal="patient" /> },
       { path: "doctor/login", element: <AuthPage portal="doctor" /> },
       { path: "providers/login", element: <AuthPage portal="doctor" /> },

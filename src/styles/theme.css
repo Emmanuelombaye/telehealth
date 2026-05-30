@@ -22,8 +22,8 @@
   --card-foreground: #0A0D14;
   --popover: #ffffff;
   --popover-foreground: #0A0D14;
-  --primary: #0A2E1F;
-  --primary-foreground: #ffffff;
+  --primary: #064e3b;
+  --primary-foreground: #ecfdf5;
   --secondary: #F0F7F4;
   --secondary-foreground: #0A2E1F;
   --muted: #F8FAFC;
@@ -303,6 +303,9 @@
   animation: bounce-slow 3s ease-in-out infinite;
 }
 .animate-fade-in-up {
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-fade-up {
   animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
