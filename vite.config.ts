@@ -31,10 +31,22 @@ function figmaAssetResolver() {
   }
 }
 
+/** Vercel waits for Node to exit; Vite/Tailwind can leave handles open and hit the 45m build cap. */
+function forceExitAfterBuild() {
+  return {
+    name: 'force-exit-after-build',
+    apply: 'build' as const,
+    closeBundle() {
+      setTimeout(() => process.exit(0), 0)
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
     referlyInitInject(),
     figmaAssetResolver(),
+    forceExitAfterBuild(),
     // The React and Tailwind plugins are both required for Make, even if
     // Tailwind is not being actively used – do not remove them
     react(),

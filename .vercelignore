@@ -1,2 +1,16 @@
 node_modules
 .git
+*.sql
+scratch
+supabase
+docs
+agent-tools
+.cursor
+**/*.md
+!README.md
+test_*.js
+verify_*.js
+apply_*.js
+run-*.cjs
+run-*.mjs
+.tmp-*
