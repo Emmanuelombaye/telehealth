@@ -3,6 +3,10 @@ import { Share2, Plus, Users, RefreshCw, ExternalLink, Zap, ShieldCheck, Play, C
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "../../../components/ui/shared.tsx";
 import { toast } from "sonner";
 import { cn } from "../../../components/ui/utils";
+import {
+  REFERLY_MERCHANT_CONSOLE_URL,
+  referlyPartnerPortalUrl,
+} from "../../../../lib/referly";
 
 type Campaign = {
   id: string;
@@ -29,7 +33,7 @@ export function AdminAffiliatesPage() {
   const [testEmail, setTestEmail] = useState("affiliate.tester@gmail.com");
   const [logs, setLogs] = useState<string[]>([
     "[System] Referly.so SDK initialized.",
-    "[Telemetry] Connected to tracking endpoint 'partners.peak-health.io'"
+    "[Telemetry] Connected to tracking endpoint 'partners.peak-health.io'",
   ]);
 
   // Modal State
@@ -132,7 +136,7 @@ export function AdminAffiliatesPage() {
         </div>
         <div className="flex items-center gap-3">
           <Button 
-            onClick={() => window.open("https://referly.so", "_blank")}
+            onClick={() => window.open(REFERLY_MERCHANT_CONSOLE_URL, "_blank")}
             className="h-10 px-5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-black uppercase text-[10px] tracking-widest gap-2 shadow-sm"
           >
             Open Referly.so Console <ExternalLink className="h-3.5 w-3.5" />
@@ -150,7 +154,7 @@ export function AdminAffiliatesPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: "ATTRIBUTION PIXEL", value: "Active & Loaded", desc: "checkout webhook listener", status: "success" },
-          { label: "TRACKING DOMAIN", value: "partners.peak-health.io", desc: "cname DNS record verified", status: "success" },
+          { label: "PARTNER PORTAL", value: referlyPartnerPortalUrl().replace("https://", ""), desc: "Referly white-label affiliate login", status: "success" },
           { label: "DEFAULT PAYOUT", value: "20% Lifetime RevShare", desc: "custom tiering enabled", status: "warning" },
           { label: "SYNC STATE", value: "HIPAA Compliant Data Layer", desc: "automatic email hashing active", status: "success" },
         ].map((s, idx) => (

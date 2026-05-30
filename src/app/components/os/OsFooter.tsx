@@ -1,3 +1,6 @@
+import { Link } from "react-router";
+import { PORTAL_LOGINS } from "../../../lib/portalLinks";
+
 export function OsFooter() {
   return (
     <footer className="py-20 px-6 bg-slate-50 border-t border-slate-200">
@@ -20,7 +23,11 @@ export function OsFooter() {
             <li className="hover:text-emerald-600 cursor-pointer">Infrastructure</li>
             <li className="hover:text-emerald-600 cursor-pointer">Intake Engine</li>
             <li className="hover:text-emerald-600 cursor-pointer">E-Pharmacy</li>
-            <li className="hover:text-emerald-600 cursor-pointer">Affiliates</li>
+            <li>
+              <Link to={PORTAL_LOGINS.affiliate} className="hover:text-emerald-600">
+                Affiliates
+              </Link>
+            </li>
           </ul>
         </div>
 

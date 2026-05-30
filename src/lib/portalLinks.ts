@@ -1,12 +1,18 @@
 /** Canonical login URLs for each staff/partner portal. */
+import { referlyPartnerPortalUrl } from "./referly";
+
 export const PORTAL_LOGINS = {
   patient: "/login",
   doctor: "/providers/login",
   admin: "/admin/login",
   superadmin: "/superadmin/login",
+  /** Bridge on peak-health.io → redirects to Referly white-label portal */
   affiliate: "/affiliate/login",
   pharmacy: "/pharmacy/login",
 } as const;
+
+/** Direct Referly partner portal (affiliate sign-in, links, payouts). */
+export const REFERLY_AFFILIATE_PORTAL_URL = referlyPartnerPortalUrl();
 
 export const PORTAL_HOME = {
   patient: "/patient",
@@ -21,7 +27,7 @@ export const MARKETING_PORTAL_LINKS = [
   { label: "Patient Portal", href: PORTAL_LOGINS.patient, description: "Orders, intake, messages, prescriptions" },
   { label: "Provider Portal", href: PORTAL_LOGINS.doctor, description: "Clinical queue, consults, eRx, labs" },
   { label: "Admin Portal", href: PORTAL_LOGINS.admin, description: "Brand operations, products, orders" },
-  { label: "Affiliate Portal", href: PORTAL_LOGINS.affiliate, description: "Referrals, payouts, marketing assets" },
+  { label: "Affiliate Portal", href: PORTAL_LOGINS.affiliate, description: "Referly partner dashboard — links, conversions, payouts" },
   { label: "Super Admin", href: PORTAL_LOGINS.superadmin, description: "Cross-brand platform control" },
   { label: "Pharmacy Portal", href: PORTAL_LOGINS.pharmacy, description: "Fulfillment, inventory, shipping" },
 ] as const;

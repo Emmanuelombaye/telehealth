@@ -16,6 +16,7 @@ import {
   PLATFORM_FEATURES,
   REGISTER_PATH,
 } from "./constants";
+import { PORTAL_LOGINS } from "../../../lib/portalLinks";
 
 function PlatformIcon({ type }: { type: (typeof PLATFORM_FEATURES)[number]["icon"] }) {
   const className = "h-6 w-6";
@@ -216,13 +217,16 @@ export function OsLandingSections() {
                     Direct Sync
                   </p>
                 </div>
-                <div className="bg-emerald-400 p-6 rounded-3xl space-y-4 text-emerald-950">
+                <Link
+                  to={PORTAL_LOGINS.affiliate}
+                  className="block bg-emerald-400 p-6 rounded-3xl space-y-4 text-emerald-950 hover:bg-emerald-300 transition-colors"
+                >
                   <Plus className="h-8 w-8" />
                   <h5 className="font-bold">Affiliate Hub</h5>
                   <p className="text-[10px] text-emerald-900/60 leading-relaxed uppercase tracking-widest font-black">
-                    Growth Ready
+                    Referly Partner Portal
                   </p>
-                </div>
+                </Link>
               </div>
             </div>
           </div>
