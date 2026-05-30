@@ -10,7 +10,8 @@ const portalLoginUrl = (path: string) => {
   if (path.startsWith('/admin')) return '/admin/login';
   if (path.startsWith('/superadmin')) return '/superadmin/login';
   if (path.startsWith('/affiliate')) return '/affiliate/login';
-  return '/patient/login';
+  if (path.startsWith('/patient')) return '/login';
+  return '/login';
 };
 
 function AuthLoadingScreen() {
@@ -83,7 +84,9 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
                 ? '/admin'
                 : effectiveRole === 'affiliate'
                   ? '/affiliate'
-                  : '/patient';
+                  : effectiveRole === 'patient'
+                    ? '/patient'
+                    : '/login';
       
       console.log(`[ProtectedRoute] RBAC mismatch: User role "${effectiveRole}" not in [${rolesKey}]. Redirecting to ${targetPortal}`);
       navigate(targetPortal, { replace: true });

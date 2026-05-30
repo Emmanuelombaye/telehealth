@@ -39,6 +39,12 @@ export function OsNavbar() {
 
         <div className="hidden md:flex items-center gap-4">
           <Link
+            to="/portals"
+            className="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-emerald-700 transition-colors px-4"
+          >
+            Portals
+          </Link>
+          <Link
             to="/login"
             className="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-emerald-700 transition-colors px-4"
           >
@@ -74,6 +80,13 @@ export function OsNavbar() {
               {link.label}
             </a>
           ))}
+          <Link
+            to="/portals"
+            className="block text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-emerald-700"
+            onClick={() => setMobileOpen(false)}
+          >
+            Portals
+          </Link>
           <Link
             to="/login"
             className="block text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-emerald-700 pt-2"

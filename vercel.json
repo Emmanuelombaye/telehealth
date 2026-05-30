@@ -19,7 +19,7 @@
     {
       "source": "/",
       "has": [{ "type": "host", "value": "doctor\\.(?<domain>.+)" }],
-      "destination": "/doctor",
+      "destination": "/providers",
       "permanent": false
     },
     {
@@ -38,6 +38,12 @@
       "source": "/",
       "has": [{ "type": "host", "value": "doctors\\.(?<domain>.+)" }],
       "destination": "/providers",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "pharmacy\\.(?<domain>.+)" }],
+      "destination": "/pharmacy",
       "permanent": false
     }
   ],

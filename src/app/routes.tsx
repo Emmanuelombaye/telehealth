@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router";
 import { AppLayout } from "./components/AppLayout";
 import { PublicLayout } from "./components/PublicLayout";
 import { LandingPage } from "./pages/Landing";
+import { PortalsPage } from "./pages/Portals";
 import { PatientDashboard } from "./pages/patient/Dashboard";
 import { DoctorDashboard } from "./pages/doctor/Dashboard";
 import { AdminDashboard } from "./pages/admin/Dashboard";
@@ -125,7 +126,8 @@ export const router = createBrowserRouter([
         element: <PublicLayout />,
         children: [
           { index: true, Component: LandingPage },
-          
+          { path: "portals", Component: PortalsPage },
+
           // Treatment Hubs (Public)
           { path: "treatments/weight-loss", Component: WeightLossPage },
           { path: "treatments/sexual-wellness", Component: SexualWellnessPage },
@@ -162,7 +164,7 @@ export const router = createBrowserRouter([
       { path: "Affiliate", element: <Navigate to="/affiliate" replace /> },
       { path: "Affiliate/*", element: <Navigate to="/affiliate" replace /> },
       { path: "reset-password", Component: ResetPasswordPage },
-      // { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
+      { path: "pharmacy/login", element: <AuthPage portal="pharmacy" /> },
 
       // Patient Shop flow (Standalone) — shareable steps: /patient/shop/checkout, /create-account, etc.
       { path: "patient/shop/:step", Component: PatientShopPage },
@@ -254,8 +256,7 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // Pharmacy portal (Disabled for automated webhook flow)
-          /* 
+          // Pharmacy portal
           {
             path: "pharmacy",
             element: <ProtectedRoute allowedRoles={['pharmacy', 'doctor', 'brand_admin', 'super_admin']} />,
@@ -269,7 +270,7 @@ export const router = createBrowserRouter([
               { path: "audit", Component: PharmacyInventoryPage },
               { path: "settings", Component: PharmacySettingsPage },
             ],
-          */
+          },
 
           // Affiliate Portal
           {

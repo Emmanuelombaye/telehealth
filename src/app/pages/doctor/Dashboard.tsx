@@ -19,6 +19,7 @@ export function DoctorDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
   const doctorBase = useDoctorPortalBase();
+  const { user } = useAuthStore();
   const doctorName = user?.user_metadata?.first_name
     ? `Dr. ${user.user_metadata.first_name} ${user.user_metadata.last_name}`
     : "Dr. Clinical Provider";

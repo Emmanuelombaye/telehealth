@@ -7,7 +7,7 @@ import { Lock, Mail, AlertCircle, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Link } from "react-router";
 import { MARKETING_PORTAL_LINKS } from "../../../lib/portalLinks";
 
-type Portal = "patient" | "doctor" | "admin" | "superadmin" | "affiliate";
+type Portal = "patient" | "doctor" | "admin" | "superadmin" | "affiliate" | "pharmacy";
 
 export function AuthPage({ portal }: { portal: Portal }) {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot_password'>('login');
@@ -66,6 +66,8 @@ export function AuthPage({ portal }: { portal: Portal }) {
         return `/superadmin${buster}`;
       case 'affiliate':
         return `/affiliate${buster}`;
+      case 'pharmacy':
+        return `/pharmacy${buster}`;
       default:
         return `/patient${buster}`;
     }
@@ -125,8 +127,8 @@ export function AuthPage({ portal }: { portal: Portal }) {
         const staffEntry = staffAccounts[email.toLowerCase()];
 
         if (signInError) {
-          if (staffEntry) {
-            console.warn('[Auth] Real login failed, using dev override for staff:', email);
+          if (staffEntry && import.meta.env.DEV) {
+            console.warn('[Auth] DEV: login failed, using staff override for:', email);
             localStorage.setItem('peak_health_dev_role', staffEntry.role as string);
             await initialize();
             navigate(portalTarget(portal), { replace: true });
@@ -170,6 +172,24 @@ export function AuthPage({ portal }: { portal: Portal }) {
               role !== 'super_admin'
             ) {
               setError("Access denied. Affiliate portal only.");
+              await supabase.auth.signOut();
+              await initialize();
+              return;
+            }
+            if (
+              portal === 'pharmacy' &&
+              role !== 'pharmacy' &&
+              role !== 'doctor' &&
+              role !== 'brand_admin' &&
+              role !== 'super_admin'
+            ) {
+              setError("Access denied. Pharmacy portal only.");
+              await supabase.auth.signOut();
+              await initialize();
+              return;
+            }
+            if (portal === 'patient' && role && role !== 'patient' && role !== 'super_admin') {
+              setError("Use the staff portal login for your role.");
               await supabase.auth.signOut();
               await initialize();
               return;
@@ -240,6 +260,10 @@ export function AuthPage({ portal }: { portal: Portal }) {
     affiliate: {
       title: "Affiliate partner",
       subtitle: "Referrals, payouts, and growth assets.",
+    },
+    pharmacy: {
+      title: "Pharmacy operations",
+      subtitle: "Fulfillment, inventory, and shipping.",
     },
   };
 

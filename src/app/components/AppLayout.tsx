@@ -12,6 +12,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { PageErrorBoundary } from "./PageErrorBoundary";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 import { motion } from "framer-motion";
+import { portalHasNotifications, portalHomeFromPath } from "../../lib/portalLinks";
 
 export function AppLayout() {
   const fetchOrders = usePatientStore(state => state.fetchOrders);
@@ -69,11 +70,12 @@ export function AppLayout() {
   };
   
   // Determine Role for Sidebar based on current URL path
-  let sidebarRole: "patient" | "doctor" | "admin" | "superadmin" | "affiliate" = "patient";
+  let sidebarRole: "patient" | "doctor" | "admin" | "superadmin" | "affiliate" | "pharmacy" = "patient";
   if (path.startsWith("/doctor") || path.startsWith("/providers")) sidebarRole = "doctor";
   else if (path.startsWith("/admin")) sidebarRole = "admin";
   else if (path.startsWith("/superadmin")) sidebarRole = "superadmin";
   else if (path.startsWith("/affiliate")) sidebarRole = "affiliate";
+  else if (path.startsWith("/pharmacy")) sidebarRole = "pharmacy";
 
   // Dynamic user info
   const fullName = user?.user_metadata?.first_name 
@@ -83,6 +85,8 @@ export function AppLayout() {
   const displayRole = authRole?.replace('_', ' ').toUpperCase() || sidebarRole.toUpperCase();
   const isPatientPortal = path.startsWith("/patient");
   const isSuperAdminPortal = path.startsWith("/superadmin");
+  const portalHome = portalHomeFromPath(path);
+  const showNotifications = portalHasNotifications(path);
 
   return (
     <div
@@ -152,7 +156,7 @@ export function AppLayout() {
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             >
               <Link
-                to={`/${sidebarRole}`}
+                to={portalHome}
                 className="flex items-center rounded-2xl px-2 py-1 ring-1 ring-emerald-600/10 shadow-md shadow-emerald-900/[0.06] bg-white/90 backdrop-blur-sm hover:opacity-90 transition-all duration-300"
               >
                 <img
@@ -167,7 +171,7 @@ export function AppLayout() {
             </motion.div>
           ) : (
             <Link
-              to={`/${sidebarRole}`}
+              to={portalHome}
               className="flex items-center pointer-events-auto hover:opacity-80 transition-all duration-300"
             >
               <img
@@ -184,21 +188,30 @@ export function AppLayout() {
 
         {/* Right Section: Telemetry & Identity */}
         <div className="flex items-center gap-3 flex-1 justify-end relative z-10">
-          <div className="flex items-center gap-2 pr-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => navigate(`/${sidebarRole}/notifications`)}
-              className="relative h-10 w-10 rounded-xl group hover:bg-emerald-50/50 transition-all"
-            >
-              <Bell className="h-5 w-5 transition-colors text-slate-400 group-hover:text-emerald-700" />
-              {totalNotifications > 0 && (
-                <span className="absolute top-2 right-2 h-4 min-w-[1rem] px-1 rounded-full bg-emerald-600 border-2 border-white text-[8px] font-black text-white flex items-center justify-center">
-                  {totalNotifications}
-                </span>
-              )}
-            </Button>
-          </div>
+          {showNotifications && (
+            <div className="flex items-center gap-2 pr-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  const base = path.startsWith("/providers")
+                    ? "/providers"
+                    : path.startsWith("/doctor")
+                      ? "/doctor"
+                      : `/${sidebarRole}`;
+                  navigate(`${base}/notifications`);
+                }}
+                className="relative h-10 w-10 rounded-xl group hover:bg-emerald-50/50 transition-all"
+              >
+                <Bell className="h-5 w-5 transition-colors text-slate-400 group-hover:text-emerald-700" />
+                {totalNotifications > 0 && (
+                  <span className="absolute top-2 right-2 h-4 min-w-[1rem] px-1 rounded-full bg-emerald-600 border-2 border-white text-[8px] font-black text-white flex items-center justify-center">
+                    {totalNotifications}
+                  </span>
+                )}
+              </Button>
+            </div>
+          )}
           
           <div className="h-8 w-[1px] bg-slate-100 mx-1 hidden sm:block" />
 
