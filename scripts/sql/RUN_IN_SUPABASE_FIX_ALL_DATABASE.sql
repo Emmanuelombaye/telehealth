@@ -759,7 +759,7 @@ SELECT 'increment_patients_count()', EXISTS (SELECT 1 FROM pg_proc WHERE proname
 SELECT 'FIX ALL DATABASE complete — review ok column above' AS status;
 
 -- =============================================================================
--- PART 13 — Partner brand: North Star MD (marketing site → /patient/shop?brand=north-star-md)
+-- PART 13 — Partner brand: North Star MD (marketing → /care/north-star-md/shop)
 -- =============================================================================
 DO $$
 BEGIN
