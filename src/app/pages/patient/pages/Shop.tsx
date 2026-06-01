@@ -7,6 +7,7 @@ import {
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { invokeEdgeFunction } from "../../../../lib/invokeEdgeFunction";
+import { isShopLiveOtpEnabled } from "../../../../lib/shopOtp";
 import { useBrand } from "../../../context/BrandContext";
 import { useAuthStore } from "../../../../lib";
 import { 
@@ -381,12 +382,12 @@ export function PatientShopPage() {
     }
   }, [gateway, paymentQualifiersPassed, stage]);
 
-  // ── Send real OTP when 2FA stage begins ─────────────────────────────────────
+  // ── Send real OTP when 2FA stage begins (skip if live OTP not enabled — demo bypass) ──
   useEffect(() => {
-    if (stage !== '2fa' || !phone) return;
-    const e164 = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g, '')}`;
+    if (stage !== "2fa" || !phone || !isShopLiveOtpEnabled()) return;
+    const e164 = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
     invokeEdgeFunction("send-otp", { requireSession: false, body: { phone: e164 } }).catch(console.warn);
-  }, [stage]);
+  }, [stage, phone]);
 
   const goToStage = useCallback(
     (next: ShopFlowStage, opts?: { replace?: boolean }) => {
@@ -1317,13 +1318,22 @@ export function PatientShopPage() {
              <ShieldCheck className="h-8 w-8 text-blue-500" />
           </div>
           <h1 className="text-2xl font-bold">Verify your phone</h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            We sent a 6-digit code to<br />
-            <span className="font-bold text-foreground">{phone || "(555) 000-0000"}</span>
-          </p>
-          <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-200">
-            ⚡ Demo Mode: Type any 6 digits to instantly bypass
-          </div>
+          {isShopLiveOtpEnabled() ? (
+            <p className="text-sm text-muted-foreground mt-2">
+              We sent a 6-digit code to<br />
+              <span className="font-bold text-foreground">{phone || "(555) 000-0000"}</span>
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground mt-2">
+              SMS verification is in demo mode — enter any 6 digits for{" "}
+              <span className="font-bold text-foreground">{phone || "your number"}</span> to continue.
+            </p>
+          )}
+          {!isShopLiveOtpEnabled() && (
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-200">
+              Demo OTP — no SMS sent until Edge Functions + Twilio are configured
+            </div>
+          )}
         </div>
 
         <div className="space-y-4 pt-4">
@@ -1370,16 +1380,27 @@ export function PatientShopPage() {
             {isVerifyingOtp ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify & Continue"}
           </Button>
           <p className="text-xs text-center text-muted-foreground mt-4">
-            Didn't receive the code?{" "}
-            <button
-              className="font-bold text-primary hover:underline"
-              onClick={async () => {
-                const e164 = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g,'')}`;
-                await invokeEdgeFunction("send-otp", { requireSession: false, body: { phone: e164 } });
-              }}
-            >
-              Resend SMS
-            </button>
+            {isShopLiveOtpEnabled() ? (
+              <>
+                Didn&apos;t receive the code?{" "}
+                <button
+                  className="font-bold text-primary hover:underline"
+                  onClick={async () => {
+                    const e164 = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
+                    const { error: resendErr } = await invokeEdgeFunction("send-otp", {
+                      requireSession: false,
+                      body: { phone: e164 },
+                    });
+                    if (resendErr) setError(resendErr.message);
+                  }}
+                >
+                  Resend SMS
+                </button>
+              </>
+            ) : (
+              <>Enable real SMS: deploy <code className="text-[10px]">send-otp</code> in Supabase and set{" "}
+                <code className="text-[10px]">VITE_SHOP_LIVE_OTP=true</code> on Vercel.</>
+            )}
           </p>
         </div>
       </EnrollmentFlowShell>
