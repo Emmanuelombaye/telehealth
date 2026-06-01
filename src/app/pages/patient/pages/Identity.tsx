@@ -23,6 +23,7 @@ import { invokeEdgeFunction } from "../../../../lib/invokeEdgeFunction";
 import { useAuthStore } from "../../../../lib";
 import type { PhiAccessLogRow } from "../../../../lib/phiAccessAudit";
 import { toast } from "sonner";
+import { useBrand } from "../../../context/BrandContext";
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
 
@@ -37,6 +38,8 @@ type PrivacyPanel = "encryption" | "access" | "hipaa" | null;
 
 export function IdentityPage() {
   const { user } = useAuthStore();
+  const { site } = useBrand();
+  const portalName = site.copy.portalName;
   const navigate = useNavigate();
   const [verification, setVerification] = useState<Record<string, unknown> | null>(null);
   const [kycVerified, setKycVerified] = useState(false);
@@ -233,7 +236,7 @@ export function IdentityPage() {
         <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-800/70">Privacy center</p>
         <h1 className="text-2xl font-bold tracking-tight text-[#0A2E1F]">Identity verification</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Secure your account and see how Peak Health protects your health information.
+          Secure your account and see how {portalName} protects your health information.
         </p>
       </div>
 
@@ -375,7 +378,7 @@ export function IdentityPage() {
             <DialogDescription asChild>
               <div className="space-y-3 pt-2 text-sm text-slate-600">
                 <p>
-                  Peak Health uses industry-standard <strong>TLS</strong> for all traffic between your browser and our
+                  {portalName} uses industry-standard <strong>TLS</strong> for all traffic between your browser and our
                   servers. Clinical data is stored on <strong>Supabase</strong> infrastructure with encryption at rest
                   and role-based access controls.
                 </p>

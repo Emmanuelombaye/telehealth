@@ -155,6 +155,7 @@ const AffiliateDashboard = lazy(() =>
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { BrandProvider } from "./context/BrandContext";
+import { BrandSiteGate } from "./components/brand/BrandSiteGate";
 
 
 export const router = createBrowserRouter([
@@ -228,6 +229,46 @@ export const router = createBrowserRouter([
       // Patient Shop flow (Standalone) — shareable steps: /patient/shop/checkout, /create-account, etc.
       { path: "patient/shop/:step", Component: PatientShopPage },
       { path: "patient/shop", Component: PatientShopPage },
+
+      // White-label partner enrollment + patient portal (no Peak Health branding in UI)
+      {
+        path: "care/:brandSlug",
+        element: <BrandSiteGate />,
+        children: [
+          { index: true, element: <Navigate to="shop" replace /> },
+          { path: "shop/:step", Component: PatientShopPage },
+          { path: "shop", Component: PatientShopPage },
+          { path: "login", element: <AuthPage portal="patient" /> },
+          {
+            element: <AppLayout />,
+            children: [
+              {
+                path: "patient",
+                element: <ProtectedRoute allowedRoles={["patient", "super_admin"]} />,
+                children: [
+                  { index: true, Component: PatientDashboard },
+                  { path: "orders", Component: PatientOrderTrackingPage },
+                  { path: "appointments", Component: AppointmentsPage },
+                  { path: "intake", Component: IntakeFormsPage },
+                  { path: "visit-forms", Component: VisitFormsPage },
+                  { path: "messages", Component: MessagesPage },
+                  { path: "summaries", Component: VisitSummariesPage },
+                  { path: "prescriptions", Component: PrescriptionsPage },
+                  { path: "labs", Component: LabResultsPage },
+                  { path: "documents", Component: DocumentsPage },
+                  { path: "profile", Component: ProfilePage },
+                  { path: "identity", Component: IdentityPage },
+                  { path: "family", Component: FamilyAccessPage },
+                  { path: "notifications", Component: NotificationsPage },
+                  { path: "insurance", Component: InsurancePage },
+                  { path: "consult", Component: PatientConsultPage },
+                  { path: "vitals", Component: PatientVitalsPage },
+                ],
+              },
+            ],
+          },
+        ],
+      },
 
       // --- PROTECTED PORTALS (All use AppLayout) ---
       {

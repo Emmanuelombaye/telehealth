@@ -8,65 +8,83 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation } from "react-router";
+import type { BrandSiteConfig } from "../../brand-sites";
+import { PEAK_SITE } from "../../brand-sites";
 import {
   type ActiveBrand,
   PEAK_HEALTH_BRAND,
   parseBrandFromSearch,
   resolveActiveBrand,
 } from "../../lib/brands";
+import {
+  applyBrandSiteTheme,
+  clearBrandSiteTheme,
+  resolveBrandExperience,
+  type BrandExperience,
+} from "../../lib/brands/whiteLabel";
 
-type BrandContextValue = {
+export type BrandContextValue = BrandExperience & {
   brand: ActiveBrand;
+  site: BrandSiteConfig;
   loading: boolean;
-  /** Value for orders.sub_brand and profiles.brand_id (UUID). */
   orderBrandKey: string;
   refreshBrand: () => Promise<void>;
 };
 
 const BrandContext = createContext<BrandContextValue | null>(null);
 
+function brandSlugFromPath(pathname: string): string | null {
+  const m = pathname.match(/^\/care\/([^/]+)/);
+  return m?.[1] ?? null;
+}
+
 export function BrandProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const [brand, setBrand] = useState<ActiveBrand>(PEAK_HEALTH_BRAND);
+  const [experience, setExperience] = useState<BrandExperience>(() =>
+    resolveBrandExperience({}),
+  );
   const [loading, setLoading] = useState(true);
 
-  const refreshBrand = useCallback(async () => {
+  const syncBrand = useCallback(async () => {
+    const hostname = typeof window !== "undefined" ? window.location.hostname : undefined;
+    const pathSlug = brandSlugFromPath(location.pathname);
     const fromUrl = parseBrandFromSearch(location.search);
+    const exp = resolveBrandExperience({
+      brandSlug: pathSlug || fromUrl.brandSlug || fromUrl.brandId,
+      hostname,
+    });
+    setExperience(exp);
+
     const resolved = await resolveActiveBrand({
-      ...fromUrl,
-      hostname: typeof window !== "undefined" ? window.location.hostname : undefined,
+      brandId: exp.site.brand.id,
+      brandSlug: exp.site.brand.slug,
+      hostname,
     });
     setBrand(resolved);
     setLoading(false);
-  }, [location.search]);
+
+    if (exp.isWhiteLabel) {
+      applyBrandSiteTheme(exp.site);
+    } else {
+      clearBrandSiteTheme();
+    }
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      const fromUrl = parseBrandFromSearch(location.search);
-      const resolved = await resolveActiveBrand({
-        ...fromUrl,
-        hostname: typeof window !== "undefined" ? window.location.hostname : undefined,
-      });
-      if (!cancelled) {
-        setBrand(resolved);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [location.search, location.pathname]);
+    void syncBrand();
+  }, [syncBrand]);
 
   const value = useMemo(
-    () => ({
+    (): BrandContextValue => ({
+      ...experience,
       brand,
+      site: experience.site,
       loading,
       orderBrandKey: brand.id,
-      refreshBrand,
+      refreshBrand: syncBrand,
     }),
-    [brand, loading, refreshBrand],
+    [experience, brand, loading, syncBrand],
   );
 
   return <BrandContext.Provider value={value}>{children}</BrandContext.Provider>;
@@ -75,8 +93,11 @@ export function BrandProvider({ children }: { children: ReactNode }) {
 export function useBrand(): BrandContextValue {
   const ctx = useContext(BrandContext);
   if (!ctx) {
+    const exp = resolveBrandExperience({});
     return {
+      ...exp,
       brand: PEAK_HEALTH_BRAND,
+      site: PEAK_SITE,
       loading: false,
       orderBrandKey: PEAK_HEALTH_BRAND.id,
       refreshBrand: async () => {},

@@ -17,6 +17,7 @@ import { usePatientStore } from "../../lib/patient-store";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 import { motion, AnimatePresence } from "framer-motion";
 import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
+import { useBrand } from "../context/BrandContext";
 
 type DoctorNavChild = {
   label: string;
@@ -65,9 +66,11 @@ type Role = "patient" | "doctor" | "admin" | "superadmin" | "affiliate";
 function navLinkEndsAtExact(role: Role, doctorBase: "/doctor" | "/providers" | null, itemHref: string): boolean {
   if (role === "doctor" && doctorBase) return itemHref === doctorBase;
   if (role === "patient") {
-    if (itemHref === "/patient") return true;
-    /** Shop + enrollment steps live under `/patient/shop/...` */
-    if (itemHref === "/patient/shop" || itemHref.startsWith("/patient/shop/")) return false;
+    const isHome =
+      itemHref === "/patient" || /^\/care\/[^/]+\/patient$/.test(itemHref);
+    if (isHome) return true;
+    /** Shop + enrollment steps live under `.../shop/...` */
+    if (itemHref.includes("/shop")) return false;
     return true;
   }
   if (role === "admin") return itemHref === "/admin";
@@ -163,8 +166,21 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const location = useLocation();
   const doctorBase =
     role === "doctor" ? doctorPortalBaseFromPath(location.pathname) : null;
-  const menu =
+  const { isWhiteLabel, patientPortalBase, enrollBase } = useBrand();
+  let menu =
     role === "doctor" && doctorBase !== null ? buildDoctorMenu(doctorBase) : menuConfig[role];
+  if (role === "patient" && isWhiteLabel) {
+    const base = patientPortalBase.replace(/\/$/, "");
+    menu = menuConfig.patient.map((item: { href: string }) => ({
+      ...item,
+      href:
+        item.href === "/patient"
+          ? base
+          : item.href === "/patient/shop"
+            ? enrollBase
+            : item.href.replace(/^\/patient/, base),
+    }));
+  }
   const { user, role: authRole } = useAuthStore();
   const orders = usePatientStore((s) => s.orders) ?? [];
   const notifications = usePatientStore((s) => s.notifications) ?? [];

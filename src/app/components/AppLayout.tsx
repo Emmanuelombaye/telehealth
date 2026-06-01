@@ -16,6 +16,7 @@ import { AuthLoadingScreen } from "./ProtectedRoute";
 import { motion, AnimatePresence } from "framer-motion";
 import { doctorPortalBackground, doctorMainBackground } from "../../lib/doctorPortalUi";
 import { PhiAccessRouteLogger } from "./PhiAccessRouteLogger";
+import { useBrand } from "../context/BrandContext";
 
 export function AppLayout() {
   const fetchOrders = usePatientStore(state => state.fetchOrders);
@@ -33,8 +34,10 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname;
-
-  const isPatientPortal = path.startsWith("/patient");
+  const { brand, site, isWhiteLabel, patientPortalBase } = useBrand();
+  const isWhiteLabelPatient = isWhiteLabel && /^\/care\/[^/]+/.test(path);
+  const isPatientPortal =
+    path.startsWith("/patient") || /^\/care\/[^/]+\/patient/.test(path);
   const isSuperAdminPortal = path.startsWith("/superadmin");
   const isDoctorPortal = path.startsWith("/doctor") || path.startsWith("/providers");
   const isRpmCommandCenter =
@@ -84,8 +87,12 @@ export function AppLayout() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isChatbotEnabled, setIsChatbotEnabled] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const portalName = site.copy.portalName;
   const [messages, setMessages] = useState<Array<{ sender: "user" | "bot"; text: string }>>([
-    { sender: "bot", text: "Hello! I am your Peak Health Virtual Care Assistant. How can I help you today?" }
+    {
+      sender: "bot",
+      text: `Hello! I am your ${portalName} Virtual Care Assistant. How can I help you today?`,
+    },
   ]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -149,7 +156,7 @@ export function AppLayout() {
       } else if (lower.includes("order") || lower.includes("shipping") || lower.includes("package")) {
         reply = "To track active shipments, medication refills, or view billing details, check the 'Orders' tracker in your navigation menu.";
       } else if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
-        reply = "Hello there! How can I assist you with your Peak Health care journey today?";
+        reply = `Hello there! How can I assist you with your ${portalName} care journey today?`;
       }
 
       setMessages(prev => [...prev, { sender: "bot", text: reply }]);
@@ -265,7 +272,7 @@ export function AppLayout() {
               </span>
               <span className="truncate text-sm font-semibold text-slate-500 md:text-[15px]">
                 {isPatientPortal
-                  ? "Peak Health"
+                  ? site.copy.portalName
                   : isSuperAdminPortal
                     ? "Super Admin portal"
                     : path.startsWith("/admin")
@@ -285,12 +292,12 @@ export function AppLayout() {
               className="flex w-full max-w-[min(94vw,28rem)] justify-center sm:max-w-[30rem] md:max-w-[32rem]"
             >
               <Link
-                to="/patient"
+                to={patientPortalBase}
                 className="flex items-center justify-center outline-none transition-opacity hover:opacity-90 focus-visible:opacity-90"
               >
                 <img
-                  src="/PeakHealthLogo.png"
-                  alt="Peak Health"
+                  src={isWhiteLabelPatient ? brand.logoUrl : "/PeakHealthLogo.png"}
+                  alt={brand.logoAlt}
                   width={320}
                   height={120}
                   decoding="async"
@@ -469,7 +476,7 @@ export function AppLayout() {
                       <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-400 border border-[#0A2E1F] animate-pulse" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold leading-tight">Peak Health AI</h4>
+                      <h4 className="text-xs font-bold leading-tight">{portalName} AI</h4>
                       <p className="text-[10px] text-emerald-300 font-medium">Online &amp; Active</p>
                     </div>
                   </div>

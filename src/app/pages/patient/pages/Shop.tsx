@@ -49,6 +49,8 @@ import { toCustomerMessage } from "../../../../lib/customerSafeError";
 import { insertPatientOrder } from "../../../../lib/insertPatientOrder";
 import {
   shopPathForStage,
+  shopEnrollBaseFromPath,
+  shopStageFromPathname,
   shopStageFromStepParam,
   type ShopFlowStage,
 } from "../../../../lib/patientShopRoutes";
@@ -188,13 +190,12 @@ export function PatientShopPage() {
 
   const readInitialStage = (): ShopFlowStage => {
     if (typeof window === "undefined") return "catalog";
-    const seg = window.location.pathname.replace(/^\/patient\/shop\/?/, "").split("/")[0];
-    return shopStageFromStepParam(seg || undefined) ?? "catalog";
+    return shopStageFromPathname(window.location.pathname) ?? "catalog";
   };
 
   const [stage, setStageState] = useState<ShopFlowStage>(readInitialStage);
   const { initialize } = useAuthStore();
-  const { brand, orderBrandKey } = useBrand();
+  const { brand, orderBrandKey, site, enrollBase, patientPortalBase, isWhiteLabel } = useBrand();
   const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [assignedDoctorForScheduling, setAssignedDoctorForScheduling] = useState<any>(null);
@@ -390,9 +391,9 @@ export function PatientShopPage() {
   const goToStage = useCallback(
     (next: ShopFlowStage, opts?: { replace?: boolean }) => {
       setStageState(next);
-      navigate(shopPathForStage(next), { replace: opts?.replace ?? false });
+      navigate(shopPathForStage(next, enrollBase), { replace: opts?.replace ?? false });
     },
-    [navigate]
+    [navigate, enrollBase]
   );
 
   /** Standalone scheduling stage was merged into medical intake; normalize in-memory state. */
@@ -405,20 +406,20 @@ export function PatientShopPage() {
   useEffect(() => {
     const parsed = shopStageFromStepParam(stepParam);
     if (stepParam && parsed === null) {
-      navigate("/patient/shop", { replace: true });
+      navigate(enrollBase, { replace: true });
       return;
     }
     setStageState(parsed ?? "catalog");
-  }, [stepParam, navigate]);
+  }, [stepParam, navigate, enrollBase]);
 
   /** Deep link to a step without a chosen program → back to catalog. */
   useEffect(() => {
     if (stage === "catalog") return;
     if (selected) return;
     if (resumeDraftAvailable) return;
-    navigate("/patient/shop", { replace: true });
+    navigate(enrollBase, { replace: true });
     setStageState("catalog");
-  }, [stage, selected, resumeDraftAvailable, navigate]);
+  }, [stage, selected, resumeDraftAvailable, navigate, enrollBase]);
 
   // ── Reset Stripe secret when product changes ─────────────────────────────────
   const startFlow = (product: any) => {
@@ -1049,14 +1050,14 @@ export function PatientShopPage() {
       <EnrollmentFlowShell centered className="space-y-5 pt-8">
         <PatientShopTopChrome
           stage={stage}
-          onBack={() => navigate("/patient")}
+          onBack={() => navigate(patientPortalBase)}
           backLabel="Back to portal"
         />
         <div className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center mx-auto">
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
         <div>
-          <h2 className="text-xl font-bold">Welcome to Peak Health, {firstName}!</h2>
+          <h2 className="text-xl font-bold">{site.copy.welcomeTitle(firstName)}</h2>
           <p className="text-sm text-muted-foreground mt-1">Your account is created and intake is under review.</p>
         </div>
         <Card className="text-left">
@@ -1079,9 +1080,9 @@ export function PatientShopPage() {
           className="w-full rounded-xl text-base h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
           onClick={() => {
             // Hard reload ensures the protected route and layout pick up the new session immediately
-            window.location.href = '/patient';
+            window.location.href = patientPortalBase;
           }}>
-          Enter My Patient Portal →
+          Enter My {site.copy.portalName} Portal →
         </Button>
         <p className="text-xs text-muted-foreground">
           If you're prompted to log in, use <strong>{email}</strong> and the password you just created.
@@ -1252,12 +1253,12 @@ export function PatientShopPage() {
         <label className="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
           <span className="text-xs text-muted-foreground leading-relaxed">
-            I agree to Peak Health&apos;s{" "}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold underline">
+            {site.copy.termsLabel}{" "}
+            <a href={site.copy.termsHref} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold underline">
               Terms of Service
             </a>{" "}
             and{" "}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold underline">
+            <a href={site.copy.privacyHref} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold underline">
               Privacy Policy
             </a>
             . I consent to telehealth services and electronic prescriptions.
@@ -2157,7 +2158,7 @@ export function PatientShopPage() {
   return (
     <div className="patient-enrollment-surface min-h-[100dvh] bg-[#F4F7F5]">
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-10 space-y-6 pb-20 pt-6 sm:pt-8">
-      <PatientEnrollmentCatalogChrome stage={stage} onBack={() => navigate("/patient")} />
+      <PatientEnrollmentCatalogChrome stage={stage} onBack={() => navigate(patientPortalBase)} />
 
       {resumeDraftAvailable && (
         <Card className="border-primary/30 bg-primary/5">

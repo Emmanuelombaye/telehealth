@@ -16,6 +16,11 @@ export type BrandResolveInput = {
   hostname?: string;
 };
 
+export function brandSlugFromPathname(pathname: string): string | null {
+  const m = pathname.match(/^\/care\/([^/]+)/);
+  return m?.[1] ?? null;
+}
+
 let cachedDbBrands: ActiveBrand[] | null = null;
 
 async function loadDbBrands(): Promise<ActiveBrand[]> {

@@ -2,14 +2,17 @@ import { NavLink } from "react-router";
 import { Home, Calendar, MessageSquare, Package, User } from "lucide-react";
 import { cn } from "./ui/utils";
 import { motion } from "framer-motion";
+import { useBrand } from "../context/BrandContext";
 
 export function BottomNav() {
+  const { patientPortalBase, enrollBase } = useBrand();
+  const base = patientPortalBase.replace(/\/$/, "");
   const navItems = [
-    { icon: Home, label: "Home", href: "/patient" },
-    { icon: Package, label: "Shop", href: "/patient/shop" },
-    { icon: Calendar, label: "Visits", href: "/patient/appointments" },
-    { icon: MessageSquare, label: "Messages", href: "/patient/messages" },
-    { icon: User, label: "Profile", href: "/patient/profile" },
+    { icon: Home, label: "Home", href: base },
+    { icon: Package, label: "Shop", href: enrollBase },
+    { icon: Calendar, label: "Visits", href: `${base}/appointments` },
+    { icon: MessageSquare, label: "Messages", href: `${base}/messages` },
+    { icon: User, label: "Profile", href: `${base}/profile` },
   ];
 
   return (
@@ -28,9 +31,9 @@ export function BottomNav() {
             key={item.href}
             to={item.href}
             end={
-              item.href === "/patient"
+              item.href === base
                 ? true
-                : item.href === "/patient/shop"
+                : item.href === enrollBase
                   ? false
                   : true
             }

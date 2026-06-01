@@ -19,6 +19,7 @@ import {
 } from "../../../lib";
 import { supabase } from "../../../lib/supabaseClient";
 import { patientMessagesHref } from "../../../lib/patientMessaging";
+import { useBrand } from "../../context/BrandContext";
 
 const stepIcon: Record<string, any> = {
   order_submitted: FileText,
@@ -41,6 +42,8 @@ const subBrandTint: Record<string, string> = {
 
 export function PatientDashboard() {
   const { t } = useI18n();
+  const { site } = useBrand();
+  const portalName = site.copy.portalName;
   const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
   const firstName = user?.user_metadata?.first_name || 'Patient';
@@ -169,7 +172,7 @@ export function PatientDashboard() {
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="mx-auto max-w-xl space-y-3 text-center sm:mx-0 sm:text-left">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-800/70">
-              Peak Health · Patient · Step 9 of 9 (dashboard)
+              {portalName} · Patient · Step 9 of 9 (dashboard)
             </p>
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl md:text-[2.65rem] md:leading-[1.08]">
               Welcome back,{" "}

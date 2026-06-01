@@ -37,10 +37,32 @@ const SEGMENT_TO_STAGE: Record<string, ShopFlowStage> = Object.fromEntries(
 // Force questionnaire for that segment (scheduling is never navigated via its own URL).
 SEGMENT_TO_STAGE["medical-intake"] = "questionnaire";
 
+/** Enrollment shop base path — Peak or white-label `/care/:slug/shop`. */
+export function shopEnrollBaseFromPath(pathname: string): string {
+  const care = pathname.match(/^(\/care\/[^/]+\/shop)/);
+  if (care) return care[1];
+  return "/patient/shop";
+}
+
+export function shopStepSegmentFromPath(pathname: string): string | undefined {
+  const care = pathname.match(/^\/care\/[^/]+\/shop\/(.+)$/);
+  if (care) return care[1];
+  const peak = pathname.match(/^\/patient\/shop\/(.+)$/);
+  if (peak) return peak[1];
+  return undefined;
+}
+
 /** Full path for router.navigate — catalog is base shop URL. */
-export function shopPathForStage(stage: ShopFlowStage): string {
+export function shopPathForStage(stage: ShopFlowStage, enrollBase = "/patient/shop"): string {
   const seg = STAGE_TO_SEGMENT[stage];
-  return seg ? `/patient/shop/${seg}` : "/patient/shop";
+  const base = enrollBase.replace(/\/$/, "");
+  return seg ? `${base}/${seg}` : base;
+}
+
+/** Resolve stage from URL path (Peak or /care/:brand/shop). */
+export function shopStageFromPathname(pathname: string): ShopFlowStage | null {
+  const seg = shopStepSegmentFromPath(pathname);
+  return shopStageFromStepParam(seg);
 }
 
 /** Resolve stage from :step param (undefined → catalog). Invalid segment → null. */

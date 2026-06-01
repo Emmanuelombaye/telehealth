@@ -9,6 +9,7 @@ import {
   matchStaffDemo,
   persistDemoAuth,
 } from "../../../lib/staffDemoAuth";
+import { useBrand } from "../../context/BrandContext";
 
 type Portal = "patient" | "doctor" | "admin" | "superadmin" | "affiliate" | "pharmacy";
 
@@ -25,6 +26,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { brand, site, isWhiteLabel, patientPortalBase, enrollBase } = useBrand();
   const initialize = useAuthStore(state => state.initialize);
   const cleanupDone = useRef(false);
 
@@ -72,7 +74,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
       case 'pharmacy':
         return `/pharmacy${buster}`;
       default:
-        return `/patient${buster}`;
+        return `${patientPortalBase.replace(/\/$/, "")}${buster}`;
     }
   };
 
@@ -236,7 +238,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA]">
         <div className="flex flex-col items-center gap-4">
-          <img src="/PeakHealthLogo.png" alt="Peak Health" className="h-20 object-contain opacity-80" />
+          <img
+            src={isWhiteLabel && portal === "patient" ? brand.logoUrl : "/PeakHealthLogo.png"}
+            alt={brand.logoAlt}
+            className="h-20 object-contain opacity-80"
+          />
           <div className="flex items-center gap-3">
             <span className="h-5 w-5 border-2 border-slate-200 border-t-[#0A3622] rounded-full animate-spin" />
             <span className="text-sm font-medium tracking-wide text-slate-500">Preparing secure login...</span>
@@ -252,17 +258,26 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const portalSubtitle =
     portal === "affiliate"
       ? "Powered by Referly.so — referral links, tracking, and payouts."
-      : "Secure access for clinicians and patients.";
+      : isWhiteLabel && portal === "patient"
+        ? `Sign in to your ${site.copy.portalName} patient portal.`
+        : "Secure access for clinicians and patients.";
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA] p-4 overflow-auto font-sans">
-      <a href="/" className="absolute top-6 left-6 flex items-center gap-2 text-xs font-bold text-[#8CA397] hover:text-[#0A3622] transition-colors">
+      <a
+        href={isWhiteLabel && portal === "patient" ? enrollBase : "/"}
+        className="absolute top-6 left-6 flex items-center gap-2 text-xs font-bold text-[#8CA397] hover:text-[#0A3622] transition-colors"
+      >
         <ArrowLeft className="h-4 w-4" /> Back to Home
       </a>
 
       <div className="w-full max-w-[420px] space-y-6 pt-4">
         <div className="flex flex-col items-center text-center mb-6">
-          <img src="/PeakHealthLogo.png" alt="Peak Health" className="w-[380px] h-auto object-contain -mb-12" />
+          <img
+            src={isWhiteLabel && portal === "patient" ? brand.logoUrl : "/PeakHealthLogo.png"}
+            alt={brand.logoAlt}
+            className="w-[380px] h-auto object-contain -mb-12"
+          />
           <div className="space-y-1.5 -mt-4">
             {portal === "affiliate" && (
               <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-800 mb-2">

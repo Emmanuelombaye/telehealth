@@ -7,6 +7,7 @@ import {
   hasForcePatientPortalIntent,
 } from '../../lib/patientPortalIntent';
 import { readStoredDemoAuth } from '../../lib/staffDemoAuth';
+import { useBrand } from '../context/BrandContext';
 
 const portalLoginUrl = (path: string) => {
   if (path.startsWith('/doctor')) return '/doctor/login';
@@ -16,13 +17,20 @@ const portalLoginUrl = (path: string) => {
   if (path.startsWith('/superadmin')) return '/superadmin/login';
   if (path.startsWith('/affiliate')) return '/affiliate/login';
   if (path.startsWith('/patient')) return '/login';
+  const care = path.match(/^\/care\/([^/]+)/);
+  if (care) return `/care/${care[1]}/login`;
   return '/login';
 };
 
 export function AuthLoadingScreen() {
+  const { brand, isWhiteLabel } = useBrand();
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center gap-6 z-50">
-      <img src="/originallogo.png" alt="Peak Health" className="h-14 object-contain opacity-90" />
+      <img
+        src={isWhiteLabel ? brand.logoUrl : "/originallogo.png"}
+        alt={brand.logoAlt}
+        className="h-14 object-contain opacity-90"
+      />
       <div className="flex items-center gap-3">
         <span className="h-5 w-5 border-2 border-white/20 border-t-emerald-400 rounded-full animate-spin" />
         <span className="text-white/50 text-sm font-medium tracking-wide">Verifying credentials...</span>
@@ -74,6 +82,8 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
         typeof window !== 'undefined'
           ? doctorPortalBaseFromPath(window.location.pathname)
           : '/doctor';
+      const careMatch =
+        typeof window !== 'undefined' ? window.location.pathname.match(/^\/care\/([^/]+)/) : null;
       const targetPortal =
         effectiveRole === 'doctor'
           ? doctorBase
@@ -85,7 +95,9 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
                 ? '/admin'
                 : effectiveRole === 'affiliate'
                   ? '/affiliate'
-                  : '/patient';
+                  : careMatch
+                    ? `/care/${careMatch[1]}/patient`
+                    : '/patient';
       
       console.log(`[ProtectedRoute] RBAC mismatch: User role "${effectiveRole}" not in [${rolesKey}]. Redirecting to ${targetPortal}`);
       navigate(targetPortal, { replace: true });
@@ -109,7 +121,8 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
   }
 
   // ✅ Authenticated + correct role — render the portal
-  if (forcePatient && window.location.pathname.startsWith('/patient')) {
+  const p = window.location.pathname;
+  if (forcePatient && (p.startsWith('/patient') || /^\/care\/[^/]+\/patient/.test(p))) {
     clearForcePatientPortalIntent();
   }
   return <Outlet />;
