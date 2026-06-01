@@ -1,0 +1,18 @@
+---
+description: Git commit author must be Emmanuel Ombaye, never Cursor co-author
+alwaysApply: true
+---
+
+# Git commit author
+
+When creating git commits in this repo:
+
+- **Author:** `Emmanuel Ombaye <Emmanuelombaye@users.noreply.github.com>`
+- **Never** add `Co-authored-by: Cursor` or commit as `cursoragent` / `James Sio`.
+- Pass author explicitly (do not change global git config):
+
+```bash
+git commit --author="Emmanuel Ombaye <Emmanuelombaye@users.noreply.github.com>" -m "message"
+```
+
+Push to `origin main` after commits when the user asks to send changes to GitHub.
