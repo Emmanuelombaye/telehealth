@@ -17,6 +17,8 @@ export const NORTH_STAR_BRAND: ActiveBrand = {
   domain: domainEnv || "northstarmd.com",
   domains: [
     domainEnv || "northstarmd.com",
+    "joinnorthstarmd.com",
+    "www.joinnorthstarmd.com",
     "northstarmed.vercel.app",
     "www.northstarmed.vercel.app",
     "care.northstarmed.vercel.app",

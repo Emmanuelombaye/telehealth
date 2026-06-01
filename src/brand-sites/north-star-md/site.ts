@@ -4,12 +4,14 @@ import type { BrandSiteConfig } from "../types";
 /**
  * North Star MD — white-label site kit
  * Marketing: https://northstarmed.vercel.app/
- * Enrollment (white-label): /care/north-star-md/shop
+ * Enrollment: https://joinnorthstarmd.com/care/north-star-md/shop
  * Patient portal: /care/north-star-md/patient
  */
 export const northStarSite: BrandSiteConfig = {
   brand: NORTH_STAR_BRAND,
   hosts: [
+    "joinnorthstarmd.com",
+    "www.joinnorthstarmd.com",
     "northstarmed.vercel.app",
     "www.northstarmed.vercel.app",
     "care.northstarmed.vercel.app",
