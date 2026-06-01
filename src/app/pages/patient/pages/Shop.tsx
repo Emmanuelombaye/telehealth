@@ -7,7 +7,7 @@ import {
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { invokeEdgeFunction } from "../../../../lib/invokeEdgeFunction";
-import { isShopLiveOtpEnabled } from "../../../../lib/shopOtp";
+import { isShopLiveOtpEnabled, isShopMockOtp } from "../../../../lib/shopOtp";
 import { useBrand } from "../../../context/BrandContext";
 import { useAuthStore } from "../../../../lib";
 import { 
@@ -382,7 +382,7 @@ export function PatientShopPage() {
     }
   }, [gateway, paymentQualifiersPassed, stage]);
 
-  // ── Send real OTP when 2FA stage begins (skip if live OTP not enabled — demo bypass) ──
+  // ── Send real OTP when 2FA stage begins (live OTP only) ──
   useEffect(() => {
     if (stage !== "2fa" || !phone || !isShopLiveOtpEnabled()) return;
     const e164 = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
@@ -396,6 +396,13 @@ export function PatientShopPage() {
     },
     [navigate, enrollBase]
   );
+
+  /** Mock mode: skip SMS step if user lands on /2fa URL directly. */
+  useEffect(() => {
+    if (stage === "2fa" && isShopMockOtp()) {
+      goToStage("identity", { replace: true });
+    }
+  }, [stage, goToStage]);
 
   /** Standalone scheduling stage was merged into medical intake; normalize in-memory state. */
   useEffect(() => {
@@ -1295,17 +1302,23 @@ export function PatientShopPage() {
             const currentUser = useAuthStore.getState().user;
             if (currentUser) {
               goToStage("identity");
-            } else {
+            } else if (isShopLiveOtpEnabled()) {
               goToStage("2fa");
+            } else {
+              goToStage("identity");
             }
           }}>
-          Continue to Phone Verification <ChevronRight className="h-4 w-4 ml-1" />
+          {isShopLiveOtpEnabled() ? (
+            <>Continue to Phone Verification <ChevronRight className="h-4 w-4 ml-1" /></>
+          ) : (
+            <>Continue <ChevronRight className="h-4 w-4 ml-1" /></>
+          )}
         </Button>
       </EnrollmentFlowShell>
     );
   }
 
-  if (stage === "2fa" && selected) {
+  if (stage === "2fa" && selected && isShopLiveOtpEnabled()) {
     return (
       <EnrollmentFlowShell className="space-y-6 pt-8">
         <PatientShopTopChrome
@@ -1318,22 +1331,10 @@ export function PatientShopPage() {
              <ShieldCheck className="h-8 w-8 text-blue-500" />
           </div>
           <h1 className="text-2xl font-bold">Verify your phone</h1>
-          {isShopLiveOtpEnabled() ? (
-            <p className="text-sm text-muted-foreground mt-2">
-              We sent a 6-digit code to<br />
-              <span className="font-bold text-foreground">{phone || "(555) 000-0000"}</span>
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground mt-2">
-              SMS verification is in demo mode — enter any 6 digits for{" "}
-              <span className="font-bold text-foreground">{phone || "your number"}</span> to continue.
-            </p>
-          )}
-          {!isShopLiveOtpEnabled() && (
-            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-200">
-              Demo OTP — no SMS sent until Edge Functions + Twilio are configured
-            </div>
-          )}
+          <p className="text-sm text-muted-foreground mt-2">
+            We sent a 6-digit code to<br />
+            <span className="font-bold text-foreground">{phone || "(555) 000-0000"}</span>
+          </p>
         </div>
 
         <div className="space-y-4 pt-4">
@@ -1380,27 +1381,20 @@ export function PatientShopPage() {
             {isVerifyingOtp ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify & Continue"}
           </Button>
           <p className="text-xs text-center text-muted-foreground mt-4">
-            {isShopLiveOtpEnabled() ? (
-              <>
-                Didn&apos;t receive the code?{" "}
-                <button
-                  className="font-bold text-primary hover:underline"
-                  onClick={async () => {
-                    const e164 = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
-                    const { error: resendErr } = await invokeEdgeFunction("send-otp", {
-                      requireSession: false,
-                      body: { phone: e164 },
-                    });
-                    if (resendErr) setError(resendErr.message);
-                  }}
-                >
-                  Resend SMS
-                </button>
-              </>
-            ) : (
-              <>Enable real SMS: deploy <code className="text-[10px]">send-otp</code> in Supabase and set{" "}
-                <code className="text-[10px]">VITE_SHOP_LIVE_OTP=true</code> on Vercel.</>
-            )}
+            Didn&apos;t receive the code?{" "}
+            <button
+              className="font-bold text-primary hover:underline"
+              onClick={async () => {
+                const e164 = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
+                const { error: resendErr } = await invokeEdgeFunction("send-otp", {
+                  requireSession: false,
+                  body: { phone: e164 },
+                });
+                if (resendErr) setError(resendErr.message);
+              }}
+            >
+              Resend SMS
+            </button>
           </p>
         </div>
       </EnrollmentFlowShell>
@@ -1415,7 +1409,7 @@ export function PatientShopPage() {
           onBack={() => {
             const currentUser = useAuthStore.getState().user;
             if (currentUser) goToStage("payment_confirmation");
-            else goToStage("2fa");
+            else goToStage(isShopLiveOtpEnabled() ? "2fa" : "account_setup");
           }}
           backLabel="Back"
         />
