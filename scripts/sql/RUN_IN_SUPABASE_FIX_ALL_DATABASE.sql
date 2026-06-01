@@ -759,9 +759,53 @@ SELECT 'increment_patients_count()', EXISTS (SELECT 1 FROM pg_proc WHERE proname
 SELECT 'FIX ALL DATABASE complete — review ok column above' AS status;
 
 -- =============================================================================
--- AFTER SQL (still in Supabase Dashboard — not terminal):
--- Edge Functions → invite-doctor → if missing, create it from repo code
---   supabase/functions/invite-doctor/index.ts
--- Turn OFF "Enforce JWT Verification" for invite-doctor (fixes browser CORS preflight).
--- Click Deploy. Secrets: SUPABASE_SERVICE_ROLE_KEY is auto on hosted projects.
+-- PART 13 — Partner brand: North Star MD (marketing site → /patient/shop?brand=north-star-md)
+-- =============================================================================
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'brands'
+  ) THEN
+    INSERT INTO public.brands (
+      id, name, slug, domain, country, timezone, status, plan, since_date
+    ) VALUES (
+      'c8e7f6a2-4b1d-4e9f-a3c2-1d5e8f7a6b4c'::uuid,
+      'North Star MD',
+      'north-star-md',
+      'northstarmd.com',
+      'United States',
+      'America/New_York',
+      'active',
+      'Enterprise',
+      to_char(now(), 'Mon YYYY')
+    )
+    ON CONFLICT (slug) DO UPDATE SET
+      name = EXCLUDED.name,
+      domain = EXCLUDED.domain,
+      status = 'active';
+  END IF;
+END $$;
+
+-- =============================================================================
+-- AFTER SQL — deploy ALL browser Edge Functions (Supabase Dashboard → Edge Functions)
+-- Paste each file from supabase/functions/<name>/index.ts (self-contained, no _shared imports).
+-- For EACH function below: Settings → turn OFF "Enforce JWT Verification" → Deploy.
+--
+-- Status on project kvopgyhcjcniaocjozje (check Edge Functions list):
+--   [deployed] dispatch-prescription, invite-doctor
+--   [missing — deploy from repo] assign-doctor, create-payment-intent, stripe-attach-order,
+--     merge-scheduling-pending, send-otp, verify-otp, verify-identity, zoom-video-token,
+--     ai-medical-scribe, stripe-create-refund, process-refund
+--
+-- Required secrets (Dashboard → Edge Functions → Secrets):
+--   STRIPE_SECRET_KEY          → create-payment-intent, verify-identity, stripe-attach-order, stripe-create-refund
+--   TWILIO_*                   → send-otp, verify-otp
+--   ZOOM_VIDEO_SDK_KEY/SECRET  → zoom-video-token
+--   OPENAI_API_KEY             → ai-medical-scribe (optional — has fallback)
+--   PHARMACY_API_URL/KEY       → dispatch-prescription
+--
+-- Auth users (Authentication → Users) — demo login cannot call Edge Functions:
+--   brandon@peakbodyco.com  → super_admin (invite-doctor, super admin tools)
+--   doctor@peakbodyco.com   → doctor (dispatch-prescription, ai-medical-scribe, refunds)
 -- =============================================================================

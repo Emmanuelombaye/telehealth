@@ -124,6 +124,13 @@ export function AuthPage({ portal }: { portal: Portal }) {
         if (signInError) {
           const demo = matchStaffDemo(email, password);
           if (demo) {
+            if (portal === "superadmin" || portal === "doctor") {
+              throw new Error(
+                portal === "superadmin"
+                  ? "Super Admin requires a live Supabase login (Edge Functions). Create brandon@peakbodyco.com in Supabase Auth → Users with role super_admin."
+                  : "Provider portal requires a live Supabase login (Edge Functions). Create doctor@peakbodyco.com in Supabase Auth → Users with role doctor.",
+              );
+            }
             persistDemoAuth(demo);
             await initialize();
             navigate(portalTarget(portal), { replace: true });

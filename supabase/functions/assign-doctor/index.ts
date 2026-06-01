@@ -1,7 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
+const corsHeaders: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-api-version, prefer",
+};
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
+  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+
   try {
     const { order_id, patient_state } = await req.json();
 
@@ -29,7 +46,7 @@ serve(async (req) => {
 
     if (!assignedDoctor) {
       console.warn(`No licensed doctor found for state: ${patient_state}. Flagging for manual admin assignment.`);
-      return new Response(JSON.stringify({ error: "No eligible doctor found" }), { status: 404 });
+      return jsonResponse({ error: "No eligible doctor found" }, 404);
     }
 
     // 3. Assign doctor to order
@@ -47,13 +64,13 @@ serve(async (req) => {
     // 4. Increment doctor's patient count
     await supabase.rpc('increment_patients_count', { doctor_id: assignedDoctor.id });
 
-    return new Response(JSON.stringify({ 
+    return jsonResponse({ 
       success: true, 
       doctor_id: assignedDoctor.id, 
       doctor_name: assignedDoctor.full_name 
-    }), { status: 200 });
+    });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return jsonResponse({ error: err instanceof Error ? err.message : "Internal error" }, 500);
   }
 });

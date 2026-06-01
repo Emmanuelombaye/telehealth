@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "../../../components/ui/dialog.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
+import { invokeEdgeFunction } from "../../../../lib/invokeEdgeFunction";
 import { useAuthStore } from "../../../../lib";
 import type { PhiAccessLogRow } from "../../../../lib/phiAccessAudit";
 import { toast } from "sonner";
@@ -155,7 +156,7 @@ export function IdentityPage() {
     }
     setVerifyingId(true);
     try {
-      const { data, error } = await supabase.functions.invoke("verify-identity", {
+      const { data, error } = await invokeEdgeFunction("verify-identity", {
         body: { userId: user.id },
       });
       if (error) throw error;

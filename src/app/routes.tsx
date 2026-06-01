@@ -154,6 +154,7 @@ const AffiliateDashboard = lazy(() =>
 
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { BrandProvider } from "./context/BrandContext";
 
 
 export const router = createBrowserRouter([
@@ -162,7 +163,9 @@ export const router = createBrowserRouter([
     element: (
       <>
         <ScrollToTop />
-        <Outlet />
+        <BrandProvider>
+          <Outlet />
+        </BrandProvider>
       </>
     ),
     errorElement: <ErrorBoundary />,

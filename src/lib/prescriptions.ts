@@ -4,6 +4,7 @@
 
 import { openBrandedPrintDocument } from "./brandedExport";
 import { logPhiAccess } from "./phiAccessAudit";
+import { invokeEdgeFunction } from "./invokeEdgeFunction";
 import { supabase } from "./supabaseClient";
 import { useAuthStore } from "./auth-store";
 
@@ -85,7 +86,7 @@ export async function dispatchPrescription(
   };
 
   try {
-    const { data, error } = await supabase.functions.invoke("dispatch-prescription", { body });
+    const { data, error } = await invokeEdgeFunction("dispatch-prescription", { body });
     if (!error && data?.success) {
       return {
         ok: true,

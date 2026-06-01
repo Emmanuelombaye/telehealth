@@ -3,6 +3,7 @@
  */
 
 import { supabase } from "./supabaseClient";
+import { invokeEdgeFunction } from "./invokeEdgeFunction";
 
 export type InviteDoctorPayload = {
   email: string;
@@ -47,7 +48,7 @@ export async function inviteDoctor(payload: InviteDoctorPayload): Promise<Invite
     throw new Error("Calendar URL must start with http:// or https://");
   }
 
-  const { data, error } = await supabase.functions.invoke("invite-doctor", {
+  const { data, error } = await invokeEdgeFunction<InviteDoctorResult & { error?: string }>("invite-doctor", {
     body: {
       email: payload.email.trim().toLowerCase(),
       full_name: payload.full_name.trim(),
@@ -63,9 +64,12 @@ export async function inviteDoctor(payload: InviteDoctorPayload): Promise<Invite
 
   if (error) {
     const fromBody = result?.error;
+    const gatewayMsg = error.message ?? "";
     const msg =
       fromBody ||
-      error.message ||
+      (gatewayMsg.includes("UNAUTHORIZED") || gatewayMsg.includes("401")
+        ? "Unauthorized — turn OFF “Enforce JWT Verification” on invite-doctor in Supabase Edge Functions → Settings, then log in with a real super_admin account."
+        : gatewayMsg) ||
       "Could not reach invite-doctor. Deploy the edge function and apply doctor_invites migration.";
     throw new Error(msg);
   }

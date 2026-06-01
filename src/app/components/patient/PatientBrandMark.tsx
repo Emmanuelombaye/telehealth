@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useBrand } from "../../context/BrandContext";
 import { cn } from "../ui/utils";
 
 const sizeClass: Record<"sm" | "md" | "lg" | "hero" | "xl", string> = {
@@ -19,6 +20,9 @@ type PatientBrandMarkProps = {
  * Peak Health mark for shop flows — plain image, no “card” frame (header carries primary branding).
  */
 export function PatientBrandMark({ size = "md", showTagline = false, className }: PatientBrandMarkProps) {
+  const { brand } = useBrand();
+  const isPartner = brand.slug !== "peak-health";
+  const showLine = showTagline || isPartner;
   return (
     <motion.div
       initial={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -27,22 +31,22 @@ export function PatientBrandMark({ size = "md", showTagline = false, className }
       className={cn("inline-flex flex-col items-center", className)}
     >
       <img
-        src="/PeakHealthLogo.png"
-        alt="Peak Health"
+        src={brand.logoUrl}
+        alt={brand.logoAlt}
         className={cn(sizeClass[size], "object-contain object-center")}
         width={320}
         height={120}
         decoding="async"
         fetchPriority={size === "hero" ? "high" : undefined}
       />
-      {showTagline ? (
+      {showLine ? (
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.4 }}
           className="mt-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-emerald-800/75"
         >
-          Clinical care, online
+          {brand.tagline || (isPartner ? brand.name : "Clinical care, online")}
         </motion.span>
       ) : null}
     </motion.div>

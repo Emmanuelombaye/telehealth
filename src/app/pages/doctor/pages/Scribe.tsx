@@ -24,6 +24,7 @@ import { DoctorPageHeader } from "../../../components/doctor/DoctorPageHeader";
 import { doctorPageContainer, doctorSurfaceCard } from "../../../../lib/doctorPortalUi";
 import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { supabase } from "../../../../lib/supabaseClient";
+import { invokeEdgeFunction } from "../../../../lib/invokeEdgeFunction";
 import { useAuthStore } from "../../../../lib";
 import { isMissingTableError } from "../../../../lib/supabaseTableError";
 import {
@@ -167,7 +168,7 @@ export function DoctorScribePage() {
       }
       setIsProcessing(true);
       try {
-        const { data, error } = await supabase.functions.invoke("ai-medical-scribe", {
+        const { data, error } = await invokeEdgeFunction("ai-medical-scribe", {
           body: { transcript },
         });
         if (error) throw error;

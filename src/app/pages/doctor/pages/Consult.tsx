@@ -11,6 +11,7 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 import { useAuthStore } from "../../../../lib";
 import { doctorMessagesHref, useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { supabase } from "../../../../lib/supabaseClient";
+import { invokeEdgeFunction } from "../../../../lib/invokeEdgeFunction";
 import { approveAndDispatchPrescription } from "../../../../lib/prescriptions";
 import { getOrderVideoRail } from "../../../../lib/orderVideoRail";
 import { motion, AnimatePresence } from "framer-motion";
@@ -584,7 +585,7 @@ export function DoctorConsultPage() {
       }
 
       if (order.stripe_payment_intent_id && order.payment_status === 'paid') {
-        const { error: refundErr } = await supabase.functions.invoke('stripe-create-refund', {
+        const { error: refundErr } = await invokeEdgeFunction("stripe-create-refund", {
           body: {
             payment_intent_id: order.stripe_payment_intent_id,
             order_number: order.order_number,

@@ -24,6 +24,7 @@ export async function ensurePatientPortalRoleAfterEnrollment(
   fullName: string,
   firstName?: string,
   lastName?: string,
+  brandId?: string | null,
 ): Promise<void> {
   setForcePatientPortalIntent();
 
@@ -34,6 +35,7 @@ export async function ensurePatientPortalRoleAfterEnrollment(
         first_name: firstName || fullName.split(/\s+/)[0] || "Patient",
         last_name: lastName || fullName.split(/\s+/).slice(1).join(" ") || "",
         full_name: fullName.trim() || "Patient",
+        ...(brandId ? { brand_id: brandId } : {}),
       },
     });
     await supabase.auth.refreshSession();
@@ -48,6 +50,7 @@ export async function ensurePatientPortalRoleAfterEnrollment(
       email: email.trim().toLowerCase(),
       full_name: fullName.trim() || "Patient",
       status: "active",
+      ...(brandId ? { brand_id: brandId } : {}),
     },
     { onConflict: "id" },
   );

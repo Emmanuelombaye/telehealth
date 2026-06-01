@@ -1,0 +1,41 @@
+/**
+ * Browser-safe Supabase Edge Function invoke — passes session JWT and clear errors.
+ */
+import { supabase } from "./supabaseClient";
+
+type InvokeOptions = {
+  body?: Record<string, unknown>;
+  /** When true (default), fails fast if there is no Supabase session JWT. */
+  requireSession?: boolean;
+};
+
+export async function invokeEdgeFunction<T = unknown>(
+  name: string,
+  options: InvokeOptions = {},
+): Promise<{ data: T | null; error: { message: string } | null }> {
+  const { body, requireSession = true } = options;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+
+  if (requireSession && !token) {
+    return {
+      data: null,
+      error: {
+        message: `Not signed in with Supabase — "${name}" needs a live session (demo login cannot call Edge Functions).`,
+      },
+    };
+  }
+
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  const { data, error } = await supabase.functions.invoke(name, { body, headers });
+
+  if (error) {
+    const gatewayHint =
+      error.message?.includes("401") || error.message?.includes("UNAUTHORIZED")
+        ? ` Turn OFF "Enforce JWT Verification" for ${name} in Supabase Edge Functions → Settings.`
+        : "";
+    return { data: data as T | null, error: { message: (error.message ?? "Edge function failed") + gatewayHint } };
+  }
+
+  return { data: data as T | null, error: null };
+}

@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import {
   ChevronRight, CheckCircle2, CreditCard,
   Star, Shield, ShieldCheck, Clock, Package, ArrowLeft, Globe, Zap, Loader2,
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
+import { invokeEdgeFunction } from "../../../../lib/invokeEdgeFunction";
+import { useBrand } from "../../../context/BrandContext";
 import { useAuthStore } from "../../../../lib";
 import { 
   usePatientStore, 
@@ -182,6 +184,7 @@ const gatewayConfig: Record<string, { label: string; icon: string; color: string
 export function PatientShopPage() {
   const navigate = useNavigate();
   const { step: stepParam } = useParams();
+  const [searchParams] = useSearchParams();
 
   const readInitialStage = (): ShopFlowStage => {
     if (typeof window === "undefined") return "catalog";
@@ -191,6 +194,7 @@ export function PatientShopPage() {
 
   const [stage, setStageState] = useState<ShopFlowStage>(readInitialStage);
   const { initialize } = useAuthStore();
+  const { brand, orderBrandKey } = useBrand();
   const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [assignedDoctorForScheduling, setAssignedDoctorForScheduling] = useState<any>(null);
@@ -241,6 +245,13 @@ export function PatientShopPage() {
   const [bookingAttestation, setBookingAttestation] = useState(false);
   // orderRef is now generated fresh at submission time — static useState caused 409 conflicts on retry
   const [activeCat, setActiveCat] = useState("All");
+
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get("category");
+    if (categoryFromUrl && stage === "catalog") {
+      setActiveCat(categoryFromUrl);
+    }
+  }, [searchParams, stage]);
   
   // Account creation state
   const [email, setEmail] = useState("");
@@ -331,7 +342,8 @@ export function PatientShopPage() {
     (async () => {
       try {
         const amountCents = Math.round((selected.priceUSD ?? 0) * 100);
-        const { data, error } = await supabase.functions.invoke("create-payment-intent", {
+        const { data, error } = await invokeEdgeFunction("create-payment-intent", {
+          requireSession: false,
           body: {
             amount: amountCents,
             currency: "usd",
@@ -372,7 +384,7 @@ export function PatientShopPage() {
   useEffect(() => {
     if (stage !== '2fa' || !phone) return;
     const e164 = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g, '')}`;
-    supabase.functions.invoke('send-otp', { body: { phone: e164 } }).catch(console.warn);
+    invokeEdgeFunction("send-otp", { requireSession: false, body: { phone: e164 } }).catch(console.warn);
   }, [stage]);
 
   const goToStage = useCallback(
@@ -801,6 +813,7 @@ export function PatientShopPage() {
               date_of_birth: dob,
               phone,
               role: 'patient',
+              brand_id: orderBrandKey,
             }
           }
         });
@@ -923,7 +936,8 @@ export function PatientShopPage() {
         patient_avatar:    (resolvedFirstName[0] || "") + (resolvedLastName[0] || ""),
         patient_age:       age,
         patient_country:   "🇺🇸 US",
-        sub_brand:         "Peak Health",
+        sub_brand:         orderBrandKey,
+        brand_id:          orderBrandKey,
         medication:        selected.name,
         dosage_instructions: selected.tagline,
         category:          selected.category,
@@ -983,14 +997,14 @@ export function PatientShopPage() {
       }
 
       if (needsVideo && schedulingRef) {
-        const { error: mergeErr } = await supabase.functions.invoke("merge-scheduling-pending", {
+        const { error: mergeErr } = await invokeEdgeFunction("merge-scheduling-pending", {
           body: { order_number: freshOrderRef, scheduling_ref: schedulingRef },
         });
         if (mergeErr) console.warn("[Shop] merge-scheduling-pending:", mergeErr.message);
       }
 
       if (stripePaymentIntentId) {
-        const { error: attachErr } = await supabase.functions.invoke("stripe-attach-order", {
+        const { error: attachErr } = await invokeEdgeFunction("stripe-attach-order", {
           body: { payment_intent_id: stripePaymentIntentId, order_number: freshOrderRef },
         });
         if (attachErr) console.warn("[Shop] stripe-attach-order:", attachErr.message);
@@ -1360,7 +1374,7 @@ export function PatientShopPage() {
               className="font-bold text-primary hover:underline"
               onClick={async () => {
                 const e164 = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g,'')}`;
-                await supabase.functions.invoke('send-otp', { body: { phone: e164 } });
+                await invokeEdgeFunction("send-otp", { requireSession: false, body: { phone: e164 } });
               }}
             >
               Resend SMS

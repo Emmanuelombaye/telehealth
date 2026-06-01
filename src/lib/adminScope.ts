@@ -1,3 +1,4 @@
+import { DEFAULT_BRAND_ID } from "../app/components/os/constants";
 import type { Role } from "./auth-store";
 
 /**
@@ -76,12 +77,21 @@ export function ordersSelectForMode(mode: OrdersFetchMode): string {
 }
 
 /** Brand-scopes an orders query builder; preserves concrete Supabase/PostgREST chain types. */
-export function applyOrdersBrandScope<Q extends { eq: (column: string, value: string) => Q }>(
+/** Legacy Peak Health orders used display name before multi-brand UUID keys. */
+const LEGACY_PEAK_SUB_BRAND = "Peak Health";
+
+export function applyOrdersBrandScope<Q extends {
+  eq: (column: string, value: string) => Q;
+  or?: (filter: string) => Q;
+}>(
   q: Q,
   role: Role | null,
   brandId: string | null
 ): Q {
   if (role === "brand_admin" && brandId) {
+    if (typeof q.or === "function" && brandId === DEFAULT_BRAND_ID) {
+      return q.or(`sub_brand.eq.${brandId},sub_brand.eq.${LEGACY_PEAK_SUB_BRAND}`);
+    }
     return q.eq("sub_brand", brandId);
   }
   return q;

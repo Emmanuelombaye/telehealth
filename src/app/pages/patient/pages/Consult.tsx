@@ -7,6 +7,7 @@ import {
 import { cn } from "../../../components/ui/shared.tsx";
 import { useAuthStore } from "../../../../lib";
 import { supabase } from "../../../../lib/supabaseClient";
+import { invokeEdgeFunction } from "../../../../lib/invokeEdgeFunction";
 
 // ── Zoom Video SDK ────────────────────────────────────────────────────────────
 // Loaded lazily so the heavy SDK bundle only parses when the patient actually
@@ -321,7 +322,7 @@ export function PatientConsultPage() {
           ? `${user.user_metadata.first_name} ${user.user_metadata.last_name ?? ""}`.trim()
           : user?.email ?? "Patient";
 
-      const { data, error } = await supabase.functions.invoke("zoom-video-token", {
+      const { data, error } = await invokeEdgeFunction("zoom-video-token", {
         body: {
           sessionName,
           role: 0, // 0 = attendee
