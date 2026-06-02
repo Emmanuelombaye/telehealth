@@ -7,6 +7,7 @@ import { useAuthStore } from "../../../../lib";
 import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { doctorPageContainer } from "../../../../lib/doctorPortalUi";
 import { toSchedulingIframeSrc, defaultCalendlySchedulingUrl } from "../../../../lib/calendlyEmbed";
+import { getMockSchedulingSlots, isMockSchedulingEnabled } from "../../../../lib/mockScheduling";
 import { useNavigate } from "react-router";
 import * as FramerMotion from "framer-motion";
 const { motion, AnimatePresence } = FramerMotion;
@@ -33,7 +34,9 @@ export function DoctorSchedulePage() {
         .eq("id", user.id)
         .maybeSingle();
       const u = data?.calendly_url?.trim();
-      if (u && u.startsWith("http")) {
+      if (isMockSchedulingEnabled()) {
+        setSchedulingEmbedUrl(null);
+      } else if (u && u.startsWith("http")) {
         setSchedulingEmbedUrl(
           toSchedulingIframeSrc(u, { primaryColor: "0a2e1f" }) || u
         );
@@ -405,7 +408,24 @@ export function DoctorSchedulePage() {
           </Badge>
         </div>
         <div className="overflow-hidden border border-slate-200 shadow-xl shadow-slate-200/50 rounded-[1.75rem] bg-white">
-          {schedulingEmbedUrl ? (
+          {isMockSchedulingEnabled() ? (
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-600">
+                Demo scheduling — no live Calendly embed. Patient bookings use mock slots during enrollment.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {getMockSchedulingSlots(6).map((slot) => (
+                  <div
+                    key={slot.id}
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
+                  >
+                    <p className="font-semibold text-slate-900">{slot.dayLabel}</p>
+                    <p className="text-xs text-slate-500">{slot.timeLabel} · available (demo)</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : schedulingEmbedUrl ? (
           <iframe
             src={schedulingEmbedUrl}
             width="100%" height="700" frameBorder="0" title="Your scheduling calendar"

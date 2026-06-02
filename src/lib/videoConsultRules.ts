@@ -312,7 +312,8 @@ export function buildEnrollmentVideoReasons(
   return [...new Set(reasons)];
 }
 
-export function defaultSchedulingEmbedUrl(): string {
+export function defaultSchedulingEmbedUrl(): string | null {
+  if (isMockSchedulingEnabled()) return null;
   const v = import.meta.env.VITE_SCHEDULING_EMBED_URL as string | undefined;
   if (v && v.startsWith("https://")) {
     return toSchedulingIframeSrc(v, {}) || v;

@@ -32,6 +32,7 @@ import { IntakeRoutingBanner } from "../../../components/patient/IntakeRoutingBa
 import { PatientSchedulingPanel } from "../../../components/patient/PatientSchedulingPanel";
 import { resolveProductIntakeFeatures } from "../../../../lib/clinicalIntakeTemplates";
 import { DEFAULT_CALENDLY_BOOKING_URL, toSchedulingIframeSrc } from "../../../../lib/calendlyEmbed";
+import { isMockSchedulingEnabled } from "../../../../lib/mockScheduling";
 import { pickEligibleSchedulingDoctor } from "../../../../lib/schedulingDoctorMatch";
 import {
   ENROLLMENT_DRAFT_KEY,
@@ -632,10 +633,12 @@ export function PatientShopPage() {
   }, [stage, needsScheduledVideo, selected, qStep, totalQ, state, assignedDoctorForScheduling]);
 
   const schedulingEmbedSrc = useMemo(() => {
+    if (isMockSchedulingEnabled()) return null;
     const raw =
       assignedDoctorForScheduling?.calendly_url ||
       videoRules?.schedulingEmbedUrl ||
       defaultSchedulingEmbedUrl();
+    if (!raw) return null;
     return (
       toSchedulingIframeSrc(raw, {
         email: email || undefined,
@@ -2080,20 +2083,21 @@ export function PatientShopPage() {
             </CardContent>
           </Card>
         )}
-        {showScheduler && schedulingEmbedSrc && (
+        {showScheduler && (isMockSchedulingEnabled() || schedulingEmbedSrc) && (
           <>
             <PatientSchedulingPanel
               embedSrc={schedulingEmbedSrc}
               rawBookingUrl={
                 assignedDoctorForScheduling?.calendly_url ||
                 videoRules?.schedulingEmbedUrl ||
-                DEFAULT_CALENDLY_BOOKING_URL
+                (isMockSchedulingEnabled() ? "mock://scheduling" : DEFAULT_CALENDLY_BOOKING_URL)
               }
               doctorName={assignedDoctorForScheduling?.full_name}
               doctorHint={state ? `Clinician licensed for ${state.toUpperCase()}` : undefined}
               doctorMatchPending={!assignedDoctorForScheduling}
               schedulingRefTail={schedulingRef ? schedulingRef.slice(-10) : null}
               onCalendlyBookingConfirmed={() => setBookingAttestation(true)}
+              onMockSlotSelected={() => setBookingAttestation(true)}
             />
             <label className="flex items-start gap-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50/80 cursor-pointer">
               <input
@@ -2104,8 +2108,12 @@ export function PatientShopPage() {
               />
               <span className="text-sm text-emerald-950">
                 {bookingAttestation
-                  ? "Booking detected — you can continue enrollment."
-                  : "Confirm you selected a time above, or wait for the calendar to register your booking automatically."}
+                  ? isMockSchedulingEnabled()
+                    ? "Demo time selected — you can continue enrollment."
+                    : "Booking detected — you can continue enrollment."
+                  : isMockSchedulingEnabled()
+                    ? "Select a demo time above, then check here to confirm."
+                    : "Confirm you selected a time above, or wait for the calendar to register your booking automatically."}
               </span>
             </label>
             <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 shadow-sm">

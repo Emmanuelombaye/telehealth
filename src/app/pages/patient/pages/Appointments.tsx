@@ -4,6 +4,8 @@ import { Card, CardContent, Button, cn } from "../../../components/ui/shared.tsx
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore } from "../../../../lib";
 import { defaultCalendlyBookingPageUrl, toSchedulingOpenTabUrl } from "../../../../lib/calendlyEmbed";
+import { getMockSchedulingSlots, isMockSchedulingEnabled } from "../../../../lib/mockScheduling";
+import { toast } from "sonner";
 
 // Real-time zoom status config
 const zoomStatusConfig: Record<string, { label: string; icon: ReactNode; card: string; badge: string }> = {
@@ -14,7 +16,7 @@ const zoomStatusConfig: Record<string, { label: string; icon: ReactNode; card: s
     badge: "bg-slate-100 text-slate-500",
   },
   requested: {
-    label: "Visit requested — book time (Cal.com / Calendly)",
+    label: "Visit requested — book time",
     icon: <Clock className="h-5 w-5 text-amber-500 animate-pulse" />,
     card: "bg-amber-50 border-amber-200",
     badge: "bg-amber-100 text-amber-700",
@@ -271,7 +273,32 @@ export function AppointmentsPage() {
                       </p>
                       <Button 
                         onClick={async () => {
+                          if (isMockSchedulingEnabled()) {
+                            const slot = getMockSchedulingSlots(1)[0];
+                            const { error } = await supabase
+                              .from("orders")
+                              .update({
+                                zoom_status: "confirmed",
+                                consultation_time: slot?.isoStart ?? new Date().toISOString(),
+                              })
+                              .eq("id", order.id);
+                            if (error) {
+                              toast.error("Could not save demo booking.");
+                              return;
+                            }
+                            toast.success(
+                              slot
+                                ? `Demo visit booked for ${slot.dayLabel} at ${slot.timeLabel}`
+                                : "Demo visit booked.",
+                            );
+                            return;
+                          }
+
                           let bookingUrl = defaultCalendlyBookingPageUrl();
+                          if (!bookingUrl) {
+                            toast.error("No scheduling URL configured.");
+                            return;
+                          }
 
                           if (order.doctor_id) {
                             const { data: profile } = await supabase

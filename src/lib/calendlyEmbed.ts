@@ -1,11 +1,12 @@
 /**
- * Normalize any Calendly scheduling URL into one suitable for an <iframe> inline embed.
- * @see https://help.calendly.com/hc/en-us/articles/223147027-Embed-options-overview
+ * Normalize Calendly scheduling URLs for iframe embed.
+ * Default: mock scheduling (no live Calendly). Set VITE_USE_LIVE_SCHEDULING=true to enable real URLs.
  */
 
-/** Peak default event when no doctor/product/env URL is set. */
-export const DEFAULT_CALENDLY_BOOKING_URL =
-  "https://calendly.com/telelaunch/discoverycall";
+import { isMockSchedulingEnabled } from "./mockScheduling";
+
+/** Legacy constant — not loaded in the UI when mock scheduling is on. */
+export const DEFAULT_CALENDLY_BOOKING_URL = "https://calendly.com/telelaunch/discoverycall";
 
 export type CalendlyEmbedOptions = {
   /** Prefill guest email (Calendly query: email) */
@@ -73,6 +74,7 @@ export function toSchedulingIframeSrc(
   raw: string | null | undefined,
   opts: CalendlyEmbedOptions = {}
 ): string | null {
+  if (isMockSchedulingEnabled()) return null;
   if (!raw || typeof raw !== "string") return null;
   const t = raw.trim();
   if (!t) return null;
@@ -91,8 +93,9 @@ export function toSchedulingIframeSrc(
   return null;
 }
 
-/** Default team/event Calendly used when nothing else is configured. */
-export function defaultCalendlySchedulingUrl(): string {
+/** Default team/event Calendly — only when live scheduling is enabled. */
+export function defaultCalendlySchedulingUrl(): string | null {
+  if (isMockSchedulingEnabled()) return null;
   const env = import.meta.env.VITE_CALENDLY_DEFAULT_URL as string | undefined;
   if (env && env.includes("calendly.com")) {
     return toCalendlyInlineEmbedUrl(env, {}) || env;
@@ -126,7 +129,8 @@ export function stripCalendlyEmbedParams(urlStr: string): string {
 }
 
 /** Default public booking link (new tab), not iframe. */
-export function defaultCalendlyBookingPageUrl(): string {
+export function defaultCalendlyBookingPageUrl(): string | null {
+  if (isMockSchedulingEnabled()) return null;
   const env = import.meta.env.VITE_CALENDLY_DEFAULT_URL as string | undefined;
   if (env && env.includes("calendly.com")) return stripCalendlyEmbedParams(env);
   return DEFAULT_CALENDLY_BOOKING_URL;
