@@ -229,6 +229,9 @@ export const router = createBrowserRouter([
       // Patient Shop flow (Standalone) — shareable steps: /patient/shop/checkout, /create-account, etc.
       { path: "patient/shop/:step", Component: PatientShopPage },
       { path: "patient/shop", Component: PatientShopPage },
+      // White-label brand enrollment (North Star MD, etc.)
+      { path: "care/:brandSlug/shop/:step", Component: PatientShopPage },
+      { path: "care/:brandSlug/shop", Component: PatientShopPage },
 
       // White-label partner enrollment + patient portal (no Peak Health branding in UI)
       {

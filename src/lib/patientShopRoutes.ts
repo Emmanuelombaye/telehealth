@@ -37,6 +37,7 @@ const SEGMENT_TO_STAGE: Record<string, ShopFlowStage> = Object.fromEntries(
 // Force questionnaire for that segment (scheduling is never navigated via its own URL).
 SEGMENT_TO_STAGE["medical-intake"] = "questionnaire";
 
+
 /** Enrollment shop base path — Peak or white-label `/care/:slug/shop`. */
 export function shopEnrollBaseFromPath(pathname: string): string {
   const care = pathname.match(/^(\/care\/[^/]+\/shop)/);
@@ -64,6 +65,7 @@ export function shopStageFromPathname(pathname: string): ShopFlowStage | null {
   const seg = shopStepSegmentFromPath(pathname);
   return shopStageFromStepParam(seg);
 }
+
 
 /** Resolve stage from :step param (undefined → catalog). Invalid segment → null. */
 export function shopStageFromStepParam(step: string | undefined): ShopFlowStage | null {

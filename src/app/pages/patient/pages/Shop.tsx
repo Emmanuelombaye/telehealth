@@ -50,6 +50,11 @@ import {
 import { toCustomerMessage } from "../../../../lib/customerSafeError";
 import { insertPatientOrder } from "../../../../lib/insertPatientOrder";
 import {
+  parseEnrollmentSearchParams,
+  resolveDeepLinkProduct,
+  normalizeCategorySlug,
+} from "../../../../lib/enrollmentDeepLink";
+import {
   shopPathForStage,
   shopEnrollBaseFromPath,
   shopStageFromPathname,
@@ -252,7 +257,7 @@ export function PatientShopPage() {
   useEffect(() => {
     const categoryFromUrl = searchParams.get("category");
     if (categoryFromUrl && stage === "catalog") {
-      setActiveCat(categoryFromUrl);
+      setActiveCat(normalizeCategorySlug(categoryFromUrl));
     }
   }, [searchParams, stage]);
   
@@ -310,6 +315,7 @@ export function PatientShopPage() {
   const [identityStripeCompleted, setIdentityStripeCompleted] = useState(false);
   const [resumeDraftAvailable, setResumeDraftAvailable] = useState(false);
   const saveDraftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deepLinkHandled = useRef(false);
 
   const requireStripeOnly =
     import.meta.env.PROD && !!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
@@ -431,26 +437,29 @@ export function PatientShopPage() {
   }, [stage, selected, resumeDraftAvailable, navigate, enrollBase]);
 
   // ── Reset Stripe secret when product changes ─────────────────────────────────
-  const startFlow = (product: any) => {
-    clearEnrollmentDraft();
-    setResumeDraftAvailable(false);
-    setSelected(product);
-    setQStep(0);
-    setAnswers({});
-    setGateway("");
-    setStripeClientSecret(null);
-    setStripePaymentIntentId(null);
-    setBookingAttestation(false);
-    setConsultationTime("");
-    setPaymentQualifiersPassed(false);
-    setQualifierAge18_75(false);
-    setQualifierNotPregnant(false);
-    setQualifierNoMtcMen2(false);
-    setQualifierUsResident(false);
-    setIdentityStripeCompleted(false);
-    setSchedulingRef(null);
-    goToStage("payment");
-  };
+  const startFlow = useCallback(
+    (product: any) => {
+      clearEnrollmentDraft();
+      setResumeDraftAvailable(false);
+      setSelected(product);
+      setQStep(0);
+      setAnswers({});
+      setGateway("");
+      setStripeClientSecret(null);
+      setStripePaymentIntentId(null);
+      setBookingAttestation(false);
+      setConsultationTime("");
+      setPaymentQualifiersPassed(false);
+      setQualifierAge18_75(false);
+      setQualifierNotPregnant(false);
+      setQualifierNoMtcMen2(false);
+      setQualifierUsResident(false);
+      setIdentityStripeCompleted(false);
+      setSchedulingRef(null);
+      goToStage("payment");
+    },
+    [goToStage],
+  );
 
   const filteredProducts = activeCat === "All" ? dbProducts : dbProducts.filter(p => p.category === activeCat);
   const catalogCategories = ["All", ...Array.from(new Set(dbProducts.map(p => p.category)))];
@@ -465,6 +474,33 @@ export function PatientShopPage() {
       setResumeDraftAvailable(false);
     }
   }, [isLoadingProducts, dbProducts]);
+
+  /** Marketing-site deep link: pre-select product and skip catalog when ?product=…&auto=1 */
+  useEffect(() => {
+    if (isLoadingProducts || dbProducts.length === 0 || deepLinkHandled.current) return;
+    if (resumeDraftAvailable) return;
+
+    const link = parseEnrollmentSearchParams(window.location.search);
+    if (link.categoryDisplay && !link.autoStart) {
+      setActiveCat(link.categoryDisplay);
+      deepLinkHandled.current = true;
+      return;
+    }
+
+    if (!link.autoStart) return;
+
+    const product = resolveDeepLinkProduct(dbProducts, link);
+    if (product) {
+      deepLinkHandled.current = true;
+      startFlow(product);
+      return;
+    }
+
+    if (link.categoryDisplay) {
+      setActiveCat(link.categoryDisplay);
+      deepLinkHandled.current = true;
+    }
+  }, [isLoadingProducts, dbProducts, resumeDraftAvailable, startFlow]);
 
   const applyResumeDraft = useCallback(() => {
     const d = loadEnrollmentDraft();
