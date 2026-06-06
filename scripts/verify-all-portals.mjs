@@ -176,7 +176,9 @@ async function main() {
   }
   console.error(`\x1b[31m${total} check group(s) failed.\x1b[0m`);
   if (authFails) {
-    console.error("  → Run scripts/sql/RUN_IN_SUPABASE_AUTH_500_FIX.sql then RUN_IN_SUPABASE_STAFF_AUTH_ALL.sql");
+    console.error("  → SQL Editor: RUN_IN_SUPABASE_AUTH_500_FIX.sql");
+    console.error("  → If still failing: RUN_IN_SUPABASE_AUTH_RESET_STAFF.sql");
+    console.error("  → Then locally: npm run auth:provision-staff");
   }
   if (dbFails) {
     console.error("  → Run scripts/sql/RUN_IN_SUPABASE_FIX_ALL_DATABASE.sql then RUN_IN_SUPABASE_SCHEMA_GAP_FIX.sql in Supabase SQL Editor.");

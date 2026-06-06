@@ -1,6 +1,13 @@
 /**
- * Provision all staff accounts via service role.
+ * Create/update staff accounts via Supabase Admin API (no SQL auth.users access needed).
+ *
  *   npm run auth:provision-staff
+ *
+ * Requires in .env.production:
+ *   VITE_SUPABASE_URL
+ *   SUPABASE_SERVICE_ROLE_KEY
+ *
+ * Also requires RUN_IN_SUPABASE_STAFF_AUTH_ALL.sql (RPC helpers) in Supabase once.
  */
 import { createClient } from "@supabase/supabase-js";
 import ws from "ws";
@@ -56,70 +63,38 @@ const admin = createClient(url, serviceKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-async function findUser(email) {
-  let page = 1;
-  while (true) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
-    if (error) throw error;
-    const hit = data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-    if (hit) return hit;
-    if (data.users.length < 200) return null;
-    page++;
+async function rpcFixTokens() {
+  const { error } = await admin.rpc("fix_auth_null_tokens");
+  if (error) {
+    console.warn("fix_auth_null_tokens RPC skipped:", error.message);
+    console.warn("  → Run scripts/sql/RUN_IN_SUPABASE_STAFF_AUTH_ALL.sql in Supabase SQL Editor first");
+    return false;
   }
+  console.log("Fixed NULL auth token columns via RPC");
+  return true;
 }
 
-async function upsertStaff(account) {
-  const appMeta = {
-    role: account.role,
-    ...(account.brandId ? { brand_id: account.brandId } : {}),
-  };
-  const userMeta = {
-    role: account.role,
-    full_name: account.name,
-    first_name: account.name.split(" ")[0],
-    last_name: account.name.split(" ").slice(1).join(" ") || "",
-    ...(account.brandId ? { brand_id: account.brandId } : {}),
-  };
-
-  let userId;
-  let existing = null;
-  try {
-    existing = await findUser(account.email);
-  } catch (e) {
-    console.warn(`listUsers skipped for ${account.email}:`, e.message);
+async function rpcLookupStaffIds() {
+  const { data, error } = await admin.rpc("lookup_staff_user_ids");
+  if (error) return {};
+  const map = {};
+  for (const row of data ?? []) {
+    if (row.email && row.user_id) map[row.email.toLowerCase()] = row.user_id;
   }
+  return map;
+}
 
-  if (existing) {
-    const { data, error } = await admin.auth.admin.updateUserById(existing.id, {
-      password: account.password,
-      email_confirm: true,
-      app_metadata: { ...existing.app_metadata, ...appMeta },
-      user_metadata: { ...existing.user_metadata, ...userMeta },
-    });
-    if (error) throw error;
-    userId = data.user.id;
-    console.log(`Updated ${account.email}`);
-  } else {
-    const { data, error } = await admin.auth.admin.createUser({
-      email: account.email,
-      password: account.password,
-      email_confirm: true,
-      app_metadata: appMeta,
-      user_metadata: userMeta,
-    });
-    if (error) {
-      if (error.message?.includes("already registered") || error.message?.includes("already exists")) {
-        console.warn(`Skip ${account.email} — already exists but listUsers failed`);
-        return;
-      }
-      throw error;
-    }
-    userId = data.user.id;
-    console.log(`Created ${account.email}`);
+async function rpcDeleteBrokenStaff() {
+  const { error } = await admin.rpc("delete_broken_staff_auth_users");
+  if (error) {
+    console.warn("delete_broken_staff_auth_users skipped:", error.message);
+    return false;
   }
+  console.log("Removed broken staff auth rows (doctor/admin/brandon/pharmacy)");
+  return true;
+}
 
-  if (!userId) return;
-
+async function syncProfile(userId, account) {
   await admin.from("profiles").upsert(
     {
       id: userId,
@@ -134,15 +109,79 @@ async function upsertStaff(account) {
   );
 }
 
+async function upsertStaff(account, idMap) {
+  const appMeta = {
+    role: account.role,
+    ...(account.brandId ? { brand_id: account.brandId } : {}),
+  };
+  const userMeta = {
+    role: account.role,
+    full_name: account.name,
+    first_name: account.name.split(" ")[0],
+    last_name: account.name.split(" ").slice(1).join(" ") || "",
+    ...(account.brandId ? { brand_id: account.brandId } : {}),
+  };
+
+  const existingId = idMap[account.email.toLowerCase()];
+
+  if (existingId) {
+    const { data, error } = await admin.auth.admin.updateUserById(existingId, {
+      password: account.password,
+      email_confirm: true,
+      app_metadata: appMeta,
+      user_metadata: userMeta,
+    });
+    if (error) throw error;
+    console.log(`Updated ${account.email}`);
+    await syncProfile(data.user.id, account);
+    return;
+  }
+
+  const { data, error } = await admin.auth.admin.createUser({
+    email: account.email,
+    password: account.password,
+    email_confirm: true,
+    app_metadata: appMeta,
+    user_metadata: userMeta,
+  });
+  if (error) {
+    if (error.message?.includes("already registered") || error.message?.includes("already exists")) {
+      console.warn(`${account.email} exists but lookup failed — run delete_broken_staff RPC or AUTH_RESET_STAFF.sql`);
+      return;
+    }
+    throw error;
+  }
+  console.log(`Created ${account.email}`);
+  await syncProfile(data.user.id, account);
+}
+
 async function main() {
   console.log("Provisioning staff on", url, "\n");
+
+  await rpcFixTokens();
+
+  let idMap = await rpcLookupStaffIds();
+
   for (const account of STAFF) {
     try {
-      await upsertStaff(account);
+      await upsertStaff(account, idMap);
     } catch (e) {
-      console.error(`FAIL ${account.email}:`, e.message);
+      const msg = e.message ?? String(e);
+      if (msg.includes("Database error") || msg.includes("querying schema")) {
+        console.warn(`${account.email}: corrupt auth row — resetting staff auth...`);
+        await rpcDeleteBrokenStaff();
+        idMap = await rpcLookupStaffIds();
+        try {
+          await upsertStaff(account, idMap);
+        } catch (e2) {
+          console.error(`FAIL ${account.email} after reset:`, e2.message);
+        }
+      } else {
+        console.error(`FAIL ${account.email}:`, msg);
+      }
     }
   }
+
   console.log("\nDone. Run: npm run verify:portals");
 }
 
