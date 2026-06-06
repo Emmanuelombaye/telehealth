@@ -5,9 +5,15 @@ import {
   getBrandSiteByHost,
   getBrandSiteBySlug,
   isWhiteLabelSite,
+  resolveBrandSiteConfig,
+  adminLoginPath,
+  adminPortalBasePath,
+  affiliateLoginPath,
+  affiliatePortalBasePath,
   patientLoginPath,
   patientPortalBasePath,
 } from "../../brand-sites";
+import { type ActiveBrand, PEAK_HEALTH_BRAND } from "./registry";
 
 export type BrandExperience = {
   site: BrandSiteConfig;
@@ -15,15 +21,36 @@ export type BrandExperience = {
   enrollBase: string;
   patientPortalBase: string;
   patientLogin: string;
+  adminPortalBase: string;
+  affiliatePortalBase: string;
+  adminLogin: string;
+  affiliateLogin: string;
 };
 
 export function resolveBrandExperience(input: {
   brandSlug?: string | null;
   hostname?: string;
+  brand?: ActiveBrand | null;
 }): BrandExperience {
   const fromHost = input.hostname ? getBrandSiteByHost(input.hostname) : null;
   const fromSlug = input.brandSlug ? getBrandSiteBySlug(input.brandSlug) : null;
-  const site = fromSlug ?? fromHost ?? PEAK_SITE;
+  const site =
+    fromSlug ??
+    fromHost ??
+    (input.brand
+      ? resolveBrandSiteConfig(input.brand, input)
+      : input.brandSlug
+        ? resolveBrandSiteConfig(
+            {
+              id: "",
+              slug: input.brandSlug,
+              name: input.brandSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+              logoUrl: PEAK_HEALTH_BRAND.logoUrl,
+              logoAlt: input.brandSlug,
+            },
+            input,
+          )
+        : PEAK_SITE);
 
   return {
     site,
@@ -31,6 +58,10 @@ export function resolveBrandExperience(input: {
     enrollBase: enrollBasePath(site),
     patientPortalBase: patientPortalBasePath(site),
     patientLogin: patientLoginPath(site),
+    adminPortalBase: adminPortalBasePath(site),
+    affiliatePortalBase: affiliatePortalBasePath(site),
+    adminLogin: adminLoginPath(site),
+    affiliateLogin: affiliateLoginPath(site),
   };
 }
 

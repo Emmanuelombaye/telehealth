@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
-const SUPABASE_URL = 'https://kvopgyhcjcniaocjozje.supabase.co';
+const SUPABASE_URL = 'https://vzzmdbdvcofajgrjgajq.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_wr1AUarSttsAd7_m3VAH1A_z0jhs2XZ';
 
 async function simulateWebhook() {

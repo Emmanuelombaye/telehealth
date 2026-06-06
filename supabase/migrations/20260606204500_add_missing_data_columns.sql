@@ -1,0 +1,5 @@
+ALTER TABLE public.brands ADD COLUMN IF NOT EXISTS logo_url TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS popular BOOLEAN DEFAULT false;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS carrier TEXT;
+ALTER TABLE public.prescriptions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;

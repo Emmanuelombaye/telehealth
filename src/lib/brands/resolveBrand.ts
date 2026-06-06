@@ -22,13 +22,37 @@ export function brandSlugFromPathname(pathname: string): string | null {
 }
 
 let cachedDbBrands: ActiveBrand[] | null = null;
+let cachedBrandHostnames: Map<string, string[]> | null = null;
+
+async function loadBrandHostnames(): Promise<Map<string, string[]>> {
+  if (cachedBrandHostnames) return cachedBrandHostnames;
+  const map = new Map<string, string[]>();
+  try {
+    const { data, error } = await supabase
+      .from("brand_hostnames")
+      .select("brand_id, hostname");
+    if (error) throw error;
+    for (const row of data ?? []) {
+      const brandId = String(row.brand_id ?? "");
+      const host = String(row.hostname ?? "").trim().toLowerCase().replace(/^www\./, "");
+      if (!brandId || !host) continue;
+      const list = map.get(brandId) ?? [];
+      list.push(host);
+      map.set(brandId, list);
+    }
+  } catch {
+    /* anon or table missing — static hosts still work */
+  }
+  cachedBrandHostnames = map;
+  return map;
+}
 
 async function loadDbBrands(): Promise<ActiveBrand[]> {
   if (cachedDbBrands) return cachedDbBrands;
   try {
     const { data, error } = await supabase
       .from("brands")
-      .select("id, name, slug, domain, status")
+      .select("id, name, slug, domain, status, logo_url, portal_origin, settings")
       .eq("status", "active");
     if (error) throw error;
     cachedDbBrands = (data ?? [])
@@ -40,7 +64,11 @@ async function loadDbBrands(): Promise<ActiveBrand[]> {
   return cachedDbBrands;
 }
 
-function findInList(list: ActiveBrand[], input: BrandResolveInput): ActiveBrand | null {
+function findInList(
+  list: ActiveBrand[],
+  input: BrandResolveInput,
+  hostnamesByBrandId?: Map<string, string[]>,
+): ActiveBrand | null {
   const id = input.brandId?.trim();
   if (id) {
     const hit = list.find((b) => b.id === id) ?? findStaticBrandById(id);
@@ -60,6 +88,7 @@ function findInList(list: ActiveBrand[], input: BrandResolveInput): ActiveBrand 
       const hosts = [
         ...(b.domains ?? []),
         ...(b.domain ? [b.domain] : []),
+        ...(hostnamesByBrandId?.get(b.id) ?? []),
       ].map((d) => d.toLowerCase().replace(/^www\./, ""));
       return hosts.some((d) => bare === d || bare.endsWith(`.${d}`));
     });
@@ -90,12 +119,13 @@ export async function resolveActiveBrand(input: BrandResolveInput = {}): Promise
     (typeof window !== "undefined" ? window.location.hostname : undefined);
 
   const dbBrands = await loadDbBrands();
+  const hostnamesByBrandId = await loadBrandHostnames();
   const merged = [...ALL_STATIC_BRANDS];
   for (const b of dbBrands) {
     if (!merged.some((m) => m.id === b.id)) merged.push(b);
   }
 
-  const fromInput = findInList(merged, input);
+  const fromInput = findInList(merged, input, hostnamesByBrandId);
   if (fromInput) {
     persistBrandId(fromInput.id);
     return fromInput;
@@ -103,12 +133,12 @@ export async function resolveActiveBrand(input: BrandResolveInput = {}): Promise
 
   const stored = readStoredBrandId();
   if (stored) {
-    const fromStore = findInList(merged, { brandId: stored });
+    const fromStore = findInList(merged, { brandId: stored }, hostnamesByBrandId);
     if (fromStore) return fromStore;
   }
 
   if (hostname) {
-    const fromHost = findInList(merged, { hostname });
+    const fromHost = findInList(merged, { hostname }, hostnamesByBrandId);
     if (fromHost) {
       persistBrandId(fromHost.id);
       return fromHost;

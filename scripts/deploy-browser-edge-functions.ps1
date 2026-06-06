@@ -25,7 +25,8 @@ $functions = @(
   "zoom-video-token",
   "ai-medical-scribe",
   "stripe-create-refund",
-  "process-refund"
+  "process-refund",
+  "partner-api"
 )
 
 Write-Host "Deploying Edge Functions to project $ProjectRef ..."

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Partner Site (server proxy demo)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <p class="eyebrow">Production integration pattern</p>
+      <h1>Partner storefront</h1>
+      <p class="lead">
+        This demo calls <code>/api/*</code> on a <strong>partner backend</strong>. The
+        <code>X-Partner-Api-Key</code> never appears in browser JavaScript.
+      </p>
+    </header>
+    <main class="layout">
+      <section class="panel">
+        <h2>Catalog (via partner server)</h2>
+        <div id="catalog-cards" class="cards"></div>
+        <button type="button" id="btn-load" class="btn">Load treatments</button>
+      </section>
+      <section class="panel highlight">
+        <h2>Enroll</h2>
+        <button type="button" id="btn-enroll" class="btn btn-primary">Get Started</button>
+        <pre id="out" class="code"></pre>
+      </section>
+    </main>
+    <script src="proxy-app.js"></script>
+  </body>
+</html>

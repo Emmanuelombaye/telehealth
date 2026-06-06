@@ -50,18 +50,18 @@ export function BrandProvider({ children }: { children: ReactNode }) {
     const hostname = typeof window !== "undefined" ? window.location.hostname : undefined;
     const pathSlug = brandSlugFromPath(location.pathname);
     const fromUrl = parseBrandFromSearch(location.search);
-    const exp = resolveBrandExperience({
-      brandSlug: pathSlug || fromUrl.brandSlug || fromUrl.brandId,
+    const resolved = await resolveActiveBrand({
+      brandId: fromUrl.brandId || undefined,
+      brandSlug: pathSlug || fromUrl.brandSlug || undefined,
       hostname,
     });
-    setExperience(exp);
-
-    const resolved = await resolveActiveBrand({
-      brandId: exp.site.brand.id,
-      brandSlug: exp.site.brand.slug,
+    const exp = resolveBrandExperience({
+      brandSlug: pathSlug || fromUrl.brandSlug || resolved.slug,
       hostname,
+      brand: resolved,
     });
     setBrand(resolved);
+    setExperience(exp);
     setLoading(false);
 
     if (exp.isWhiteLabel) {

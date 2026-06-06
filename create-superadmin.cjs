@@ -2,8 +2,8 @@ const { createClient } = require('@supabase/supabase-js');
 global.WebSocket = require('ws');
 
 const supabase = createClient(
-  'https://kvopgyhcjcniaocjozje.supabase.co',
-  'sb_publishable_wr1AUarSttsAd7_m3VAH1A_z0jhs2XZ'
+  'https://vzzmdbdvcofajgrjgajq.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6em1kYmR2Y29mYWpncmpnYWpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NjIyOTQsImV4cCI6MjA5NjMzODI5NH0.Dz4OAZTGycCgxJhDIRVpo9Fp1yW0PFf1-hrWIoTYAUg'
 );
 
 const EMAIL    = 'admin2@peakbodyco.com';

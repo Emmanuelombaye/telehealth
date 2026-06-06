@@ -2,7 +2,7 @@ const { Client } = require('pg');
 const fs = require('fs');
 
 async function testConnection(host) {
-  const connectionString = `postgresql://postgres.kvopgyhcjcniaocjozje:@Kenya90!132323@${host}:6543/postgres`;
+  const connectionString = `postgresql://postgres.vzzmdbdvcofajgrjgajq:@Kenya90!132323@${host}:6543/postgres`;
   const client = new Client({ connectionString });
   try {
     await client.connect();

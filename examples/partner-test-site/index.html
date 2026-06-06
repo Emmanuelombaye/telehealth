@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Partner API Test — Demo Clinic</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <p class="eyebrow">Third-party marketing site (test)</p>
+      <h1>Demo Clinic</h1>
+      <p class="lead">
+        This page is <strong>not</strong> Peak Health UI — it simulates a partner who built their own
+        website and integrates via the private Partner API.
+      </p>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>API connection</h2>
+        <p id="health-status" class="status">Checking API health…</p>
+        <label>
+          Partner API key (demo only)
+          <input type="password" id="api-key" placeholder="Set in config.js or paste key" />
+        </label>
+        <button type="button" id="btn-save-key" class="btn btn-secondary">Use key for this session</button>
+      </section>
+
+      <section class="panel">
+        <h2>Brand</h2>
+        <pre id="brand-out" class="code">Load brand…</pre>
+        <button type="button" id="btn-brand" class="btn">GET brand</button>
+      </section>
+
+      <section class="panel">
+        <h2>Treatment catalog</h2>
+        <div id="catalog-cards" class="cards"></div>
+        <button type="button" id="btn-catalog" class="btn">GET catalog</button>
+      </section>
+
+      <section class="panel highlight">
+        <h2>Start enrollment (API → branded portal)</h2>
+        <p>
+          Calls <code>POST enrollment_start</code> then sends the patient to Peak’s
+          <strong>branded</strong> shop on <code>/care/north-star-md/shop</code>.
+        </p>
+        <button type="button" id="btn-enroll" class="btn btn-primary">Get Started — API handoff</button>
+        <pre id="enroll-out" class="code"></pre>
+      </section>
+    </main>
+
+    <footer>
+      <p>Peak Health Partner API v1 · <a href="../../docs/PARTNER_API.md">Documentation</a></p>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

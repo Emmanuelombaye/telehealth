@@ -10,6 +10,14 @@ import { readStoredDemoAuth } from '../../lib/staffDemoAuth';
 import { useBrand } from '../context/BrandContext';
 
 const portalLoginUrl = (path: string) => {
+  const care = path.match(/^\/care\/([^/]+)/);
+  if (care) {
+    const slug = care[1];
+    const rest = path.slice(`/care/${slug}`.length);
+    if (rest.startsWith("/admin")) return `/care/${slug}/admin/login`;
+    if (rest.startsWith("/affiliate")) return `/care/${slug}/affiliate/login`;
+    return `/care/${slug}/login`;
+  }
   if (path.startsWith('/doctor')) return '/doctor/login';
   if (path.startsWith('/providers')) return '/providers/login';
   if (path.startsWith('/pharmacy')) return '/pharmacy/login';
@@ -17,8 +25,6 @@ const portalLoginUrl = (path: string) => {
   if (path.startsWith('/superadmin')) return '/superadmin/login';
   if (path.startsWith('/affiliate')) return '/affiliate/login';
   if (path.startsWith('/patient')) return '/login';
-  const care = path.match(/^\/care\/([^/]+)/);
-  if (care) return `/care/${care[1]}/login`;
   return '/login';
 };
 
@@ -92,9 +98,13 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
             : effectiveRole === 'super_admin'
               ? '/superadmin'
               : effectiveRole === 'brand_admin'
-                ? '/admin'
+                ? careMatch
+                  ? `/care/${careMatch[1]}/admin`
+                  : '/admin'
                 : effectiveRole === 'affiliate'
-                  ? '/affiliate'
+                  ? careMatch
+                    ? `/care/${careMatch[1]}/affiliate`
+                    : '/affiliate'
                   : careMatch
                     ? `/care/${careMatch[1]}/patient`
                     : '/patient';

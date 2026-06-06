@@ -759,7 +759,9 @@ SELECT 'increment_patients_count()', EXISTS (SELECT 1 FROM pg_proc WHERE proname
 SELECT 'FIX ALL DATABASE complete — review ok column above' AS status;
 
 -- =============================================================================
--- PART 13 — Partner brand: North Star MD (marketing → /care/north-star-md/shop)
+-- PART 14 — Multi-tenant platform (brands hostnames, partner keys, North Star seed)
+-- Run scripts/sql/RUN_IN_SUPABASE_MULTI_TENANT_PLATFORM.sql in SQL Editor instead.
+-- PART 13 below is superseded by that script but kept for backward compatibility.
 -- =============================================================================
 DO $$
 BEGIN

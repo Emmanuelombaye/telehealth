@@ -146,6 +146,7 @@ serve(async (req) => {
         : "patient@example.com";
 
     // ── INSERT: new enrollment / order with video required ───────────────────
+    if (pType === "INSERT" && record.video_required === true) {
       await sendVideoBookingRequested(supabase, resendApiKey, record, { isInsert: true });
       return new Response(JSON.stringify({ success: true, event: "video_booking_insert" }), { status: 200 });
     }
@@ -225,7 +226,7 @@ serve(async (req) => {
     }
 
     return new Response("Ignored - No relevant status change", { status: 200 });
-  } catch (error: unknown) {
+  } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("Email Webhook Error:", msg);
     return new Response(JSON.stringify({ error: msg }), { status: 500 });

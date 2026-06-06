@@ -14,7 +14,12 @@
     "check:engineering": "node scripts/engineering-check.mjs",
     "check:production": "node scripts/production-preflight.mjs",
     "check:scheduling-gate": "node scripts/scheduling-production-gate.mjs",
-    "db:seed-clinical-intake": "node scripts/apply-clinical-intake-seed.mjs"
+    "db:seed-clinical-intake": "node scripts/apply-clinical-intake-seed.mjs",
+    "partner-api:demo": "npx --yes serve examples/partner-test-site -p 5199",
+    "partner-api:proxy": "node examples/partner-test-site/server-proxy.mjs",
+    "partner-storefront": "node examples/partner-storefront/server.mjs",
+    "test:partner-storefront": "node examples/partner-storefront/test-api.mjs",
+    "check:partner-api": "node scripts/verify-partner-api.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

@@ -19,6 +19,9 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
+import ws from "ws";
+
+global.WebSocket = ws;
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 

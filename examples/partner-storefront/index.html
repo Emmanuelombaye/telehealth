@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Summit Health — Partner Storefront Demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="wrap topbar-inner">
+        <span class="logo">Summit Health</span>
+        <span id="api-pill" class="pill">Connecting…</span>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <p class="eyebrow">Independent partner site</p>
+          <h1>Your wellness journey starts here</h1>
+          <p class="lead">
+            This is a <strong>separate frontend</strong> — not Peak Health UI. Treatments load from the
+            private Partner API; checkout hands off to the branded care portal.
+          </p>
+          <button type="button" id="btn-hero-enroll" class="btn btn-primary">Get started — API handoff</button>
+        </div>
+        <aside class="hero-card">
+          <h2>API status</h2>
+          <dl id="status-list">
+            <div><dt>Mode</dt><dd id="stat-mode">—</dd></div>
+            <div><dt>Brand</dt><dd id="stat-brand">—</dd></div>
+            <div><dt>Portal origin</dt><dd id="stat-origin">—</dd></div>
+          </dl>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Treatments from <code>GET catalog</code></h2>
+          <button type="button" id="btn-reload" class="btn btn-ghost">Reload catalog</button>
+        </div>
+        <div id="catalog" class="catalog" aria-live="polite">
+          <p class="muted">Loading catalog…</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="wrap split">
+        <div>
+          <h2>Portal links from <code>GET brand</code></h2>
+          <ul id="portal-links" class="link-list"></ul>
+        </div>
+        <div>
+          <h2>Machine-readable docs</h2>
+          <pre id="docs-out" class="code-block">Loading docs…</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <h2>Last API response</h2>
+        <pre id="last-response" class="code-block">—</pre>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="wrap">
+        <p>
+          Demo partner storefront · Partner API v1 ·
+          <a href="https://github.com" rel="noopener">docs/PARTNER_API.md</a>
+        </p>
+      </div>
+    </footer>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

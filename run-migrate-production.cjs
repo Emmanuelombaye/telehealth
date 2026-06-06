@@ -1,8 +1,8 @@
 const https = require('https');
 const fs = require('fs');
 
-const SUPABASE_URL = 'https://kvopgyhcjcniaocjozje.supabase.co';
-const SERVICE_KEY = 'sb_publishable_wr1AUarSttsAd7_m3VAH1A_z0jhs2XZ';
+const SUPABASE_URL = 'https://vzzmdbdvcofajgrjgajq.supabase.co';
+const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6em1kYmR2Y29mYWpncmpnYWpxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDc2MjI5NCwiZXhwIjoyMDk2MzM4Mjk0fQ.UTaWWdHsCSBRG1ZP4Rsp1ixnhUeMIJurUvxpowBAhCM';
 
 // Each SQL statement to run via Supabase RPC
 const migrations = [
@@ -140,7 +140,7 @@ function runSQL(sql) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({ query: sql });
     const options = {
-      hostname: 'kvopgyhcjcniaocjozje.supabase.co',
+      hostname: 'vzzmdbdvcofajgrjgajq.supabase.co',
       path: '/rest/v1/rpc/query',
       method: 'POST',
       headers: {
@@ -172,7 +172,7 @@ async function main() {
   
   console.log('✅ File created: supabase_paste_in_editor.sql');
   console.log('\n📌 INSTRUCTIONS:');
-  console.log('   1. Go to https://supabase.com/dashboard/project/kvopgyhcjcniaocjozje/sql/new');
+  console.log('   1. Go to https://supabase.com/dashboard/project/vzzmdbdvcofajgrjgajq/sql/new');
   console.log('   2. Open supabase_paste_in_editor.sql');
   console.log('   3. Copy the contents and paste into the Supabase SQL Editor');
   console.log('   4. Click "Run" (▶ button)');

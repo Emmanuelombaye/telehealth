@@ -1,3 +1,5 @@
+import { resolvePartnerCarePathRewrite } from "./careSubdomain";
+
 /**
  * Maps first DNS label → app path for staff/partner portals on subdomains
  * (e.g. admin.peakhealth.io → /admin). Only applied when the hostname matches
@@ -36,6 +38,18 @@ export function applySubdomainPortalPathRewrite(): void {
   if (pathname === "/" || pathname === "") {
     window.history.replaceState(null, "", target);
   }
+}
+
+/**
+ * Partner white-label hosts (care.brand.com, admin.brand.com) → /care/:slug/…
+ * Runs before React Router so deep links work on branded subdomains.
+ */
+export function applyPartnerCareSubdomainRewrite(): void {
+  if (typeof window === "undefined") return;
+  const { hostname, pathname } = window.location;
+  const next = resolvePartnerCarePathRewrite(hostname, pathname);
+  if (!next || next === pathname) return;
+  window.history.replaceState(null, "", next);
 }
 
 /** Normalize legacy marketing-style path `/Affiliate` → `/affiliate`. */

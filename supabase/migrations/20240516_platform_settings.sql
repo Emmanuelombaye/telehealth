@@ -18,7 +18,7 @@ DROP POLICY IF EXISTS "Allow authenticated to view public platform_settings" ON 
 
 CREATE POLICY "Allow super_admin to manage platform_settings" ON public.platform_settings
     FOR ALL USING (
-        EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'super_admin')
+        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'super_admin')
     );
 
 CREATE POLICY "Allow authenticated to view public platform_settings" ON public.platform_settings

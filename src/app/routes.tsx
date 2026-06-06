@@ -156,6 +156,10 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { BrandProvider } from "./context/BrandContext";
 import { BrandSiteGate } from "./components/brand/BrandSiteGate";
+import {
+  adminPortalChildRoutes,
+  affiliatePortalChildRoutes,
+} from "./routes/portalRouteChildren";
 
 
 export const router = createBrowserRouter([
@@ -242,6 +246,8 @@ export const router = createBrowserRouter([
           { path: "shop/:step", Component: PatientShopPage },
           { path: "shop", Component: PatientShopPage },
           { path: "login", element: <AuthPage portal="patient" /> },
+          { path: "admin/login", element: <AuthPage portal="admin" /> },
+          { path: "affiliate/login", element: <AuthPage portal="affiliate" /> },
           {
             element: <AppLayout />,
             children: [
@@ -267,6 +273,16 @@ export const router = createBrowserRouter([
                   { path: "consult", Component: PatientConsultPage },
                   { path: "vitals", Component: PatientVitalsPage },
                 ],
+              },
+              {
+                path: "admin",
+                element: <ProtectedRoute allowedRoles={["brand_admin", "super_admin"]} />,
+                children: adminPortalChildRoutes,
+              },
+              {
+                path: "affiliate",
+                element: <ProtectedRoute allowedRoles={["affiliate", "super_admin"]} />,
+                children: affiliatePortalChildRoutes,
               },
             ],
           },
@@ -368,25 +384,7 @@ export const router = createBrowserRouter([
           {
             path: "admin",
             element: <ProtectedRoute allowedRoles={['brand_admin', 'super_admin']} />,
-            children: [
-              { index: true, Component: AdminDashboard },
-              { path: "patients", Component: AdminPatientsPage },
-              { path: "treatments", Component: AdminTreatmentsPage },
-              { path: "orders", Component: AdminOrdersPage },
-              { path: "messages", Component: AdminMessagesPage },
-              { path: "analytics", Component: AdminAnalyticsPage },
-              { path: "tools", Component: AdminToolsPage },
-              { path: "questionnaires", Component: AdminQuestionnairePage },
-              { path: "products", Component: AdminProductsPage },
-              { path: "builders", Component: AdminBuildersPage },
-              { path: "finance", Component: AdminFinancePage },
-              { path: "discounts", Component: AdminDiscountsPage },
-              { path: "affiliates", Component: AdminAffiliatesPage },
-              { path: "users", Component: AdminUsersPage },
-              { path: "audit", Component: AdminAuditPage },
-              { path: "settings", Component: AdminSettingsPage },
-              { path: "notifications", Component: DoctorNotificationsPage },
-            ],
+            children: adminPortalChildRoutes,
           },
 
           // SuperAdmin portal
@@ -440,13 +438,7 @@ export const router = createBrowserRouter([
           {
             path: "affiliate",
             element: <ProtectedRoute allowedRoles={['affiliate', 'super_admin']} />,
-            children: [
-              { index: true, Component: AffiliateDashboard },
-              { path: "referrals", Component: AffiliateDashboard },
-              { path: "payouts", Component: AffiliateDashboard },
-              { path: "assets", Component: AffiliateDashboard },
-              { path: "settings", Component: AffiliateDashboard },
-            ],
+            children: affiliatePortalChildRoutes,
           },
         ],
       },

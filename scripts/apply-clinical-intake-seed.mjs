@@ -11,6 +11,9 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import ws from "ws";
+
+global.WebSocket = ws;
 import { readFileSync, existsSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
