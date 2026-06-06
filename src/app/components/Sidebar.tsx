@@ -46,7 +46,7 @@ function buildDoctorMenu(base: "/doctor" | "/providers"): DoctorNavItem[] {
     { icon: Pill, label: "Prescriptions", href: p("/erx") },
     { icon: BarChart3, label: "Reports", href: p("/analytics") },
     { icon: Receipt, label: "Billing", href: p("/billing") },
-    { icon: Shield, label: "Clinical Risk", href: p("/rpm/ai-risk") },
+    { icon: HeartPulse, label: "Clinical Risk", href: p("/rpm/ai-risk") },
     { group: "CLINICAL", icon: ClipboardList, label: "Patient Queue", href: p("/queue") },
     { group: "CLINICAL", icon: HeartPulse, label: "Vitals", href: p("/vitals") },
     { group: "CLINICAL", icon: FileText, label: "Clinical Intake", href: p("/intake") },

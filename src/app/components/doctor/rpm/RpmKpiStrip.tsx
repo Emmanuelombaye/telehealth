@@ -2,7 +2,6 @@ import {
   Users,
   AlertTriangle,
   Watch,
-  Brain,
   Activity,
   Video,
   Siren,
