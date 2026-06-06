@@ -283,13 +283,13 @@ export function AppointmentsPage() {
                               })
                               .eq("id", order.id);
                             if (error) {
-                              toast.error("Could not save demo booking.");
+                              toast.error("Could not save booking.");
                               return;
                             }
                             toast.success(
                               slot
-                                ? `Demo visit booked for ${slot.dayLabel} at ${slot.timeLabel}`
-                                : "Demo visit booked.",
+                                ? `Visit booked for ${slot.dayLabel} at ${slot.timeLabel}`
+                                : "Visit booked.",
                             );
                             return;
                           }

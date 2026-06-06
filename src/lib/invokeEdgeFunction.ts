@@ -21,7 +21,7 @@ export async function invokeEdgeFunction<T = unknown>(
     return {
       data: null,
       error: {
-        message: `Not signed in with Supabase — "${name}" needs a live session (demo login cannot call Edge Functions).`,
+        message: `Not signed in with Supabase — "${name}" requires an active session.`,
       },
     };
   }

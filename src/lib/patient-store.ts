@@ -13,7 +13,6 @@ import { isAuditPlaceholderOrder } from './clinicalTestData';
 import { fetchOrdersRows, orderRefFromRow } from './ordersFetch';
 import { countUnreadMessages } from './messagesFetch';
 import { fetchVisitFormsForPatient } from './visitFormsFetch';
-import { isDemoAuthWithoutSession } from './staffDemoAuth';
 import { isMissingTableError } from './supabaseTableError';
 
 // Centralized reactive Zustand store for the global state (Patient/Doctor/Admin).
@@ -263,7 +262,7 @@ export const usePatientStore = create<AppState>()(
       fetchUnreadMessages: async () => {
         try {
           const { user, session } = useAuthStore.getState();
-          if (!user || isDemoAuthWithoutSession(user, session)) {
+          if (!user || !session) {
             set({ unreadMessagesCount: 0 });
             return;
           }
@@ -283,7 +282,7 @@ export const usePatientStore = create<AppState>()(
         set({ prescriptionsLoading: true });
         try {
           const { user, session } = useAuthStore.getState();
-          if (!user || isDemoAuthWithoutSession(user, session)) {
+          if (!user || !session) {
             set({ prescriptions: [] });
             return;
           }
@@ -306,7 +305,7 @@ export const usePatientStore = create<AppState>()(
         set({ visitFormsLoading: true });
         try {
           const { user, session } = useAuthStore.getState();
-          if (!user || isDemoAuthWithoutSession(user, session)) {
+          if (!user || !session) {
             set({ visitForms: [] });
             return;
           }
@@ -330,7 +329,7 @@ export const usePatientStore = create<AppState>()(
       fetchNotifications: async () => {
         try {
           const { user, session } = useAuthStore.getState();
-          if (!user || isDemoAuthWithoutSession(user, session)) {
+          if (!user || !session) {
             set({ notifications: [] });
             return;
           }

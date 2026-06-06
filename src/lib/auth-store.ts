@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { supabase } from './supabaseClient';
 import { User, Session } from '@supabase/supabase-js';
 import { hasForcePatientPortalIntent } from './patientPortalIntent';
-import { clearDemoAuth, demoUserFromStorage, readStoredDemoAuth } from './staffDemoAuth';
 
 export type Role =
   | 'patient'
@@ -24,6 +23,13 @@ interface AuthState {
   setSession: (session: Session | null) => void;
 }
 
+/** Clear legacy client-side demo auth keys from older builds. */
+function clearLegacyDemoStorage(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('peak_health_dev_role');
+  localStorage.removeItem('peak_health_demo_email');
+}
+
 /**
  * Get role — prefers JWT `app_metadata` (server-set), then `user_metadata`,
  * then profiles sync. Brand id uses the same precedence.
@@ -33,14 +39,10 @@ function getRoleFromSession(session: Session): { role: Role; brandId: string | n
   const appMeta = (session.user as { app_metadata?: { role?: string; brand_id?: string } }).app_metadata || {};
   const brandId = appMeta.brand_id || meta.brand_id || null;
 
-  // Shop enrollment just completed — must land on patient portal even if staff JWT/dev state exists.
   if (hasForcePatientPortalIntent()) {
     return { role: 'patient', brandId };
   }
 
-  // Dev override applies only without a real session (see initialize fake-user path).
-  // Priority 1: app_metadata (set server-side via admin API)
-  // Priority 2: user_metadata (set at signup / enrollment)
   const sessionRole = (appMeta.role || meta.role) as Role;
 
   if (sessionRole) {
@@ -50,10 +52,6 @@ function getRoleFromSession(session: Session): { role: Role; brandId: string | n
   return { role: 'patient', brandId };
 }
 
-/**
- * Background sync: try to read/create the profile row.
- * We do this silently — it NEVER blocks or throws.
- */
 function sessionJwtRole(session: Session): Role | null {
   const meta = session.user.user_metadata || {};
   const appMeta = (session.user as { app_metadata?: { role?: string } }).app_metadata || {};
@@ -74,7 +72,6 @@ async function syncProfile(session: Session): Promise<{ role: Role; brandId: str
 
     if (!error && data) {
       const profileRole = (data.role as Role) || 'patient';
-      // Patient signup metadata must win over a stale profiles.role (e.g. doctor from testing).
       if (sessionJwtRole(session) === 'patient' && profileRole !== 'patient') {
         return { role: 'patient', brandId: data.brand_id || jwtRB.brandId };
       }
@@ -82,21 +79,13 @@ async function syncProfile(session: Session): Promise<{ role: Role; brandId: str
     }
 
     if (error) {
-      // Log but don't throw — JWT role is already being used
       console.warn('[auth-store] profiles sync skipped:', error.message, '(status:', (error as any).status, ')');
     }
   } catch (err) {
     console.warn('[auth-store] syncProfile error (non-fatal):', err);
   }
 
-  // Fall back to what JWT says
   return getRoleFromSession(session);
-}
-
-function brandIdFromDemoUser(user: User): string | null {
-  const meta = user.user_metadata || {};
-  const appMeta = (user as { app_metadata?: { brand_id?: string } }).app_metadata || {};
-  return appMeta.brand_id || meta.brand_id || null;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -108,6 +97,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize: async (initialSession) => {
     try {
+      clearLegacyDemoStorage();
+
       let session: Session | null = initialSession !== undefined ? initialSession : null;
       if (initialSession === undefined) {
         const { data, error } = await supabase.auth.getSession();
@@ -132,18 +123,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
         });
       } else {
-        const demoUser = demoUserFromStorage();
-        if (demoUser) {
-          set({
-            session: null,
-            user: demoUser,
-            role: readStoredDemoAuth()?.role ?? null,
-            brandId: brandIdFromDemoUser(demoUser),
-            isLoading: false,
-          });
-        } else {
-          set({ session: null, user: null, role: null, brandId: null, isLoading: false });
-        }
+        set({ session: null, user: null, role: null, brandId: null, isLoading: false });
       }
 
       supabase.auth.onAuthStateChange((event, newSession) => {
@@ -160,18 +140,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             }
           });
         } else {
-          const demoUser = demoUserFromStorage();
-          if (demoUser) {
-            set({
-              session: null,
-              user: demoUser,
-              role: readStoredDemoAuth()?.role ?? null,
-              brandId: brandIdFromDemoUser(demoUser),
-              isLoading: false,
-            });
-          } else {
-            set({ session: null, user: null, role: null, brandId: null, isLoading: false });
-          }
+          set({ session: null, user: null, role: null, brandId: null, isLoading: false });
         }
       });
     } catch (error) {
@@ -181,7 +150,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    clearDemoAuth();
+    clearLegacyDemoStorage();
     await supabase.auth.signOut();
     set({ session: null, user: null, role: null, brandId: null });
   },

@@ -74,7 +74,7 @@ export function OsLandingSections() {
               to="/login"
               className="inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background duration-200 hover:-translate-y-0.5 active:scale-[0.98] py-2 h-14 px-10 rounded-full text-slate-500 font-bold text-sm hover:bg-emerald-50 hover:text-emerald-900 transition-all w-full sm:w-auto"
             >
-              View Demo Portal
+              Patient Portal
             </Link>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 pt-8 border-t border-slate-200/60 max-w-2xl mx-auto">

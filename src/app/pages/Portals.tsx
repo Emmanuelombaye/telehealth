@@ -14,7 +14,7 @@ export function PortalsPage() {
             Portal access
           </h1>
           <p className="text-slate-500 font-light text-lg max-w-xl mx-auto">
-            Sign in with your assigned demo account, or create a new patient account from{" "}
+            Sign in with your assigned account, or create a new patient account from{" "}
             <Link to={PORTAL_LOGINS.patient} className="text-emerald-700 font-semibold hover:underline">
               patient login
             </Link>

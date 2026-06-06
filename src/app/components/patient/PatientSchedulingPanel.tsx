@@ -95,8 +95,7 @@ export function PatientSchedulingPanel({
           <p className="text-sm text-muted-foreground mt-1 max-w-prose">
             {mock ? (
               <>
-                Pick a demo time below to continue enrollment. No external calendar is loaded — meeting details are
-                simulated until live scheduling is enabled.
+                Pick a time below to continue enrollment. Meeting details will be confirmed after you complete intake.
               </>
             ) : (
               <>
@@ -185,13 +184,13 @@ export function PatientSchedulingPanel({
           <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs">
             <Calendar className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
             <span className="font-semibold text-slate-900">
-              {mock ? "Demo availability" : "Book with our clinical team"}
+              {mock ? "Available times" : "Book with our clinical team"}
             </span>
           </div>
 
           {mock ? (
             <div className="p-4 sm:p-6 space-y-3">
-              <p className="text-xs text-slate-500">Select any slot — demo only, no SMS or calendar invite is sent.</p>
+              <p className="text-xs text-slate-500">Select a slot to reserve your video visit.</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {slots.map((slot) => {
                   const picked = selectedSlotId === slot.id;

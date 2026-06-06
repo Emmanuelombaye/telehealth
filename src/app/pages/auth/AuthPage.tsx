@@ -5,19 +5,16 @@ import { useAuthStore, Role } from "../../../lib/auth-store";
 import { doctorPortalBaseFromPath } from "../../../lib/doctorPortalBase";
 import { Lock, Mail, AlertCircle, Eye, EyeOff, ArrowLeft, Sparkles } from "lucide-react";
 import { formatSupabaseSignInError } from "../../../lib/authErrors";
-import {
-  clearDemoAuth,
-  demoAccountForPortal,
-  demoRoleAllowedOnPortal,
-  isStaffPortal,
-  matchStaffDemo,
-  persistDemoAuth,
-  portalDemoMismatchMessage,
-} from "../../../lib/staffDemoAuth";
 import { useBrand } from "../../context/BrandContext";
 import { cn } from "../../components/ui/utils";
 
 type Portal = "patient" | "doctor" | "admin" | "superadmin" | "affiliate" | "pharmacy";
+
+const STAFF_PORTALS: Portal[] = ["doctor", "admin", "superadmin", "affiliate", "pharmacy"];
+
+function isStaffPortal(portal: Portal): boolean {
+  return STAFF_PORTALS.includes(portal);
+}
 
 export function AuthPage({ portal }: { portal: Portal }) {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot_password'>('login');
@@ -36,16 +33,14 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const initialize = useAuthStore(state => state.initialize);
   const cleanupDone = useRef(false);
 
-  // ── OPTIMIZED: Faster login page preparation ──
   useEffect(() => {
     if (cleanupDone.current) return;
     cleanupDone.current = true;
 
     async function cleanup() {
       try {
-        clearDemoAuth();
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (session) {
           await supabase.auth.signOut();
           await initialize(null);
@@ -60,13 +55,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
     }
     cleanup();
   }, [initialize]);
-
-  useEffect(() => {
-    if (!ready || mode !== "login" || !isStaffPortal(portal)) return;
-    const demo = demoAccountForPortal(portal);
-    setEmail(demo.email);
-    setPassword("");
-  }, [ready, portal, mode]);
 
   const portalTarget = (p: Portal) => {
     const buster = `?v=${Date.now()}`;
@@ -124,7 +112,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
       if (!firstName || !lastName) { setError("Please enter your full name."); return; }
       if (password !== confirmPassword) { setError("Passwords do not match."); return; }
     }
-    
+
     setLoading(true);
     setError(null);
     setSuccessMsg(null);
@@ -132,7 +120,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
     try {
       if (mode === 'login') {
         const normalizedEmail = email.trim().toLowerCase();
-        const demo = matchStaffDemo(normalizedEmail, password);
 
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: normalizedEmail,
@@ -140,15 +127,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
         });
 
         if (signInError) {
-          if (demo && isStaffPortal(portal)) {
-            if (!demoRoleAllowedOnPortal(portal, demo.role)) {
-              throw new Error(portalDemoMismatchMessage(portal));
-            }
-            persistDemoAuth(demo);
-            await initialize();
-            navigate(portalTarget(portal), { replace: true });
-            return;
-          }
           if (isStaffPortal(portal)) {
             throw new Error(formatSupabaseSignInError(signInError));
           }
@@ -156,11 +134,9 @@ export function AuthPage({ portal }: { portal: Portal }) {
         }
 
         if (data.user) {
-          clearDemoAuth();
-
           await initialize();
           const role = useAuthStore.getState().role;
-          
+
           if (role !== 'super_admin') {
             if (portal === 'superadmin') {
               setError("Access denied. Super Admin portal only.");
@@ -203,7 +179,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
               return;
             }
           }
-          
+
           if (role === 'super_admin') {
             navigate('/superadmin', { replace: true });
           } else {
@@ -230,7 +206,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
           }
         });
         if (signUpError) throw signUpError;
-        
+
         if (data.user) {
           if (data.session) {
             await initialize();
@@ -280,7 +256,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
         : "Secure access for clinicians and patients.";
 
   const isPartnerPatientLogin = isWhiteLabel && portal === "patient";
-  const portalDemo = isStaffPortal(portal) ? demoAccountForPortal(portal) : null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA] p-4 overflow-auto font-sans">
@@ -341,18 +316,6 @@ export function AuthPage({ portal }: { portal: Portal }) {
         </div>
 
         <div className="bg-white rounded-[24px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60">
-          {portalDemo && mode === "login" && (
-            <div className="mb-5 rounded-[14px] border border-emerald-100 bg-emerald-50/80 p-4 text-left">
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-1">
-                Demo account
-              </p>
-              <p className="text-[13px] font-semibold text-emerald-900">{portalDemo.displayName}</p>
-              <p className="text-[13px] text-emerald-900 font-mono mt-1">{portalDemo.email}</p>
-              <p className="text-[11px] text-emerald-700/80 mt-2 leading-relaxed">
-                Enter your password below to sign in.
-              </p>
-            </div>
-          )}
           <form onSubmit={handleAuth} className="space-y-5">
             {error && (
               <div className="flex items-start gap-2 p-3 rounded-[14px] text-sm bg-red-50 border border-red-100 text-red-600">
@@ -413,8 +376,8 @@ export function AuthPage({ portal }: { portal: Portal }) {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397]">Password</label>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => { setMode('forgot_password'); setError(null); setSuccessMsg(null); }}
                     className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397] hover:text-[#0A3622] transition-colors"
                   >
@@ -473,8 +436,8 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
           {mode === 'forgot_password' && (
              <div className="mt-6 text-center">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => { setMode('login'); setError(null); setSuccessMsg(null); }}
                 className="text-[13px] text-[#6A8074] hover:text-[#0A3622] font-medium"
               >

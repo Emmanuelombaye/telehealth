@@ -1,5 +1,5 @@
 /**
- * Provision all staff demo accounts via service role (fixes broken anon sign-in paths).
+ * Provision all staff accounts via service role.
  *   npm run auth:provision-staff
  */
 import { createClient } from "@supabase/supabase-js";

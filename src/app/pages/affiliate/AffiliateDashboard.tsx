@@ -96,7 +96,7 @@ export function AffiliateDashboard() {
                 Powered by Referly.so
               </Badge>
               <Badge variant="outline" className="text-[8px] font-black uppercase tracking-wider border-emerald-200 text-emerald-700">
-                {trackingLive ? "Tracking live" : "Demo preview mode"}
+                {trackingLive ? "Tracking live" : "Sync pending"}
               </Badge>
             </div>
             <h1 className="text-2xl md:text-3xl font-serif text-[#0A2E1F] tracking-tight">
@@ -104,7 +104,7 @@ export function AffiliateDashboard() {
             </h1>
             <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
               Referral links, click tracking, checkout attribution, and payouts are managed through Referly.
-              This portal previews the integrated experience your partners will see on{" "}
+              Partners sign in on{" "}
               <span className="font-mono text-emerald-800">{REFERLY_SYNC_STATUS.partnerPortal}</span>.
             </p>
           </div>
@@ -329,10 +329,6 @@ export function AffiliateDashboard() {
         </Card>
       )}
 
-      <div className="flex items-center gap-3 p-6 rounded-[1.5rem] bg-[#0A2E1F] text-emerald-100/80 text-[10px] font-bold uppercase tracking-widest">
-        <ShieldCheck className="h-5 w-5 text-[#D4AF37] shrink-0" />
-        Demo data shown for client preview — connect VITE_REFERLY_SITE_ID and Referly partner domain for live sync.
-      </div>
     </div>
   );
 }

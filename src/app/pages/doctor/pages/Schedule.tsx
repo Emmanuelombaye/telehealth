@@ -411,7 +411,7 @@ export function DoctorSchedulePage() {
           {isMockSchedulingEnabled() ? (
             <div className="p-6 space-y-4">
               <p className="text-sm text-slate-600">
-                Demo scheduling — no live Calendly embed. Patient bookings use mock slots during enrollment.
+                Scheduling calendar — patient bookings from enrollment appear here when live scheduling is enabled.
               </p>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {getMockSchedulingSlots(6).map((slot) => (
@@ -420,7 +420,7 @@ export function DoctorSchedulePage() {
                     className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
                   >
                     <p className="font-semibold text-slate-900">{slot.dayLabel}</p>
-                    <p className="text-xs text-slate-500">{slot.timeLabel} · available (demo)</p>
+                    <p className="text-xs text-slate-500">{slot.timeLabel} · available</p>
                   </div>
                 ))}
               </div>

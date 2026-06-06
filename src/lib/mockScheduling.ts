@@ -65,4 +65,4 @@ export function getMockSchedulingSlots(count = 8): MockSchedulingSlot[] {
   return slots;
 }
 
-export const MOCK_SCHEDULING_PROVIDER_LABEL = "Demo scheduler";
+export const MOCK_SCHEDULING_PROVIDER_LABEL = "Peak scheduling";

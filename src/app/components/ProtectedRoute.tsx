@@ -6,7 +6,6 @@ import {
   clearForcePatientPortalIntent,
   hasForcePatientPortalIntent,
 } from '../../lib/patientPortalIntent';
-import { readStoredDemoAuth } from '../../lib/staffDemoAuth';
 import { useBrand } from '../context/BrandContext';
 
 const portalLoginUrl = (path: string) => {
@@ -53,9 +52,8 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
   const redirected = useRef(false);
 
   const forcePatient = hasForcePatientPortalIntent();
-  const demoAuth = readStoredDemoAuth();
-  const effectiveRole = forcePatient ? 'patient' : user ? role : demoAuth?.role ?? null;
-  const isAuthenticated = !!user || !!demoAuth?.role;
+  const effectiveRole = forcePatient ? 'patient' : role;
+  const isAuthenticated = !!user;
 
   // Memoize allowed roles check to prevent infinite loops from unstable array props
   const rolesKey = allowedRoles?.join(',') || '';

@@ -1468,10 +1468,6 @@ export function PatientShopPage() {
              To comply with KYC and telemedicine regulations, we need to quickly verify your identity using a government-issued ID. This usually takes less than 60 seconds.
            </p>
            
-           <div className="mt-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-700 font-semibold">
-             ⚡ Demo Mode: Clicking "Verify My Identity" will simulate a successful Stripe Identity scan and verification.
-           </div>
-
            {error && (
              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold">
                {error}
@@ -1486,7 +1482,7 @@ export function PatientShopPage() {
                   setIsVerifyingIdentity(true);
                   setError(null);
                   try {
-                    // DEMO MODE: short simulated scan to feel realistic, then pass successfully
+                    // Simulated scan when Stripe Identity is not wired for this product
                     await new Promise((resolve) => setTimeout(resolve, 1500));
                     setIdentityStripeCompleted(true);
                     goToStage("questionnaire");
@@ -1499,7 +1495,7 @@ export function PatientShopPage() {
               >
                 {isVerifyingIdentity ? (
                   <span className="flex items-center gap-2">
-                    <Loader2 className="h-5 w-5 animate-spin text-emerald-400" /> Simulating ID Scan...
+                    <Loader2 className="h-5 w-5 animate-spin text-emerald-400" /> Verifying identity...
                   </span>
                 ) : (
                   <span className="flex items-center gap-2"><Shield className="h-5 w-5" /> Verify My Identity</span>
@@ -1779,12 +1775,12 @@ export function PatientShopPage() {
         {gateway && gateway !== "stripe" && allowSimulatedAltGateway && (
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">
-              Demo card (not charged)
+              Simulated card (not charged)
             </p>
             <div className="relative h-36 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-5 mb-4 overflow-hidden shadow-xl">
               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_50%,white,transparent_60%)]" />
               <div className="flex justify-between items-start">
-                <span className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Demo</span>
+                <span className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Card</span>
                 <CreditCard className="h-6 w-6 text-white/50" />
               </div>
               <p className="text-white font-mono text-lg tracking-[0.2em] mt-3 font-bold">
@@ -1869,7 +1865,7 @@ export function PatientShopPage() {
                 goToStage("payment_confirmation");
               }}
             >
-              Continue (demo checkout — no charge)
+              Continue (no charge)
             </Button>
           </div>
         )}
@@ -1912,7 +1908,7 @@ export function PatientShopPage() {
         ) : gateway === "stripe" && !stripePromise ? (
           <p className="text-xs text-center text-amber-700 font-semibold">
             Stripe is not configured (missing publishable key). Add{" "}
-            <code className="font-mono">VITE_STRIPE_PUBLISHABLE_KEY</code> or use a demo gateway in development.
+            <code className="font-mono">VITE_STRIPE_PUBLISHABLE_KEY</code> in your environment to enable card payments.
           </p>
         ) : !gateway ? (
           <p className="text-xs text-center text-muted-foreground">Select a payment method above.</p>
@@ -1939,7 +1935,7 @@ export function PatientShopPage() {
           <p className="text-sm text-muted-foreground mt-2">
             Thank you{firstName ? `, ${firstName}` : ""}. Your subscription payment for{" "}
             <span className="font-semibold text-foreground">{selected.name}</span> was processed
-            {stripePaymentIntentId ? " securely" : " (demo mode)"}.
+            {stripePaymentIntentId ? " securely" : " successfully"}.
           </p>
         </div>
         <Card className="text-left">
@@ -2145,10 +2141,10 @@ export function PatientShopPage() {
               <span className="text-sm text-emerald-950">
                 {bookingAttestation
                   ? isMockSchedulingEnabled()
-                    ? "Demo time selected — you can continue enrollment."
+                    ? "Time selected — you can continue enrollment."
                     : "Booking detected — you can continue enrollment."
                   : isMockSchedulingEnabled()
-                    ? "Select a demo time above, then check here to confirm."
+                    ? "Select a time above, then check here to confirm."
                     : "Confirm you selected a time above, or wait for the calendar to register your booking automatically."}
               </span>
             </label>

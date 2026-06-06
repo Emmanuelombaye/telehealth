@@ -1,5 +1,5 @@
 /**
- * Verify new Supabase DB + all staff portal demo logins.
+ * Verify new Supabase DB + all staff portal logins.
  * Loads .env.production / .env.local automatically.
  *
  *   npm run verify:portals
@@ -171,13 +171,12 @@ async function main() {
   const total = dbFails + authFails + httpFails;
   console.log("\n=== Summary ===");
   if (total === 0) {
-    console.log("\x1b[32mAll checks passed.\x1b[0m Demo UI login also works if Supabase auth is down.");
+    console.log("\x1b[32mAll checks passed.\x1b[0m");
     process.exit(0);
   }
   console.error(`\x1b[31m${total} check group(s) failed.\x1b[0m`);
   if (authFails) {
-    console.error("  → Run: npm run auth:provision-staff");
-    console.error("  → Or use pre-filled demo login (bypasses Supabase) on each portal.");
+    console.error("  → Run scripts/sql/RUN_IN_SUPABASE_STAFF_AUTH_ALL.sql in Supabase SQL Editor.");
   }
   if (dbFails) {
     console.error("  → Run scripts/sql/RUN_IN_SUPABASE_FIX_ALL_DATABASE.sql then RUN_IN_SUPABASE_SCHEMA_GAP_FIX.sql in Supabase SQL Editor.");
