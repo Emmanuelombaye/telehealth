@@ -669,6 +669,11 @@ CREATE POLICY "Users can send messages" ON public.messages
 CREATE POLICY "Users can update received messages" ON public.messages
   FOR UPDATE USING (auth.uid() = receiver_id);
 
+DROP POLICY IF EXISTS "Super admin can view all messages" ON public.messages;
+CREATE POLICY "Super admin can view all messages" ON public.messages
+  FOR SELECT TO authenticated
+  USING (public.get_auth_role() = 'super_admin');
+
 DO $$
 BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;

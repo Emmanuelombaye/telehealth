@@ -330,6 +330,11 @@ BEGIN
   END IF;
 END $$;
 
+DROP POLICY IF EXISTS "Super admin can view all messages" ON public.messages;
+CREATE POLICY "Super admin can view all messages" ON public.messages
+  FOR SELECT TO authenticated
+  USING (public.get_auth_role() = 'super_admin');
+
 -- ---------------------------------------------------------------------------
 -- 8) NOTIFICATIONS
 -- ---------------------------------------------------------------------------

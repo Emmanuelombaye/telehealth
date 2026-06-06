@@ -142,6 +142,7 @@ const SuperAdminUsersPage = lazy(() => lazyRetry(() => import("./pages/superadmi
 const SuperAdminDoctorsPage = lazy(() => lazyRetry(() => import("./pages/superadmin/pages/Doctors").then(m => ({ default: m.SuperAdminDoctorsPage }))));
 const SuperAdminFinancePage = lazy(() => lazyRetry(() => import("./pages/superadmin/pages/Finance").then(m => ({ default: m.SuperAdminFinancePage }))));
 const SuperAdminSecurityPage = lazy(() => lazyRetry(() => import("./pages/superadmin/pages/Security").then(m => ({ default: m.SuperAdminSecurityPage }))));
+const SuperAdminMessagesPage = lazy(() => lazyRetry(() => import("./pages/superadmin/pages/Messages").then(m => ({ default: m.SuperAdminMessagesPage }))));
 
 // Affiliate — Referly-branded partner portal (demo data until live API sync)
 const AffiliateDashboard = lazy(() =>
@@ -403,7 +404,7 @@ export const router = createBrowserRouter([
               { path: "security", Component: SuperAdminSecurityPage },
               { path: "orders", Component: AdminOrdersPage },
               { path: "patients", Component: AdminPatientsPage },
-              { path: "messages", Component: AdminMessagesPage },
+              { path: "messages", Component: SuperAdminMessagesPage },
               { path: "products", Component: AdminProductsPage },
               { path: "treatments", Component: AdminTreatmentsPage },
               { path: "questionnaires", Component: AdminQuestionnairePage },

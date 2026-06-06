@@ -107,6 +107,72 @@ export function buildThreadsFromMessages(rows: RawMessageRow[], currentUserId: s
   );
 }
 
+export type PlatformMessageThread = {
+  id: string;
+  patientId: string;
+  patientName: string;
+  doctorId: string;
+  doctorName: string;
+  lastMsg: string;
+  lastAt: string;
+  timeLabel: string;
+  unread: number;
+};
+
+/** Group patient↔doctor threads for super-admin platform oversight. */
+export function buildPlatformThreadsFromMessages(rows: RawMessageRow[]): PlatformMessageThread[] {
+  const threadMap: Record<string, PlatformMessageThread> = {};
+
+  for (const msg of rows) {
+    const senderRole = (msg.sender?.role || "").toLowerCase();
+    const receiverRole = (msg.receiver?.role || "").toLowerCase();
+
+    let patientId: string | null = null;
+    let patientName = "Patient";
+    let doctorId: string | null = null;
+    let doctorName = "Doctor";
+
+    if (senderRole === "patient") {
+      patientId = msg.sender_id;
+      patientName = msg.sender?.full_name || "Patient";
+      doctorId = msg.receiver_id;
+      doctorName = msg.receiver?.full_name || "Doctor";
+    } else if (receiverRole === "patient") {
+      patientId = msg.receiver_id;
+      patientName = msg.receiver?.full_name || "Patient";
+      doctorId = msg.sender_id;
+      doctorName = msg.sender?.full_name || "Doctor";
+    } else {
+      continue;
+    }
+
+    if (!patientId || !doctorId) continue;
+
+    const key = `${patientId}::${doctorId}`;
+    if (!threadMap[key]) {
+      threadMap[key] = {
+        id: key,
+        patientId,
+        patientName,
+        doctorId,
+        doctorName,
+        lastMsg: msg.content,
+        lastAt: msg.created_at,
+        timeLabel: formatThreadTime(msg.created_at),
+        unread: 0,
+      };
+    }
+
+    if (!msg.is_read && msg.receiver_id === doctorId) {
+      threadMap[key].unread += 1;
+    }
+  }
+
+  return Object.values(threadMap).sort(
+    (a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime(),
+  );
+}
+
 export function buildPatientContacts(
   orders: {
     id?: string;
