@@ -20,6 +20,19 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ---------------------------------------------------------------------------
+-- 0) Fix Auth 500 — NULL token columns break GoTrue login
+-- ---------------------------------------------------------------------------
+UPDATE auth.users SET confirmation_token = '' WHERE confirmation_token IS NULL;
+UPDATE auth.users SET recovery_token = '' WHERE recovery_token IS NULL;
+UPDATE auth.users SET email_change_token_new = '' WHERE email_change_token_new IS NULL;
+UPDATE auth.users SET email_change = '' WHERE email_change IS NULL;
+
+ALTER TABLE auth.users ALTER COLUMN confirmation_token SET DEFAULT '';
+ALTER TABLE auth.users ALTER COLUMN recovery_token SET DEFAULT '';
+ALTER TABLE auth.users ALTER COLUMN email_change_token_new SET DEFAULT '';
+ALTER TABLE auth.users ALTER COLUMN email_change SET DEFAULT '';
+
+-- ---------------------------------------------------------------------------
 -- 1) Profiles table + signup trigger
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -105,9 +118,9 @@ BEGIN
   v_last := NULLIF(trim(substring(p_full_name from length(v_first) + 2)), '');
 
   v_app := jsonb_build_object(
-    'role', p_role,
     'provider', 'email',
-    'providers', jsonb_build_array('email')
+    'providers', jsonb_build_array('email'),
+    'role', p_role
   );
   IF p_brand_id IS NOT NULL AND trim(p_brand_id) <> '' THEN
     v_app := v_app || jsonb_build_object('brand_id', p_brand_id);
@@ -182,6 +195,10 @@ BEGIN
     UPDATE auth.users SET
       encrypted_password = crypt(p_password, gen_salt('bf')),
       email_confirmed_at = COALESCE(email_confirmed_at, now()),
+      confirmation_token = COALESCE(confirmation_token, ''),
+      recovery_token = COALESCE(recovery_token, ''),
+      email_change_token_new = COALESCE(email_change_token_new, ''),
+      email_change = COALESCE(email_change, ''),
       raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) || v_app,
       raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || v_meta || jsonb_build_object('sub', v_id::text, 'email', lower(p_email)),
       updated_at = now()
