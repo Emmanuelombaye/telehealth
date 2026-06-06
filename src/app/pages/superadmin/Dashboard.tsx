@@ -24,7 +24,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { supabase } from "../../../lib/supabaseClient";
-import { ORDERS_ADMIN_NON_CLINICAL_SELECT } from "../../../lib/adminScope";
+import { fetchOrdersRows } from "../../../lib/ordersFetch";
 import { cn } from "../../components/ui/utils";
 import { motion } from "framer-motion";
 import { AdminScopeNotice } from "../../components/admin/AdminScopeNotice.tsx";
@@ -38,10 +38,7 @@ export function SuperAdminDashboard() {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const { data, error } = await supabase
-          .from("orders")
-          .select(ORDERS_ADMIN_NON_CLINICAL_SELECT)
-          .order("created_at", { ascending: false });
+        const { data, error } = await fetchOrdersRows("super_admin", null, undefined);
         if (error) throw error;
         setOrders(data || []);
       } catch (err) {

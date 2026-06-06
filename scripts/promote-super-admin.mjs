@@ -13,32 +13,12 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync, existsSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import ws from "ws";
+import { applyProjectEnv } from "./loadEnv.mjs";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, "..");
+global.WebSocket = ws;
 
-function loadEnvLocal() {
-  const p = join(root, ".env.local");
-  if (!existsSync(p)) return {};
-  const out = {};
-  for (const line of readFileSync(p, "utf8").split("\n")) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    const i = t.indexOf("=");
-    if (i === -1) continue;
-    const k = t.slice(0, i).trim();
-    let v = t.slice(i + 1).trim();
-    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))
-      v = v.slice(1, -1);
-    out[k] = v;
-  }
-  return out;
-}
-
-const env = { ...process.env, ...loadEnvLocal() };
+const env = applyProjectEnv();
 const url = (env.VITE_SUPABASE_URL || env.SUPABASE_URL || "").trim();
 const serviceKey = (env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
 const email = (env.SUPERADMIN_EMAIL || "brandon@peakbodyco.com").trim().toLowerCase();

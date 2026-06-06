@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { usePatientStore } from "../../../../lib/patient-store";
-import { supabase } from "../../../../lib/supabaseClient";
+import { updateVisitForm } from "../../../../lib/visitFormsFetch";
 import { useAuthStore } from "../../../../lib";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ type VisitForm = {
   urgent: boolean;
   form_data: Record<string, any>;
   created_at: string;
+  _sourceTable?: "intake_forms" | "visit_forms";
 };
 
 // A question inside form_data.questions (doctor-assigned) or a generic fallback
@@ -89,15 +90,15 @@ function FormViewer({
         answers,
         submitted_at: new Date().toISOString(),
       };
-      const { data, error } = await supabase
-        .from("visit_forms")
-        .update({
+      const { data, error } = await updateVisitForm(
+        form.id,
+        {
           status: "completed",
           form_data: newFormData,
-        })
-        .eq("id", form.id)
-        .select()
-        .single();
+          ...(form._sourceTable === "intake_forms" ? { completed_date: new Date().toISOString().slice(0, 10) } : {}),
+        },
+        form._sourceTable,
+      );
       if (error) throw error;
       toast.success("Visit form submitted successfully");
       onSubmitted(data as VisitForm);

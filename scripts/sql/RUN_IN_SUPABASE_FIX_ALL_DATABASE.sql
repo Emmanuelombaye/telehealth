@@ -204,6 +204,33 @@ BEGIN
     EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS scheduling_ref TEXT';
     EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS scheduling_booking_url TEXT';
 
+    -- Human-readable order ref + clinical/display columns (PostgREST 42703 fixes)
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS order_number TEXT';
+    EXECUTE 'CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_order_number ON public.orders (order_number) WHERE order_number IS NOT NULL';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS patient_name TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS patient_avatar TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS patient_age INTEGER';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS patient_country TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS medication TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS dosage_instructions TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS category TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS ordered_date TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS pharmacy TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS doctor TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS doctor_note TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS tracking TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS mrn TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS timeline JSONB DEFAULT ''[]''::jsonb';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS intake_notes TEXT';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS intake_answers JSONB DEFAULT ''{}''::jsonb';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS patient_vitals JSONB DEFAULT ''{}''::jsonb';
+    EXECUTE 'ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS shipped_date TEXT';
+    EXECUTE $q$
+      UPDATE public.orders
+      SET order_number = 'ORD-' || UPPER(SUBSTRING(id::text FROM 1 FOR 8))
+      WHERE order_number IS NULL OR TRIM(order_number) = ''
+    $q$;
+
     EXECUTE 'ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY';
 
     EXECUTE 'DROP POLICY IF EXISTS "MVP Public Select" ON public.orders';
@@ -753,6 +780,10 @@ UNION ALL
 SELECT 'profiles.calendly_url column', EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'calendly_url')
 UNION ALL
 SELECT 'orders.enrollment_video_required', EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'enrollment_video_required')
+UNION ALL
+SELECT 'orders.order_number', EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'order_number')
+UNION ALL
+SELECT 'orders.patient_name', EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'patient_name')
 UNION ALL
 SELECT 'increment_patients_count()', EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'increment_patients_count');
 

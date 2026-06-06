@@ -8,8 +8,13 @@ import {
   requestPrescriptionRefill,
 } from './prescriptions';
 export type { PrescriptionRecord } from './prescriptions';
-import { applyOrdersBrandScope, ordersSelectForMode, resolveOrdersFetchMode } from './adminScope';
+import { resolveOrdersFetchMode } from './adminScope';
 import { isAuditPlaceholderOrder } from './clinicalTestData';
+import { fetchOrdersRows, orderRefFromRow } from './ordersFetch';
+import { countUnreadMessages } from './messagesFetch';
+import { fetchVisitFormsForPatient } from './visitFormsFetch';
+import { isDemoAuthWithoutSession } from './staffDemoAuth';
+import { isMissingTableError } from './supabaseTableError';
 
 // Centralized reactive Zustand store for the global state (Patient/Doctor/Admin).
 // Source of truth for: brand config, active order pipeline, doctor availability.
@@ -237,8 +242,8 @@ export const usePatientStore = create<AppState>()(
           .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
-            table: 'visit_forms'
-          }, (payload) => {
+            table: 'intake_forms'
+          }, () => {
             get().fetchVisitForms();
           })
           .on('postgres_changes', { 
@@ -257,13 +262,12 @@ export const usePatientStore = create<AppState>()(
 
       fetchUnreadMessages: async () => {
         try {
-          const user = useAuthStore.getState().user;
-          if (!user) return;
-          const { data, count, error } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('receiver_id', user.id)
-            .eq('is_read', false);
+          const { user, session } = useAuthStore.getState();
+          if (!user || isDemoAuthWithoutSession(user, session)) {
+            set({ unreadMessagesCount: 0 });
+            return;
+          }
+          const { count, error } = await countUnreadMessages(user.id);
           
           if (error) {
             if (error.code === 'PGRST303') console.warn("Session Expired: Please re-login to refresh clinical data.");
@@ -278,8 +282,11 @@ export const usePatientStore = create<AppState>()(
       fetchPrescriptions: async () => {
         set({ prescriptionsLoading: true });
         try {
-          const { user } = useAuthStore.getState();
-          if (!user) return;
+          const { user, session } = useAuthStore.getState();
+          if (!user || isDemoAuthWithoutSession(user, session)) {
+            set({ prescriptions: [] });
+            return;
+          }
           const rows = await fetchPatientPrescriptionsEnriched(user.id);
           set({ prescriptions: rows });
         } catch (error: unknown) {
@@ -298,20 +305,23 @@ export const usePatientStore = create<AppState>()(
       fetchVisitForms: async () => {
         set({ visitFormsLoading: true });
         try {
-          const { user } = useAuthStore.getState();
-          if (!user) return;
-          const { data, error } = await supabase
-            .from('visit_forms')
-            .select('*')
-            .eq('patient_id', user.id)
-            .order('created_at', { ascending: false });
+          const { user, session } = useAuthStore.getState();
+          if (!user || isDemoAuthWithoutSession(user, session)) {
+            set({ visitForms: [] });
+            return;
+          }
+
+          const { data, error } = await fetchVisitFormsForPatient(user.id);
+
           if (error) {
             if (error.code === 'PGRST303') console.warn("Session Expired: Please re-login to view visit forms.");
-            throw error;
+            if (!isMissingTableError(error)) throw error;
           }
           set({ visitForms: data || [] });
         } catch (error) {
-          console.error('Error fetching visit forms:', error);
+          if (!isMissingTableError(error as { code?: string; message?: string })) {
+            console.error('Error fetching visit forms:', error);
+          }
         } finally {
           set({ visitFormsLoading: false });
         }
@@ -319,8 +329,11 @@ export const usePatientStore = create<AppState>()(
 
       fetchNotifications: async () => {
         try {
-          const { user } = useAuthStore.getState();
-          if (!user) return;
+          const { user, session } = useAuthStore.getState();
+          if (!user || isDemoAuthWithoutSession(user, session)) {
+            set({ notifications: [] });
+            return;
+          }
           const { data, error } = await supabase
             .from('notifications')
             .select('*')
@@ -378,17 +391,8 @@ export const usePatientStore = create<AppState>()(
         try {
           const { role, brandId, user } = useAuthStore.getState();
           const mode = resolveOrdersFetchMode(role);
-          const selectCols = ordersSelectForMode(mode);
 
-          let query = supabase.from('orders').select(selectCols).order('created_at', { ascending: false });
-
-          if (role === 'patient' && user) {
-            query = query.eq('user_id', user.id);
-          } else {
-            query = applyOrdersBrandScope(query, role, brandId);
-          }
-
-          const { data, error } = await query;
+          const { data: rawRows, error } = await fetchOrdersRows(role, brandId, user?.id);
           if (error) {
             if (error.code === 'PGRST303') console.warn("Session Expired: Please re-login to sync orders.");
             if (error.code === '42P17') {
@@ -398,56 +402,55 @@ export const usePatientStore = create<AppState>()(
             throw error;
           }
           
-          const rawRows = (data ?? []) as Record<string, any>[];
-
           const mappedOrders: Order[] = rawRows.map(d => ({
-            id: d.order_number,
-            dbId: d.id,
-            userId: d.user_id,
-            user_id: d.user_id,
-            patientName: d.patient_name,
-            patientAvatar: d.patient_avatar || '',
-            patientAge: d.patient_age,
-            patientCountry: d.patient_country,
-            subBrand: d.sub_brand,
-            medication: d.medication,
-            dosageInstructions: d.dosage_instructions,
-            category: d.category,
+            id: orderRefFromRow(d),
+            dbId: d.id as string,
+            userId: d.user_id as string,
+            user_id: d.user_id as string,
+            patientName: (d.patient_name as string) || 'Patient',
+            patientAvatar: (d.patient_avatar as string) || '',
+            patientAge: (d.patient_age as number) ?? 0,
+            patientCountry: (d.patient_country as string) || '',
+            subBrand: (d.sub_brand as string) || '',
+            medication: (d.medication as string) || '',
+            dosageInstructions: (d.dosage_instructions as string) || '',
+            category: (d.category as string) || '',
             status: d.status as OrderStatus,
-            orderedDate: d.ordered_date,
-            consultationSubmittedDate: d.consultation_submitted_date,
-            pharmacy: d.pharmacy,
-            amount: d.amount,
-            doctor: d.doctor,
-            doctorNote: mode === 'admin' ? null : d.doctor_note,
-            tracking: d.tracking,
-            carrier: d.carrier,
-            trackingUrl: d.tracking_url,
-            estimatedDelivery: d.estimated_delivery,
-            timeline: d.timeline || [],
-            urgent: d.urgent,
-            intakeComplete: d.intake_complete,
-            intakeNotes: mode === 'admin' ? undefined : d.intake_notes,
-            intakeAnswers: mode === 'admin' ? undefined : d.intake_answers,
-            patientVitals: mode === 'admin' ? undefined : d.patient_vitals,
-            zoomStatus: d.zoom_status,
+            orderedDate: (d.ordered_date as string) || '',
+            consultationSubmittedDate: d.consultation_submitted_date as string | undefined,
+            pharmacy: (d.pharmacy as string) || '',
+            amount: d.amount != null ? String(d.amount) : '',
+            doctor: (d.doctor as string) || '',
+            doctorNote: mode === 'admin' ? null : (d.doctor_note as string | null),
+            tracking: (d.tracking as string | null) ?? (d.tracking_number as string | null),
+            carrier: d.carrier as string | null,
+            trackingUrl: d.tracking_url as string | null,
+            estimatedDelivery: d.estimated_delivery as string | null,
+            timeline: (d.timeline as Order['timeline']) || [],
+            urgent: !!d.urgent,
+            intakeComplete: !!d.intake_complete,
+            intakeNotes: mode === 'admin' ? undefined : (d.intake_notes as string | undefined),
+            intakeAnswers: mode === 'admin' ? undefined : (d.intake_answers as Record<string, string | string[]> | undefined),
+            patientVitals: mode === 'admin' ? undefined : (d.patient_vitals as Order['patientVitals']),
+            zoomStatus: d.zoom_status as Order['zoomStatus'],
             enrollmentVideoRequired: !!(
               d.enrollment_video_required ??
               (typeof d.intake_answers === "object" &&
                 d.intake_answers !== null &&
                 "_scheduling" in d.intake_answers)
             ),
-            zoomDoctorMessage: mode === 'admin' ? null : d.zoom_doctor_message,
-            zoomRescheduledTime: d.zoom_rescheduled_time,
-            consultationTime: d.consultation_time,
-            waitMins: d.wait_mins,
-            time: d.time,
-            mrn: d.mrn || generateMRN(),
-            lastApprovedAt: d.last_approved_at,
-            nextRefillAt: d.next_refill_at,
-            refillIntervalDays: d.refill_interval_days,
-            doctor_id: d.doctor_id,
-            created_at: d.created_at
+            zoomDoctorMessage: mode === 'admin' ? null : (d.zoom_doctor_message as string | null),
+            zoomRescheduledTime: d.zoom_rescheduled_time as string | undefined,
+            consultationTime: d.consultation_time as string | undefined,
+            waitMins: d.wait_mins as number | undefined,
+            time: d.time as string | undefined,
+            mrn: (d.mrn as string) || generateMRN(),
+            lastApprovedAt: d.last_approved_at as string | null,
+            nextRefillAt: d.next_refill_at as string | null,
+            refillIntervalDays: d.refill_interval_days as number | undefined,
+            doctor_id: d.doctor_id as string | undefined,
+            created_at: d.created_at as string | undefined,
+            order_number: d.order_number as string | undefined,
           }));
           const clinicalOrders = mappedOrders.filter(
             (o) =>

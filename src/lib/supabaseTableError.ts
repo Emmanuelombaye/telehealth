@@ -1,3 +1,21 @@
+/** True when a selected column does not exist on the table (schema not fully migrated). */
+export function isMissingColumnError(error: {
+  code?: string;
+  message?: string;
+} | null | undefined): boolean {
+  if (!error) return false;
+  return error.code === "42703" || (error.message ?? "").toLowerCase().includes("does not exist");
+}
+
+/** True when a filter value is not a valid UUID for a uuid column. */
+export function isInvalidUuidError(error: {
+  code?: string;
+  message?: string;
+} | null | undefined): boolean {
+  if (!error) return false;
+  return error.code === "22P02" || (error.message ?? "").toLowerCase().includes("invalid input syntax for type uuid");
+}
+
 /** True when PostgREST/Postgres reports the table or relation is missing. */
 export function isMissingTableError(error: {
   code?: string;

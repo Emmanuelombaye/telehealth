@@ -65,7 +65,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
     if (!ready || mode !== "login" || !isStaffPortal(portal)) return;
     const demo = demoAccountForPortal(portal);
     setEmail(demo.email);
-    setPassword(demo.password);
+    setPassword("");
   }, [ready, portal, mode]);
 
   const portalTarget = (p: Portal) => {
@@ -134,28 +134,27 @@ export function AuthPage({ portal }: { portal: Portal }) {
         const normalizedEmail = email.trim().toLowerCase();
         const demo = matchStaffDemo(normalizedEmail, password);
 
-        if (demo) {
-          if (isStaffPortal(portal) && !demoRoleAllowedOnPortal(portal, demo.role)) {
-            throw new Error(portalDemoMismatchMessage(portal));
-          }
-          persistDemoAuth(demo);
-          await initialize();
-          navigate(portalTarget(portal), { replace: true });
-          return;
-        }
-
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: normalizedEmail,
           password,
         });
 
         if (signInError) {
+          if (demo && isStaffPortal(portal)) {
+            if (!demoRoleAllowedOnPortal(portal, demo.role)) {
+              throw new Error(portalDemoMismatchMessage(portal));
+            }
+            persistDemoAuth(demo);
+            await initialize();
+            navigate(portalTarget(portal), { replace: true });
+            return;
+          }
           if (isStaffPortal(portal)) {
             throw new Error(formatSupabaseSignInError(signInError));
           }
           throw signInError;
         }
-        
+
         if (data.user) {
           clearDemoAuth();
 
@@ -349,12 +348,9 @@ export function AuthPage({ portal }: { portal: Portal }) {
               </p>
               <p className="text-[13px] font-semibold text-emerald-900">{portalDemo.displayName}</p>
               <p className="text-[13px] text-emerald-900 font-mono mt-1">{portalDemo.email}</p>
-              <p className="text-[13px] text-emerald-900 font-mono">{portalDemo.password}</p>
-              {portal === "affiliate" && (
-                <p className="text-[11px] text-emerald-700/80 mt-2 leading-relaxed">
-                  Preview dashboard syncs with Referly on production once VITE_REFERLY_SITE_ID is set.
-                </p>
-              )}
+              <p className="text-[11px] text-emerald-700/80 mt-2 leading-relaxed">
+                Enter your password below to sign in.
+              </p>
             </div>
           )}
           <form onSubmit={handleAuth} className="space-y-5">

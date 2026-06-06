@@ -19,6 +19,7 @@ import {
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
 import { DoctorPageHeader } from "../../../components/doctor/DoctorPageHeader";
 import { supabase } from "../../../../lib/supabaseClient";
+import { fetchOrdersRows } from "../../../../lib/ordersFetch";
 import { doctorPageContainer, doctorSurfaceCard } from "../../../../lib/doctorPortalUi";
 import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import {
@@ -52,14 +53,7 @@ export function DoctorPatientsPage() {
   const fetchPatients = useCallback(async () => {
     setRefreshing(true);
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          "id, user_id, order_number, patient_name, patient_age, patient_email, sub_brand, category, medication, status, urgent, intake_complete, enrollment_video_required, patient_vitals, intake_answers, created_at",
-        )
-        .order("created_at", { ascending: false })
-        .limit(500);
-
+      const { data, error } = await fetchOrdersRows("doctor", null, undefined, 500);
       if (error) throw error;
       setFetchError(null);
       setRegistry(buildPatientRegistry((data || []) as RawOrderRow[]));

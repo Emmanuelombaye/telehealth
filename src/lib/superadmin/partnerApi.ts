@@ -1,8 +1,11 @@
 /** Partner API base — used by Super Admin integration panel */
 export function partnerApiBaseUrl(): string {
   const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
-  if (url) return `${url.replace(/\/$/, "")}/functions/v1/partner-api`;
-  return "https://kvopgyhcjcniaocjozje.supabase.co/functions/v1/partner-api";
+  if (!url) {
+    console.warn("[partner-api] VITE_SUPABASE_URL missing — Partner API links will not work.");
+    return "";
+  }
+  return `${url.replace(/\/$/, "")}/functions/v1/partner-api`;
 }
 
 export function partnerApiDocsUiUrl(): string {

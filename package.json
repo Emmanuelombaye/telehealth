@@ -20,7 +20,9 @@
     "partner-storefront": "node examples/partner-storefront/server.mjs",
     "test:partner-storefront": "node examples/partner-storefront/test-api.mjs",
     "check:partner-api": "node scripts/verify-partner-api.mjs",
-    "auth:promote-super-admin": "node scripts/promote-super-admin.mjs"
+    "auth:promote-super-admin": "node scripts/promote-super-admin.mjs",
+    "auth:provision-staff": "node scripts/provision-staff.mjs",
+    "verify:portals": "node scripts/verify-all-portals.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

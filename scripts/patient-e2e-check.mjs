@@ -4,7 +4,7 @@
  * Usage (from repo root `telehealth/`):
  *   node scripts/patient-e2e-check.mjs
  *
- * Loads `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from `.env.local`.
+ * Loads env from `.env.production` then `.env.local`.
  * Optional full path (sign-in + insert order like Shop checkout):
  *   PATIENT_E2E_EMAIL=...
  *   PATIENT_E2E_PASSWORD=...
@@ -14,45 +14,18 @@
 
 import { createClient } from "@supabase/supabase-js";
 import ws from "ws";
+import { applyProjectEnv } from "./loadEnv.mjs";
 
 global.WebSocket = ws;
-import { readFileSync, existsSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, "..");
-
-function loadEnvLocal() {
-  const p = join(root, ".env.local");
-  if (!existsSync(p)) {
-    console.error("Missing .env.local — copy from your Vercel / local env (VITE_SUPABASE_*).");
-    process.exit(1);
-  }
-  const text = readFileSync(p, "utf8");
-  const out = {};
-  for (const line of text.split("\n")) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    const i = t.indexOf("=");
-    if (i === -1) continue;
-    const k = t.slice(0, i).trim();
-    let v = t.slice(i + 1).trim();
-    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))
-      v = v.slice(1, -1);
-    out[k] = v;
-  }
-  return out;
-}
-
-const env = loadEnvLocal();
+const env = applyProjectEnv();
 const url = env.VITE_SUPABASE_URL;
 const anon = env.VITE_SUPABASE_ANON_KEY;
 const e2eEmail = env.PATIENT_E2E_EMAIL?.trim();
 const e2ePassword = env.PATIENT_E2E_PASSWORD;
 
 if (!url || !anon) {
-  console.error("VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in .env.local");
+  console.error("VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in .env.production or .env.local");
   process.exit(1);
 }
 
@@ -80,12 +53,13 @@ async function smokeAnonymous() {
   if (!products?.length) fail("products (active) has at least one row", new Error("empty"));
   ok(`products: ${products.length} active row(s), e.g. "${products[0].name}"`);
 
-  const { data: docs, error: de } = await supabase
-    .from("doctor_availability")
-    .select("id,name,available")
+  const { data: doctors, error: de } = await supabase
+    .from("profiles")
+    .select("id,full_name,role")
+    .eq("role", "doctor")
     .limit(5);
-  if (de) fail("doctor_availability readable", de);
-  ok(`doctor_availability: ${docs?.length ?? 0} row(s)`);
+  if (de) fail("profiles (doctors) readable", de);
+  ok(`profiles (doctors): ${doctors?.length ?? 0} row(s)`);
 
   const { error: authErr } = await supabase.auth.getSession();
   if (authErr) fail("auth.getSession()", authErr);
@@ -176,7 +150,7 @@ async function authenticatedPatientFlow() {
 
 async function main() {
   console.log("Peak Health — patient backend E2E check");
-  console.log("Project:", root);
+  console.log("Project:", url);
 
   await smokeAnonymous();
 

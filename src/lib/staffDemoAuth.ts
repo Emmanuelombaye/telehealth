@@ -1,4 +1,4 @@
-import type { User } from "@supabase/supabase-js";
+import type { Session, User } from "@supabase/supabase-js";
 import type { Role } from "./auth-store";
 
 export type StaffDemoAccount = {
@@ -138,8 +138,21 @@ export function demoUserFromStorage(): User | null {
   return buildDemoUser(account);
 }
 
+/** Client-side demo login uses synthetic ids like `demo-super_admin-...` (not UUIDs). */
+export function isDemoUser(user: User | null | undefined): boolean {
+  return !!user?.id?.startsWith("demo-");
+}
+
+/** Skip user-scoped Supabase reads when logged in via demo auth without a real JWT session. */
+export function isDemoAuthWithoutSession(
+  user: User | null | undefined,
+  session: Session | null | undefined,
+): boolean {
+  return isDemoUser(user) && !session;
+}
+
 /** Wrong portal demo account — message names the account this portal expects. */
 export function portalDemoMismatchMessage(portal: StaffPortal): string {
   const expected = demoAccountForPortal(portal);
-  return `Use the ${portal} demo account: ${expected.displayName} — ${expected.email} / ${expected.password}`;
+  return `Use the ${portal} demo account: ${expected.displayName} (${expected.email}).`;
 }
