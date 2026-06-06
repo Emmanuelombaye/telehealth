@@ -23,6 +23,7 @@ import {
   sourceDisplay,
   METRIC_LABEL,
 } from "./doctorRpm";
+import { resolvePatientDisplayName } from "./profileLookup";
 import { parseIntakeVitals, type IntakeVitals } from "./vitalsClinical";
 
 export type { RpmTimeRange, RpmPatient };
@@ -362,11 +363,18 @@ export function buildAlertsEngine(
     const tier: RpmAlertTier =
       r.flagged || st === "alert" || st === "high" ? "critical" : st === "elevated" || st === "low" ? "warning" : "info";
 
+    const rosterMatch =
+      roster.find((p) => p.key === key || p.patient_id === r.patient_id || p.patient_name === r.patient_name) ??
+      null;
+
     alerts.push({
       id: r.id,
       tier,
       patientKey: key,
-      patientName: r.patient_name || "Unknown patient",
+      patientName: resolvePatientDisplayName({
+        userId: r.patient_id,
+        orderPatientName: rosterMatch?.patient_name || r.patient_name,
+      }),
       title: tier === "critical" ? "Critical vital" : tier === "warning" ? "Abnormal vital" : "Device reading",
       detail: `${METRIC_LABEL[r.metric] || r.metric}: ${fmtMetric(r.metric, Number(r.value), r.unit)}`,
       metric: r.metric,

@@ -28,6 +28,38 @@ export function profileDisplayName(
   return "Unnamed user";
 }
 
+/** Best available patient label: order name → profile → email local-part → short id. */
+export function resolvePatientDisplayName(opts: {
+  userId?: string | null;
+  orderPatientName?: string | null;
+  profiles?: Map<string, ProfileMini>;
+  orderNames?: Map<string, string>;
+}): string {
+  const trimmed = opts.orderPatientName?.trim();
+  if (trimmed && !/^unknown(\s+patient)?$/i.test(trimmed)) return trimmed;
+
+  const uid = opts.userId;
+  if (uid) {
+    const fromOrders = opts.orderNames?.get(uid)?.trim();
+    if (fromOrders && !/^unknown(\s+patient)?$/i.test(fromOrders)) return fromOrders;
+
+    const profile = opts.profiles?.get(uid);
+    const fromProfile = profileDisplayName(profile, uid);
+    if (fromProfile !== "Unnamed user") return fromProfile;
+    return `Patient ${uid.slice(0, 8)}`;
+  }
+
+  return trimmed || "Unnamed patient";
+}
+
+export async function loadPatientNameContext(userIds: string[]) {
+  const [profiles, orderNames] = await Promise.all([
+    fetchProfilesByIds(userIds),
+    fetchPatientNamesFromOrders(userIds),
+  ]);
+  return { profiles, orderNames };
+}
+
 export async function fetchProfilesByIds(ids: string[]): Promise<Map<string, ProfileMini>> {
   const map = new Map<string, ProfileMini>();
   const unique = [...new Set(ids.filter(Boolean))];

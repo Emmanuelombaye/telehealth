@@ -20,6 +20,7 @@ import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/sha
 import { DoctorPageHeader } from "../../../components/doctor/DoctorPageHeader";
 import { supabase } from "../../../../lib/supabaseClient";
 import { fetchOrdersRows } from "../../../../lib/ordersFetch";
+import { loadPatientNameContext } from "../../../../lib/profileLookup";
 import { doctorPageContainer, doctorSurfaceCard } from "../../../../lib/doctorPortalUi";
 import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import {
@@ -56,7 +57,10 @@ export function DoctorPatientsPage() {
       const { data, error } = await fetchOrdersRows("doctor", null, undefined, 500);
       if (error) throw error;
       setFetchError(null);
-      setRegistry(buildPatientRegistry((data || []) as RawOrderRow[]));
+      const rows = (data || []) as RawOrderRow[];
+      const userIds = rows.map((r) => r.user_id).filter(Boolean) as string[];
+      const nameContext = await loadPatientNameContext(userIds);
+      setRegistry(buildPatientRegistry(rows, nameContext));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not load patient registry";
       console.error("Patient registry fetch error:", err);

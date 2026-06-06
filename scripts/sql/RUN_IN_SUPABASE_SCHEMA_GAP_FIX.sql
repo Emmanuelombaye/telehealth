@@ -415,6 +415,37 @@ CREATE POLICY "Staff can read all notifications" ON public.notifications
 
 GRANT SELECT, UPDATE ON public.notifications TO authenticated;
 
+-- ---------------------------------------------------------------------------
+-- 9) PROFILE + ORDER NAME BACKFILL (fixes "Unknown patient" in portals)
+-- ---------------------------------------------------------------------------
+UPDATE public.profiles p
+SET full_name = NULLIF(trim(o.patient_name), '')
+FROM (
+  SELECT DISTINCT ON (user_id) user_id, patient_name
+  FROM public.orders
+  WHERE user_id IS NOT NULL
+    AND patient_name IS NOT NULL
+    AND trim(patient_name) <> ''
+  ORDER BY user_id, created_at DESC NULLS LAST
+) o
+WHERE p.id = o.user_id
+  AND (p.full_name IS NULL OR trim(p.full_name) = '');
+
+UPDATE public.profiles p
+SET full_name = NULLIF(trim(
+  COALESCE(u.raw_user_meta_data->>'first_name', '') || ' ' ||
+  COALESCE(u.raw_user_meta_data->>'last_name', '')
+), '')
+FROM auth.users u
+WHERE p.id = u.id
+  AND (p.full_name IS NULL OR trim(p.full_name) = '');
+
+UPDATE public.orders
+SET patient_name = COALESCE(NULLIF(trim(patient_name), ''), NULLIF(trim(p.full_name), ''))
+FROM public.profiles p
+WHERE orders.user_id = p.id
+  AND (orders.patient_name IS NULL OR trim(orders.patient_name) = '');
+
 COMMIT;
 
 NOTIFY pgrst, 'reload schema';

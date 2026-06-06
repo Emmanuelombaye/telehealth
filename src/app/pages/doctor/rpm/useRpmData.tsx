@@ -14,7 +14,7 @@ import { isMissingTableError } from "../../../../lib/supabaseTableError";
 import { type VitalReading } from "../../../../lib/vitalsClinical";
 import { filterClinicalPatientOrders } from "../../../../lib/clinicalTestData";
 import { buildRpmRoster, readingsForPatient, type RpmTimeRange } from "../../../../lib/doctorRpm";
-import { fetchProfilesByIds, type ProfileMini } from "../../../../lib/profileLookup";
+import { fetchProfilesByIds, fetchPatientNamesFromOrders, type ProfileMini } from "../../../../lib/profileLookup";
 import {
   buildAlertsEngine,
   buildDeviceFleet,
@@ -85,6 +85,7 @@ export function RpmProvider({ children }: { children: ReactNode }) {
   const [readings, setReadings] = useState<VitalReading[]>([]);
   const [orders, setOrders] = useState<RpmOrderRow[]>([]);
   const [profileNames, setProfileNames] = useState<Map<string, ProfileMini>>(() => new Map());
+  const [orderNames, setOrderNames] = useState<Map<string, string>>(() => new Map());
   const [range, setRange] = useState<RpmTimeRange>("24h");
   const [search, setSearch] = useState("");
   const [theme, setThemeState] = useState<RpmTheme>(() => {
@@ -208,14 +209,28 @@ export function RpmProvider({ children }: { children: ReactNode }) {
         const readingIds = ((readingsRes.data || []) as VitalReading[])
           .map((r) => r.patient_id)
           .filter(Boolean) as string[];
-        const profiles = await fetchProfilesByIds([...userIds, ...readingIds]);
+        const ids = [...userIds, ...readingIds];
+        const [profiles, namesFromOrders] = await Promise.all([
+          fetchProfilesByIds(ids),
+          fetchPatientNamesFromOrders(ids),
+        ]);
+        const namesFromCurrentOrders = new Map<string, string>();
+        for (const o of mapped) {
+          if (o.user_id && o.patient_name?.trim()) namesFromCurrentOrders.set(o.user_id, o.patient_name.trim());
+        }
+        const mergedOrderNames = new Map([...namesFromOrders, ...namesFromCurrentOrders]);
         setProfileNames(profiles);
+        setOrderNames(mergedOrderNames);
       } else if (!readingsRes.error) {
         const readingIds = ((readingsRes.data || []) as VitalReading[])
           .map((r) => r.patient_id)
           .filter(Boolean) as string[];
-        const profiles = await fetchProfilesByIds(readingIds);
+        const [profiles, namesFromOrders] = await Promise.all([
+          fetchProfilesByIds(readingIds),
+          fetchPatientNamesFromOrders(readingIds),
+        ]);
         setProfileNames(profiles);
+        setOrderNames(namesFromOrders);
       }
     } catch (err) {
       console.error("[RPM]", err);
@@ -241,7 +256,10 @@ export function RpmProvider({ children }: { children: ReactNode }) {
   }, [fetchAll, missingTable]);
 
   const ordersLookup = useMemo(() => buildOrdersLookup(orders), [orders]);
-  const roster = useMemo(() => buildRpmRoster(readings, orders, range, profileNames), [readings, orders, range, profileNames]);
+  const roster = useMemo(
+    () => buildRpmRoster(readings, orders, range, { profiles: profileNames, orderNames }),
+    [readings, orders, range, profileNames, orderNames],
+  );
   const stats = useMemo(() => computeCommandStats(roster, readings, orders, range), [roster, readings, orders, range]);
   const liveRows = useMemo(
     () => buildLiveMonitoringRows(roster, readings, range, ordersLookup, escalated),

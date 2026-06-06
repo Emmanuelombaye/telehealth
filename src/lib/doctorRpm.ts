@@ -11,7 +11,7 @@ import {
   type VitalReading,
   type VitalStatus,
 } from "./vitalsClinical";
-import { profileDisplayName, type ProfileMini } from "./profileLookup";
+import { resolvePatientDisplayName, type ProfileMini } from "./profileLookup";
 
 export type RpmTimeRange = "24h" | "7d" | "30d" | "all";
 
@@ -88,7 +88,7 @@ export function buildRpmRoster(
   readings: VitalReading[],
   orders: { id?: string; user_id?: string | null; patient_name?: string | null; patient_vitals?: unknown }[],
   range: RpmTimeRange,
-  profileNames?: Map<string, ProfileMini>,
+  nameContext?: { profiles?: Map<string, ProfileMini>; orderNames?: Map<string, string> },
 ): RpmPatient[] {
   const scoped = filterReadingsByRange(readings, range);
   const map = new Map<string, RpmPatient>();
@@ -111,15 +111,13 @@ export function buildRpmRoster(
     return map.get(key)!;
   };
 
-  const nameFor = (patient_id: string | null, patient_name: string | null | undefined) => {
-    const trimmed = patient_name?.trim();
-    if (trimmed && trimmed.toLowerCase() !== "unknown patient") return trimmed;
-    if (patient_id && profileNames?.has(patient_id)) {
-      return profileDisplayName(profileNames.get(patient_id), patient_id);
-    }
-    if (patient_id) return profileDisplayName(undefined, patient_id);
-    return "Unnamed patient";
-  };
+  const nameFor = (patient_id: string | null, patient_name: string | null | undefined) =>
+    resolvePatientDisplayName({
+      userId: patient_id,
+      orderPatientName: patient_name,
+      profiles: nameContext?.profiles,
+      orderNames: nameContext?.orderNames,
+    });
 
   for (const o of orders) {
     const key = o.user_id || o.patient_name || "unknown";

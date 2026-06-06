@@ -34,6 +34,7 @@ import {
   RISK_STYLES,
   type RawOrderRow,
 } from "../../../../lib/doctorPatientManagement";
+import { loadPatientNameContext, type ProfileMini } from "../../../../lib/profileLookup";
 
 type ChartTab = "overview" | "encounters" | "intake";
 
@@ -47,6 +48,10 @@ export function DoctorPatientDetailPage() {
   const [tab, setTab] = useState<ChartTab>("overview");
   const [vitalsFlagged, setVitalsFlagged] = useState(0);
   const [documentCount, setDocumentCount] = useState(0);
+  const [nameContext, setNameContext] = useState<{
+    profiles: Map<string, ProfileMini>;
+    orderNames: Map<string, string>;
+  }>({ profiles: new Map(), orderNames: new Map() });
 
   const fetchPatient = useCallback(async () => {
     if (!id) return;
@@ -70,6 +75,8 @@ export function DoctorPatientDetailPage() {
 
       const userId = baseOrder.user_id;
       if (userId) {
+        const ctx = await loadPatientNameContext([userId]);
+        setNameContext(ctx);
         const [vitalsRes, docsRes] = await Promise.all([
           supabase
             .from("vital_readings")
@@ -101,9 +108,9 @@ export function DoctorPatientDetailPage() {
 
   const record = useMemo(() => {
     if (!patientData) return null;
-    const reg = buildPatientRegistry(history.length ? history : [patientData]);
+    const reg = buildPatientRegistry(history.length ? history : [patientData], nameContext);
     return reg[0] ?? null;
-  }, [patientData, history]);
+  }, [patientData, history, nameContext]);
 
   const requiresAction = history.some((o) =>
     ["medical_review", "order_submitted"].includes(o.status || ""),

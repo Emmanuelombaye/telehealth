@@ -5,6 +5,10 @@
 import { buildDoctorIntakeReview, orderToIntakeSource } from "./doctorIntakeReview";
 import { filterClinicalPatientOrders } from "./clinicalTestData";
 import { parseIntakeVitals, type IntakeVitals } from "./vitalsClinical";
+import {
+  resolvePatientDisplayName,
+  type ProfileMini,
+} from "./profileLookup";
 
 export type PatientRisk = "low" | "medium" | "high";
 
@@ -99,7 +103,10 @@ export function deriveRisk(latest: RawOrderRow, orders: RawOrderRow[]): PatientR
   return "low";
 }
 
-export function buildPatientRegistry(rows: RawOrderRow[]): DoctorPatientRecord[] {
+export function buildPatientRegistry(
+  rows: RawOrderRow[],
+  nameContext?: { profiles?: Map<string, ProfileMini>; orderNames?: Map<string, string> },
+): DoctorPatientRecord[] {
   const groups = new Map<string, RawOrderRow[]>();
 
   for (const row of rows) {
@@ -122,7 +129,12 @@ export function buildPatientRegistry(rows: RawOrderRow[]): DoctorPatientRecord[]
       registryKey,
       userId: latest.user_id ?? null,
       primaryOrderId: latest.id,
-      name: latest.patient_name || "Unknown patient",
+      name: resolvePatientDisplayName({
+        userId: latest.user_id,
+        orderPatientName: latest.patient_name,
+        profiles: nameContext?.profiles,
+        orderNames: nameContext?.orderNames,
+      }),
       subBrand: latest.sub_brand?.trim() || null,
       age: latest.patient_age ?? null,
       email: latest.patient_email ?? null,
