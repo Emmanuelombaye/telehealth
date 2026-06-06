@@ -11,7 +11,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+/**
+ * Auth tokens use sessionStorage (per browser tab), not localStorage.
+ * That lets you keep e.g. Admin in one tab and Doctor/Super Admin in another
+ * without one login overwriting the other.
+ */
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-anon-key',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: 'peak-health-auth',
+      storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,
+    },
+  },
 );

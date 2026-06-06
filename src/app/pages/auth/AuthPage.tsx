@@ -5,10 +5,11 @@ import { useAuthStore, Role } from "../../../lib/auth-store";
 import { doctorPortalBaseFromPath } from "../../../lib/doctorPortalBase";
 import { Lock, Mail, AlertCircle, Eye, EyeOff, ArrowLeft, Sparkles } from "lucide-react";
 import { formatSupabaseSignInError } from "../../../lib/authErrors";
+import { roleCanAccessPortal, portalHomePath, type StaffPortal } from "../../../lib/portalAuth";
 import { useBrand } from "../../context/BrandContext";
 import { cn } from "../../components/ui/utils";
 
-type Portal = "patient" | "doctor" | "admin" | "superadmin" | "affiliate" | "pharmacy";
+type Portal = StaffPortal;
 
 const STAFF_PORTALS: Portal[] = ["doctor", "admin", "superadmin", "affiliate", "pharmacy"];
 
@@ -30,31 +31,39 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const navigate = useNavigate();
   const { brand, site, isWhiteLabel, patientPortalBase, enrollBase } = useBrand();
+  const [existingSessionEmail, setExistingSessionEmail] = useState<string | null>(null);
   const initialize = useAuthStore(state => state.initialize);
+  const signOut = useAuthStore(state => state.signOut);
   const cleanupDone = useRef(false);
 
   useEffect(() => {
     if (cleanupDone.current) return;
     cleanupDone.current = true;
 
-    async function cleanup() {
+    async function hydrate() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        await initialize();
+        const { session, role } = useAuthStore.getState();
 
-        if (session) {
-          await supabase.auth.signOut();
-          await initialize(null);
-        } else {
-          await initialize(null);
+        if (session?.user && role) {
+          if (role === "super_admin" && portal === "superadmin") {
+            navigate("/superadmin", { replace: true });
+            return;
+          }
+          if (roleCanAccessPortal(role, portal)) {
+            navigate(portalHomePath(portal, window.location.pathname, patientPortalBase), { replace: true });
+            return;
+          }
+          setExistingSessionEmail(session.user.email ?? null);
         }
       } catch (err) {
-        console.warn('[AuthPage] Initialization cleanup error:', err);
+        console.warn("[AuthPage] auth hydrate error:", err);
       } finally {
         setReady(true);
       }
     }
-    cleanup();
-  }, [initialize]);
+    void hydrate();
+  }, [initialize, navigate, portal, patientPortalBase]);
 
   const portalTarget = (p: Portal) => {
     const buster = `?v=${Date.now()}`;
@@ -317,6 +326,24 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
         <div className="bg-white rounded-[24px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60">
           <form onSubmit={handleAuth} className="space-y-5">
+            {existingSessionEmail && (
+              <div className="rounded-[14px] border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                <p>
+                  This tab is signed in as <strong>{existingSessionEmail}</strong>, which cannot open this portal.
+                  Other tabs stay signed in separately.
+                </p>
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-bold text-amber-900 underline"
+                  onClick={async () => {
+                    await signOut();
+                    setExistingSessionEmail(null);
+                  }}
+                >
+                  Sign out in this tab only
+                </button>
+              </div>
+            )}
             {error && (
               <div className="flex items-start gap-2 p-3 rounded-[14px] text-sm bg-red-50 border border-red-100 text-red-600">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />

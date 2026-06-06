@@ -88,6 +88,34 @@ async function syncProfile(session: Session): Promise<{ role: Role; brandId: str
   return getRoleFromSession(session);
 }
 
+let authListenerBound = false;
+
+function bindAuthListener(
+  set: (partial: Partial<AuthState> | ((state: AuthState) => Partial<AuthState>)) => void,
+  get: () => AuthState,
+) {
+  if (authListenerBound) return;
+  authListenerBound = true;
+
+  supabase.auth.onAuthStateChange((event, newSession) => {
+    if (event === "TOKEN_REFRESHED" && !newSession) {
+      void get().signOut();
+      return;
+    }
+    if (newSession?.user) {
+      const jwtRB = getRoleFromSession(newSession);
+      set({ session: newSession, user: newSession.user, role: jwtRB.role, brandId: jwtRB.brandId, isLoading: false });
+      void syncProfile(newSession).then((merged) => {
+        if (merged.role !== jwtRB.role || merged.brandId !== jwtRB.brandId) {
+          set({ role: merged.role, brandId: merged.brandId });
+        }
+      });
+    } else {
+      set({ session: null, user: null, role: null, brandId: null, isLoading: false });
+    }
+  });
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   user: null,
@@ -126,23 +154,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ session: null, user: null, role: null, brandId: null, isLoading: false });
       }
 
-      supabase.auth.onAuthStateChange((event, newSession) => {
-        if (event === "TOKEN_REFRESHED" && !newSession) {
-          void get().signOut();
-          return;
-        }
-        if (newSession?.user) {
-          const jwtRB = getRoleFromSession(newSession);
-          set({ session: newSession, user: newSession.user, role: jwtRB.role, brandId: jwtRB.brandId, isLoading: false });
-          void syncProfile(newSession).then((merged) => {
-            if (merged.role !== jwtRB.role || merged.brandId !== jwtRB.brandId) {
-              set({ role: merged.role, brandId: merged.brandId });
-            }
-          });
-        } else {
-          set({ session: null, user: null, role: null, brandId: null, isLoading: false });
-        }
-      });
+      bindAuthListener(set, get);
     } catch (error) {
       console.error('[auth-store] initialize error:', error);
       set({ isLoading: false });
