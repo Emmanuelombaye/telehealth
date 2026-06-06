@@ -107,6 +107,13 @@ const STATIC_BRANDS: Record<
   string,
   { id: string; name: string; slug: string; domain: string; status: string }
 > = {
+  "summit-md": {
+    id: "7caaa526-185e-4eda-bf0e-832be6ba37a7",
+    name: "Summit MD",
+    slug: "summit-md",
+    domain: "summitmd.com",
+    status: "active",
+  },
   "north-star-md": {
     id: "c8e7f6a2-4b1d-4e9f-a3c2-1d5e8f7a6b4c",
     name: "North Star MD",
@@ -205,7 +212,7 @@ function partnerApiBaseUrl(): string {
 
 function apiDocsPayload() {
   const base = partnerApiBaseUrl();
-  const exampleSlug = "north-star-md";
+  const exampleSlug = "summit-md";
   return {
     service: "partner-api",
     version: API_VERSION,

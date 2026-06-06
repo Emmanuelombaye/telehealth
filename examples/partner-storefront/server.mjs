@@ -22,10 +22,10 @@ const PORT = Number(process.env.PORT || 5200);
 const LIVE = process.env.PARTNER_API_LIVE === "1" || process.env.PARTNER_API_LIVE === "true";
 const API_BASE =
   process.env.PARTNER_API_URL ||
-  "https://kvopgyhcjcniaocjozje.supabase.co/functions/v1/partner-api";
+  "https://vzzmdbdvcofajgrjgajq.supabase.co/functions/v1/partner-api";
 const KEY = process.env.PARTNER_API_KEY || "";
-const BRAND = process.env.PARTNER_BRAND_SLUG || "north-star-md";
-const PORTAL_ORIGIN = process.env.PARTNER_PORTAL_ORIGIN || "https://joinnorthstarmd.com";
+const BRAND = process.env.PARTNER_BRAND_SLUG || "summit-md";
+const PORTAL_ORIGIN = process.env.PARTNER_PORTAL_ORIGIN || "https://www.peak-health.io";
 
 const API_VERSION = "1.0.0";
 
@@ -37,13 +37,21 @@ const MIME = {
 };
 
 const MOCK_BRANDS = {
+  "summit-md": {
+    id: "7caaa526-185e-4eda-bf0e-832be6ba37a7",
+    name: "Summit MD",
+    slug: "summit-md",
+    domain: "summitmd.com",
+    status: "active",
+    portal_origin: PORTAL_ORIGIN,
+  },
   "north-star-md": {
     id: "c8e7f6a2-4b1d-4e9f-a3c2-1d5e8f7a6b4c",
     name: "North Star MD",
     slug: "north-star-md",
     domain: "northstarmd.com",
     status: "active",
-    portal_origin: PORTAL_ORIGIN,
+    portal_origin: "https://joinnorthstarmd.com",
   },
 };
 

@@ -164,7 +164,7 @@ export function partnerApiOpenApiSpec(baseUrl: string) {
                     summary: "Weight loss program",
                     value: {
                       action: "enrollment_start",
-                      brand_slug: "north-star-md",
+                      brand_slug: "summit-md",
                       category: "weight-loss",
                       portal_origin: "https://care.northstarmd.com",
                       return_url: "https://partner.com/thank-you",
@@ -204,7 +204,7 @@ export function partnerApiOpenApiSpec(baseUrl: string) {
           name: "brand_slug",
           in: "query",
           required: true,
-          schema: { type: "string", example: "north-star-md" },
+          schema: { type: "string", example: "summit-md" },
           description: "Tenant slug. Optional if API key is scoped to one brand.",
         },
       },
@@ -225,7 +225,7 @@ export function partnerApiOpenApiSpec(baseUrl: string) {
               schema: { $ref: "#/components/schemas/Error" },
               example: {
                 error: "Forbidden",
-                hint: 'This API key is scoped to brand "north-star-md" only',
+                hint: 'This API key is scoped to brand "summit-md" only',
               },
             },
           },

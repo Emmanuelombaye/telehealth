@@ -22,6 +22,7 @@
     "check:partner-api": "node scripts/verify-partner-api.mjs",
     "auth:promote-super-admin": "node scripts/promote-super-admin.mjs",
     "auth:provision-staff": "node scripts/provision-staff.mjs",
+    "auth:provision-summitmd": "node scripts/provision-summitmd-partner.mjs",
     "verify:portals": "node scripts/verify-all-portals.mjs"
   },
   "dependencies": {

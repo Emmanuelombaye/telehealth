@@ -17,7 +17,7 @@ const API_BASE =
   process.env.PARTNER_API_URL ||
   "https://kvopgyhcjcniaocjozje.supabase.co/functions/v1/partner-api";
 const KEY = process.env.PARTNER_API_KEY || "";
-const BRAND = process.env.PARTNER_BRAND_SLUG || "north-star-md";
+const BRAND = process.env.PARTNER_BRAND_SLUG || "summit-md";
 
 if (!KEY) {
   console.error("Set PARTNER_API_KEY in the environment.");

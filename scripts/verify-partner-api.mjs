@@ -33,11 +33,13 @@ function loadEnvLocal() {
 }
 
 const env = { ...loadEnvLocal(), ...process.env };
+const supabaseUrl = (env.VITE_SUPABASE_URL || env.SUPABASE_URL || "").replace(/\/$/, "");
 const API_BASE =
   env.PARTNER_API_URL ||
-  "https://kvopgyhcjcniaocjozje.supabase.co/functions/v1/partner-api";
+  (supabaseUrl ? `${supabaseUrl}/functions/v1/partner-api` : "") ||
+  "https://vzzmdbdvcofajgrjgajq.supabase.co/functions/v1/partner-api";
 const KEY = env.PARTNER_API_KEY || "";
-const BRAND = env.PARTNER_BRAND_SLUG || "north-star-md";
+const BRAND = env.PARTNER_BRAND_SLUG || "summit-md";
 
 function pass(msg) {
   console.log(`\x1b[32mPASS\x1b[0m ${msg}`);
