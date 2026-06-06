@@ -5,7 +5,13 @@ import { useAuthStore, Role } from "../../../lib/auth-store";
 import { doctorPortalBaseFromPath } from "../../../lib/doctorPortalBase";
 import { Lock, Mail, AlertCircle, Eye, EyeOff, ArrowLeft, Sparkles } from "lucide-react";
 import { formatSupabaseSignInError } from "../../../lib/authErrors";
-import { roleCanAccessPortal, portalHomePath, type StaffPortal } from "../../../lib/portalAuth";
+import {
+  roleCanAccessPortal,
+  portalHomePath,
+  portalAccessDeniedMessage,
+  suggestedPortalLoginForRole,
+  type StaffPortal,
+} from "../../../lib/portalAuth";
 import { useBrand } from "../../context/BrandContext";
 import { cn } from "../../components/ui/utils";
 
@@ -28,6 +34,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [portalRedirect, setPortalRedirect] = useState<{ path: string; label: string } | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const navigate = useNavigate();
   const { brand, site, isWhiteLabel, patientPortalBase, enrollBase } = useBrand();
@@ -124,6 +131,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
     setLoading(true);
     setError(null);
+    setPortalRedirect(null);
     setSuccessMsg(null);
 
     try {
@@ -146,47 +154,26 @@ export function AuthPage({ portal }: { portal: Portal }) {
           await initialize();
           const role = useAuthStore.getState().role;
 
-          if (role !== 'super_admin') {
-            if (portal === 'superadmin') {
-              setError("Access denied. Super Admin portal only.");
-              await supabase.auth.signOut();
-              await initialize();
-              return;
-            }
-            if (portal === 'doctor' && role !== 'doctor') {
-              setError("Access denied. Provider portal requires a doctor account.");
-              await supabase.auth.signOut();
-              await initialize();
-              return;
-            }
-            if (portal === 'admin' && role !== 'brand_admin') {
-              setError("Access denied. Admin portal only.");
-              await supabase.auth.signOut();
-              await initialize();
-              return;
-            }
-            if (
-              portal === 'affiliate' &&
-              role !== 'affiliate' &&
-              role !== 'super_admin'
-            ) {
-              setError("Access denied. Affiliate portal only.");
-              await supabase.auth.signOut();
-              await initialize();
-              return;
-            }
-            if (
-              portal === 'pharmacy' &&
-              role !== 'pharmacy' &&
-              role !== 'doctor' &&
-              role !== 'brand_admin' &&
-              role !== 'super_admin'
-            ) {
-              setError("Access denied. Pharmacy portal only.");
-              await supabase.auth.signOut();
-              await initialize();
-              return;
-            }
+          const denied =
+            (portal === "superadmin" && role !== "super_admin") ||
+            (portal === "doctor" && role !== "doctor" && role !== "super_admin") ||
+            (portal === "admin" && role !== "brand_admin" && role !== "super_admin") ||
+            (portal === "affiliate" &&
+              role !== "affiliate" &&
+              role !== "super_admin") ||
+            (portal === "pharmacy" &&
+              role !== "pharmacy" &&
+              role !== "doctor" &&
+              role !== "brand_admin" &&
+              role !== "super_admin");
+
+          if (denied && role) {
+            const { message, redirect } = portalAccessDeniedMessage(role, portal);
+            setError(message);
+            setPortalRedirect(redirect);
+            await supabase.auth.signOut();
+            await initialize();
+            return;
           }
 
           if (role === 'super_admin') {
@@ -254,15 +241,43 @@ export function AuthPage({ portal }: { portal: Portal }) {
     );
   }
 
-  const portalTitle =
-    portal === "affiliate" ? "Affiliate partner login" : "Welcome back";
+  const portalTitle = (() => {
+    switch (portal) {
+      case "superadmin":
+        return "Super Admin login";
+      case "doctor":
+        return "Provider login";
+      case "admin":
+        return "Admin login";
+      case "pharmacy":
+        return "Pharmacy login";
+      case "affiliate":
+        return "Affiliate partner login";
+      default:
+        return "Welcome back";
+    }
+  })();
 
-  const portalSubtitle =
-    portal === "affiliate"
-      ? "Powered by Referly.so — referral links, tracking, and payouts."
-      : isWhiteLabel && portal === "patient"
-        ? `Sign in to your ${site.copy.portalName} patient portal.`
-        : "Secure access for clinicians and patients.";
+  const portalSubtitle = (() => {
+    switch (portal) {
+      case "superadmin":
+        return "Platform-wide access for Peak Health operators only.";
+      case "doctor":
+        return "Clinical queue, consults, eRx, and RPM.";
+      case "admin":
+        return "Brand operations, products, and orders.";
+      case "pharmacy":
+        return "Fulfillment, inventory, and shipping.";
+      case "affiliate":
+        return "Powered by Referly.so — referral links, tracking, and payouts.";
+      case "patient":
+        return isWhiteLabel
+          ? `Sign in to your ${site.copy.portalName} patient portal.`
+          : "Secure access for patients.";
+      default:
+        return "Secure access for clinicians and patients.";
+    }
+  })();
 
   const isPartnerPatientLogin = isWhiteLabel && portal === "patient";
 
@@ -332,9 +347,22 @@ export function AuthPage({ portal }: { portal: Portal }) {
                   This tab is signed in as <strong>{existingSessionEmail}</strong>, which cannot open this portal.
                   Other tabs stay signed in separately.
                 </p>
+                {(() => {
+                  const role = useAuthStore.getState().role;
+                  const suggested = suggestedPortalLoginForRole(role);
+                  if (!suggested || roleCanAccessPortal(role, portal)) return null;
+                  return (
+                    <a
+                      href={suggested.path}
+                      className="mt-2 inline-block text-xs font-bold text-amber-900 underline"
+                    >
+                      Go to {suggested.label} portal
+                    </a>
+                  );
+                })()}
                 <button
                   type="button"
-                  className="mt-2 text-xs font-bold text-amber-900 underline"
+                  className="mt-2 block text-xs font-bold text-amber-900 underline"
                   onClick={async () => {
                     await signOut();
                     setExistingSessionEmail(null);
@@ -347,7 +375,17 @@ export function AuthPage({ portal }: { portal: Portal }) {
             {error && (
               <div className="flex items-start gap-2 p-3 rounded-[14px] text-sm bg-red-50 border border-red-100 text-red-600">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <p>{error}</p>
+                <div className="space-y-2">
+                  <p>{error}</p>
+                  {portalRedirect && (
+                    <a
+                      href={portalRedirect.path}
+                      className="inline-block text-xs font-bold text-red-700 underline hover:text-red-800"
+                    >
+                      Sign in at the {portalRedirect.label} portal →
+                    </a>
+                  )}
+                </div>
               </div>
             )}
             {successMsg && (
