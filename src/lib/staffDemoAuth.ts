@@ -6,9 +6,12 @@ export type StaffDemoAccount = {
   password: string;
   role: Exclude<Role, null>;
   displayName: string;
+  brandId?: string;
 };
 
-/** Demo credentials for client UAT — used when Supabase sign-in fails but password matches. */
+export type StaffPortal = "doctor" | "admin" | "superadmin" | "pharmacy" | "affiliate";
+
+/** Demo credentials for client UAT — used when Supabase sign-in fails or credentials match. */
 export const STAFF_DEMO_ACCOUNTS: StaffDemoAccount[] = [
   {
     email: "doctor@peakbodyco.com",
@@ -21,6 +24,7 @@ export const STAFF_DEMO_ACCOUNTS: StaffDemoAccount[] = [
     password: "password123",
     role: "brand_admin",
     displayName: "Brand Administrator",
+    brandId: "peak",
   },
   {
     email: "brandon@peakbodyco.com",
@@ -42,8 +46,45 @@ export const STAFF_DEMO_ACCOUNTS: StaffDemoAccount[] = [
   },
 ];
 
+const PORTAL_DEMO_EMAIL: Record<StaffPortal, string> = {
+  superadmin: "brandon@peakbodyco.com",
+  doctor: "doctor@peakbodyco.com",
+  admin: "admin@peakbodyco.com",
+  pharmacy: "pharmacy@peakbodyco.com",
+  affiliate: "affiliate@peakbodyco.com",
+};
+
 export const DEMO_ROLE_KEY = "peak_health_dev_role";
 export const DEMO_EMAIL_KEY = "peak_health_demo_email";
+
+export function isStaffPortal(portal: string): portal is StaffPortal {
+  return portal in PORTAL_DEMO_EMAIL;
+}
+
+export function demoAccountForPortal(portal: StaffPortal): StaffDemoAccount {
+  const email = PORTAL_DEMO_EMAIL[portal];
+  const account = STAFF_DEMO_ACCOUNTS.find((a) => a.email === email);
+  if (!account) throw new Error(`No demo account for portal: ${portal}`);
+  return account;
+}
+
+export function demoRoleAllowedOnPortal(portal: StaffPortal, role: Role): boolean {
+  if (role === "super_admin") return true;
+  switch (portal) {
+    case "superadmin":
+      return role === "super_admin";
+    case "doctor":
+      return role === "doctor";
+    case "admin":
+      return role === "brand_admin";
+    case "pharmacy":
+      return role === "pharmacy" || role === "doctor" || role === "brand_admin";
+    case "affiliate":
+      return role === "affiliate";
+    default:
+      return false;
+  }
+}
 
 export function matchStaffDemo(email: string, password: string): StaffDemoAccount | null {
   const normalized = email.trim().toLowerCase();
@@ -80,8 +121,12 @@ export function buildDemoUser(account: StaffDemoAccount): User {
       last_name: rest.join(" ") || "",
       full_name: account.displayName,
       role: account.role,
+      ...(account.brandId ? { brand_id: account.brandId } : {}),
     },
-    app_metadata: { role: account.role },
+    app_metadata: {
+      role: account.role,
+      ...(account.brandId ? { brand_id: account.brandId } : {}),
+    },
   } as User;
 }
 
@@ -91,4 +136,10 @@ export function demoUserFromStorage(): User | null {
   const account = STAFF_DEMO_ACCOUNTS.find((a) => a.email === stored.email);
   if (!account) return null;
   return buildDemoUser(account);
+}
+
+/** Wrong portal demo account — message names the account this portal expects. */
+export function portalDemoMismatchMessage(portal: StaffPortal): string {
+  const expected = demoAccountForPortal(portal);
+  return `Use the ${portal} demo account: ${expected.displayName} — ${expected.email} / ${expected.password}`;
 }

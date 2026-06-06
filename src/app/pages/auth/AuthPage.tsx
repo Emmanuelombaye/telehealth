@@ -4,10 +4,15 @@ import { supabase } from "../../../lib/supabaseClient";
 import { useAuthStore, Role } from "../../../lib/auth-store";
 import { doctorPortalBaseFromPath } from "../../../lib/doctorPortalBase";
 import { Lock, Mail, AlertCircle, Eye, EyeOff, ArrowLeft, Sparkles } from "lucide-react";
+import { formatSupabaseSignInError } from "../../../lib/authErrors";
 import {
   clearDemoAuth,
+  demoAccountForPortal,
+  demoRoleAllowedOnPortal,
+  isStaffPortal,
   matchStaffDemo,
   persistDemoAuth,
+  portalDemoMismatchMessage,
 } from "../../../lib/staffDemoAuth";
 import { useBrand } from "../../context/BrandContext";
 import { cn } from "../../components/ui/utils";
@@ -55,6 +60,13 @@ export function AuthPage({ portal }: { portal: Portal }) {
     }
     cleanup();
   }, [initialize]);
+
+  useEffect(() => {
+    if (!ready || mode !== "login" || !isStaffPortal(portal)) return;
+    const demo = demoAccountForPortal(portal);
+    setEmail(demo.email);
+    setPassword(demo.password);
+  }, [ready, portal, mode]);
 
   const portalTarget = (p: Portal) => {
     const buster = `?v=${Date.now()}`;
@@ -119,25 +131,27 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
     try {
       if (mode === 'login') {
+        const normalizedEmail = email.trim().toLowerCase();
+        const demo = matchStaffDemo(normalizedEmail, password);
+
+        if (demo) {
+          if (isStaffPortal(portal) && !demoRoleAllowedOnPortal(portal, demo.role)) {
+            throw new Error(portalDemoMismatchMessage(portal));
+          }
+          persistDemoAuth(demo);
+          await initialize();
+          navigate(portalTarget(portal), { replace: true });
+          return;
+        }
+
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
+          email: normalizedEmail,
           password,
         });
 
         if (signInError) {
-          const demo = matchStaffDemo(email, password);
-          if (demo) {
-            if (portal === "superadmin" || portal === "doctor") {
-              throw new Error(
-                portal === "superadmin"
-                  ? "Super Admin requires a live Supabase login (Edge Functions). Create brandon@peakbodyco.com in Supabase Auth → Users with role super_admin."
-                  : "Provider portal requires a live Supabase login (Edge Functions). Create doctor@peakbodyco.com in Supabase Auth → Users with role doctor.",
-              );
-            }
-            persistDemoAuth(demo);
-            await initialize();
-            navigate(portalTarget(portal), { replace: true });
-            return;
+          if (isStaffPortal(portal)) {
+            throw new Error(formatSupabaseSignInError(signInError));
           }
           throw signInError;
         }
@@ -267,6 +281,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
         : "Secure access for clinicians and patients.";
 
   const isPartnerPatientLogin = isWhiteLabel && portal === "patient";
+  const portalDemo = isStaffPortal(portal) ? demoAccountForPortal(portal) : null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA] p-4 overflow-auto font-sans">
@@ -327,14 +342,19 @@ export function AuthPage({ portal }: { portal: Portal }) {
         </div>
 
         <div className="bg-white rounded-[24px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60">
-          {portal === "affiliate" && mode === "login" && (
+          {portalDemo && mode === "login" && (
             <div className="mb-5 rounded-[14px] border border-emerald-100 bg-emerald-50/80 p-4 text-left">
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-1">Demo partner account</p>
-              <p className="text-[13px] text-emerald-900 font-mono">affiliate@peakbodyco.com</p>
-              <p className="text-[13px] text-emerald-900 font-mono">password123</p>
-              <p className="text-[11px] text-emerald-700/80 mt-2 leading-relaxed">
-                Preview dashboard syncs with Referly on production once VITE_REFERLY_SITE_ID is set.
+              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-1">
+                Demo account
               </p>
+              <p className="text-[13px] font-semibold text-emerald-900">{portalDemo.displayName}</p>
+              <p className="text-[13px] text-emerald-900 font-mono mt-1">{portalDemo.email}</p>
+              <p className="text-[13px] text-emerald-900 font-mono">{portalDemo.password}</p>
+              {portal === "affiliate" && (
+                <p className="text-[11px] text-emerald-700/80 mt-2 leading-relaxed">
+                  Preview dashboard syncs with Referly on production once VITE_REFERLY_SITE_ID is set.
+                </p>
+              )}
             </div>
           )}
           <form onSubmit={handleAuth} className="space-y-5">

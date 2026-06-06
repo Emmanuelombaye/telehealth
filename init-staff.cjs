@@ -22,10 +22,22 @@ const STAFF = [
     name: 'Brand Administrator'
   },
   {
+    email: 'brandon@peakbodyco.com',
+    password: '@incorrect!',
+    role: 'super_admin',
+    name: 'Brandon Admin'
+  },
+  {
     email: 'pharmacy@peakbodyco.com',
     password: 'password123',
     role: 'pharmacy',
     name: 'Pharmacy Fulfillment'
+  },
+  {
+    email: 'affiliate@peakbodyco.com',
+    password: 'password123',
+    role: 'affiliate',
+    name: 'Affiliate Partner'
   }
 ];
 

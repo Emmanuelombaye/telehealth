@@ -93,6 +93,12 @@ async function syncProfile(session: Session): Promise<{ role: Role; brandId: str
   return getRoleFromSession(session);
 }
 
+function brandIdFromDemoUser(user: User): string | null {
+  const meta = user.user_metadata || {};
+  const appMeta = (user as { app_metadata?: { brand_id?: string } }).app_metadata || {};
+  return appMeta.brand_id || meta.brand_id || null;
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   user: null,
@@ -132,7 +138,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             session: null,
             user: demoUser,
             role: readStoredDemoAuth()?.role ?? null,
-            brandId: null,
+            brandId: brandIdFromDemoUser(demoUser),
             isLoading: false,
           });
         } else {
@@ -160,7 +166,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               session: null,
               user: demoUser,
               role: readStoredDemoAuth()?.role ?? null,
-              brandId: null,
+              brandId: brandIdFromDemoUser(demoUser),
               isLoading: false,
             });
           } else {
