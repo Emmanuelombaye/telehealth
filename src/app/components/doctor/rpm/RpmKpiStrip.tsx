@@ -6,6 +6,7 @@ import {
   Video,
   Siren,
   Shield,
+  HeartPulse,
 } from "lucide-react";
 import { cn } from "../../ui/shared.tsx";
 import { useRpmData } from "../../../pages/doctor/rpm/useRpmData";
@@ -52,7 +53,7 @@ export function RpmKpiStrip() {
     },
     { label: "Critical alerts", value: stats.criticalAlerts, icon: AlertTriangle, pulse: stats.criticalAlerts > 0 },
     { label: "Devices connected", value: stats.devicesConnected, icon: Watch, pulse: false },
-    { label: "High-risk patients", value: stats.highRiskPatients, icon: Brain, pulse: stats.highRiskPatients > 0 },
+    { label: "High-risk patients", value: stats.highRiskPatients, icon: HeartPulse, pulse: stats.highRiskPatients > 0 },
     { label: "Avg compliance", value: `${stats.avgCompliance}%`, icon: Activity, pulse: false },
     { label: "Live sessions", value: stats.liveConsultations, icon: Video, pulse: false },
     { label: "Escalations today", value: stats.emergencyEscalationsToday, icon: Siren, pulse: stats.emergencyEscalationsToday > 0 },
