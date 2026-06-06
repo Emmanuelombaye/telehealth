@@ -726,6 +726,9 @@ VITE_PARTNER_PRODUCT_MAP_JSON={"partner_product_id":"peak-product-uuid"}
 
 ## 13. Summit MD example (live partner)
 
+> **Frontend devs start here:** [`docs/partners/SUMMIT_MD_FRONTEND.md`](partners/SUMMIT_MD_FRONTEND.md)  
+> Summit repo ops checklist: `PARTNER_SETUP.md` in [summitmd](https://github.com/Emmanuelombaye/summitmd)
+
 | Field | Value |
 |-------|--------|
 | Marketing site | [https://summitmd.vercel.app](https://summitmd.vercel.app) |
@@ -733,15 +736,39 @@ VITE_PARTNER_PRODUCT_MAP_JSON={"partner_product_id":"peak-product-uuid"}
 | Brand slug | `summit-md` |
 | Brand UUID | `7caaa526-185e-4eda-bf0e-832be6ba37a7` |
 | SQL setup | `scripts/sql/RUN_IN_SUPABASE_SUMMITMD_PARTNER.sql` |
-| Partner repo integration | `api/enroll-start.js` + `PARTNER_SETUP.md` |
 
-**Enrollment URL:**
+### Frontend flow (SummitMD repo)
+
+```
+ShopPage.jsx  →  partnerEnrollmentClient.js  →  POST /api/enroll-start  →  Peak partner-api
+     ↓                                                                               ↓
+"Secure Treatment Plan & Checkout"                              window.location = enrollment_url
+```
+
+| Step | Action | File |
+|------|--------|------|
+| 1 | Wire checkout button | `src/components/public/ShopPage.jsx` |
+| 2 | Client calls server proxy | `src/api/partnerEnrollmentClient.js` |
+| 3 | Server holds API key | `api/enroll-start.js`, `api/lib/partnerProxy.js` |
+| 4 | Vercel env (see below) | Vercel dashboard |
+| 5 | SPA must not swallow `/api/*` | `vercel.json` |
+
+**Frontend env (Vite — safe to expose):**
+
+```env
+VITE_PARTNER_BRAND_SLUG=summit-md
+VITE_PARTNER_ENROLLMENT_ENDPOINT=/api/enroll-start
+VITE_PARTNER_PORTAL_ORIGIN=https://www.peak-health.io
+VITE_PARTNER_RETURN_URL=https://summitmd.vercel.app/shop
+```
+
+**Server env (never in `VITE_*`):** `PARTNER_API_KEY`, `PARTNER_BRAND_SLUG`, `PARTNER_API_URL`, `PARTNER_PORTAL_ORIGIN`, `PARTNER_RETURN_URL`.
+
+**Enrollment URL (where users land after checkout):**
 
 ```text
 https://www.peak-health.io/care/summit-md/shop?brand=summit-md&brandId=7caaa526-185e-4eda-bf0e-832be6ba37a7
 ```
-
-**Vercel env (SummitMD project):** see SummitMD `PARTNER_SETUP.md`.
 
 **Test:**
 
@@ -754,15 +781,41 @@ PARTNER_API_KEY=pk_live_… npm run test:partner
 
 ## 14. North Star MD example (reference partner)
 
+> **Frontend devs start here:** [`docs/partners/NORTH_STAR_MD_FRONTEND.md`](partners/NORTH_STAR_MD_FRONTEND.md)  
+> Site kit pointer: `src/brand-sites/north-star-md/README.md`
+
 | Field | Value |
 |-------|--------|
 | Slug | `north-star-md` |
+| Brand UUID | `c8e7f6a2-4b1d-4e9f-a3c2-1d5e8f7a6b4c` |
 | Marketing | northstarmd.com / joinnorthstarmd.com |
-| Static UI kit | `src/brand-sites/north-star-md/` |
-| Full DNS + hostnames | `scripts/sql/RUN_IN_SUPABASE_MULTI_TENANT_PLATFORM.sql` |
-| Demo storefront | `npm run partner-storefront` |
+| Static UI kit | `src/brand-sites/north-star-md/site.ts` |
+| Brand registry | `src/lib/brands/northStar.ts` |
+| SQL + DNS | `scripts/sql/RUN_IN_SUPABASE_MULTI_TENANT_PLATFORM.sql` |
+| API demo storefront | `npm run partner-storefront` → [`examples/partner-storefront/README.md`](../examples/partner-storefront/README.md) |
 
-North Star is the **reference implementation** for white-label DNS (`care.`, `admin.`, `affiliate.` subdomains).
+### Choose your frontend pattern
+
+| Pattern | When | What frontend does |
+|---------|------|-------------------|
+| **A. External marketing site** | Own repo like Summit MD | Button → `/api/enroll-start` → redirect to `enrollment_url` |
+| **B. Peak white-label links** | No Partner API on marketing | Link CTAs directly to `/care/north-star-md/shop?…` |
+| **C. Demo storefront** | Engineers testing API | `examples/partner-storefront/app.js` — enroll buttons call server proxy |
+
+**Pattern B — direct shop link (copy into marketing CTAs):**
+
+```text
+https://www.peak-health.io/care/north-star-md/shop?brand=north-star-md&brandId=c8e7f6a2-4b1d-4e9f-a3c2-1d5e8f7a6b4c
+```
+
+| Portal | Path |
+|--------|------|
+| Patient login | `/care/north-star-md/login` |
+| Patient app | `/care/north-star-md/patient` |
+| Brand admin | `/care/north-star-md/admin/login` |
+| Affiliate | `/care/north-star-md/affiliate` |
+
+North Star is the **reference** for white-label DNS (`care.`, `admin.`, `affiliate.` subdomains) and all three integration patterns above.
 
 ---
 
@@ -988,7 +1041,10 @@ Consolidated from [PRODUCTION_LAUNCH.md](./PRODUCTION_LAUNCH.md) and [ENGINEERIN
 | [SYSTEM_INDEX.md](./SYSTEM_INDEX.md) | Engineers | Codebase map |
 | [ENGINEERING_ROLLOUT.md](./ENGINEERING_ROLLOUT.md) | DevOps | Migrations + RLS |
 | [PRODUCTION_LAUNCH.md](./PRODUCTION_LAUNCH.md) | Launch team | Go-live phases |
-| SummitMD `PARTNER_SETUP.md` | Summit devs | Repo-specific proxy setup |
+| [SUMMIT_MD_FRONTEND.md](./partners/SUMMIT_MD_FRONTEND.md) | Summit frontend devs | Checkout button, env vars, file map |
+| [NORTH_STAR_MD_FRONTEND.md](./partners/NORTH_STAR_MD_FRONTEND.md) | North Star / partner frontend devs | 3 integration patterns, direct links, demo |
+| SummitMD `PARTNER_SETUP.md` | Summit devs | Short ops + frontend checklist |
+| [partner-storefront README](../examples/partner-storefront/README.md) | Engineers | North Star API demo UI |
 
 ---
 
@@ -997,6 +1053,7 @@ Consolidated from [PRODUCTION_LAUNCH.md](./PRODUCTION_LAUNCH.md) and [ENGINEERIN
 | Date | Change |
 |------|--------|
 | 2026-06-06 | Initial master guide — portals, Partner API, Summit MD, products, flows, dev handoff |
+| 2026-06-06 | Partner frontend guides — Summit MD + North Star MD with checklists and file maps |
 
 ---
 
