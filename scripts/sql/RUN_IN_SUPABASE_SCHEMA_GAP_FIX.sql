@@ -335,6 +335,57 @@ CREATE POLICY "Super admin can view all messages" ON public.messages
   FOR SELECT TO authenticated
   USING (public.get_auth_role() = 'super_admin');
 
+-- Messages → profiles foreign keys (PostgREST joins + integrity)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'messages'
+  ) THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.table_constraints
+      WHERE table_schema = 'public' AND table_name = 'messages'
+        AND constraint_name = 'messages_sender_id_fkey'
+    ) THEN
+      ALTER TABLE public.messages
+        ADD CONSTRAINT messages_sender_id_fkey
+        FOREIGN KEY (sender_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.table_constraints
+      WHERE table_schema = 'public' AND table_name = 'messages'
+        AND constraint_name = 'messages_receiver_id_fkey'
+    ) THEN
+      ALTER TABLE public.messages
+        ADD CONSTRAINT messages_receiver_id_fkey
+        FOREIGN KEY (receiver_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+    END IF;
+  END IF;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'messages FK setup skipped: %', SQLERRM;
+END $$;
+
+-- Backfill profiles for message participants missing from profiles
+INSERT INTO public.profiles (id, email, role, full_name)
+SELECT DISTINCT
+  u.id,
+  u.email,
+  COALESCE(NULLIF(trim(u.raw_user_meta_data->>'role'), ''), 'patient'),
+  NULLIF(trim(
+    COALESCE(u.raw_user_meta_data->>'first_name', '') || ' ' ||
+    COALESCE(u.raw_user_meta_data->>'last_name', '')
+  ), '')
+FROM (
+  SELECT sender_id AS uid FROM public.messages WHERE sender_id IS NOT NULL
+  UNION
+  SELECT receiver_id FROM public.messages WHERE receiver_id IS NOT NULL
+) m
+JOIN auth.users u ON u.id = m.uid
+ON CONFLICT (id) DO UPDATE SET
+  email = COALESCE(EXCLUDED.email, public.profiles.email),
+  role = COALESCE(NULLIF(EXCLUDED.role, ''), public.profiles.role),
+  full_name = COALESCE(NULLIF(EXCLUDED.full_name, ''), public.profiles.full_name);
+
 -- ---------------------------------------------------------------------------
 -- 8) NOTIFICATIONS
 -- ---------------------------------------------------------------------------

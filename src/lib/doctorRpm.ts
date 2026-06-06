@@ -11,6 +11,7 @@ import {
   type VitalReading,
   type VitalStatus,
 } from "./vitalsClinical";
+import { profileDisplayName, type ProfileMini } from "./profileLookup";
 
 export type RpmTimeRange = "24h" | "7d" | "30d" | "all";
 
@@ -87,6 +88,7 @@ export function buildRpmRoster(
   readings: VitalReading[],
   orders: { id?: string; user_id?: string | null; patient_name?: string | null; patient_vitals?: unknown }[],
   range: RpmTimeRange,
+  profileNames?: Map<string, ProfileMini>,
 ): RpmPatient[] {
   const scoped = filterReadingsByRange(readings, range);
   const map = new Map<string, RpmPatient>();
@@ -109,16 +111,26 @@ export function buildRpmRoster(
     return map.get(key)!;
   };
 
+  const nameFor = (patient_id: string | null, patient_name: string | null | undefined) => {
+    const trimmed = patient_name?.trim();
+    if (trimmed && trimmed.toLowerCase() !== "unknown patient") return trimmed;
+    if (patient_id && profileNames?.has(patient_id)) {
+      return profileDisplayName(profileNames.get(patient_id), patient_id);
+    }
+    if (patient_id) return profileDisplayName(undefined, patient_id);
+    return "Unnamed patient";
+  };
+
   for (const o of orders) {
     const key = o.user_id || o.patient_name || "unknown";
-    const row = ensure(key, o.user_id ?? null, o.patient_name || "Unknown patient");
+    const row = ensure(key, o.user_id ?? null, nameFor(o.user_id ?? null, o.patient_name));
     if (o.id && !row.order_id) row.order_id = o.id;
     if (!row.intake && o.patient_vitals) row.intake = parseIntakeVitals(o.patient_vitals);
   }
 
   for (const r of scoped) {
     const key = r.patient_id || r.patient_name || "unknown";
-    const row = ensure(key, r.patient_id, r.patient_name || "Unknown patient");
+    const row = ensure(key, r.patient_id, nameFor(r.patient_id, r.patient_name));
     row.readingsInRange += 1;
     if (r.flagged) row.alertCountInRange += 1;
     if (r.source && !row.deviceSources.includes(r.source)) row.deviceSources.push(r.source);

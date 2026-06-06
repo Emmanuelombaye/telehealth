@@ -2,18 +2,20 @@ import type { ReactNode } from "react";
 import type { TooltipProps } from "recharts";
 import { cn } from "../../ui/shared.tsx";
 
-/** RPM analytics palette — matches premium purple dashboard reference */
+/** RPM analytics palette — clinical teal + vitals accent */
 export const RPM_CHART = {
-  primary: "#8B5CF6",
-  primaryDark: "#7C3AED",
-  primaryLight: "#A78BFA",
+  primary: "#0D9488",
+  primaryDark: "#0F766E",
+  primaryLight: "#14B8A6",
   primaryFill: "url(#rpmAreaPrimary)",
   secondary: "#E2E8F0",
   secondaryDark: "#CBD5E1",
   grid: "#EEF2F6",
-  axis: "#94A3B8",
+  axis: "#64748B",
   card: "#FFFFFF",
   cardBorder: "rgba(226, 232, 240, 0.9)",
+  reference: "#94A3B8",
+  normalBand: "rgba(16, 185, 129, 0.08)",
 } as const;
 
 export const rpmChartCard = cn(
@@ -39,12 +41,12 @@ export function RpmChartGradients() {
   return (
     <defs>
       <linearGradient id="rpmAreaPrimary" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.45} />
-        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.02} />
+        <stop offset="0%" stopColor="#0D9488" stopOpacity={0.45} />
+        <stop offset="95%" stopColor="#0D9488" stopOpacity={0.02} />
       </linearGradient>
       <linearGradient id="rpmAreaSoft" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#A78BFA" stopOpacity={0.35} />
-        <stop offset="95%" stopColor="#A78BFA" stopOpacity={0} />
+        <stop offset="0%" stopColor="#14B8A6" stopOpacity={0.35} />
+        <stop offset="95%" stopColor="#14B8A6" stopOpacity={0} />
       </linearGradient>
       <linearGradient id="rpmAreaHeart" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#10b981" stopOpacity={0.5} />

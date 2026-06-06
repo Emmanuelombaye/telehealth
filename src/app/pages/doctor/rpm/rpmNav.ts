@@ -6,13 +6,13 @@ import {
   AlertOctagon,
   Watch,
   Shield,
-  Brain,
   TrendingUp,
   Users,
   Siren,
   FileBarChart,
   Plug,
   Settings,
+  HeartPulse,
 } from "lucide-react";
 
 export type RpmNavItem = { path: string; label: string; icon: LucideIcon; desc?: string };
@@ -26,7 +26,7 @@ export function rpmNavItems(base: "/doctor" | "/providers"): RpmNavItem[] {
     { path: p("/critical"), label: "Critical Cases", icon: AlertOctagon },
     { path: p("/devices"), label: "Device Management", icon: Watch },
     { path: p("/compliance"), label: "Compliance Tracking", icon: Shield },
-    { path: p("/ai-risk"), label: "AI Risk Analysis", icon: Brain },
+    { path: p("/ai-risk"), label: "Clinical Risk", icon: HeartPulse, desc: "Vitals-based scoring" },
     { path: p("/analytics"), label: "Trends & Analytics", icon: TrendingUp },
     { path: p("/queue"), label: "Care Team Queue", icon: Users },
     { path: p("/escalations"), label: "Emergency Escalations", icon: Siren },

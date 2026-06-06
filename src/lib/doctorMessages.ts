@@ -90,7 +90,7 @@ export function buildThreadsFromMessages(rows: RawMessageRow[], currentUserId: s
     if (!threadMap[otherId]) {
       threadMap[otherId] = {
         id: otherId,
-        name: otherProfile?.full_name || "Unknown",
+        name: otherProfile?.full_name || "Unnamed user",
         role: otherProfile?.role || "patient",
         lastMsg: msg.content,
         lastAt: msg.created_at,

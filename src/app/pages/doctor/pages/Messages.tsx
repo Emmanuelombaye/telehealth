@@ -22,6 +22,8 @@ import { doctorPageContainer, doctorSurfaceCard, doctorInsetCard } from "../../.
 import { doctorMessagesHref, useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore, usePatientStore } from "../../../../lib";
+import { fetchMessagesWithProfiles } from "../../../../lib/messagesFetch";
+import { profileDisplayName } from "../../../../lib/profileLookup";
 import {
   buildPatientContacts,
   buildThreadsFromMessages,
@@ -37,12 +39,6 @@ import {
 import { toast } from "sonner";
 
 type ThreadFilter = "all" | "patients" | "unread";
-
-const MESSAGE_SELECT = `
-  id, content, created_at, sender_id, receiver_id, is_read,
-  sender:profiles!messages_sender_id_fkey(id, full_name, role),
-  receiver:profiles!messages_receiver_id_fkey(id, full_name, role)
-`;
 
 export function DoctorMessagesPage() {
   const doctorBase = useDoctorPortalBase();
@@ -78,12 +74,11 @@ export function DoctorMessagesPage() {
     if (!opts?.silent) setRefreshing(true);
     try {
       const [msgRes, ordersRes] = await Promise.all([
-        supabase
-          .from("messages")
-          .select(MESSAGE_SELECT)
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-          .order("created_at", { ascending: false })
-          .limit(400),
+        fetchMessagesWithProfiles({
+          orFilter: `sender_id.eq.${user.id},receiver_id.eq.${user.id}`,
+          limit: 400,
+          ascending: false,
+        }),
         supabase
           .from("orders")
           .select("id, user_id, patient_name, order_number, status")
@@ -126,11 +121,11 @@ export function DoctorMessagesPage() {
         setActiveThread(existing);
         return;
       }
-      const { data } = await supabase.from("profiles").select("id, full_name, role").eq("id", targetId).single();
+      const { data } = await supabase.from("profiles").select("id, full_name, email, role").eq("id", targetId).single();
       if (data) {
         setActiveThread({
           id: data.id,
-          name: data.full_name || "Unknown",
+          name: profileDisplayName(data, targetId),
           role: data.role || "patient",
           lastMsg: "",
           lastAt: new Date().toISOString(),

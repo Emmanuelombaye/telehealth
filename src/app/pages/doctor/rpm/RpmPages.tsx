@@ -12,7 +12,6 @@ import {
   Activity,
   Watch,
   Shield,
-  Brain,
   Siren,
   FileBarChart,
   Plug,
@@ -27,7 +26,7 @@ import { useRpmData } from "./useRpmData";
 import { useDoctorPortalBase } from "../../../../lib/doctorPortalBase";
 import { RpmWorkspace } from "./RpmWorkspace";
 import { RpmAlertsStream } from "../../../components/doctor/rpm/RpmAlertsStream";
-import { rpmGlass, RPM_STATUS_TONE, aiConfidencePct } from "../../../../lib/rpmEnterpriseUi";
+import { rpmGlass, RPM_STATUS_TONE } from "../../../../lib/rpmEnterpriseUi";
 import {
   RPM_CHART,
   RpmChartGradients,
@@ -37,7 +36,7 @@ import {
   rpmChartCard,
 } from "../../../components/doctor/rpm/rpmChartUi";
 import { timeAgo } from "../../../../lib/rpmCommandCenter";
-import { RISK_STYLES, computeAiRisk } from "../../../../lib/rpmCommandCenter";
+import { RISK_STYLES, computeClinicalRisk } from "../../../../lib/rpmCommandCenter";
 import { readingsForPatient } from "../../../../lib/doctorRpm";
 
 export function RpmPatientVitalsPage() {
@@ -130,18 +129,18 @@ export function RpmCompliancePage() {
   );
 }
 
-export function RpmAiRiskPage() {
+export function RpmClinicalRiskPage() {
   const { filteredRows, readings, range, selectPatient } = useRpmData();
   return (
     <RpmWorkspace
-      title="AI risk analysis"
-      subtitle="Predictive scoring — select a patient for vitals + AI context"
-      icon={Brain}
+      title="Clinical risk"
+      subtitle="Rule-based vitals scoring — select a patient for trend context"
+      icon={Shield}
       extra={
         <div className="grid gap-2 sm:grid-cols-2">
           {filteredRows.slice(0, 8).map((row) => {
             const pr = readingsForPatient(readings, row.patient, range);
-            const risk = computeAiRisk(row.patient, pr, range);
+            const risk = computeClinicalRisk(row.patient, pr, range);
             return (
               <button
                 key={row.patient.key}
@@ -153,7 +152,9 @@ export function RpmAiRiskPage() {
                   <span className="font-bold text-sm rpm-text truncate">{row.patient.patient_name}</span>
                   <Badge className={cn("text-[8px] border", RISK_STYLES[risk.level].badge)}>{RISK_STYLES[risk.level].label}</Badge>
                 </div>
-                <p className="text-[10px] rpm-muted mt-1">AI confidence {aiConfidencePct(risk.level)}%</p>
+                <p className="text-[10px] rpm-muted mt-1 line-clamp-2">
+                  {risk.reasons[0] || "Within expected range"}
+                </p>
               </button>
             );
           })}
@@ -162,6 +163,9 @@ export function RpmAiRiskPage() {
     />
   );
 }
+
+/** @deprecated use RpmClinicalRiskPage */
+export const RpmAiRiskPage = RpmClinicalRiskPage;
 
 export function RpmAnalyticsPage() {
   const { stats } = useRpmData();
@@ -257,7 +261,7 @@ export function RpmReportsPage() {
             ["Monitored", stats.activePatients],
             ["Critical", stats.criticalAlerts],
             ["Adherence", `${stats.avgCompliance}%`],
-            ["AI flagged", stats.aiPredictedRisks],
+            ["Clinical flags", stats.clinicalRiskFlags],
           ].map(([l, v]) => (
             <div key={l as string} className={cn(rpmGlass, "p-4")}>
               <p className="text-[10px] font-bold uppercase rpm-muted">{l}</p>

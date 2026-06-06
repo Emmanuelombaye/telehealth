@@ -98,7 +98,7 @@ export type RpmCommandStats = {
   syncsInRange: number;
   stablePct: number;
   emergencyEscalationsToday: number;
-  aiPredictedRisks: number;
+  clinicalRiskFlags: number;
 };
 
 export type RpmDeviceFleetItem = {
@@ -188,7 +188,7 @@ function patientSeverity(patientReadings: VitalReading[], patient: RpmPatient): 
   return "normal";
 }
 
-export function computeAiRisk(
+export function computeClinicalRisk(
   patient: RpmPatient,
   patientReadings: VitalReading[],
   range: RpmTimeRange,
@@ -227,6 +227,9 @@ export function computeAiRisk(
 
   return { level, reasons: reasons.slice(0, 4) };
 }
+
+/** @deprecated use computeClinicalRisk */
+export const computeAiRisk = computeClinicalRisk;
 
 const ESC_KEY = "peak_rpm_escalated";
 
@@ -303,7 +306,7 @@ export function buildLiveMonitoringRows(
     const resp = latestReading(pr, ["resp_rate", "rr"]);
     const temp = latestReading(pr, ["temp", "temperature"]);
     const severity = patientSeverity(pr, patient);
-    const risk = computeAiRisk(patient, pr, range);
+    const risk = computeClinicalRisk(patient, pr, range);
     const conn = CONNECTIVITY_STYLES[patient.connectivity];
     const order =
       (patient.order_id && ordersByKey?.get(`order:${patient.order_id}`)) ||
@@ -446,9 +449,9 @@ export function computeCommandStats(
 
   const escalated = loadEscalatedPatients();
   const emergencyEscalationsToday = escalated.size;
-  const aiPredictedRisks = roster.filter((p) => {
+  const clinicalRiskFlags = roster.filter((p) => {
     const pr = readingsForPatient(readings, p, range);
-    const lvl = computeAiRisk(p, pr, range).level;
+    const lvl = computeClinicalRisk(p, pr, range).level;
     return lvl === "moderate" || lvl === "high" || lvl === "critical";
   }).length;
 
@@ -462,7 +465,7 @@ export function computeCommandStats(
     syncsInRange: scoped.length,
     stablePct,
     emergencyEscalationsToday,
-    aiPredictedRisks,
+    clinicalRiskFlags,
   };
 }
 

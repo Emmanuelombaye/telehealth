@@ -14,6 +14,7 @@ import {
 import { SuperAdminShell, saPanel } from "../../../components/superadmin/SuperAdminShell.tsx";
 import { Badge, Button, Input, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
+import { fetchMessagesWithProfiles } from "../../../../lib/messagesFetch";
 import {
   buildPlatformThreadsFromMessages,
   formatMessageTime,
@@ -24,12 +25,6 @@ import {
   type RawMessageRow,
 } from "../../../../lib/doctorMessages";
 import { toast } from "sonner";
-
-const MESSAGE_SELECT = `
-  id, content, created_at, sender_id, receiver_id, is_read,
-  sender:profiles!messages_sender_id_fkey(id, full_name, role),
-  receiver:profiles!messages_receiver_id_fkey(id, full_name, role)
-`;
 
 type ThreadFilter = "all" | "unread";
 
@@ -55,11 +50,7 @@ export function SuperAdminMessagesPage() {
   const fetchThreads = useCallback(async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setRefreshing(true);
     try {
-      const { data, error } = await supabase
-        .from("messages")
-        .select(MESSAGE_SELECT)
-        .order("created_at", { ascending: false })
-        .limit(500);
+      const { data, error } = await fetchMessagesWithProfiles({ limit: 500, ascending: false });
 
       if (error) throw error;
       setThreads(buildPlatformThreadsFromMessages((data || []) as unknown as RawMessageRow[]));

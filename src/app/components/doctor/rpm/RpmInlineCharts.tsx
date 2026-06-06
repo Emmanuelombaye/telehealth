@@ -4,6 +4,9 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Legend,
+  ReferenceArea,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -124,12 +127,16 @@ export function RpmInlineCharts({ row, readings }: Props) {
             <AreaChart data={hr} margin={{ top: 12, right: 8, left: -8, bottom: 0 }}>
               <RpmChartGradients />
               <CartesianGrid {...rpmGridProps} />
+              <ReferenceArea y1={60} y2={100} fill={RPM_CHART.normalBand} strokeOpacity={0} />
+              <ReferenceLine y={60} stroke={RPM_CHART.reference} strokeDasharray="4 4" label={{ value: "60", position: "left", fontSize: 9, fill: RPM_CHART.axis }} />
+              <ReferenceLine y={100} stroke={RPM_CHART.reference} strokeDasharray="4 4" label={{ value: "100", position: "left", fontSize: 9, fill: RPM_CHART.axis }} />
               <XAxis dataKey="time" {...rpmAxisProps} interval="preserveStartEnd" />
-              <YAxis {...rpmAxisProps} width={36} />
+              <YAxis {...rpmAxisProps} width={36} domain={["dataMin - 10", "dataMax + 10"]} />
               <Tooltip content={<RpmChartTooltip unit=" bpm" />} />
               <Area
                 type="monotone"
                 dataKey="value"
+                name="Heart rate"
                 stroke="#10b981"
                 strokeWidth={2.5}
                 fill="url(#rpmAreaHeart)"
@@ -148,9 +155,16 @@ export function RpmInlineCharts({ row, readings }: Props) {
               <AreaChart data={bp} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
                 <RpmChartGradients />
                 <CartesianGrid {...rpmGridProps} />
+                <ReferenceArea y1={90} y2={120} fill={RPM_CHART.normalBand} strokeOpacity={0} />
                 <XAxis dataKey="time" {...rpmAxisProps} interval="preserveStartEnd" />
-                <YAxis {...rpmAxisProps} width={36} />
+                <YAxis {...rpmAxisProps} width={36} domain={[60, 160]} />
                 <Tooltip content={<RpmChartTooltip />} />
+                <Legend
+                  verticalAlign="top"
+                  align="right"
+                  iconType="circle"
+                  wrapperStyle={{ fontSize: 10, paddingBottom: 4 }}
+                />
                 <Area
                   type="monotone"
                   dataKey="sys"

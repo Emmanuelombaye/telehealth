@@ -8,7 +8,6 @@ import {
   AlertOctagon,
   Activity,
   Clock,
-  Brain,
   Shield,
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -39,7 +38,7 @@ import {
 } from "../../../../lib/vitalsClinical";
 import {
   ALERT_TIER_STYLES,
-  computeAiRisk,
+  computeClinicalRisk,
   computeCompliance,
   orderContextFromRow,
   RISK_STYLES,
@@ -95,7 +94,7 @@ export function RpmPatientDrawer({
   const patient = row.patient;
   const conn = CONNECTIVITY_STYLES[patient.connectivity];
   const ctx = order ? orderContextFromRow(order) : null;
-  const risk = computeAiRisk(patient, patientReadings, range);
+  const risk = computeClinicalRisk(patient, patientReadings, range);
   const compliance = computeCompliance(patient, range);
   const vitalCards = buildVitalCards(patientReadings, patient.intake);
   const bpTrend = buildBpTrend(patientReadings, 20);
@@ -226,7 +225,7 @@ export function RpmPatientDrawer({
             <Card className={doctorSurfaceCard}>
               <CardContent className="p-4">
                 <p className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1">
-                  <Brain className="h-3 w-3" /> AI risk
+                  <Shield className="h-3 w-3" /> Clinical risk
                 </p>
                 <p className="text-sm font-black text-[#0A2E1F] mt-1">{RISK_STYLES[risk.level].label}</p>
                 {risk.reasons.length > 0 && (

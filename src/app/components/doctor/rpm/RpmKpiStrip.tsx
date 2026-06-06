@@ -6,7 +6,7 @@ import {
   Activity,
   Video,
   Siren,
-  Sparkles,
+  Shield,
 } from "lucide-react";
 import { cn } from "../../ui/shared.tsx";
 import { useRpmData } from "../../../pages/doctor/rpm/useRpmData";
@@ -14,14 +14,14 @@ import { rpmKpiCard } from "../../../../lib/rpmEnterpriseUi";
 import { sparklineFromReadings } from "../../../../lib/rpmCommandCenter";
 
 const ACCENTS = [
-  "from-violet-500/25 to-purple-500/5",
-  "from-violet-500/20 to-fuchsia-500/5",
-  "from-purple-500/25 to-violet-400/5",
-  "from-violet-600/20 to-purple-500/5",
-  "from-purple-400/20 to-violet-300/5",
-  "from-violet-500/22 to-indigo-500/5",
-  "from-fuchsia-500/20 to-violet-500/5",
-  "from-violet-500/18 to-purple-400/5",
+  "from-teal-500/25 to-emerald-500/5",
+  "from-teal-500/20 to-cyan-500/5",
+  "from-emerald-500/25 to-teal-400/5",
+  "from-teal-600/20 to-emerald-500/5",
+  "from-cyan-400/20 to-teal-300/5",
+  "from-teal-500/22 to-emerald-500/5",
+  "from-emerald-500/20 to-teal-500/5",
+  "from-teal-500/18 to-cyan-400/5",
 ];
 
 function MiniTrend({ values }: { values: number[] }) {
@@ -33,7 +33,7 @@ function MiniTrend({ values }: { values: number[] }) {
     .map((v, i) => `${(i / (values.length - 1)) * 56},${24 - ((v - min) / span) * 22}`)
     .join(" ");
   return (
-    <svg width={56} height={24} className="text-[#8B5CF6] opacity-90">
+    <svg width={56} height={24} className="text-teal-600 opacity-90">
       <polyline fill="none" stroke="currentColor" strokeWidth="2" points={pts} />
     </svg>
   );
@@ -57,7 +57,7 @@ export function RpmKpiStrip() {
     { label: "Avg compliance", value: `${stats.avgCompliance}%`, icon: Activity, pulse: false },
     { label: "Live sessions", value: stats.liveConsultations, icon: Video, pulse: false },
     { label: "Escalations today", value: stats.emergencyEscalationsToday, icon: Siren, pulse: stats.emergencyEscalationsToday > 0 },
-    { label: "AI predicted risks", value: stats.aiPredictedRisks, icon: Sparkles, pulse: stats.aiPredictedRisks > 0 },
+    { label: "Clinical flags", value: stats.clinicalRiskFlags, icon: Shield, pulse: stats.clinicalRiskFlags > 0 },
   ];
 
   return (

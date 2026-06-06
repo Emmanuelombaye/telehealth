@@ -117,7 +117,7 @@ export function RpmMonitorCard({ row, onOpen, onEscalate, onHoverStart, onHoverE
         <Badge className={cn("text-[8px] font-black border", tone.badge)}>{tone.label}</Badge>
         <Badge className="text-[8px] font-black border bg-black/5 rpm-dark:bg-white/10 rpm-border">
           <Activity className="inline h-2.5 w-2.5 mr-0.5 opacity-70" />
-          AI {row.aiScore}%
+          Risk {row.aiScore}
         </Badge>
         <span className="text-[9px] rpm-muted ml-auto">{row.compliancePct}% adherence</span>
       </div>
