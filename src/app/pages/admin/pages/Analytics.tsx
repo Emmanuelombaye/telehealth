@@ -69,7 +69,10 @@ export function AdminAnalyticsPage() {
               }),
           )
           .map((d) => ({
-            orderedDate: (d.ordered_date as string) || "",
+            orderedDate:
+              (d.ordered_date as string) ||
+              (d.created_at as string) ||
+              "",
             amount: d.amount != null ? String(d.amount) : "",
             status: (d.status as string) || "",
             medication: (d.medication as string) || "",
