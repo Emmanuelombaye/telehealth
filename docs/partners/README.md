@@ -107,4 +107,4 @@ Peak login shows **partner logo**, `source` handoff message, and after auth redi
 | `summit-md` | `summitmd-shop` | external |
 | `north-star-md` | `northstar-shop` | api |
 
-See also: [SUMMIT_MD_FRONTEND.md](./SUMMIT_MD_FRONTEND.md), [NORTH_STAR_MD_FRONTEND.md](./NORTH_STAR_MD_FRONTEND.md), [PARTNER_CONNECT.md](../PARTNER_CONNECT.md).
+See also: [SUMMIT_MD_FRONTEND.md](./SUMMIT_MD_FRONTEND.md), [NORTH_STAR_MD_FRONTEND.md](./NORTH_STAR_MD_FRONTEND.md), [PARTNER_CONNECT.md](../PARTNER_CONNECT.md), [WHITE_LABEL_PATIENT_PORTAL.md](./WHITE_LABEL_PATIENT_PORTAL.md).
