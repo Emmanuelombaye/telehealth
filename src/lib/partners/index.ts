@@ -36,3 +36,5 @@ export {
   partnerLoginHandoffMessage,
 } from "./authHandoff";
 export type { PartnerAuthMode } from "./authHandoff";
+export { resolvePatientShopDestination } from "./catalogRouting";
+export type { PatientShopDestination } from "./catalogRouting";

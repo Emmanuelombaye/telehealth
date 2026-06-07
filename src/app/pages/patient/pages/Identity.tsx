@@ -24,6 +24,7 @@ import { useAuthStore } from "../../../../lib";
 import type { PhiAccessLogRow } from "../../../../lib/phiAccessAudit";
 import { toast } from "sonner";
 import { useBrand } from "../../../context/BrandContext";
+import { usePatientNav } from "../../../../lib/brands/patientNav";
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
 
@@ -39,6 +40,7 @@ type PrivacyPanel = "encryption" | "access" | "hipaa" | null;
 export function IdentityPage() {
   const { user } = useAuthStore();
   const { site } = useBrand();
+  const { routes, shop } = usePatientNav();
   const portalName = site.copy.portalName;
   const navigate = useNavigate();
   const [verification, setVerification] = useState<Record<string, unknown> | null>(null);
@@ -154,7 +156,11 @@ export function IdentityPage() {
       toast.message("Identity verification", {
         description: "Complete verification during enrollment, or contact support to enable Stripe Identity.",
       });
-      navigate("/patient/shop");
+      if (shop.external) {
+        window.location.href = shop.href;
+      } else {
+        navigate(shop.href);
+      }
       return;
     }
     setVerifyingId(true);
@@ -205,11 +211,11 @@ export function IdentityPage() {
       return;
     }
     if (item.id === "address") {
-      navigate("/patient/profile");
+      navigate(routes.profile);
       return;
     }
     if (item.id === "2fa") {
-      navigate("/patient/profile");
+      navigate(routes.profile);
       toast.message("SMS verification", {
         description: "Add your mobile number on Profile. We send a one-time code during secure sign-in and enrollment.",
       });
@@ -417,7 +423,7 @@ export function IdentityPage() {
               className="flex-1 rounded-xl"
               onClick={() => {
                 setPanel(null);
-                navigate("/patient/documents");
+                navigate(routes.documents);
               }}
             >
               My documents
@@ -426,7 +432,7 @@ export function IdentityPage() {
               className="flex-1 rounded-xl bg-[#0A2E1F]"
               onClick={() => {
                 setPanel(null);
-                navigate("/patient/messages");
+                navigate(routes.messages);
               }}
             >
               Message care team

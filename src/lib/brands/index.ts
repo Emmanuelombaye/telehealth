@@ -20,3 +20,5 @@ export {
   clearBrandDocumentMeta,
   finalizeBrandFromKit,
 } from "./brandDocument";
+export { buildPatientPortalRoutes, usePatientNav } from "./patientNav";
+export type { PatientPortalRoutes } from "./patientNav";

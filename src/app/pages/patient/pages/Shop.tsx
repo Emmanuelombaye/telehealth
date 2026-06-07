@@ -63,7 +63,8 @@ import {
 } from "../../../../lib/patientShopRoutes";
 import { PatientEnrollmentCatalogChrome } from "../../../components/patient/PatientEnrollmentCatalogChrome";
 import { PatientShopTopChrome } from "../../../components/patient/PatientShopTopChrome";
-import { EnrollmentFlowShell } from "../../../components/patient/EnrollmentFlowShell";
+import { PartnerExternalShopRedirect } from "../../../components/patient/PartnerExternalShopRedirect";
+import { resolvePatientShopDestination } from "../../../../lib/partners/catalogRouting";
 // Stripe
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -203,6 +204,7 @@ export function PatientShopPage() {
   const [stage, setStageState] = useState<ShopFlowStage>(readInitialStage);
   const { initialize } = useAuthStore();
   const { brand, orderBrandKey, site, enrollBase, patientPortalBase, isWhiteLabel } = useBrand();
+  const shopDestination = resolvePatientShopDestination(brand.slug, enrollBase);
   const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [assignedDoctorForScheduling, setAssignedDoctorForScheduling] = useState<any>(null);
@@ -1091,6 +1093,10 @@ export function PatientShopPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (shopDestination.external) {
+    return <PartnerExternalShopRedirect />;
+  }
 
   if (stage === "confirmed" && selected) {
     return (

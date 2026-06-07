@@ -9,9 +9,13 @@ export type AssignedDoctor = {
   name: string;
 };
 
-export function patientMessagesHref(doctorId?: string | null): string {
-  if (doctorId) return `/patient/messages?userId=${encodeURIComponent(doctorId)}`;
-  return "/patient/messages";
+export function patientMessagesHref(
+  doctorId?: string | null,
+  portalBase = "/patient",
+): string {
+  const base = portalBase.replace(/\/$/, "") || "/patient";
+  if (doctorId) return `${base}/messages?userId=${encodeURIComponent(doctorId)}`;
+  return `${base}/messages`;
 }
 
 /** Doctor on the patient's latest order. */

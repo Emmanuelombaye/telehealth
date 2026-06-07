@@ -18,6 +18,8 @@ import { LogoutConfirmation } from "./LogoutConfirmation";
 import { motion, AnimatePresence } from "framer-motion";
 import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
 import { useBrand } from "../context/BrandContext";
+import { resolvePatientShopDestination } from "../../lib/partners/catalogRouting";
+import { buildPatientPortalRoutes } from "../../lib/brands/patientNav";
 
 type DoctorNavChild = {
   label: string;
@@ -166,20 +168,27 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
   const location = useLocation();
   const doctorBase =
     role === "doctor" ? doctorPortalBaseFromPath(location.pathname) : null;
-  const { isWhiteLabel, patientPortalBase, enrollBase } = useBrand();
+  const { isWhiteLabel, patientPortalBase, enrollBase, brand } = useBrand();
   let menu =
     role === "doctor" && doctorBase !== null ? buildDoctorMenu(doctorBase) : menuConfig[role];
-  if (role === "patient" && isWhiteLabel) {
-    const base = patientPortalBase.replace(/\/$/, "");
-    menu = menuConfig.patient.map((item: { href: string }) => ({
-      ...item,
-      href:
-        item.href === "/patient"
-          ? base
-          : item.href === "/patient/shop"
-            ? enrollBase
-            : item.href.replace(/^\/patient/, base),
-    }));
+  if (role === "patient") {
+    const routes = buildPatientPortalRoutes(
+      isWhiteLabel ? patientPortalBase : "/patient",
+    );
+    const shop = resolvePatientShopDestination(brand.slug, enrollBase);
+    menu = menuConfig.patient.map((item: { href: string; label: string }) => {
+      if (item.href === "/patient") return { ...item, href: routes.home };
+      if (item.href === "/patient/shop") {
+        return {
+          ...item,
+          href: shop.href,
+          label: shop.label,
+          external: shop.external,
+        };
+      }
+      const segment = item.href.replace(/^\/patient\/?/, "");
+      return { ...item, href: segment ? `${routes.home}/${segment}` : routes.home };
+    });
   }
   const { user, role: authRole } = useAuthStore();
   const orders = usePatientStore((s) => s.orders) ?? [];
@@ -313,6 +322,20 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                       </div>
                     )}
                   </div>
+                ) : (item as { external?: boolean }).external ? (
+                  <a
+                    href={item.href}
+                    onClick={onMobileClose}
+                    className={cn(
+                      "flex items-center justify-between gap-2 rounded-2xl px-4 py-3.5 text-[13px] font-black transition-all duration-300 group relative overflow-hidden",
+                      "text-slate-500 hover:text-[#0A2E1F] hover:bg-slate-50/80 border-l-4 border-transparent",
+                    )}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 relative z-10">
+                      <item.icon className="h-5 w-5 shrink-0 text-slate-400" />
+                      <span className="truncate uppercase tracking-tight text-[12px]">{item.label}</span>
+                    </div>
+                  </a>
                 ) : (
                   <NavLink
                     to={item.href}

@@ -18,8 +18,9 @@ import {
   getOrderFulfillmentRailIndex,
 } from "../../../lib";
 import { supabase } from "../../../lib/supabaseClient";
-import { patientMessagesHref } from "../../../lib/patientMessaging";
 import { useBrand } from "../../context/BrandContext";
+import { usePatientNav } from "../../../lib/brands/patientNav";
+import { PatientShopLink } from "../../components/patient/PatientShopLink";
 
 const stepIcon: Record<string, any> = {
   order_submitted: FileText,
@@ -43,6 +44,7 @@ const subBrandTint: Record<string, string> = {
 export function PatientDashboard() {
   const { t } = useI18n();
   const { site } = useBrand();
+  const { routes, shop, messagesHref } = usePatientNav();
   const portalName = site.copy.portalName;
   const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
@@ -146,7 +148,7 @@ export function PatientDashboard() {
 
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => navigate('/patient/consult')}
+                    onClick={() => navigate(routes.consult)}
                     className="bg-emerald-500 hover:bg-emerald-400 text-white rounded-[1.25rem] px-10 h-16 font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95 flex items-center gap-3 group/btn"
                   >
                     Join Secure Consult <ChevronRight className="h-5 w-5 group-hover/btn:translate-x-1 transition-transform" />
@@ -186,35 +188,48 @@ export function PatientDashboard() {
             </p>
           </div>
           <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center lg:w-auto lg:flex-col lg:items-stretch">
-            <Link to="/patient/appointments" className="w-full sm:max-w-xs lg:max-w-none">
+            <Link to={routes.appointments} className="w-full sm:max-w-xs lg:max-w-none">
               <Button className="h-12 w-full rounded-2xl bg-[#0A2E1F] px-8 text-sm font-semibold shadow-lg shadow-emerald-900/15 transition hover:bg-[#0d3a28] sm:h-14">
                 <Plus className="mr-2 h-4 w-4" />
                 {t("action.bookVisit")}
               </Button>
             </Link>
-            <Link
-              to="/patient/shop"
+            <PatientShopLink
               className="flex h-12 w-full items-center justify-center rounded-2xl border border-emerald-200/80 bg-white/80 text-sm font-semibold text-emerald-900 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/50 sm:max-w-xs lg:max-w-none"
             >
               <ShoppingBag className="mr-2 h-4 w-4 opacity-80" />
-              Browse treatments
-            </Link>
+              {shop.label}
+            </PatientShopLink>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { to: "/patient/shop", icon: ShoppingBag, label: "Shop", sub: "Plans" },
+          { to: shop.href, external: shop.external, icon: ShoppingBag, label: shop.external ? "Plans" : "Shop", sub: "Care" },
           {
-            to: patientMessagesHref(orders.find((o) => o.doctor_id)?.doctor_id),
+            to: messagesHref(orders.find((o) => o.doctor_id)?.doctor_id),
+            external: false,
             icon: MessageSquare,
             label: "Messages",
             sub: "Inbox",
           },
-          { to: "/patient/labs", icon: Activity, label: "Labs", sub: "Results" },
-          { to: "/patient/orders", icon: Truck, label: "Orders", sub: "Tracking" },
-        ].map((item) => (
+          { to: routes.labs, external: false, icon: Activity, label: "Labs", sub: "Results" },
+          { to: routes.orders, external: false, icon: Truck, label: "Orders", sub: "Tracking" },
+        ].map((item) =>
+          item.external ? (
+            <a
+              key={item.to}
+              href={item.to}
+              className="group flex flex-col items-center gap-2 rounded-2xl border border-white/80 bg-white/60 p-4 shadow-sm ring-1 ring-emerald-900/[0.04] backdrop-blur-sm transition hover:border-emerald-200 hover:bg-white hover:shadow-md"
+            >
+              <item.icon className="h-5 w-5 text-emerald-700 transition group-hover:scale-110" />
+              <div className="text-center">
+                <p className="text-xs font-bold text-slate-900">{item.label}</p>
+                <p className="text-[10px] text-slate-500">{item.sub}</p>
+              </div>
+            </a>
+          ) : (
           <Link
             key={item.to}
             to={item.to}
@@ -224,7 +239,8 @@ export function PatientDashboard() {
             <span className="text-sm font-semibold text-slate-900">{item.label}</span>
             <span className="text-xs text-slate-500">{item.sub}</span>
           </Link>
-        ))}
+          ),
+        )}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-10">
@@ -301,7 +317,7 @@ export function PatientDashboard() {
                       </p>
                       <Button
                         className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-[1.5rem] h-16 font-black uppercase tracking-[0.2em] gap-3 shadow-xl shadow-amber-600/10"
-                        onClick={() => navigate("/patient/appointments")}
+                        onClick={() => navigate(routes.appointments)}
                       >
                         Book visit (step 8 follow-up) <Calendar className="h-5 w-5" />
                       </Button>
@@ -362,11 +378,11 @@ export function PatientDashboard() {
                 <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] max-w-sm mx-auto leading-loose">
                   Explore our clinical treatment plans to start your professional care.
                 </p>
-                <Link to="/patient/shop" className="inline-block mt-12">
+                <PatientShopLink className="inline-block mt-12">
                   <Button className="rounded-[2rem] h-20 px-16 shadow-2xl shadow-emerald-900/10 text-base">
                     Browse Dispensary →
                   </Button>
-                </Link>
+                </PatientShopLink>
               </CardContent>
             </Card>
           )}

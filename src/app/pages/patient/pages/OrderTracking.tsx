@@ -5,6 +5,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
+import { usePatientNav } from "../../../../lib/brands/patientNav";
+import { PatientShopLink } from "../../../components/patient/PatientShopLink";
 import {
   buildOrderTrackingVerticalSteps,
   getOrderTrackingVerticalIndex,
@@ -51,6 +53,7 @@ function truncateOrderDisplayId(order: Record<string, unknown>, len = 8): string
 }
 
 export function PatientOrderTrackingPage() {
+  const { routes, messagesHref } = usePatientNav();
   const [selected, setSelected] = useState<Order | null>(null);
   const [copied, setCopied] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -243,7 +246,7 @@ export function PatientOrderTrackingPage() {
                         Join meeting <ExternalLink className="h-4 w-4" />
                       </Button>
                     )}
-                    <Link to="/patient/appointments" className="flex-1">
+                    <Link to={routes.appointments} className="flex-1">
                       <Button
                         variant={joinUrl ? "outline" : "primary"}
                         className={cn(
@@ -275,7 +278,7 @@ export function PatientOrderTrackingPage() {
                     {activeSelected.doctor_note || "Your physician needs some additional information to proceed with your treatment."}
                   </p>
                   <div className="flex gap-2 mt-4">
-                    <Link to="/patient/messages" className="flex-1">
+                    <Link to={routes.messages} className="flex-1">
                       <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white h-10 rounded-xl text-xs font-bold gap-2">
                          Open Messages <ChevronRight className="h-4 w-4" />
                       </Button>
@@ -356,7 +359,7 @@ export function PatientOrderTrackingPage() {
 
         {/* Message doctor */}
         {activeSelected.doctor_id ? (
-          <Link to={`/patient/messages?userId=${activeSelected.doctor_id}`}>
+          <Link to={messagesHref(activeSelected.doctor_id)}>
             <Button variant="outline" className="w-full rounded-xl gap-2 hover:bg-emerald-500/10 hover:text-emerald-500 hover:border-emerald-500/30 transition-all">
               <MessageSquare className="h-4 w-4" /> Message {activeSelected.doctor || "Medical Provider"}
             </Button>
@@ -397,9 +400,9 @@ export function PatientOrderTrackingPage() {
               <p className="text-sm text-muted-foreground max-w-sm mx-auto">
                 When you complete checkout, your treatment orders will appear here with live tracking.
               </p>
-              <Link to="/patient/shop">
+              <PatientShopLink>
                 <Button className="rounded-xl mt-2">Browse treatments</Button>
-              </Link>
+              </PatientShopLink>
             </CardContent>
           </Card>
         ) : (() => {
