@@ -37,6 +37,7 @@ import {
   type RawMessageRow,
 } from "../../../../lib/doctorMessages";
 import { toast } from "sonner";
+import { useScrollToBottomOnNewMessages } from "../../../../lib/messageScroll";
 
 type ThreadFilter = "all" | "patients" | "unread";
 
@@ -183,9 +184,7 @@ export function DoctorMessagesPage() {
         if (threadsDebounceRef.current) clearTimeout(threadsDebounceRef.current);
         threadsDebounceRef.current = setTimeout(() => {
           fetchThreads({ silent: true });
-          const tid = activeThreadIdRef.current;
-          if (tid) fetchThreadMessages(tid);
-        }, 400);
+        }, 800);
       })
       .subscribe();
     return () => {
@@ -223,9 +222,7 @@ export function DoctorMessagesPage() {
     };
   }, [activeThread, user, fetchThreadMessages, fetchUnreadMessages]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useScrollToBottomOnNewMessages(messages.length, bottomRef);
 
   const stats = useMemo(() => {
     const unread = threads.reduce((s, t) => s + t.unread, 0);

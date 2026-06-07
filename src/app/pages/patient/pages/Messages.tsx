@@ -5,6 +5,8 @@ import { Button, cn } from "../../../components/ui/shared.tsx";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuthStore, usePatientStore } from "../../../../lib";
 import { getAssignedDoctor, type AssignedDoctor } from "../../../../lib/patientMessaging";
+import { fetchMessages, markMessagesRead } from "../../../../lib/messagesFetch";
+import { useScrollToBottomOnNewMessages } from "../../../../lib/messageScroll";
 
 type ChatMessage = {
   id: string;
@@ -35,7 +37,6 @@ export function MessagesPage() {
   const [searchParams] = useSearchParams();
   const deepLinkDoctorId = searchParams.get("userId");
   const { user } = useAuthStore();
-  const orders = usePatientStore((s) => s.orders);
   const unreadMessagesCount = usePatientStore((s) => s.unreadMessagesCount);
   const [doctor, setDoctor] = useState<AssignedDoctor | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -50,50 +51,60 @@ export function MessagesPage() {
       return;
     }
 
+    let cancelled = false;
+
     async function init() {
       setLoading(true);
       let d: AssignedDoctor | null = null;
 
       if (deepLinkDoctorId) {
-        const fromOrder = orders.find((o) => o.doctor_id === deepLinkDoctorId);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", deepLinkDoctorId)
+          .maybeSingle();
         d = {
           id: deepLinkDoctorId,
-          name: fromOrder?.doctor || "Your doctor",
+          name: profile?.full_name || "Your doctor",
         };
       } else {
-        const latest = orders.find((o) => o.doctor_id);
-        if (latest?.doctor_id) {
-          d = { id: latest.doctor_id, name: latest.doctor || "Your doctor" };
-        } else {
-          d = await getAssignedDoctor(user!.id);
-        }
+        d = await getAssignedDoctor(user!.id);
       }
+      if (cancelled) return;
       setDoctor(d);
 
       if (d) {
-        const { data } = await supabase
-          .from("messages")
-          .select("id, content, created_at, sender_id, receiver_id, is_read")
-          .or(
-            `and(sender_id.eq.${user!.id},receiver_id.eq.${d.id}),and(sender_id.eq.${d.id},receiver_id.eq.${user!.id})`,
-          )
-          .order("created_at", { ascending: true });
-
-        setMessages((data as ChatMessage[]) || []);
-
-        const unread = (data || []).filter((m) => m.receiver_id === user!.id && !m.is_read).map((m) => m.id);
-        if (unread.length) {
-          await supabase.from("messages").update({ is_read: true }).in("id", unread);
-          usePatientStore.getState().fetchUnreadMessages();
+        const { data, error } = await fetchMessages({ userId: user!.id });
+        if (cancelled) return;
+        if (error) {
+          console.error("Patient messages load:", error);
+          setMessages([]);
+        } else {
+          const thread = (data as ChatMessage[]).filter(
+            (m) =>
+              (m.sender_id === user!.id && m.receiver_id === d!.id) ||
+              (m.sender_id === d!.id && m.receiver_id === user!.id),
+          );
+          setMessages(thread);
+          const unread = thread
+            .filter((m) => m.receiver_id === user!.id && !m.is_read)
+            .map((m) => m.id);
+          if (unread.length) {
+            await markMessagesRead(unread);
+            usePatientStore.getState().fetchUnreadMessages();
+          }
         }
       } else {
         setMessages([]);
       }
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     }
 
     void init();
-  }, [user?.id, orders, deepLinkDoctorId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, deepLinkDoctorId]);
 
   useEffect(() => {
     if (!user?.id || !doctor?.id) return;
@@ -108,7 +119,7 @@ export function MessagesPage() {
         if (!inThread) return;
         setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
         if (msg.receiver_id === user.id) {
-          supabase.from("messages").update({ is_read: true }).eq("id", msg.id).then(() => {
+          void markMessagesRead([msg.id]).then(() => {
             setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, is_read: true } : m)));
             usePatientStore.getState().fetchUnreadMessages();
           });
@@ -129,9 +140,7 @@ export function MessagesPage() {
     };
   }, [user?.id, doctor?.id]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useScrollToBottomOnNewMessages(messages.length, bottomRef);
 
   const handleSend = async () => {
     if (!input.trim() || !user?.id || !doctor?.id || sending) return;

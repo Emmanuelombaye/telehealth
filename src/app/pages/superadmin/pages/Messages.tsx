@@ -25,6 +25,7 @@ import {
   type RawMessageRow,
 } from "../../../../lib/doctorMessages";
 import { toast } from "sonner";
+import { useScrollToBottomOnNewMessages } from "../../../../lib/messageScroll";
 
 type ThreadFilter = "all" | "unread";
 
@@ -105,9 +106,7 @@ export function SuperAdminMessagesPage() {
     void fetchThreadMessages(activeThread);
   }, [activeThread, fetchThreadMessages]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useScrollToBottomOnNewMessages(messages.length, bottomRef);
 
   const stats = useMemo(() => {
     const unread = threads.reduce((s, t) => s + t.unread, 0);

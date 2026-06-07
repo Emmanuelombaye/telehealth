@@ -21,13 +21,17 @@ AS $$
       coalesce(p_sub_brand, '') = coalesce(auth.bid, '')
       OR (
         peak.pid IS NOT NULL
-        AND auth.bid = peak.pid
-        AND coalesce(p_sub_brand, '') IN ('Peak Health', 'peak', 'peak-health', peak.pid)
+        AND auth.bid IN (peak.pid, 'a009d8db-c770-4287-a15e-cc82515437ef')
+        AND coalesce(p_sub_brand, '') IN (
+          'Peak Health', 'peak', 'peak-health', peak.pid, 'a009d8db-c770-4287-a15e-cc82515437ef'
+        )
       )
       OR (
         peak.pid IS NOT NULL
         AND lower(coalesce(auth.bid, '')) IN ('peak', 'peak-health')
-        AND coalesce(p_sub_brand, '') IN ('Peak Health', 'peak', 'peak-health', peak.pid)
+        AND coalesce(p_sub_brand, '') IN (
+          'Peak Health', 'peak', 'peak-health', peak.pid, 'a009d8db-c770-4287-a15e-cc82515437ef'
+        )
       )
   );
 $$;
