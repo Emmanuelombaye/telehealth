@@ -14,8 +14,21 @@ import {
 } from "../../../lib/portalAuth";
 import { useBrand } from "../../context/BrandContext";
 import { cn } from "../../components/ui/utils";
+import { SUMMIT_MD_MARKETING_SHOP_URL } from "../../../lib/brands/summitMd";
 
 type Portal = StaffPortal;
+
+function safeRedirectFromSearch(): string | null {
+  if (typeof window === "undefined") return null;
+  const redirect = new URLSearchParams(window.location.search).get("redirect");
+  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) return null;
+  return redirect;
+}
+
+function partnerHandoffSource(): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get("source");
+}
 
 const STAFF_PORTALS: Portal[] = ["doctor", "admin", "superadmin", "affiliate", "pharmacy"];
 
@@ -58,7 +71,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
             return;
           }
           if (roleCanAccessPortal(role, portal)) {
-            navigate(portalHomePath(portal, window.location.pathname, patientPortalBase), { replace: true });
+            const redirect = safeRedirectFromSearch();
+            navigate(
+              redirect ?? portalHomePath(portal, window.location.pathname, patientPortalBase),
+              { replace: true },
+            );
             return;
           }
           setExistingSessionEmail(session.user.email ?? null);
@@ -179,7 +196,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
           if (role === 'super_admin') {
             navigate('/superadmin', { replace: true });
           } else {
-            navigate(portalTarget(portal), { replace: true });
+            const redirect = safeRedirectFromSearch();
+            navigate(
+              redirect ?? portalHomePath(portal, window.location.pathname, patientPortalBase),
+              { replace: true },
+            );
           }
         }
       } else if (mode === 'signup') {
@@ -206,7 +227,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
         if (data.user) {
           if (data.session) {
             await initialize();
-            navigate(portalTarget(portal), { replace: true });
+            const redirect = safeRedirectFromSearch();
+            navigate(
+              redirect ?? portalHomePath(portal, window.location.pathname, patientPortalBase),
+              { replace: true },
+            );
           } else {
             setSuccessMsg("Account created! Please check your email for a confirmation link.");
             setMode('login');
@@ -280,6 +305,9 @@ export function AuthPage({ portal }: { portal: Portal }) {
   })();
 
   const isPartnerPatientLogin = isWhiteLabel && portal === "patient";
+  const isSummitShopHandoff = partnerHandoffSource() === "summitmd-shop";
+  const partnerBackHref = isSummitShopHandoff ? SUMMIT_MD_MARKETING_SHOP_URL : enrollBase;
+  const partnerBackLabel = isSummitShopHandoff ? "Back to SummitMD" : "Back to Home";
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA] p-4 overflow-auto font-sans">
@@ -295,11 +323,17 @@ export function AuthPage({ portal }: { portal: Portal }) {
       <div className="w-full max-w-[420px] space-y-6 pt-2 sm:pt-4">
         {isPartnerPatientLogin && (
           <a
-            href={enrollBase}
+            href={partnerBackHref}
             className="inline-flex items-center gap-2 text-xs font-bold text-[#8CA397] hover:text-[#0A3622] transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to Home
+            <ArrowLeft className="h-4 w-4" /> {partnerBackLabel}
           </a>
+        )}
+
+        {isSummitShopHandoff && (
+          <p className="text-center text-[13px] text-[#6A8074] leading-relaxed px-2">
+            You completed intake on SummitMD. Sign in to open your patient portal — not the product shop.
+          </p>
         )}
 
         <div

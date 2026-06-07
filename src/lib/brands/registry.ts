@@ -1,5 +1,6 @@
 import { DEFAULT_BRAND_ID } from "../../app/components/os/constants";
 import { NORTH_STAR_BRAND } from "./northStar";
+import { SUMMIT_MD_BRAND } from "./summitMd";
 
 /** Active tenant brand — `id` is stored on orders.sub_brand and profiles.brand_id for RLS. */
 export type ActiveBrand = {
@@ -30,7 +31,7 @@ export const PEAK_HEALTH_BRAND: ActiveBrand = {
  * Optional static brands (no DB row required). Prefer Supabase `brands` table for production.
  * Add your partner brand frontend here after creating the row in Super Admin → Brands.
  */
-export const PARTNER_BRANDS: ActiveBrand[] = [NORTH_STAR_BRAND];
+export const PARTNER_BRANDS: ActiveBrand[] = [NORTH_STAR_BRAND, SUMMIT_MD_BRAND];
 
 export const ALL_STATIC_BRANDS: ActiveBrand[] = [PEAK_HEALTH_BRAND, ...PARTNER_BRANDS];
 
