@@ -20,6 +20,7 @@ import { doctorPortalBaseFromPath } from "../../lib/doctorPortalBase";
 import { useBrand } from "../context/BrandContext";
 import { resolvePatientShopDestination } from "../../lib/partners/catalogRouting";
 import { buildPatientPortalRoutes } from "../../lib/brands/patientNav";
+import { adminPortalBaseFromPath, affiliatePortalBaseFromPath, rewritePortalHref } from "../../lib/portalPath";
 
 type DoctorNavChild = {
   label: string;
@@ -65,7 +66,12 @@ function buildDoctorMenu(base: "/doctor" | "/providers"): DoctorNavItem[] {
 type Role = "patient" | "doctor" | "admin" | "superadmin" | "affiliate";
 
 /** Patient leaf routes share `/patient`; without correct `end`, NavLink falsely matches unrelated pages. */
-function navLinkEndsAtExact(role: Role, doctorBase: "/doctor" | "/providers" | null, itemHref: string): boolean {
+function navLinkEndsAtExact(
+  role: Role,
+  doctorBase: "/doctor" | "/providers" | null,
+  itemHref: string,
+  pathname: string,
+): boolean {
   if (role === "doctor" && doctorBase) return itemHref === doctorBase;
   if (role === "patient") {
     const isHome =
@@ -75,9 +81,15 @@ function navLinkEndsAtExact(role: Role, doctorBase: "/doctor" | "/providers" | n
     if (itemHref.includes("/shop")) return false;
     return true;
   }
-  if (role === "admin") return itemHref === "/admin";
+  if (role === "admin") {
+    const base = adminPortalBaseFromPath(pathname);
+    return itemHref === base || itemHref === "/admin";
+  }
   if (role === "superadmin") return itemHref === "/superadmin";
-  if (role === "affiliate") return itemHref === "/affiliate";
+  if (role === "affiliate") {
+    const base = affiliatePortalBaseFromPath(pathname);
+    return itemHref === base || itemHref === "/affiliate";
+  }
   return false;
 }
 
@@ -189,6 +201,11 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
       const segment = item.href.replace(/^\/patient\/?/, "");
       return { ...item, href: segment ? `${routes.home}/${segment}` : routes.home };
     });
+  } else if (role === "admin" || role === "affiliate") {
+    menu = menu.map((item: { href: string }) => ({
+      ...item,
+      href: rewritePortalHref(item.href, role, location.pathname),
+    }));
   }
   const { user, role: authRole } = useAuthStore();
   const orders = usePatientStore((s) => s.orders) ?? [];
@@ -339,7 +356,7 @@ export function Sidebar({ role, mobileOpen, onMobileClose }: SidebarProps) {
                 ) : (
                   <NavLink
                     to={item.href}
-                    end={navLinkEndsAtExact(role, doctorBase, item.href)}
+                    end={navLinkEndsAtExact(role, doctorBase, item.href, location.pathname)}
                     onClick={onMobileClose}
                     className={({ isActive }) =>
                       cn(

@@ -23,7 +23,8 @@
     "auth:promote-super-admin": "node scripts/promote-super-admin.mjs",
     "auth:provision-staff": "node scripts/provision-staff.mjs",
     "auth:provision-summitmd": "node scripts/provision-summitmd-partner.mjs",
-    "verify:portals": "node scripts/verify-all-portals.mjs"
+    "verify:portals": "node scripts/verify-all-portals.mjs",
+    "check:all-portals": "node scripts/check-all-portals.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

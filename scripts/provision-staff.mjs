@@ -15,6 +15,9 @@ import { applyProjectEnv } from "./loadEnv.mjs";
 
 global.WebSocket = ws;
 
+/** Peak platform brand UUID — must match orders.sub_brand and RLS get_auth_brand(). */
+const PEAK_BRAND_ID = "a009d8db-c770-4287-a15e-cc82515437ef";
+
 const STAFF = [
   {
     email: "doctor@peakbodyco.com",
@@ -26,14 +29,14 @@ const STAFF = [
     email: "admin@peakbodyco.com",
     password: "password123",
     role: "brand_admin",
-    brandId: "peak",
+    brandId: PEAK_BRAND_ID,
     name: "Brand Administrator",
   },
   {
     email: "brandon@peakbodyco.com",
     password: "@incorrect!",
     role: "super_admin",
-    brandId: "peak",
+    brandId: PEAK_BRAND_ID,
     name: "Brandon Admin",
   },
   {

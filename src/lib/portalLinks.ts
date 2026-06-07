@@ -1,5 +1,13 @@
 /** Canonical login URLs for each staff/partner portal. */
 import { referlyPartnerPortalUrl } from "./referly";
+import {
+  adminPortalBaseFromPath,
+  affiliatePortalBaseFromPath,
+  isBrandAdminPortalPath,
+  isAffiliatePortalPath,
+  isPatientPortalPath,
+  isSuperAdminPortalPath,
+} from "./portalPath";
 
 export const PORTAL_LOGINS = {
   patient: "/login",
@@ -36,11 +44,11 @@ export function portalHomeFromPath(pathname: string): string {
   if (pathname.startsWith("/providers") || pathname.startsWith("/doctor")) {
     return pathname.startsWith("/providers") ? "/providers" : "/doctor";
   }
-  if (pathname.startsWith("/admin")) return PORTAL_HOME.admin;
-  if (pathname.startsWith("/superadmin")) return PORTAL_HOME.superadmin;
-  if (pathname.startsWith("/affiliate")) return PORTAL_HOME.affiliate;
+  if (isBrandAdminPortalPath(pathname)) return adminPortalBaseFromPath(pathname);
+  if (isSuperAdminPortalPath(pathname)) return PORTAL_HOME.superadmin;
+  if (isAffiliatePortalPath(pathname)) return affiliatePortalBaseFromPath(pathname);
   if (pathname.startsWith("/pharmacy")) return PORTAL_HOME.pharmacy;
-  if (pathname.startsWith("/patient")) return PORTAL_HOME.patient;
+  if (isPatientPortalPath(pathname)) return PORTAL_HOME.patient;
   return "/";
 }
 
@@ -49,7 +57,7 @@ export function portalHasNotifications(pathname: string): boolean {
     pathname.startsWith("/patient") ||
     pathname.startsWith("/doctor") ||
     pathname.startsWith("/providers") ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/superadmin")
+    isBrandAdminPortalPath(pathname) ||
+    isSuperAdminPortalPath(pathname)
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import {
   ShoppingCart, DollarSign, Activity, Users,
   Clock, CheckCircle2, AlertCircle, ChevronRight,
@@ -13,6 +13,7 @@ import { supabase } from "../../../lib/supabaseClient";
 import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope } from "../../../lib/adminScope";
 import { motion, AnimatePresence } from "framer-motion";
 import { AdminScopeNotice } from "../../components/admin/AdminScopeNotice.tsx";
+import { adminPortalBaseFromPath } from "../../../lib/portalPath";
 
 function countUniquePatients(orderRows: { user_id?: string; patient_email?: string; patient_name?: string }[]) {
   const seen = new Set<string>();
@@ -24,6 +25,8 @@ function countUniquePatients(orderRows: { user_id?: string; patient_email?: stri
 }
 
 export function AdminDashboard() {
+  const location = useLocation();
+  const adminBase = adminPortalBaseFromPath(location.pathname);
   const user = useAuthStore(state => state.user);
   const role = useAuthStore(state => state.role);
   const brandId = useAuthStore(state => state.brandId);
@@ -120,7 +123,7 @@ export function AdminDashboard() {
                 className="w-80 bg-slate-50 border-none rounded-2xl py-4 pl-14 pr-6 text-sm font-bold focus:ring-4 focus:ring-emerald-500/5 transition-all"
               />
            </div>
-           <Link to="/admin/orders">
+           <Link to={`${adminBase}/orders`}>
              <Button className="h-14 rounded-2xl bg-[#0A2E1F] text-white hover:bg-emerald-950 px-8 font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-emerald-900/10">
                 Manage orders <ChevronRight className="ml-2 h-4 w-4" />
              </Button>
@@ -216,7 +219,7 @@ export function AdminDashboard() {
                       </div>
                     ))}
                  </div>
-                 <Link to="/admin/analytics">
+                 <Link to={`${adminBase}/analytics`}>
                     <Button className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-[#0A2E1F] font-black uppercase tracking-widest text-[10px] border-none">
                        Deep Analytics
                     </Button>
@@ -246,7 +249,7 @@ export function AdminDashboard() {
                    </div>
                  ))}
               </div>
-              <Link to="/admin/orders">
+              <Link to={`${adminBase}/orders`}>
                  <Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 text-slate-400 font-black uppercase tracking-widest text-[10px] hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100 transition-all">
                     View Full Queue
                  </Button>

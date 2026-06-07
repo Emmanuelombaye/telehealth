@@ -17,6 +17,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { doctorPortalBackground, doctorMainBackground } from "../../lib/doctorPortalUi";
 import { PhiAccessRouteLogger } from "./PhiAccessRouteLogger";
 import { useBrand } from "../context/BrandContext";
+import {
+  adminPortalBaseFromPath,
+  isBrandAdminPortalPath,
+  isStaffAdminPortalPath,
+  isSuperAdminPortalPath,
+  sidebarRoleFromPath,
+} from "../../lib/portalPath";
 
 export function AppLayout() {
   const fetchOrders = usePatientStore(state => state.fetchOrders);
@@ -38,7 +45,7 @@ export function AppLayout() {
   const isWhiteLabelPatient = isWhiteLabel && /^\/care\/[^/]+/.test(path);
   const isPatientPortal =
     path.startsWith("/patient") || /^\/care\/[^/]+\/patient/.test(path);
-  const isSuperAdminPortal = path.startsWith("/superadmin");
+  const isSuperAdminPortal = isSuperAdminPortalPath(path);
   const isDoctorPortal = path.startsWith("/doctor") || path.startsWith("/providers");
   const isRpmCommandCenter =
     path.includes("/doctor/rpm") || path.includes("/providers/rpm");
@@ -79,7 +86,7 @@ export function AppLayout() {
     subscribeToOrders,
   ]);
   /** Brand + platform ops: always light, high-contrast surface (see theme.css `.staff-admin-surface`). */
-  const isStaffAdminPortal = path.startsWith("/admin") || path.startsWith("/superadmin");
+  const isStaffAdminPortal = isStaffAdminPortalPath(path);
 
   const { user, role: authRole, signOut } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -173,12 +180,7 @@ export function AppLayout() {
     navigate("/");
   };
   
-  // Determine Role for Sidebar based on current URL path
-  let sidebarRole: "patient" | "doctor" | "admin" | "superadmin" | "affiliate" = "patient";
-  if (path.startsWith("/doctor") || path.startsWith("/providers")) sidebarRole = "doctor";
-  else if (path.startsWith("/admin")) sidebarRole = "admin";
-  else if (path.startsWith("/superadmin")) sidebarRole = "superadmin";
-  else if (path.startsWith("/affiliate")) sidebarRole = "affiliate";
+  const sidebarRole = sidebarRoleFromPath(path);
 
   // Dynamic user info
   const fullName = user?.user_metadata?.first_name
@@ -191,7 +193,11 @@ export function AppLayout() {
   
   const displayRole = authRole?.replace('_', ' ').toUpperCase() || sidebarRole.toUpperCase();
   const staffPortalLogoHome =
-    sidebarRole === "doctor" ? doctorPortalBaseFromPath(path) : `/${sidebarRole}`;
+    sidebarRole === "doctor"
+      ? doctorPortalBaseFromPath(path)
+      : sidebarRole === "admin"
+        ? adminPortalBaseFromPath(path)
+        : `/${sidebarRole}`;
 
   return (
     <div
@@ -264,7 +270,7 @@ export function AppLayout() {
                     ? "Your care"
                     : isSuperAdminPortal
                       ? "Platform governance"
-                      : path.startsWith("/admin")
+                      : isBrandAdminPortalPath(path)
                         ? authRole === "super_admin"
                           ? "Brand workspace · elevated"
                           : "Brand administration"
@@ -275,7 +281,7 @@ export function AppLayout() {
                   ? site.copy.portalName
                   : isSuperAdminPortal
                     ? "Super Admin portal"
-                    : path.startsWith("/admin")
+                    : isBrandAdminPortalPath(path)
                       ? "Non-clinical operations"
                       : "Peak Health Center"}
               </span>
@@ -334,7 +340,13 @@ export function AppLayout() {
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => navigate(`/${sidebarRole}/notifications`)}
+              onClick={() =>
+                navigate(
+                  sidebarRole === "admin"
+                    ? `${adminPortalBaseFromPath(path)}/notifications`
+                    : `/${sidebarRole}/notifications`,
+                )
+              }
               className="relative h-10 w-10 rounded-xl group hover:bg-emerald-50/50 transition-all"
             >
               <Bell className="h-5 w-5 transition-colors text-slate-400 group-hover:text-emerald-700" />

@@ -65,7 +65,13 @@ export function resolveOrdersFetchMode(role: Role | null): OrdersFetchMode {
   if (role === "super_admin") {
     if (typeof window !== "undefined") {
       const p = window.location.pathname;
-      if (p.startsWith("/admin") || p.startsWith("/superadmin")) return "admin";
+      if (
+        p.startsWith("/admin") ||
+        p.startsWith("/superadmin") ||
+        /^\/care\/[^/]+\/admin(?:\/|$)/.test(p)
+      ) {
+        return "admin";
+      }
     }
     return "clinical";
   }
@@ -80,6 +86,15 @@ export function ordersSelectForMode(mode: OrdersFetchMode): string {
 /** Legacy Peak Health orders used display name before multi-brand UUID keys. */
 const LEGACY_PEAK_SUB_BRAND = "Peak Health";
 
+/** Legacy JWT / provision values before brand UUID normalization. */
+const LEGACY_PEAK_BRAND_KEYS = new Set(["peak", "peak-health", DEFAULT_BRAND_ID]);
+
+function normalizeAdminBrandId(brandId: string | null): string | null {
+  if (!brandId) return null;
+  if (brandId === "peak" || brandId === "peak-health") return DEFAULT_BRAND_ID;
+  return brandId;
+}
+
 export function applyOrdersBrandScope<Q extends {
   eq: (column: string, value: string) => Q;
   or?: (filter: string) => Q;
@@ -89,10 +104,11 @@ export function applyOrdersBrandScope<Q extends {
   brandId: string | null
 ): Q {
   if (role === "brand_admin" && brandId) {
-    if (typeof q.or === "function" && brandId === DEFAULT_BRAND_ID) {
-      return q.or(`sub_brand.eq.${brandId},sub_brand.eq.${LEGACY_PEAK_SUB_BRAND}`);
+    const scopedBrand = normalizeAdminBrandId(brandId);
+    if (scopedBrand && typeof q.or === "function" && LEGACY_PEAK_BRAND_KEYS.has(scopedBrand)) {
+      return q.or(`sub_brand.eq.${scopedBrand},sub_brand.eq.${LEGACY_PEAK_SUB_BRAND}`);
     }
-    return q.eq("sub_brand", brandId);
+    if (scopedBrand) return q.eq("sub_brand", scopedBrand);
   }
   return q;
 }

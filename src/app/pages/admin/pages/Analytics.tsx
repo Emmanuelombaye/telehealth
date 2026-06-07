@@ -42,8 +42,6 @@ export function AdminAnalyticsPage() {
 
   // Real-time Analytics Engine with Dynamic Filtering
   const stats = useMemo(() => {
-    if (!orders.length) return null;
-
     const now = new Date();
     let startDate = new Date();
 
@@ -181,7 +179,7 @@ export function AdminAnalyticsPage() {
     }
   };
 
-  if (loading || !stats) {
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] gap-4">
         <div className="relative h-16 w-16">
@@ -192,6 +190,22 @@ export function AdminAnalyticsPage() {
       </div>
     );
   }
+
+  if (!loading && orders.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] gap-6 px-6 text-center">
+        <BarChart3 className="h-16 w-16 text-slate-200" />
+        <div>
+          <h2 className="text-2xl font-black text-[#0A2E1F] tracking-tight uppercase italic">No analytics data yet</h2>
+          <p className="text-sm text-slate-400 mt-2 max-w-md">
+            Orders will appear here once patients complete checkout. Check the Orders page or confirm your brand scope is configured correctly.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) return null;
 
   return (
     <div id="analytics-terminal" ref={terminalRef} className="max-w-[1600px] mx-auto space-y-10 pb-10 animate-in fade-in duration-1000 bg-white">
