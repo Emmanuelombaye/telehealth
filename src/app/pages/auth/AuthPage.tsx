@@ -52,6 +52,10 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const signOut = useAuthStore(state => state.signOut);
   const cleanupDone = useRef(false);
 
+  /** Summit / partner intake — signup handoff must not reuse a prior patient session. */
+  const isFreshAccountHandoff =
+    portal === "patient" && authModeFromSearch() === "signup";
+
   useEffect(() => {
     if (cleanupDone.current) return;
     cleanupDone.current = true;
@@ -62,6 +66,10 @@ export function AuthPage({ portal }: { portal: Portal }) {
         const { session, role } = useAuthStore.getState();
 
         if (session?.user && role) {
+          if (isFreshAccountHandoff && roleCanAccessPortal(role, portal)) {
+            await signOut();
+            return;
+          }
           if (role === "super_admin" && portal === "superadmin") {
             navigate("/superadmin", { replace: true });
             return;
@@ -83,7 +91,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
       }
     }
     void hydrate();
-  }, [initialize, navigate, portal, patientPortalBase]);
+  }, [initialize, navigate, portal, patientPortalBase, signOut, isFreshAccountHandoff]);
 
   const portalTarget = (p: Portal) => {
     const buster = `?v=${Date.now()}`;
@@ -205,6 +213,8 @@ export function AuthPage({ portal }: { portal: Portal }) {
           return;
         }
         const portalRole = 'patient';
+
+        await signOut();
 
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),

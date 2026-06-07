@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from './supabaseClient';
 import { User, Session } from '@supabase/supabase-js';
 import { hasForcePatientPortalIntent } from './patientPortalIntent';
+import { clearEnrollmentDraft } from './enrollmentDraft';
 
 export type Role =
   | 'patient'
@@ -28,6 +29,15 @@ function clearLegacyDemoStorage(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem('peak_health_dev_role');
   localStorage.removeItem('peak_health_demo_email');
+}
+
+/** Clear client caches that can leak prior patient identity between account switches. */
+function clearPatientClientCaches(): void {
+  clearEnrollmentDraft();
+  if (typeof window === 'undefined') return;
+  void import('./patient-store').then(({ usePatientStore }) => {
+    usePatientStore.getState().resetStore();
+  }).catch(() => {});
 }
 
 /**
@@ -163,6 +173,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: async () => {
     clearLegacyDemoStorage();
+    clearPatientClientCaches();
     await supabase.auth.signOut();
     set({ session: null, user: null, role: null, brandId: null });
   },
