@@ -31,6 +31,14 @@ const skipBuild = env.PORTAL_CHECK_SKIP_BUILD === "1";
 const ORDERS_ADMIN_SELECT =
   "id,order_number,user_id,patient_name,sub_brand,medication,status,ordered_date,amount,created_at";
 
+const MESSAGE_SELECT = "id, content, created_at, sender_id, receiver_id, is_read";
+const LEGACY_PEAK_SUB_BRAND = "Peak Health";
+const LEGACY_PEAK_BRAND_KEYS = new Set([
+  "peak",
+  "peak-health",
+  "a009d8db-c770-4287-a15e-cc82515437ef",
+]);
+
 const STAFF = [
   { portal: "Super Admin", role: "super_admin", email: "brandon@peakbodyco.com", password: "@incorrect!" },
   { portal: "Doctor", role: "doctor", email: "doctor@peakbodyco.com", password: "password123" },
@@ -278,6 +286,100 @@ async function probeQuery(label, c, table, select, extra) {
   return data;
 }
 
+/** Same query shape as src/lib/messagesFetch.ts fetchMessagesWithProfiles (no profile join). */
+async function probeMessagesUiQuery(label, c, opts = {}) {
+  let q = c
+    .from("messages")
+    .select(MESSAGE_SELECT)
+    .order("created_at", { ascending: opts.ascending ?? true });
+  if (opts.orFilter) q = q.or(opts.orFilter);
+  if (opts.limit) q = q.limit(opts.limit);
+  const { data, error } = await q;
+  if (error) {
+    fail(`${label}: messages UI query`, error);
+    return null;
+  }
+  pass(`${label}: messages UI query (${data?.length ?? 0} row(s))`);
+  return data;
+}
+
+/** Mirror admin Messages.tsx — brand-scoped participant inbox. */
+async function probeBrandAdminMessagesUi(label, c, brandId) {
+  let oq = c.from("orders").select("user_id, doctor_id").not("user_id", "is", null).limit(500);
+  const scoped = brandId || "";
+  if (scoped && LEGACY_PEAK_BRAND_KEYS.has(scoped)) {
+    oq = oq.or(`sub_brand.eq.${scoped},sub_brand.eq.${LEGACY_PEAK_SUB_BRAND}`);
+  } else if (scoped) {
+    oq = oq.eq("sub_brand", scoped);
+  }
+  const { data: orders, error: oe } = await oq;
+  if (oe) {
+    fail(`${label}: brand messages — orders scope`, oe);
+    return;
+  }
+  const ids = new Set();
+  for (const row of orders ?? []) {
+    if (row.user_id) ids.add(row.user_id);
+    if (row.doctor_id) ids.add(row.doctor_id);
+  }
+  if (!ids.size) {
+    warn(`${label}: messages UI — no brand order participants (empty inbox is OK)`);
+    return;
+  }
+  const inList = [...ids].join(",");
+  const rows = await probeMessagesUiQuery(label, c, {
+    orFilter: `sender_id.in.(${inList}),receiver_id.in.(${inList})`,
+    limit: 400,
+    ascending: false,
+  });
+  if (!rows?.length) return;
+
+  const sample = orders?.find((o) => o.user_id && o.doctor_id);
+  if (!sample) return;
+  const { patientId, doctorId } = { patientId: sample.user_id, doctorId: sample.doctor_id };
+  const { error: te } = await c
+    .from("messages")
+    .select(MESSAGE_SELECT)
+    .or(
+      `and(sender_id.eq.${patientId},receiver_id.eq.${doctorId}),and(sender_id.eq.${doctorId},receiver_id.eq.${patientId})`,
+    )
+    .order("created_at", { ascending: true })
+    .limit(5);
+  if (te) fail(`${label}: messages thread detail query`, te);
+  else pass(`${label}: messages thread detail query OK`);
+}
+
+/** Mirror doctor Messages.tsx thread list load. */
+async function probeDoctorMessagesUi(label, c, doctorId) {
+  await probeMessagesUiQuery(label, c, {
+    orFilter: `sender_id.eq.${doctorId},receiver_id.eq.${doctorId}`,
+    limit: 400,
+    ascending: false,
+  });
+  const { error: oe } = await c
+    .from("orders")
+    .select("id, user_id, patient_name, order_number, status")
+    .eq("doctor_id", doctorId)
+    .not("user_id", "is", null)
+    .limit(5);
+  if (oe) fail(`${label}: doctor messages — patient roster orders`, oe);
+  else pass(`${label}: doctor messages — patient roster orders OK`);
+}
+
+/** Mirror admin Analytics.tsx orders load. */
+async function probeBrandAdminAnalyticsUi(label, c, brandId) {
+  let q = c.from("orders").select(ORDERS_ADMIN_SELECT).order("created_at", { ascending: false }).limit(50);
+  const scoped = brandId || "";
+  if (scoped && LEGACY_PEAK_BRAND_KEYS.has(scoped)) {
+    q = q.or(`sub_brand.eq.${scoped},sub_brand.eq.${LEGACY_PEAK_SUB_BRAND}`);
+  } else if (scoped) {
+    q = q.eq("sub_brand", scoped);
+  }
+  const { data, error } = await q;
+  if (error) fail(`${label}: analytics UI orders query`, error);
+  else pass(`${label}: analytics UI orders query (${data?.length ?? 0} row(s))`);
+}
+
 async function checkStaffLoginsAndFeatures() {
   console.log("\n=== Staff portal logins + feature probes ===\n");
 
@@ -301,12 +403,15 @@ async function checkStaffLoginsAndFeatures() {
       await probeQuery(account.portal, c, "phi_access_logs", "id,action,resource_type");
       await probeQuery(account.portal, c, "profiles", "id,role,full_name");
       await probeQuery(account.portal, c, "brands", "id,name,slug");
+      await probeMessagesUiQuery(account.portal, c, { limit: 500, ascending: false });
     }
 
     if (account.role === "brand_admin") {
       await probeQuery(account.portal, c, "orders", ORDERS_ADMIN_SELECT);
+      await probeBrandAdminAnalyticsUi(account.portal, c, brandId);
       await probeQuery(account.portal, c, "products", "id,name,active");
       await probeQuery(account.portal, c, "admin_audit_logs", "id,action,created_at");
+      await probeBrandAdminMessagesUi(account.portal, c, brandId);
       if (!brandId) warn(`${account.portal}: JWT missing brand_id — orders/analytics may be empty`);
       else if (brandId === "peak" || brandId === "peak-health") {
         warn(`${account.portal}: JWT brand_id="${brandId}" is legacy — run npm run auth:provision-staff`);
@@ -331,7 +436,7 @@ async function checkStaffLoginsAndFeatures() {
     if (account.role === "doctor") {
       await probeQuery(account.portal, c, "orders", "id,order_number,patient_name,status");
       await probeQuery(account.portal, c, "profiles", "id,full_name,role", (q) => q.eq("role", "patient"));
-      await probeQuery(account.portal, c, "messages", "id,sender_id,receiver_id,content");
+      await probeDoctorMessagesUi(account.portal, c, user.id);
       await probeQuery(account.portal, c, "notifications", "id,title,unread");
       await probeQuery(account.portal, c, "prescriptions", "id,patient_id,medication");
     }
@@ -374,7 +479,9 @@ async function checkPatientPortal() {
   await probeQuery("Patient", authed, "orders", "id,order_number,status", (q) =>
     q.eq("user_id", user.id),
   );
-  await probeQuery("Patient", authed, "messages", "id,content");
+  await probeMessagesUiQuery("Patient", authed, {
+    orFilter: `sender_id.eq.${user.id},receiver_id.eq.${user.id}`,
+  });
   await probeQuery("Patient", authed, "notifications", "id,title");
   await authed.auth.signOut();
 }
@@ -421,6 +528,16 @@ async function main() {
   await checkPatientPortal();
   await checkHttpRoutes();
 
+  console.log("\n=== Coverage notes ===");
+  console.log("  ✓ Supabase RLS + the exact queries each messages/analytics page runs");
+  console.log("  ✓ Staff logins (super_admin, doctor, brand_admin, pharmacy, affiliate)");
+  console.log("  ✓ HTTP 200 on all major portal routes (SPA shell — not full browser JS)");
+  if (!env.PATIENT_E2E_EMAIL) {
+    console.log("  ○ Patient authenticated flows skipped — set PATIENT_E2E_EMAIL + PATIENT_E2E_PASSWORD");
+  }
+  console.log("  ○ Run before every deploy: npm run check:all-portals");
+  console.log("  ○ After SQL changes: re-login all portals, then re-run this script");
+
   console.log("\n=== Summary ===");
   if (warnings) console.warn(`Warnings: ${warnings}`);
   if (failures === 0) {
@@ -429,6 +546,8 @@ async function main() {
   }
   console.error(`\x1b[31m${failures} failure(s).\x1b[0m`);
   console.error("Fix hints:");
+  console.error("  Admin/messages RLS: scripts/sql/RUN_IN_SUPABASE_ADMIN_PORTAL_FIXES.sql");
+  console.error("  Messages only:      scripts/sql/RUN_IN_SUPABASE_MESSAGES_FIX.sql");
   console.error("  Auth: RUN_IN_SUPABASE_AUTH_500_FIX.sql → RUN_IN_SUPABASE_AUTH_RESET_STAFF.sql → npm run auth:provision-staff");
   console.error("  DB:   scripts/sql/RUN_IN_SUPABASE_FIX_ALL_DATABASE.sql");
   console.error("  Audit: scripts/sql/RUN_IN_SUPABASE_phi_access_logs.sql + supabase_admin_audit_and_scope.sql");

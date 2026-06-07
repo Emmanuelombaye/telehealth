@@ -46,12 +46,12 @@ CREATE POLICY "Messages: brand admin view scoped" ON public.messages
 
 COMMIT;
 
--- Verification
+-- Verification (pg_policies uses policyname, not polname)
 SELECT 'messages_brand_admin_policy' AS check_name,
-       polname AS policy_name
+       policyname AS policy_name
 FROM pg_policies
 WHERE schemaname = 'public'
   AND tablename = 'messages'
-  AND polname = 'Messages: brand admin view scoped';
+  AND policyname = 'Messages: brand admin view scoped';
 
 SELECT 'messages_count' AS check_name, count(*) AS total FROM public.messages;
