@@ -1,3 +1,5 @@
+import type { PartnerAuthMode } from "./authHandoff";
+
 /** How a partner sells products before handoff to Peak. */
 export type PartnerCatalogMode =
   /** Partner marketing site owns catalog (SummitMD, etc.). Peak = login + portal only. */
@@ -17,8 +19,12 @@ export type PartnerIntegration = {
   marketingShopUrl: string;
   logoUrl: string;
   catalogMode: PartnerCatalogMode;
+  /** Default auth screen after external shop handoff */
+  defaultAuthMode?: PartnerAuthMode;
   /** Shown on Peak patient login when `source` matches. */
   handoffMessage?: string;
+  /** Shown when defaultAuthMode is signup. */
+  signupHandoffMessage?: string;
   /** Optional map: partner product key → Peak product UUID */
   productIdMap?: Record<string, string>;
   /** Partner category slug → Peak enrollment category */
@@ -39,3 +45,5 @@ export type PartnerApiDocs = {
   connect?: string;
   catalog?: string;
 };
+
+export type { PartnerAuthMode };

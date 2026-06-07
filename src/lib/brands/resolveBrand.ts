@@ -9,6 +9,7 @@ import {
   findStaticBrandById,
   findStaticBrandBySlug,
 } from "./registry";
+import { finalizeBrandFromKit } from "./brandDocument";
 
 export type BrandResolveInput = {
   brandId?: string | null;
@@ -128,20 +129,20 @@ export async function resolveActiveBrand(input: BrandResolveInput = {}): Promise
   const fromInput = findInList(merged, input, hostnamesByBrandId);
   if (fromInput) {
     persistBrandId(fromInput.id);
-    return fromInput;
+    return finalizeBrandFromKit(fromInput);
   }
 
   const stored = readStoredBrandId();
   if (stored) {
     const fromStore = findInList(merged, { brandId: stored }, hostnamesByBrandId);
-    if (fromStore) return fromStore;
+    if (fromStore) return finalizeBrandFromKit(fromStore);
   }
 
   if (hostname) {
     const fromHost = findInList(merged, { hostname }, hostnamesByBrandId);
     if (fromHost) {
       persistBrandId(fromHost.id);
-      return fromHost;
+      return finalizeBrandFromKit(fromHost);
     }
   }
 

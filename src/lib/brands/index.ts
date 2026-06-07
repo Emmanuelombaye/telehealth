@@ -15,3 +15,8 @@ export {
   readStoredBrandId,
   clearStoredBrandId,
 } from "./resolveBrand";
+export {
+  applyBrandDocumentMeta,
+  clearBrandDocumentMeta,
+  finalizeBrandFromKit,
+} from "./brandDocument";

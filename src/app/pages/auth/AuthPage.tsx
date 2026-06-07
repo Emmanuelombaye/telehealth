@@ -18,6 +18,8 @@ import {
   resolvePartnerHandoffContext,
   safeRedirectFromSearch,
   getPartnerBySlug,
+  authModeFromSearch,
+  partnerHandoffMessageForMode,
 } from "../../../lib/partners";
 
 type Portal = StaffPortal;
@@ -29,7 +31,9 @@ function isStaffPortal(portal: Portal): boolean {
 }
 
 export function AuthPage({ portal }: { portal: Portal }) {
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot_password'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot_password'>(() =>
+    portal === "patient" ? authModeFromSearch() : "login",
+  );
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -238,25 +242,59 @@ export function AuthPage({ portal }: { portal: Portal }) {
   };
 
   if (!ready) {
+    const loadingLogo =
+      isWhiteLabel && portal === "patient" ? brand.logoUrl : "/PeakHealthLogo.png";
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA]">
+      <div
+        className="fixed inset-0 flex items-center justify-center"
+        style={{
+          backgroundColor:
+            isWhiteLabel && portal === "patient" ? site.theme.headerBg : "#FAFAFA",
+        }}
+      >
         <div className="flex flex-col items-center gap-4">
           <img
-            src={isWhiteLabel && portal === "patient" ? brand.logoUrl : "/PeakHealthLogo.png"}
+            src={loadingLogo}
             alt={brand.logoAlt}
             className={cn(
               "object-contain opacity-80",
-              isWhiteLabel && portal === "patient" ? "h-16 w-16" : "h-20",
+              isWhiteLabel && portal === "patient"
+                ? "h-16 w-16 rounded-2xl shadow-sm"
+                : "h-20",
             )}
           />
           <div className="flex items-center gap-3">
-            <span className="h-5 w-5 border-2 border-slate-200 border-t-[#0A3622] rounded-full animate-spin" />
-            <span className="text-sm font-medium tracking-wide text-slate-500">Preparing secure login...</span>
+            <span
+              className="h-5 w-5 border-2 border-slate-200 rounded-full animate-spin"
+              style={{
+                borderTopColor: isWhiteLabel && portal === "patient" ? site.theme.primary : "#0A3622",
+              }}
+            />
+            <span className="text-sm font-medium tracking-wide text-slate-500">
+              {mode === "signup" ? "Preparing your account..." : "Preparing secure login..."}
+            </span>
           </div>
         </div>
       </div>
     );
   }
+
+  const isPartnerPatientLogin = isWhiteLabel && portal === "patient";
+  const { integration: partnerHandoff } = resolvePartnerHandoffContext();
+  const pathPartner = getPartnerBySlug(brand.slug);
+  const activePartner = partnerHandoff ?? pathPartner;
+  const partnerBackHref = activePartner?.marketingShopUrl ?? enrollBase;
+  const partnerBackLabel = activePartner ? `Back to ${activePartner.displayName}` : "Back to Home";
+  const partnerHandoffMessage = partnerHandoffMessageForMode(
+    activePartner,
+    mode === "signup" ? "signup" : "login",
+  );
+  const brandPrimary = isPartnerPatientLogin ? site.theme.primary : "#0A3622";
+  const brandMuted = isPartnerPatientLogin ? "#6A8074" : "#6A8074";
+  const brandAccentText = isPartnerPatientLogin ? site.theme.primary : "#0A3622";
+  const inputFocusClass = isPartnerPatientLogin
+    ? "focus:border-[var(--brand-primary)] focus:ring-[var(--brand-primary)]/20"
+    : "focus:border-[#0A3622] focus:ring-[#0A3622]/20";
 
   const portalTitle = (() => {
     switch (portal) {
@@ -270,6 +308,10 @@ export function AuthPage({ portal }: { portal: Portal }) {
         return "Pharmacy login";
       case "affiliate":
         return "Affiliate partner login";
+      case "patient":
+        if (isPartnerPatientLogin && mode === "signup") return "Create your account";
+        if (isPartnerPatientLogin) return "Welcome back";
+        return mode === "signup" ? "Create your account" : "Welcome back";
       default:
         return "Welcome back";
     }
@@ -288,26 +330,26 @@ export function AuthPage({ portal }: { portal: Portal }) {
       case "affiliate":
         return "Powered by Referly.so — referral links, tracking, and payouts.";
       case "patient":
+        if (isPartnerPatientLogin && mode === "signup") {
+          return `Finish setting up your ${site.copy.portalName} patient portal.`;
+        }
         return isWhiteLabel
           ? `Sign in to your ${site.copy.portalName} patient portal.`
-          : "Secure access for patients.";
+          : mode === "signup"
+            ? "Create your patient account to get started."
+            : "Secure access for patients.";
       default:
         return "Secure access for clinicians and patients.";
     }
   })();
 
-  const isPartnerPatientLogin = isWhiteLabel && portal === "patient";
-  const { integration: partnerHandoff } = resolvePartnerHandoffContext();
-  const pathPartner = getPartnerBySlug(brand.slug);
-  const activePartner = partnerHandoff ?? pathPartner;
-  const partnerBackHref = activePartner?.marketingShopUrl ?? enrollBase;
-  const partnerBackLabel = activePartner ? `Back to ${activePartner.displayName}` : "Back to Home";
-  const partnerHandoffMessage = activePartner?.handoffMessage;
-  const loginLogoUrl =
-    isPartnerPatientLogin && activePartner?.logoUrl ? activePartner.logoUrl : brand.logoUrl;
-
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#FAFAFA] p-4 overflow-auto font-sans">
+    <div
+      className="fixed inset-0 flex items-center justify-center p-4 overflow-auto font-sans"
+      style={{
+        backgroundColor: isPartnerPatientLogin ? site.theme.headerBg : "#FAFAFA",
+      }}
+    >
       {!isPartnerPatientLogin && (
         <a
           href="/"
@@ -328,7 +370,10 @@ export function AuthPage({ portal }: { portal: Portal }) {
         )}
 
         {partnerHandoffMessage && (
-          <p className="text-center text-[13px] text-[#6A8074] leading-relaxed px-2">
+          <p
+            className="text-center text-[13px] leading-relaxed px-2"
+            style={{ color: brandMuted }}
+          >
             {partnerHandoffMessage}
           </p>
         )}
@@ -340,12 +385,12 @@ export function AuthPage({ portal }: { portal: Portal }) {
           )}
         >
           <img
-            src={isPartnerPatientLogin ? loginLogoUrl : "/PeakHealthLogo.png"}
+            src={isPartnerPatientLogin ? brand.logoUrl : "/PeakHealthLogo.png"}
             alt={brand.logoAlt}
             className={cn(
               "object-contain",
               isPartnerPatientLogin
-                ? "h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem] rounded-2xl shadow-sm"
+                ? "h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem] rounded-2xl shadow-sm bg-white"
                 : "w-[min(100%,380px)] h-auto -mb-12",
             )}
           />
@@ -356,15 +401,15 @@ export function AuthPage({ portal }: { portal: Portal }) {
               </div>
             )}
             <h1
-              className={cn(
-                "text-[32px] font-medium tracking-tight",
-                isPartnerPatientLogin ? "text-[#0f2341]" : "text-[#0A3622]",
-              )}
-              style={{ fontFamily: "Georgia, serif" }}
+              className="text-[32px] font-medium tracking-tight"
+              style={{
+                fontFamily: isPartnerPatientLogin ? "Georgia, serif" : undefined,
+                color: isPartnerPatientLogin ? brandPrimary : "#0A3622",
+              }}
             >
               {portalTitle}
             </h1>
-            <p className="text-[14px] text-[#6A8074] max-w-[28ch] mx-auto leading-relaxed">
+            <p className="text-[14px] max-w-[28ch] mx-auto leading-relaxed" style={{ color: brandMuted }}>
               {portalSubtitle}
             </p>
           </div>
@@ -434,7 +479,10 @@ export function AuthPage({ portal }: { portal: Portal }) {
                     value={firstName}
                     onChange={e => setFirstName(e.target.value)}
                     required
-                    className="w-full rounded-[14px] px-4 py-3.5 text-[13px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800"
+                    className={cn(
+                      "w-full rounded-[14px] px-4 py-3.5 text-[13px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:ring-1 transition-all text-slate-800",
+                      inputFocusClass,
+                    )}
                     placeholder="Jane"
                   />
                 </div>
@@ -445,7 +493,10 @@ export function AuthPage({ portal }: { portal: Portal }) {
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
                     required
-                    className="w-full rounded-[14px] px-4 py-3.5 text-[13px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800"
+                    className={cn(
+                      "w-full rounded-[14px] px-4 py-3.5 text-[13px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:ring-1 transition-all text-slate-800",
+                      inputFocusClass,
+                    )}
                     placeholder="Doe"
                   />
                 </div>
@@ -462,7 +513,10 @@ export function AuthPage({ portal }: { portal: Portal }) {
                   onChange={e => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="w-full rounded-[14px] pl-[42px] pr-4 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800"
+                  className={cn(
+                    "w-full rounded-[14px] pl-[42px] pr-4 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:ring-1 transition-all text-slate-800",
+                    inputFocusClass,
+                  )}
                   placeholder="name@example.com"
                 />
               </div>
@@ -472,13 +526,15 @@ export function AuthPage({ portal }: { portal: Portal }) {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397]">Password</label>
-                  <button
-                    type="button"
-                    onClick={() => { setMode('forgot_password'); setError(null); setSuccessMsg(null); }}
-                    className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397] hover:text-[#0A3622] transition-colors"
-                  >
-                    Forgot Password?
-                  </button>
+                  {mode === "login" && (
+                    <button
+                      type="button"
+                      onClick={() => { setMode('forgot_password'); setError(null); setSuccessMsg(null); }}
+                      className="text-[10px] font-bold uppercase tracking-widest text-[#8CA397] hover:text-[#0A3622] transition-colors"
+                    >
+                      Forgot Password?
+                    </button>
+                  )}
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-[15px] h-[16px] w-[16px] text-[#A0B3A8]" />
@@ -487,8 +543,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     required
-                    autoComplete="current-password"
-                    className={`w-full rounded-[14px] pl-[42px] pr-10 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800 font-medium ${!showPassword ? 'tracking-[0.2em]' : ''}`}
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    className={cn(
+                      `w-full rounded-[14px] pl-[42px] pr-10 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:ring-1 transition-all text-slate-800 font-medium ${!showPassword ? 'tracking-[0.2em]' : ''}`,
+                      inputFocusClass,
+                    )}
                     placeholder="••••••••"
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
@@ -509,7 +568,11 @@ export function AuthPage({ portal }: { portal: Portal }) {
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     required
-                    className={`w-full rounded-[14px] pl-[42px] pr-10 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:border-[#0A3622] focus:ring-1 focus:ring-[#0A3622]/20 transition-all text-slate-800 font-medium ${!showPassword ? 'tracking-[0.2em]' : ''}`}
+                    autoComplete="new-password"
+                    className={cn(
+                      `w-full rounded-[14px] pl-[42px] pr-10 py-3.5 text-[14px] border border-slate-200 bg-white placeholder:text-[#A0B3A8] focus:outline-none focus:ring-1 transition-all text-slate-800 font-medium ${!showPassword ? 'tracking-[0.2em]' : ''}`,
+                      inputFocusClass,
+                    )}
                     placeholder="••••••••"
                   />
                 </div>
@@ -519,14 +582,17 @@ export function AuthPage({ portal }: { portal: Portal }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-[48px] rounded-[14px] text-[14px] font-medium text-white transition-all bg-[#0A3622] hover:bg-[#072B1A] disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-sm"
+              className="w-full h-[48px] rounded-[14px] text-[14px] font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-sm hover:opacity-95"
+              style={{
+                backgroundColor: isPartnerPatientLogin ? "var(--brand-primary)" : "#0A3622",
+              }}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Processing...
                 </span>
-              ) : mode === 'login' ? "Sign in" : mode === 'signup' ? "Create Account" : "Send Reset Link"}
+              ) : mode === 'login' ? "Sign in" : mode === 'signup' ? "Create account" : "Send Reset Link"}
             </button>
           </form>
 
@@ -545,16 +611,26 @@ export function AuthPage({ portal }: { portal: Portal }) {
           {portal === 'patient' && mode !== 'forgot_password' && (
             <div className="mt-6 text-center">
               {mode === 'login' ? (
-                <p className="text-[13px] text-[#6A8074]">
+                <p className="text-[13px]" style={{ color: brandMuted }}>
                   Don't have an account?{" "}
-                  <button type="button" onClick={() => { setMode('signup'); setError(null); }} className="text-[#0A3622] font-semibold hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => { setMode('signup'); setError(null); }}
+                    className="font-semibold hover:underline"
+                    style={{ color: brandAccentText }}
+                  >
                     Create one
                   </button>
                 </p>
               ) : (
-                <p className="text-[13px] text-[#6A8074]">
+                <p className="text-[13px]" style={{ color: brandMuted }}>
                   Already have an account?{" "}
-                  <button type="button" onClick={() => { setMode('login'); setError(null); }} className="text-[#0A3622] font-semibold hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => { setMode('login'); setError(null); }}
+                    className="font-semibold hover:underline"
+                    style={{ color: brandAccentText }}
+                  >
                     Sign in
                   </button>
                 </p>

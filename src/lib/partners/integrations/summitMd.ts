@@ -9,8 +9,10 @@ export const summitMdIntegration: PartnerIntegration = {
   marketingShopUrl: SUMMIT_MD_MARKETING_SHOP_URL,
   logoUrl: SUMMIT_MD_BRAND.logoUrl,
   catalogMode: "external-catalog",
-  handoffMessage:
-    "You completed intake on SummitMD. Sign in to open your patient portal — not the product shop.",
+  defaultAuthMode: "signup",
+  signupHandoffMessage:
+    "You selected care on SummitMD. Create your account to open your patient portal — not the product shop.",
+  handoffMessage: "Sign in to your Summit MD patient portal.",
   categoryMap: {
     subscriptions: "weight-loss",
     nutrition: "longevity",

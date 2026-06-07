@@ -29,3 +29,10 @@ export {
 } from "./connect";
 export { summitMdIntegration } from "./integrations/summitMd";
 export { northStarMdIntegration } from "./integrations/northStarMd";
+export {
+  authModeFromSearch,
+  partnerHandoffMessageForMode,
+  partnerSignupHandoffMessage,
+  partnerLoginHandoffMessage,
+} from "./authHandoff";
+export type { PartnerAuthMode } from "./authHandoff";

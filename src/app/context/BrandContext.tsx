@@ -22,6 +22,7 @@ import {
   resolveBrandExperience,
   type BrandExperience,
 } from "../../lib/brands/whiteLabel";
+import { applyBrandDocumentMeta, clearBrandDocumentMeta, finalizeBrandFromKit } from "../../lib/brands/brandDocument";
 
 export type BrandContextValue = BrandExperience & {
   brand: ActiveBrand;
@@ -50,24 +51,29 @@ export function BrandProvider({ children }: { children: ReactNode }) {
     const hostname = typeof window !== "undefined" ? window.location.hostname : undefined;
     const pathSlug = brandSlugFromPath(location.pathname);
     const fromUrl = parseBrandFromSearch(location.search);
-    const resolved = await resolveActiveBrand({
-      brandId: fromUrl.brandId || undefined,
-      brandSlug: pathSlug || fromUrl.brandSlug || undefined,
-      hostname,
-    });
+    const resolved = finalizeBrandFromKit(
+      await resolveActiveBrand({
+        brandId: fromUrl.brandId || undefined,
+        brandSlug: pathSlug || fromUrl.brandSlug || undefined,
+        hostname,
+      }),
+    );
     const exp = resolveBrandExperience({
       brandSlug: pathSlug || fromUrl.brandSlug || resolved.slug,
       hostname,
       brand: resolved,
     });
+    const site = { ...exp.site, brand: resolved };
     setBrand(resolved);
-    setExperience(exp);
+    setExperience({ ...exp, site });
     setLoading(false);
 
     if (exp.isWhiteLabel) {
-      applyBrandSiteTheme(exp.site);
+      applyBrandSiteTheme(site);
+      applyBrandDocumentMeta(resolved, site, true);
     } else {
       clearBrandSiteTheme();
+      clearBrandDocumentMeta();
     }
   }, [location.pathname, location.search]);
 

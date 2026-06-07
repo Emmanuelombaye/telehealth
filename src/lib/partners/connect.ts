@@ -92,6 +92,11 @@ export function buildPartnerPatientLoginUrl(
   const category = mapPartnerCategory(integration, opts.category);
   if (category) params.set("category", category);
 
+  const authMode =
+    integration.defaultAuthMode ??
+    (integration.catalogMode === "external-catalog" ? "signup" : "login");
+  if (authMode === "signup") params.set("mode", "signup");
+
   const loginUrl = `${origin}/care/${integration.slug}/login?${params.toString()}`;
 
   return {
