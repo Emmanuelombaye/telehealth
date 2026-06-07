@@ -8,6 +8,7 @@ import {
   applySubdomainPortalPathRewrite,
 } from "./lib/portalHost";
 import "./styles/index.css";
+import "./lib/partners";
 
 applyAffiliatePathCaseNormalize();
 applyPartnerCareSubdomainRewrite();

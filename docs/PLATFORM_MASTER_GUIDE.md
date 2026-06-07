@@ -1041,6 +1041,7 @@ Consolidated from [PRODUCTION_LAUNCH.md](./PRODUCTION_LAUNCH.md) and [ENGINEERIN
 | [SYSTEM_INDEX.md](./SYSTEM_INDEX.md) | Engineers | Codebase map |
 | [ENGINEERING_ROLLOUT.md](./ENGINEERING_ROLLOUT.md) | DevOps | Migrations + RLS |
 | [PRODUCTION_LAUNCH.md](./PRODUCTION_LAUNCH.md) | Launch team | Go-live phases |
+| [partners/README.md](./partners/README.md) | Partner devs | Scalable connect — API docs, products, login |
 | [SUMMIT_MD_FRONTEND.md](./partners/SUMMIT_MD_FRONTEND.md) | Summit frontend devs | Checkout button, env vars, file map |
 | [NORTH_STAR_MD_FRONTEND.md](./partners/NORTH_STAR_MD_FRONTEND.md) | North Star / partner frontend devs | 3 integration patterns, direct links, demo |
 | SummitMD `PARTNER_SETUP.md` | Summit devs | Short ops + frontend checklist |
