@@ -89,10 +89,20 @@ const LEGACY_PEAK_SUB_BRAND = "Peak Health";
 /** Legacy JWT / provision values before brand UUID normalization. */
 const LEGACY_PEAK_BRAND_KEYS = new Set(["peak", "peak-health", DEFAULT_BRAND_ID]);
 
-function normalizeAdminBrandId(brandId: string | null): string | null {
+export function normalizeAdminBrandId(brandId: string | null): string | null {
   if (!brandId) return null;
   if (brandId === "peak" || brandId === "peak-health") return DEFAULT_BRAND_ID;
   return brandId;
+}
+
+/** Prefer tenant brand from /care/:slug/admin URL; fall back to JWT brand_id. */
+export function resolveAdminBrandScope(
+  role: Role | null,
+  authBrandId: string | null,
+  tenantBrandId?: string | null,
+): string | null {
+  if (role === "brand_admin" && tenantBrandId) return normalizeAdminBrandId(tenantBrandId);
+  return normalizeAdminBrandId(authBrandId);
 }
 
 export function applyOrdersBrandScope<Q extends {

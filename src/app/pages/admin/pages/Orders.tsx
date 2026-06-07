@@ -10,7 +10,8 @@ import { Card, Button, Badge } from "../../../components/ui/shared.tsx";
 import { OrderStatus } from "../../../../lib/patient-store";
 import { useAuthStore } from "../../../../lib/auth-store";
 import { supabase } from "../../../../lib/supabaseClient";
-import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope } from "../../../../lib/adminScope";
+import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope, resolveAdminBrandScope } from "../../../../lib/adminScope";
+import { useBrand } from "../../../context/BrandContext";
 import { logAdminAudit } from "../../../../lib/adminAudit";
 import { downloadBrandedReportPdf } from "../../../../lib/brandedExport";
 import { logPhiAccess } from "../../../../lib/phiAccessAudit";
@@ -47,7 +48,9 @@ const statusLabels: Record<OrderStatus, string> = {
 export function AdminOrdersPage() {
   const location = useLocation();
   const scopeVariant = location.pathname.startsWith("/superadmin") ? "platform" : "brand";
-  const { role, brandId } = useAuthStore();
+  const { role, brandId: authBrandId } = useAuthStore();
+  const { brand: tenantBrand } = useBrand();
+  const brandId = resolveAdminBrandScope(role, authBrandId, tenantBrand.id);
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);

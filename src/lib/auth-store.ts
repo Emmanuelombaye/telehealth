@@ -85,7 +85,7 @@ async function syncProfile(session: Session): Promise<{ role: Role; brandId: str
       if (sessionJwtRole(session) === 'patient' && profileRole !== 'patient') {
         return { role: 'patient', brandId: data.brand_id || jwtRB.brandId };
       }
-      return { role: profileRole, brandId: data.brand_id || null };
+      return { role: profileRole, brandId: data.brand_id || jwtRB.brandId };
     }
 
     if (error) {

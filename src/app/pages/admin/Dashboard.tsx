@@ -21,7 +21,8 @@ import { Card, Button, Badge, cn } from "../../components/ui/shared.tsx";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuthStore } from "../../../lib";
 import { supabase } from "../../../lib/supabaseClient";
-import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope } from "../../../lib/adminScope";
+import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope, resolveAdminBrandScope } from "../../../lib/adminScope";
+import { useBrand } from "../../context/BrandContext";
 import { motion } from "framer-motion";
 import { AdminScopeNotice } from "../../components/admin/AdminScopeNotice.tsx";
 import { adminPortalBaseFromPath } from "../../../lib/portalPath";
@@ -71,7 +72,9 @@ export function AdminDashboard() {
   const adminBase = adminPortalBaseFromPath(location.pathname);
   const user = useAuthStore((state) => state.user);
   const role = useAuthStore((state) => state.role);
-  const brandId = useAuthStore((state) => state.brandId);
+  const authBrandId = useAuthStore((state) => state.brandId);
+  const { brand: tenantBrand } = useBrand();
+  const brandId = resolveAdminBrandScope(role, authBrandId, tenantBrand.id);
   const adminName = user?.user_metadata?.first_name || "Admin";
 
   const [orders, setOrders] = useState<any[]>([]);

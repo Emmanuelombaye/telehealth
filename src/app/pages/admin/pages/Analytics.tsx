@@ -12,9 +12,22 @@ import {
   CartesianGrid, Tooltip, ResponsiveContainer, 
   Cell, PieChart, Pie
 } from "recharts";
-import { usePatientStore } from "../../../../lib";
+import { useAuthStore } from "../../../../lib/auth-store";
+import { supabase } from "../../../../lib/supabaseClient";
+import { ORDERS_ADMIN_NON_CLINICAL_SELECT, applyOrdersBrandScope, resolveAdminBrandScope } from "../../../../lib/adminScope";
+import { isAuditPlaceholderOrder } from "../../../../lib/clinicalTestData";
+import { useBrand } from "../../../context/BrandContext";
 import { cn } from "../../../components/ui/shared.tsx";
 import { downloadBrandedScreenshotPdf } from "../../../../lib/brandedExport";
+
+type AdminOrderRow = {
+  orderedDate: string;
+  amount: string;
+  status: string;
+  medication: string;
+  patient_country?: string;
+  patientCountry?: string;
+};
 
 const COLORS = {
   emerald: "#10b981",
@@ -26,19 +39,59 @@ const COLORS = {
 };
 
 export function AdminAnalyticsPage() {
-  const { orders, fetchOrders } = usePatientStore();
+  const { role, brandId: authBrandId } = useAuthStore();
+  const { brand: tenantBrand } = useBrand();
+  const brandId = resolveAdminBrandScope(role, authBrandId, tenantBrand.id);
+  const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("30D");
   const [isExporting, setIsExporting] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const init = async () => {
-      await fetchOrders();
-      setLoading(false);
+    async function loadOrders() {
+      try {
+        setLoading(true);
+        let q = supabase
+          .from("orders")
+          .select(ORDERS_ADMIN_NON_CLINICAL_SELECT)
+          .order("created_at", { ascending: false });
+        q = applyOrdersBrandScope(q, role, brandId);
+        const { data, error } = await q;
+        if (error) throw error;
+        const rows = (data || [])
+          .filter(
+            (d) =>
+              !isAuditPlaceholderOrder({
+                patient_name: d.patient_name,
+                order_number: d.order_number,
+                medication: d.medication,
+              }),
+          )
+          .map((d) => ({
+            orderedDate: (d.ordered_date as string) || "",
+            amount: d.amount != null ? String(d.amount) : "",
+            status: (d.status as string) || "",
+            medication: (d.medication as string) || "",
+            patient_country: d.patient_country as string | undefined,
+          }));
+        setOrders(rows);
+      } catch (err) {
+        console.error("Analytics orders fetch:", err);
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadOrders();
+    const channel = supabase
+      .channel("admin-analytics-orders")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadOrders())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
     };
-    init();
-  }, [fetchOrders]);
+  }, [role, brandId]);
 
   // Real-time Analytics Engine with Dynamic Filtering
   const stats = useMemo(() => {
