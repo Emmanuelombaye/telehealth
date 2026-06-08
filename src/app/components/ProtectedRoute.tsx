@@ -7,25 +7,12 @@ import {
   hasForcePatientPortalIntent,
 } from '../../lib/patientPortalIntent';
 import { useBrand } from '../context/BrandContext';
-
-const portalLoginUrl = (path: string) => {
-  const care = path.match(/^\/care\/([^/]+)/);
-  if (care) {
-    const slug = care[1];
-    const rest = path.slice(`/care/${slug}`.length);
-    if (rest.startsWith("/admin")) return `/care/${slug}/admin/login`;
-    if (rest.startsWith("/affiliate")) return `/care/${slug}/affiliate/login`;
-    return `/care/${slug}/login`;
-  }
-  if (path.startsWith('/doctor')) return '/doctor/login';
-  if (path.startsWith('/providers')) return '/providers/login';
-  if (path.startsWith('/pharmacy')) return '/pharmacy/login';
-  if (path.startsWith('/admin')) return '/admin/login';
-  if (path.startsWith('/superadmin')) return '/superadmin/login';
-  if (path.startsWith('/affiliate')) return '/affiliate/login';
-  if (path.startsWith('/patient')) return '/login';
-  return '/login';
-};
+import { portalLoginUrl } from '../../lib/portalLoginUrl';
+import {
+  careSlugFromPath,
+  staffPortalTenantAllowed,
+  staffPortalTenantDeniedMessage,
+} from '../../lib/portalTenantGuard';
 
 export function AuthLoadingScreen() {
   const { brand, isWhiteLabel } = useBrand();
@@ -47,9 +34,11 @@ export function AuthLoadingScreen() {
 
 
 export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
-  const { user, role, isLoading } = useAuthStore();
+  const { user, role, brandId: authBrandId, isLoading } = useAuthStore();
+  const { brand: tenantBrand } = useBrand();
   const navigate = useNavigate();
   const redirected = useRef(false);
+  const tenantDenied = useRef(false);
 
   const forcePatient = hasForcePatientPortalIntent();
   const effectiveRole = forcePatient ? 'patient' : role;
@@ -73,7 +62,30 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
       return;
     }
 
-    // 4. Handle Role-based Access Control (RBAC)
+    // 4. Brand / affiliate tenant scope on /care/:slug/*
+    if (
+      isAuthenticated &&
+      effectiveRole &&
+      !staffPortalTenantAllowed(effectiveRole, authBrandId, window.location.pathname, tenantBrand.id)
+    ) {
+      if (!tenantDenied.current) {
+        tenantDenied.current = true;
+        console.warn(
+          `[ProtectedRoute] Tenant mismatch: role=${effectiveRole} authBrand=${authBrandId} tenant=${tenantBrand.id}`,
+        );
+        void useAuthStore.getState().signOut().then(() => {
+          navigate(portalLoginUrl(window.location.pathname), {
+            replace: true,
+            state: {
+              error: staffPortalTenantDeniedMessage(careSlugFromPath(window.location.pathname)),
+            },
+          });
+        });
+      }
+      return;
+    }
+
+    // 5. Handle Role-based Access Control (RBAC)
     if (
       allowedRoles &&
       effectiveRole &&
@@ -110,7 +122,7 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
       console.log(`[ProtectedRoute] RBAC mismatch: User role "${effectiveRole}" not in [${rolesKey}]. Redirecting to ${targetPortal}`);
       navigate(targetPortal, { replace: true });
     }
-  }, [isAuthenticated, effectiveRole, isLoading, navigate, rolesKey]);
+  }, [isAuthenticated, effectiveRole, isLoading, navigate, rolesKey, authBrandId, tenantBrand.id]);
 
   // Show branded loading screen while auth is resolving
   if (isLoading) return <AuthLoadingScreen />;

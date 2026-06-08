@@ -6,11 +6,14 @@ const PHI_ROUTE_PREFIXES = [
   "/providers/",
   "/admin/patients",
   "/admin/orders",
+  "/admin/analytics",
   "/admin/messages",
   "/superadmin/patients",
   "/superadmin/orders",
+  "/superadmin/analytics",
   "/superadmin/messages",
   "/pharmacy/",
+  "/care/",
 ];
 
 /** Returns null for routes that do not touch PHI (settings, builders, etc.). */
@@ -58,6 +61,7 @@ export function resolvePhiAccessFromLocation(
     return resource("patient_chart", "view_record", patientRouteMatch[1]);
   }
   if (path.includes("/patients")) return resource("patient_chart", "view_list");
+  if (path.includes("/analytics")) return resource("order", "view_list");
   if (path.includes("/orders")) return resource("order", "view_list");
   if (path.includes("/tracking") || path.includes("/appointments")) {
     return resource("order", "view_list");

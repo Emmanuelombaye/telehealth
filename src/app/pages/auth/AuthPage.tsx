@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuthStore, Role } from "../../../lib/auth-store";
 import { doctorPortalBaseFromPath } from "../../../lib/doctorPortalBase";
@@ -55,6 +55,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
   const [portalRedirect, setPortalRedirect] = useState<{ path: string; label: string } | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { brand, site, isWhiteLabel, patientPortalBase, enrollBase } = useBrand();
   const [existingSessionEmail, setExistingSessionEmail] = useState<string | null>(null);
   const initialize = useAuthStore(state => state.initialize);
@@ -74,6 +75,14 @@ export function AuthPage({ portal }: { portal: Portal }) {
       setMode("login");
     }
   }, [isPeakNativePatient, mode]);
+
+  useEffect(() => {
+    const denied = (location.state as { error?: string } | null)?.error;
+    if (denied) {
+      setError(denied);
+      navigate(location.pathname + location.search, { replace: true, state: {} });
+    }
+  }, [location.pathname, location.search, location.state, navigate]);
 
   useEffect(() => {
     if (cleanupDone.current) return;

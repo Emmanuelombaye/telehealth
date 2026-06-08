@@ -19,12 +19,13 @@ import { isAuditPlaceholderOrder } from "../../../../lib/clinicalTestData";
 import { useBrand } from "../../../context/BrandContext";
 import { cn } from "../../../components/ui/shared.tsx";
 import { downloadBrandedScreenshotPdf } from "../../../../lib/brandedExport";
+import {
+  buildAdminBrandAnalytics,
+  type AdminAnalyticsOrder,
+  type AdminTimeRange,
+} from "../../../../lib/adminBrandAnalytics";
 
-type AdminOrderRow = {
-  orderedDate: string;
-  amount: string;
-  status: string;
-  medication: string;
+type AdminOrderRow = AdminAnalyticsOrder & {
   patient_country?: string;
   patientCountry?: string;
 };
@@ -44,7 +45,7 @@ export function AdminAnalyticsPage() {
   const brandId = resolveAdminBrandScope(role, authBrandId, tenantBrand.id);
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState("30D");
+  const [timeRange, setTimeRange] = useState<AdminTimeRange>("30D");
   const [isExporting, setIsExporting] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
 
@@ -76,6 +77,7 @@ export function AdminAnalyticsPage() {
             amount: d.amount != null ? String(d.amount) : "",
             status: (d.status as string) || "",
             medication: (d.medication as string) || "",
+            category: (d.category as string) || "General",
             patient_country: d.patient_country as string | undefined,
           }));
         setOrders(rows);
@@ -96,127 +98,7 @@ export function AdminAnalyticsPage() {
     };
   }, [role, brandId]);
 
-  // Real-time Analytics Engine with Dynamic Filtering
-  const stats = useMemo(() => {
-    const now = new Date();
-    let startDate = new Date();
-
-    if (timeRange === "7D") startDate.setDate(now.getDate() - 7);
-    else if (timeRange === "30D") startDate.setDate(now.getDate() - 30);
-    else if (timeRange === "90D") startDate.setDate(now.getDate() - 90);
-    else if (timeRange === "YTD") startDate = new Date(now.getFullYear(), 0, 1);
-
-    // 1. Filtered Dataset
-    const filteredOrders = orders.filter(o => new Date(o.orderedDate) >= startDate);
-    const prevStartDate = new Date(startDate);
-    prevStartDate.setDate(prevStartDate.getDate() - (now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const prevOrders = orders.filter(o => {
-      const d = new Date(o.orderedDate);
-      return d >= prevStartDate && d < startDate;
-    });
-
-    const totalRevenue = filteredOrders.reduce((sum, o) => sum + parseFloat(o.amount?.replace(/[$,]/g, '') || "0"), 0);
-    const prevRevenue = prevOrders.reduce((sum, o) => sum + parseFloat(o.amount?.replace(/[$,]/g, '') || "0"), 0);
-    const revTrendPct = prevRevenue ? ((totalRevenue - prevRevenue) / prevRevenue * 100) : 100;
-
-    const totalConsults = filteredOrders.filter(o => 
-      ["medical_review", "rx_sent", "shipped", "delivered"].includes(o.status)
-    ).length;
-
-    const conversionRate = Math.round((totalConsults / (filteredOrders.length || 1)) * 100) || 0;
-
-    const prevConsults = prevOrders.filter(o => ["medical_review", "rx_sent", "shipped", "delivered"].includes(o.status)).length;
-    const prevConversionRate = Math.round((prevConsults / (prevOrders.length || 1)) * 100) || 0;
-    const conversionTrendVal = conversionRate - prevConversionRate;
-
-    const currentYield = Math.round(totalRevenue / (filteredOrders.length || 1));
-    const prevYield = Math.round(prevRevenue / (prevOrders.length || 1));
-    const yieldTrendVal = prevYield ? ((currentYield - prevYield) / prevYield * 100) : 100;
-
-    // 2. Chart Data Generation
-    const chartData = [];
-    const interval = timeRange === "7D" ? 7 : timeRange === "30D" ? 30 : 90;
-    
-    if (timeRange === "7D" || timeRange === "30D") {
-      // Daily granularity
-      for (let i = interval - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        
-        const dayOrders = filteredOrders.filter(o => new Date(o.orderedDate).toDateString() === d.toDateString());
-        const dayRev = dayOrders.reduce((sum, o) => sum + parseFloat(o.amount?.replace(/[$,]/g, '') || "0"), 0);
-        
-        chartData.push({
-          label: dStr,
-          revenue: dayRev,
-          yield: Math.round(dayRev / (dayOrders.length || 1))
-        });
-      }
-    } else {
-      // Monthly granularity for 90D and YTD
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const startM = startDate.getMonth();
-      const startY = startDate.getFullYear();
-      const currentM = now.getMonth();
-      const currentY = now.getFullYear();
-
-      let m = startM;
-      let y = startY;
-
-      while (y < currentY || (y === currentY && m <= currentM)) {
-        const mOrders = filteredOrders.filter(o => {
-          const od = new Date(o.orderedDate);
-          return od.getMonth() === m && od.getFullYear() === y;
-        });
-        const mRev = mOrders.reduce((sum, o) => sum + parseFloat(o.amount?.replace(/[$,]/g, '') || "0"), 0);
-        
-        chartData.push({
-          label: months[m],
-          revenue: mRev,
-          yield: Math.round(mRev / (mOrders.length || 1))
-        });
-        
-        m++;
-        if (m > 11) { m = 0; y++; }
-      }
-    }
-
-    // 3. Top Protocols in this period
-    const treatmentMap: Record<string, { revenue: number, count: number }> = {};
-    filteredOrders.forEach(o => {
-      const med = o.medication || "Consultation";
-      if (!treatmentMap[med]) treatmentMap[med] = { revenue: 0, count: 0 };
-      treatmentMap[med].revenue += parseFloat(o.amount?.replace(/[$,]/g, '') || "0");
-      treatmentMap[med].count += 1;
-    });
-
-    const topTreatments = Object.entries(treatmentMap)
-      .map(([name, s]) => ({ 
-        name, 
-        revenue: s.revenue, 
-        count: s.count,
-      }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
-
-    return {
-      revenue: `$${totalRevenue.toLocaleString()}`,
-      revenueTrend: `${revTrendPct > 0 ? '+' : ''}${revTrendPct.toFixed(1)}%`,
-      patients: filteredOrders.length.toString(),
-      patientTrend: `+${filteredOrders.length - prevOrders.length}`,
-      consults: totalConsults.toLocaleString(),
-      conversion: `${conversionRate}%`,
-      yield: `$${currentYield}`,
-      yieldTrend: `${yieldTrendVal > 0 ? '+' : ''}${yieldTrendVal.toFixed(1)}%`,
-      conversionTrend: `${conversionTrendVal > 0 ? '+' : ''}${conversionTrendVal.toFixed(1)}%`,
-      activeConsults: filteredOrders.filter(o => o.status === 'medical_review' || o.status === 'order_submitted').length.toString(),
-      shippedCount: filteredOrders.filter(o => o.status === 'shipped' || o.status === 'delivered').length.toString(),
-      regionsCount: new Set(filteredOrders.map(o => o.patient_country || o.patientCountry || "United States")).size.toString(),
-      chartData,
-      topTreatments,
-    };
-  }, [orders, timeRange]);
+  const stats = useMemo(() => buildAdminBrandAnalytics(orders, timeRange), [orders, timeRange]);
 
   const downloadPDF = async () => {
     if (!terminalRef.current) return;
@@ -262,6 +144,8 @@ export function AdminAnalyticsPage() {
   }
 
   if (!stats) return null;
+
+  const periodEmpty = orders.length > 0 && stats.periodOrderCount === 0;
 
   return (
     <div id="analytics-terminal" ref={terminalRef} className="max-w-[1600px] mx-auto space-y-10 pb-10 animate-in fade-in duration-1000 bg-white">
@@ -312,6 +196,14 @@ export function AdminAnalyticsPage() {
            </Button>
         </div>
       </div>
+
+      {periodEmpty && (
+        <div className="mx-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950">
+          No orders in the selected <strong>{timeRange}</strong> window. Try <strong>90D</strong> or{" "}
+          <strong>YTD</strong> — you have <strong>{orders.length}</strong> total brand order
+          {orders.length === 1 ? "" : "s"} on record.
+        </div>
+      )}
 
       {/* PRIMARY METRIC TILES */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 px-4">
@@ -441,20 +333,20 @@ export function AdminAnalyticsPage() {
               <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic mb-8">Top Protocols</h3>
               
               <div className="space-y-4">
-                 {stats.topTreatments.map((t, i) => (
+                 {stats.topTreatments.slice(0, 5).map((t, i) => (
                    <div key={i} className="group flex items-center justify-between p-5 rounded-3xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all cursor-pointer">
-                      <div className="flex items-center gap-4">
-                         <div className="h-10 w-10 rounded-2xl flex items-center justify-center font-black text-[11px] bg-white border border-slate-100 shadow-sm group-hover:bg-[#0A2E1F] group-hover:text-emerald-400 transition-colors">
+                      <div className="flex items-center gap-4 min-w-0">
+                         <div className="h-10 w-10 rounded-2xl flex items-center justify-center font-black text-[11px] bg-white border border-slate-100 shadow-sm group-hover:bg-[#0A2E1F] group-hover:text-emerald-400 transition-colors shrink-0">
                             {i+1}
                          </div>
-                         <div>
-                            <p className="text-[11px] font-black italic text-[#0A2E1F] uppercase tracking-tight">{t.name}</p>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t.count} Dispensations</p>
+                         <div className="min-w-0">
+                            <p className="text-[11px] font-black italic text-[#0A2E1F] uppercase tracking-tight truncate">{t.name}</p>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t.category} · {t.count} orders</p>
                          </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                          <p className="text-sm font-black text-[#0A2E1F]">${t.revenue.toLocaleString()}</p>
-                         <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">High Volume</p>
+                         <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">{t.sharePct}% share</p>
                       </div>
                    </div>
                  ))}
@@ -505,6 +397,126 @@ export function AdminAnalyticsPage() {
         </div>
 
       </div>
+
+      {/* TREATMENT & PRODUCT INTELLIGENCE */}
+      <div className="grid lg:grid-cols-12 gap-8 px-4">
+        <Card className="lg:col-span-4 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white p-8">
+          <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic mb-2">Treatment mix</h3>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">By product category ({timeRange})</p>
+          {stats.categoryBreakdown.length === 0 ? (
+            <p className="text-sm text-slate-400 py-16 text-center">No category data in this period</p>
+          ) : (
+            <>
+              <div className="h-[260px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats.categoryBreakdown}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={52}
+                      outerRadius={88}
+                      paddingAngle={3}
+                    >
+                      {stats.categoryBreakdown.map((_, i) => (
+                        <Cell key={i} fill={stats.pieColors[i % stats.pieColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-2 mt-4">
+                {stats.categoryBreakdown.slice(0, 5).map((c, i) => (
+                  <div key={c.name} className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-2 font-semibold text-slate-700 truncate">
+                      <span
+                        className="h-2 w-2 rounded-full shrink-0"
+                        style={{ background: stats.pieColors[i % stats.pieColors.length] }}
+                      />
+                      {c.name}
+                    </span>
+                    <span className="font-black text-[#0A2E1F] shrink-0">{c.value} · ${(c.revenue ?? 0).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </Card>
+
+        <Card className="lg:col-span-8 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white p-8">
+          <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic mb-2">Product performance</h3>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Revenue by treatment / SKU ({timeRange})</p>
+          {stats.productBreakdown.length === 0 ? (
+            <p className="text-sm text-slate-400 py-16 text-center">No product data in this period</p>
+          ) : (
+            <div className="h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.productBreakdown} layout="vertical" margin={{ left: 8, right: 24 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={140}
+                    tick={{ fontSize: 9, fontWeight: 700, fill: "#475569" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    formatter={(value: number, _name: string, item: { payload?: { revenue?: number } }) => [
+                      `${value} orders · $${(item.payload?.revenue ?? 0).toLocaleString()}`,
+                      "Volume",
+                    ]}
+                  />
+                  <Bar dataKey="value" fill={COLORS.emerald} radius={[0, 8, 8, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <Card className="mx-4 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white p-8 overflow-hidden">
+        <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic mb-2">Treatment tracking table</h3>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Orders, revenue, and share by product</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <th className="py-3 pr-4">Treatment / product</th>
+                <th className="py-3 pr-4">Category</th>
+                <th className="py-3 pr-4 text-right">Orders</th>
+                <th className="py-3 pr-4 text-right">Revenue</th>
+                <th className="py-3 pr-4 text-right">Avg order</th>
+                <th className="py-3 text-right">Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.topTreatments.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-400 text-xs uppercase font-bold tracking-widest">
+                    No treatments in this period
+                  </td>
+                </tr>
+              ) : (
+                stats.topTreatments.map((t) => (
+                  <tr key={t.name} className="border-b border-slate-50 hover:bg-slate-50/80">
+                    <td className="py-4 pr-4 font-semibold text-[#0A2E1F]">{t.name}</td>
+                    <td className="py-4 pr-4 text-slate-500 text-xs font-bold uppercase tracking-wide">{t.category}</td>
+                    <td className="py-4 pr-4 text-right font-black">{t.count}</td>
+                    <td className="py-4 pr-4 text-right font-black">${t.revenue.toLocaleString()}</td>
+                    <td className="py-4 pr-4 text-right text-slate-600">${t.avgOrder.toLocaleString()}</td>
+                    <td className="py-4 text-right text-emerald-600 font-black">{t.sharePct}%</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
     </div>
   );

@@ -16,6 +16,7 @@ import { AuthLoadingScreen } from "./ProtectedRoute";
 import { motion, AnimatePresence } from "framer-motion";
 import { doctorPortalBackground, doctorMainBackground } from "../../lib/doctorPortalUi";
 import { PhiAccessRouteLogger } from "./PhiAccessRouteLogger";
+import { StaffSessionGuard } from "./StaffSessionGuard";
 import { useBrand } from "../context/BrandContext";
 import {
   adminPortalBaseFromPath,
@@ -449,6 +450,7 @@ export function AppLayout() {
                   </div>
                 }>
                   <PhiAccessRouteLogger />
+                  <StaffSessionGuard />
                   <Outlet />
                 </Suspense>
               </div>
