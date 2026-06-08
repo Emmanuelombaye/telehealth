@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuthStore, Role } from "../../../lib/auth-store";
 import { doctorPortalBaseFromPath } from "../../../lib/doctorPortalBase";
@@ -21,6 +21,10 @@ import {
   authModeFromSearch,
   partnerHandoffMessageForMode,
 } from "../../../lib/partners";
+import {
+  isPeakNativePatientContext,
+  peakPatientShopEntryPath,
+} from "../../../lib/peakPatientAccess";
 
 type Portal = StaffPortal;
 
@@ -30,9 +34,14 @@ function isStaffPortal(portal: Portal): boolean {
   return STAFF_PORTALS.includes(portal);
 }
 
+function initialPatientAuthMode(): "login" | "signup" {
+  if (isPeakNativePatientContext()) return "login";
+  return authModeFromSearch();
+}
+
 export function AuthPage({ portal }: { portal: Portal }) {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot_password'>(() =>
-    portal === "patient" ? authModeFromSearch() : "login",
+    portal === "patient" ? initialPatientAuthMode() : "login",
   );
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -55,6 +64,16 @@ export function AuthPage({ portal }: { portal: Portal }) {
   /** Summit / partner intake — signup handoff must not reuse a prior patient session. */
   const isFreshAccountHandoff =
     portal === "patient" && authModeFromSearch() === "signup";
+
+  const isPeakNativePatient =
+    portal === "patient" && isPeakNativePatientContext();
+  const peakShopHref = peakPatientShopEntryPath(enrollBase);
+
+  useEffect(() => {
+    if (isPeakNativePatient && mode === "signup") {
+      setMode("login");
+    }
+  }, [isPeakNativePatient, mode]);
 
   useEffect(() => {
     if (cleanupDone.current) return;
@@ -212,6 +231,12 @@ export function AuthPage({ portal }: { portal: Portal }) {
           setError("Registration is only available for patients.");
           return;
         }
+        if (isPeakNativePatient) {
+          setError(
+            "New patients start by selecting a treatment. Your account is created securely during checkout.",
+          );
+          return;
+        }
         const portalRole = 'patient';
 
         await signOut();
@@ -345,9 +370,7 @@ export function AuthPage({ portal }: { portal: Portal }) {
         }
         return isWhiteLabel
           ? `Sign in to your ${site.copy.portalName} patient portal.`
-          : mode === "signup"
-            ? "Create your patient account to get started."
-            : "Secure access for patients.";
+          : "Sign in to track your order and message your doctor. New patients: choose a treatment first.";
       default:
         return "Secure access for clinicians and patients.";
     }
@@ -620,9 +643,20 @@ export function AuthPage({ portal }: { portal: Portal }) {
 
           {portal === 'patient' && mode !== 'forgot_password' && (
             <div className="mt-6 text-center">
-              {mode === 'login' ? (
+              {isPeakNativePatient ? (
                 <p className="text-[13px]" style={{ color: brandMuted }}>
-                  Don't have an account?{" "}
+                  New patient?{" "}
+                  <Link
+                    to={peakShopHref}
+                    className="font-semibold hover:underline"
+                    style={{ color: brandAccentText }}
+                  >
+                    Browse treatments & enroll
+                  </Link>
+                </p>
+              ) : mode === 'login' ? (
+                <p className="text-[13px]" style={{ color: brandMuted }}>
+                  Don&apos;t have an account?{" "}
                   <button
                     type="button"
                     onClick={() => { setMode('signup'); setError(null); }}
