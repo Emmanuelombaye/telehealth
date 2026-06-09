@@ -2,12 +2,11 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useLocation } from "react-router";
 import { motion } from "framer-motion";
 import { 
-  DollarSign, Activity, Globe, 
-  Zap, BarChart3, ArrowUpRight, 
-  Target, Sparkles, Gem, ShieldCheck, 
-  Download, Loader2, Stethoscope, Package, ChevronRight, User, Route
+  BarChart3, ArrowUpRight, 
+  ShieldCheck, 
+  Download, Loader2, Stethoscope, Package, ChevronRight, User, Route, TrendingUp
 } from "lucide-react";
-import { Card, CardContent, Badge, Button } from "../../../components/ui/shared.tsx";
+import { Card, Badge, Button } from "../../../components/ui/shared.tsx";
 import { 
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, 
   CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -33,14 +32,17 @@ type AdminOrderRow = AdminAnalyticsOrder & {
   patientCountry?: string;
 };
 
-const COLORS = {
-  emerald: "#10b981",
+const CHART = {
+  orange: "#E87722",
   gold: "#D4AF37",
-  indigo: "#6366f1",
-  rose: "#f43f5e",
-  slate: "#64748b",
-  deepGreen: "#0A2E1F"
+  amber: "#F59E0B",
+  copper: "#B45309",
+  ink: "#0A2E1F",
+  muted: "#78716C",
+  grid: "#F5F0E8",
 };
+
+const PIE = ["#E87722", "#D4AF37", "#F59E0B", "#0A2E1F", "#FB923C", "#B45309", "#78716C"];
 
 export function AdminAnalyticsPage() {
   const location = useLocation();
@@ -167,52 +169,47 @@ export function AdminAnalyticsPage() {
   const periodEmpty = orders.length > 0 && stats.periodOrderCount === 0;
 
   return (
-    <div id="analytics-terminal" ref={terminalRef} className="max-w-[1600px] mx-auto space-y-10 pb-10 animate-in fade-in duration-1000 bg-white">
+    <div id="analytics-terminal" ref={terminalRef} className="max-w-[1600px] mx-auto space-y-6 sm:space-y-8 pb-8 sm:pb-10 animate-in fade-in duration-700 bg-[#FFFCF7] min-h-full">
       
-      {/* LUXURY HEADER */}
-      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 pb-8 border-b border-slate-50 px-4">
-        <div>
-           <div className="flex items-center gap-3 mb-3">
-              <span className="text-[9px] font-black uppercase tracking-[0.4em] px-4 py-1.5 rounded-xl bg-emerald-50 text-[#0A2E1F] border border-emerald-100 shadow-sm">
-                Clinical Intelligence
-              </span>
-              <div className="h-1 w-1 rounded-full bg-slate-200" />
-              <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400">
-                Live Terminal v4.2
-              </span>
-           </div>
-           <h1 className="text-4xl sm:text-5xl font-black text-[#0A2E1F] tracking-tighter uppercase italic leading-none">
-             Executive <span className="text-emerald-600 font-serif italic font-normal lowercase">Analytics</span>
-           </h1>
-           <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.5em] mt-3">
-             Platform Performance Matrix • Unified Revenue Stream
-           </p>
-        </div>
-
-        <div className="flex items-center gap-3 no-print">
-           <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
+      {/* HEADER — compact, mobile-first */}
+      <div className="flex flex-col gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-amber-100/80 px-3 sm:px-4">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <span className="text-[9px] font-black uppercase tracking-[0.35em] px-3 py-1 rounded-lg bg-amber-50 text-[#B45309] border border-amber-200/80">
+              Brand analytics
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#0A2E1F] tracking-tight mt-2">
+              Performance <span className="text-[#E87722]">dashboard</span>
+            </h1>
+            <p className="text-slate-500 text-xs mt-1">Live orders · treatments · pipeline</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 no-print">
+            <div className="flex bg-white p-0.5 rounded-xl border border-amber-100 shadow-sm">
               {(["7D", "30D", "90D", "YTD"] as AdminTimeRange[]).map((range) => (
                 <button
                   key={range}
                   onClick={() => setTimeRange(range)}
                   className={cn(
-                    "px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                    timeRange === range ? "bg-white text-[#0A2E1F] shadow-md" : "text-slate-400 hover:text-slate-600"
+                    "px-3 sm:px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all",
+                    timeRange === range
+                      ? "bg-[#E87722] text-white shadow-sm"
+                      : "text-slate-500 hover:text-[#0A2E1F]",
                   )}
                 >
                   {range}
                 </button>
               ))}
-           </div>
-           <Button 
-            onClick={downloadPDF}
-            disabled={isExporting}
-            variant="outline" 
-            className="h-12 px-6 rounded-2xl border-slate-200 font-black uppercase text-[10px] tracking-widest text-slate-500 hover:bg-slate-50 gap-2"
-           >
-              {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              {isExporting ? "Exporting..." : "Export PDF"}
-           </Button>
+            </div>
+            <Button
+              onClick={downloadPDF}
+              disabled={isExporting}
+              variant="outline"
+              className="h-9 px-4 rounded-xl border-amber-200 text-[10px] font-bold uppercase tracking-wide text-slate-600 hover:bg-amber-50 gap-1.5"
+            >
+              {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              PDF
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -224,115 +221,179 @@ export function AdminAnalyticsPage() {
         </div>
       )}
 
-      {/* PRIMARY METRIC TILES */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 px-4">
+      {/* COMPACT FIGMA-STYLE CHARTS — replaces large KPI tiles */}
+      <div className="px-3 sm:px-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         {[
-          { label: "Gross Revenue", value: stats.revenue, trend: stats.revenueTrend, icon: DollarSign, color: "emerald", desc: "Settlement volume in period" },
-          { label: "Growth Velocity", value: stats.patients, trend: stats.patientTrend, icon: Zap, color: "gold", desc: "New patient onboarding" },
-          { label: "Yield Optimization", value: stats.yield, trend: stats.yieldTrend, icon: Gem, color: "indigo", desc: "Avg. revenue per patient" },
-          { label: "Conversion Delta", value: stats.conversion, trend: stats.conversionTrend, icon: Target, color: "rose", desc: "Clinical approval velocity" },
-        ].map((s, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
+          { label: "Revenue", value: stats.revenue, trend: stats.revenueTrend, dataKey: "revenue" as const, stroke: CHART.orange },
+          { label: "Orders", value: stats.patients, trend: stats.patientTrend, dataKey: "revenue" as const, stroke: CHART.gold },
+          { label: "Avg order", value: stats.yield, trend: stats.yieldTrend, dataKey: "yield" as const, stroke: CHART.amber },
+          { label: "Conversion", value: stats.conversion, trend: stats.conversionTrend, dataKey: "yield" as const, stroke: CHART.copper },
+        ].map((m, i) => (
+          <Card
+            key={m.label}
+            className="border border-amber-100/90 shadow-sm rounded-2xl bg-white p-3 sm:p-4 overflow-hidden"
           >
-            <Card className="group border-none shadow-2xl shadow-slate-100/50 rounded-[2.5rem] p-8 bg-white hover:bg-[#0A2E1F] hover:text-white transition-all duration-500 cursor-pointer relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-10 transition-opacity">
-                  <s.icon className="h-24 w-24" />
-               </div>
-               
-               <div className="flex items-center justify-between mb-8">
-                  <div className={cn(
-                    "h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-500",
-                    s.color === 'emerald' ? "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white" :
-                    s.color === 'gold' ? "bg-amber-50 text-amber-600 group-hover:bg-amber-500 group-hover:text-white" :
-                    s.color === 'indigo' ? "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-500 group-hover:text-white" :
-                    "bg-rose-50 text-rose-600 group-hover:bg-rose-500 group-hover:text-white"
-                  )}>
-                    <s.icon className="h-6 w-6" />
-                  </div>
-                  <Badge className="bg-emerald-50 text-emerald-600 border-none px-3 py-1 font-black text-[9px] uppercase tracking-widest group-hover:bg-white/10 group-hover:text-emerald-400">
-                    {s.trend} <ArrowUpRight className="ml-1 h-3 w-3" />
-                  </Badge>
-               </div>
-
-               <h2 className="text-4xl font-black tracking-tighter italic mb-1">{s.value}</h2>
-               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-emerald-100/60 mb-6">{s.label}</p>
-               
-               <p className="text-[9px] font-bold text-slate-300 group-hover:text-white/40 uppercase tracking-widest leading-relaxed">
-                 {s.desc}
-               </p>
-            </Card>
-          </motion.div>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{m.label}</p>
+                <p className="text-lg sm:text-xl font-black text-[#0A2E1F] tabular-nums">{m.value}</p>
+              </div>
+              <span className="text-[9px] font-bold text-[#B45309] bg-amber-50 px-2 py-0.5 rounded-md shrink-0">
+                {m.trend}
+              </span>
+            </div>
+            <div className="h-[72px] sm:h-[80px] -mx-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats.chartData}>
+                  <defs>
+                    <linearGradient id={`spark-${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={m.stroke} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={m.stroke} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <Area
+                    type="monotone"
+                    dataKey={m.dataKey}
+                    stroke={m.stroke}
+                    strokeWidth={2}
+                    fill={`url(#spark-${i})`}
+                    dot={false}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
         ))}
       </div>
 
-      {/* TREATMENT CARE PIPELINE — live from orders.status + medication */}
-      <div className="px-4 space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Route className="h-4 w-4 text-emerald-600" />
-              <span className="text-[9px] font-black uppercase tracking-[0.35em] text-emerald-600">
-                Live fulfillment tracking
-              </span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-[#0A2E1F] tracking-tight uppercase italic">
-              Treatment <span className="text-emerald-600 font-serif font-normal lowercase">care pipeline</span>
-            </h2>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">
-              Patient journey by treatment · sourced from live orders ({timeRange})
-            </p>
+      {/* Main revenue + category — side by side, compact */}
+      <div className="px-3 sm:px-4 grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+        <Card className="lg:col-span-2 border border-amber-100/90 shadow-sm rounded-2xl bg-white p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-black text-[#0A2E1F] flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-[#E87722]" />
+              Revenue trend
+            </h3>
+            <span className="text-[9px] font-bold text-slate-400 uppercase">{timeRange}</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2 no-print">
-            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 mr-1">Filter treatment</span>
+          <div className="h-[160px] sm:h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats.chartData}>
+                <defs>
+                  <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={CHART.orange} stopOpacity={0.25} />
+                    <stop offset="95%" stopColor={CHART.orange} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke={CHART.grid} />
+                <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#a8a29e" }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{ borderRadius: 12, border: "1px solid #fde68a", fontSize: 11 }}
+                  formatter={(v: number) => [`$${v.toLocaleString()}`, "Revenue"]}
+                />
+                <Area type="monotone" dataKey="revenue" stroke={CHART.orange} strokeWidth={2.5} fill="url(#revFill)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+        <Card className="border border-amber-100/90 shadow-sm rounded-2xl bg-white p-4 sm:p-5">
+          <h3 className="text-sm font-black text-[#0A2E1F] mb-1">Category mix</h3>
+          <p className="text-[9px] font-bold text-slate-400 uppercase mb-3">{timeRange}</p>
+          {stats.categoryBreakdown.length === 0 ? (
+            <p className="text-xs text-slate-400 py-8 text-center">No data</p>
+          ) : (
+            <>
+              <div className="h-[120px] sm:h-[140px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats.categoryBreakdown}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={36}
+                      outerRadius={56}
+                      paddingAngle={2}
+                    >
+                      {stats.categoryBreakdown.map((_, idx) => (
+                        <Cell key={idx} fill={PIE[idx % PIE.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-1.5 mt-2 max-h-[72px] overflow-y-auto">
+                {stats.categoryBreakdown.slice(0, 4).map((c, idx) => (
+                  <div key={c.name} className="flex justify-between text-[10px]">
+                    <span className="flex items-center gap-1.5 text-slate-600 truncate">
+                      <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: PIE[idx % PIE.length] }} />
+                      {c.name}
+                    </span>
+                    <span className="font-bold text-[#0A2E1F] shrink-0 ml-2">{c.value}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </Card>
+      </div>
+
+      {/* TREATMENT CARE PIPELINE */}
+      <div className="px-3 sm:px-4 space-y-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Route className="h-4 w-4 text-[#E87722]" />
+            <h2 className="text-base sm:text-lg font-black text-[#0A2E1F]">Treatment pipeline</h2>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 no-print scrollbar-none">
             <button
               type="button"
               onClick={() => setTreatmentFilter("ALL")}
               className={cn(
-                "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
+                "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap border shrink-0",
                 treatmentFilter === "ALL"
-                  ? "bg-[#0A2E1F] text-white border-[#0A2E1F] shadow-lg"
-                  : "bg-white text-slate-500 border-slate-200 hover:border-emerald-200",
+                  ? "bg-[#0A2E1F] text-white border-[#0A2E1F]"
+                  : "bg-white text-slate-600 border-amber-100",
               )}
             >
-              All treatments
+              All
             </button>
-            {pipeline.treatmentOptions.slice(0, 6).map((name) => (
+            {pipeline.treatmentOptions.map((name) => (
               <button
                 key={name}
                 type="button"
                 onClick={() => setTreatmentFilter(name)}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all max-w-[180px] truncate",
+                  "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap border shrink-0 max-w-[140px] truncate",
                   treatmentFilter === name
-                    ? "bg-emerald-600 text-white border-emerald-600 shadow-lg"
-                    : "bg-white text-slate-500 border-slate-200 hover:border-emerald-200",
+                    ? "bg-[#E87722] text-white border-[#E87722]"
+                    : "bg-white text-slate-600 border-amber-100",
                 )}
                 title={name}
               >
-                {name.length > 22 ? `${name.slice(0, 20)}…` : name}
+                {name}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-12 gap-6">
-          <Card className="lg:col-span-8 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white p-8 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+          <Card className="lg:col-span-8 border border-amber-100/90 shadow-sm rounded-2xl bg-white p-4 sm:p-5 overflow-hidden">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-black text-[#0A2E1F] uppercase italic tracking-tight flex items-center gap-2">
-                  <Stethoscope className="h-5 w-5 text-emerald-600" />
+                <h3 className="text-sm font-black text-[#0A2E1F] flex items-center gap-2">
+                  <Stethoscope className="h-4 w-4 text-[#E87722]" />
                   Fulfillment steps
                 </h3>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
                   Where orders sit in the clinical journey
                 </p>
               </div>
-              <Badge className="bg-emerald-50 text-emerald-700 border-none font-black text-[9px] uppercase tracking-widest">
-                {pipeline.scopedCount} order{pipeline.scopedCount === 1 ? "" : "s"}
+              <Badge className="bg-amber-50 text-[#B45309] border-none font-bold text-[9px] uppercase">
+                {pipeline.scopedCount} orders
               </Badge>
             </div>
 
@@ -369,7 +430,7 @@ export function AdminAnalyticsPage() {
                     ))}
                   </div>
                 </div>
-                <div className="h-[220px] mt-6">
+                <div className="h-[140px] sm:h-[180px] mt-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={pipeline.statusPipeline} layout="vertical" margin={{ left: 4, right: 16 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
@@ -400,25 +461,24 @@ export function AdminAnalyticsPage() {
             )}
           </Card>
 
-          <Card className="lg:col-span-4 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-[#0A2E1F] p-8 text-white relative overflow-hidden">
-            <div className="absolute -right-8 -top-8 h-32 w-32 bg-emerald-500/20 blur-[50px] rounded-full" />
-            <h3 className="text-lg font-black uppercase italic tracking-tight mb-6">Pipeline snapshot</h3>
-            <div className="space-y-4">
+          <Card className="lg:col-span-4 border border-amber-200/80 shadow-sm rounded-2xl bg-gradient-to-br from-[#0A2E1F] to-[#1a3d2e] p-4 sm:p-5 text-white">
+            <h3 className="text-sm font-black mb-4">Pipeline snapshot</h3>
+            <div className="grid grid-cols-2 gap-2">
               {[
-                { label: "Active in pipeline", val: pipeline.inPipeline, tone: "text-emerald-300" },
-                { label: "Awaiting clinical review", val: pipeline.awaitingReview, tone: "text-amber-300" },
-                { label: "Prescribed / Rx sent", val: pipeline.prescribed, tone: "text-sky-300" },
-                { label: "Shipped or delivered", val: pipeline.fulfilled, tone: "text-white" },
+                { label: "In pipeline", val: pipeline.inPipeline },
+                { label: "In review", val: pipeline.awaitingReview },
+                { label: "Prescribed", val: pipeline.prescribed },
+                { label: "Fulfilled", val: pipeline.fulfilled },
               ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/60">{item.label}</span>
-                  <span className={cn("text-xl font-black tabular-nums", item.tone)}>{item.val}</span>
+                <div key={item.label} className="rounded-xl bg-white/10 border border-white/10 px-3 py-2.5">
+                  <p className="text-[9px] font-bold uppercase text-amber-200/80">{item.label}</p>
+                  <p className="text-lg font-black text-[#D4AF37] tabular-nums">{item.val}</p>
                 </div>
               ))}
             </div>
             <Link
               to={`${adminBase}/orders`}
-              className="mt-8 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-emerald-300 transition-colors"
+              className="mt-4 inline-flex items-center gap-2 text-[10px] font-bold uppercase text-[#D4AF37] hover:text-amber-200"
             >
               <Package className="h-4 w-4" />
               Manage orders queue
@@ -427,22 +487,53 @@ export function AdminAnalyticsPage() {
           </Card>
         </div>
 
-        <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white p-8 overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic">
-                Patient treatment tracker
-              </h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                Each row is a live order — treatment, current step, and progress
-              </p>
-            </div>
-            <Badge className="bg-amber-50 text-amber-800 border-none font-black text-[9px] uppercase tracking-widest w-fit">
-              {pipeline.patientRows.filter((r) => r.needsAttention).length} need attention
+        <Card className="border border-amber-100/90 shadow-sm rounded-2xl bg-white p-4 sm:p-5 overflow-hidden">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <h3 className="text-sm font-black text-[#0A2E1F]">Patient treatment tracker</h3>
+            <Badge className="bg-orange-50 text-[#B45309] border-none font-bold text-[9px] uppercase">
+              {pipeline.patientRows.filter((r) => r.needsAttention).length} attention
             </Badge>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm min-w-[880px]">
+
+          {/* Mobile: card list */}
+          <div className="md:hidden space-y-3">
+            {pipeline.patientRows.length === 0 ? (
+              <p className="text-xs text-slate-400 py-8 text-center">No treatments in period</p>
+            ) : (
+              pipeline.patientRows.slice(0, 12).map((row) => (
+                <div
+                  key={row.id}
+                  className={cn(
+                    "rounded-xl border p-3",
+                    row.needsAttention ? "border-amber-200 bg-amber-50/50" : "border-slate-100 bg-slate-50/30",
+                  )}
+                >
+                  <div className="flex justify-between gap-2 mb-2">
+                    <p className="font-semibold text-sm text-[#0A2E1F] truncate">{row.patientName}</p>
+                    <span className="text-[9px] font-bold text-[#B45309] uppercase shrink-0">{row.statusLabel}</span>
+                  </div>
+                  <p className="text-xs text-slate-600 truncate">{row.medication}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#E87722] to-[#D4AF37]"
+                        style={{ width: `${row.progressPct}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500">{row.progressPct}%</span>
+                  </div>
+                  <div className="flex justify-between mt-2 text-[10px] text-slate-500">
+                    <span>{row.orderNumber}</span>
+                    <span className="font-bold text-[#0A2E1F]">${row.amount.toLocaleString()}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-sm min-w-[720px]">
               <thead>
                 <tr className="border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
                   <th className="py-3 pr-4">Patient</th>
@@ -472,8 +563,8 @@ export function AdminAnalyticsPage() {
                     >
                       <td className="py-4 pr-4">
                         <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                            <User className="h-4 w-4 text-emerald-700" />
+                          <div className="h-8 w-8 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                            <User className="h-4 w-4 text-[#B45309]" />
                           </div>
                           <span className="font-semibold text-[#0A2E1F]">{row.patientName}</span>
                         </div>
@@ -501,7 +592,7 @@ export function AdminAnalyticsPage() {
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
                             <div
-                              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-700 transition-all"
+                              className="h-full rounded-full bg-gradient-to-r from-[#E87722] to-[#D4AF37] transition-all"
                               style={{ width: `${row.progressPct}%` }}
                             />
                           </div>
@@ -514,7 +605,7 @@ export function AdminAnalyticsPage() {
                       <td className="py-4 text-right">
                         <Link
                           to={`${adminBase}/orders`}
-                          className="text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-800"
+                          className="text-[10px] font-bold uppercase text-[#E87722] hover:text-[#B45309]"
                         >
                           View
                         </Link>
@@ -533,273 +624,64 @@ export function AdminAnalyticsPage() {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-8 px-4">
-        
-        {/* REVENUE MATRIX CHART */}
-        <Card className="lg:col-span-8 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white overflow-hidden p-8 sm:p-10">
-           <div className="flex items-center justify-between mb-10">
-              <div>
-                 <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic flex items-center gap-3">
-                    <BarChart3 className="h-5 w-5 text-emerald-600" /> Performance Pulse
-                 </h3>
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Cross-platform settlement trajectory ({timeRange})</p>
-              </div>
-              <div className="flex items-center gap-6">
-                 <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Revenue</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Yield</span>
-                 </div>
-              </div>
-           </div>
-
-           <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.chartData}>
-                  <defs>
-                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLORS.emerald} stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor={COLORS.emerald} stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorYield" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLORS.indigo} stopOpacity={0.05}/>
-                      <stop offset="95%" stopColor={COLORS.indigo} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="10 10" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="label" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 11, fontWeight: 900, fill: "#cbd5e1" }} 
-                    dy={15}
-                  />
-                  <YAxis hide />
-                  <Tooltip 
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-[#0A2E1F] p-5 rounded-[1.5rem] shadow-2xl border border-white/10 text-white min-w-[160px]">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-3">{payload[0].payload.label}</p>
-                            <div className="space-y-2">
-                               <div className="flex items-center justify-between gap-6">
-                                  <span className="text-[10px] font-bold text-white/60">Revenue</span>
-                                  <span className="text-xs font-black italic">${payload[0].value.toLocaleString()}</span>
-                               </div>
-                               <div className="flex items-center justify-between gap-6">
-                                  <span className="text-[10px] font-bold text-white/60">Avg. Yield</span>
-                                  <span className="text-xs font-black italic text-indigo-400">${payload[1].value.toLocaleString()}</span>
-                               </div>
-                            </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Area type="monotone" dataKey="revenue" stroke={COLORS.emerald} strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
-                  <Area type="monotone" dataKey="yield" stroke={COLORS.indigo} strokeWidth={2} strokeDasharray="5 5" fillOpacity={1} fill="url(#colorYield)" />
-                </AreaChart>
-              </ResponsiveContainer>
-           </div>
-        </Card>
-
-        {/* TOP PROTOCOLS LIST */}
-        <div className="lg:col-span-4 space-y-8">
-           <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white p-8 overflow-hidden relative">
-              <div className="absolute top-0 right-0 p-6">
-                 <ShieldCheck className="h-6 w-6 text-emerald-100" />
-              </div>
-              <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic mb-8">Top Protocols</h3>
-              
-              <div className="space-y-4">
-                 {stats.topTreatments.slice(0, 5).map((t, i) => (
-                   <div key={i} className="group flex items-center justify-between p-5 rounded-3xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all cursor-pointer">
-                      <div className="flex items-center gap-4 min-w-0">
-                         <div className="h-10 w-10 rounded-2xl flex items-center justify-center font-black text-[11px] bg-white border border-slate-100 shadow-sm group-hover:bg-[#0A2E1F] group-hover:text-emerald-400 transition-colors shrink-0">
-                            {i+1}
-                         </div>
-                         <div className="min-w-0">
-                            <p className="text-[11px] font-black italic text-[#0A2E1F] uppercase tracking-tight truncate">{t.name}</p>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t.category} · {t.count} orders</p>
-                         </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                         <p className="text-sm font-black text-[#0A2E1F]">${t.revenue.toLocaleString()}</p>
-                         <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">{t.sharePct}% share</p>
-                      </div>
-                   </div>
-                 ))}
-                 {stats.topTreatments.length === 0 && (
-                    <div className="py-20 text-center text-slate-300 italic text-[10px] uppercase font-black tracking-widest">
-                       No protocol data for this period
-                    </div>
-                 )}
-              </div>
-           </Card>
-
-           {/* PLATFORM HEALTH */}
-           <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-[#0A2E1F] p-8 text-white relative overflow-hidden">
-              <div className="absolute -right-10 -bottom-10 h-40 w-40 bg-emerald-500/10 blur-[60px] rounded-full" />
-              
-              <div className="flex items-center justify-between mb-8">
-                 <h3 className="text-lg font-black tracking-tight uppercase italic">Platform Health</h3>
-                 <Activity className="h-4 w-4 text-emerald-400 animate-pulse" />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                 {[
-                   { label: "Gross Volume", val: stats.revenue, icon: DollarSign },
-                   { label: "Pending Consults", val: stats.activeConsults, icon: Activity },
-                   { label: "Completed Orders", val: stats.shippedCount, icon: Sparkles },
-                   { label: "Active Regions", val: stats.regionsCount, icon: Globe },
-                 ].map((item, i) => (
-                   <div key={i} className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                      <p className="text-[8px] font-black text-emerald-400/60 uppercase tracking-widest mb-1.5">{item.label}</p>
-                      <p className="text-sm font-black italic tracking-tight">{item.val}</p>
-                   </div>
-                 ))}
-              </div>
-              
-              <div className="mt-8 pt-8 border-t border-white/5 flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
-                       <Globe className="h-5 w-5 text-emerald-400" />
-                    </div>
-                    <div>
-                       <p className="text-[10px] font-black uppercase tracking-widest">Global Nodes</p>
-                       <p className="text-[9px] font-bold text-white/40">{stats.regionsCount} Active Regions</p>
-                    </div>
-                 </div>
-                 <ArrowUpRight className="h-4 w-4 text-emerald-400/40" />
-              </div>
-           </Card>
-        </div>
-
-      </div>
-
-      {/* TREATMENT & PRODUCT INTELLIGENCE */}
-      <div className="grid lg:grid-cols-12 gap-8 px-4">
-        <Card className="lg:col-span-4 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white p-8">
-          <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic mb-2">Treatment mix</h3>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">By product category ({timeRange})</p>
-          {stats.categoryBreakdown.length === 0 ? (
-            <p className="text-sm text-slate-400 py-16 text-center">No category data in this period</p>
-          ) : (
-            <>
-              <div className="h-[260px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={stats.categoryBreakdown}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={52}
-                      outerRadius={88}
-                      paddingAngle={3}
-                    >
-                      {stats.categoryBreakdown.map((_, i) => (
-                        <Cell key={i} fill={stats.pieColors[i % stats.pieColors.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="space-y-2 mt-4">
-                {stats.categoryBreakdown.slice(0, 5).map((c, i) => (
-                  <div key={c.name} className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-2 font-semibold text-slate-700 truncate">
-                      <span
-                        className="h-2 w-2 rounded-full shrink-0"
-                        style={{ background: stats.pieColors[i % stats.pieColors.length] }}
-                      />
-                      {c.name}
-                    </span>
-                    <span className="font-black text-[#0A2E1F] shrink-0">{c.value} · ${(c.revenue ?? 0).toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </Card>
-
-        <Card className="lg:col-span-8 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white p-8">
-          <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic mb-2">Product performance</h3>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Revenue by treatment / SKU ({timeRange})</p>
+      {/* Product performance + treatment revenue table */}
+      <div className="px-3 sm:px-4 grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <Card className="border border-amber-100/90 shadow-sm rounded-2xl bg-white p-4 sm:p-5">
+          <h3 className="text-sm font-black text-[#0A2E1F] mb-3 flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-[#D4AF37]" />
+            Top treatments
+          </h3>
           {stats.productBreakdown.length === 0 ? (
-            <p className="text-sm text-slate-400 py-16 text-center">No product data in this period</p>
+            <p className="text-xs text-slate-400 py-8 text-center">No product data</p>
           ) : (
-            <div className="h-[320px]">
+            <div className="h-[180px] sm:h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.productBreakdown} layout="vertical" margin={{ left: 8, right: 24 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                  <XAxis type="number" tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={140}
-                    tick={{ fontSize: 9, fontWeight: 700, fill: "#475569" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    formatter={(value: number, _name: string, item: { payload?: { revenue?: number } }) => [
-                      `${value} orders · $${(item.payload?.revenue ?? 0).toLocaleString()}`,
-                      "Volume",
-                    ]}
-                  />
-                  <Bar dataKey="value" fill={COLORS.emerald} radius={[0, 8, 8, 0]} />
+                <BarChart data={stats.productBreakdown} layout="vertical" margin={{ left: 4, right: 12 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={CHART.grid} />
+                  <XAxis type="number" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 8, fill: "#57534e" }} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v: number, _n: string, item: { payload?: { revenue?: number } }) => [`${v} · $${(item.payload?.revenue ?? 0).toLocaleString()}`, "Orders"]} />
+                  <Bar dataKey="value" fill={CHART.gold} radius={[0, 6, 6, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
         </Card>
-      </div>
-
-      <Card className="mx-4 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white p-8 overflow-hidden">
-        <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic mb-2">Treatment tracking table</h3>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Orders, revenue, and share by product</p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <th className="py-3 pr-4">Treatment / product</th>
-                <th className="py-3 pr-4">Category</th>
-                <th className="py-3 pr-4 text-right">Orders</th>
-                <th className="py-3 pr-4 text-right">Revenue</th>
-                <th className="py-3 pr-4 text-right">Avg order</th>
-                <th className="py-3 text-right">Share</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.topTreatments.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 text-xs uppercase font-bold tracking-widest">
-                    No treatments in this period
-                  </td>
+        <Card className="border border-amber-100/90 shadow-sm rounded-2xl bg-white p-4 sm:p-5 overflow-hidden">
+          <h3 className="text-sm font-black text-[#0A2E1F] mb-3 flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-[#E87722]" />
+            Treatment revenue
+          </h3>
+          <div className="overflow-x-auto max-h-[220px] overflow-y-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="sticky top-0 bg-white">
+                <tr className="border-b border-amber-100 text-[9px] font-bold uppercase text-slate-500">
+                  <th className="py-2 pr-2">Treatment</th>
+                  <th className="py-2 pr-2 text-right">Ord</th>
+                  <th className="py-2 pr-2 text-right">Rev</th>
+                  <th className="py-2 text-right">%</th>
                 </tr>
-              ) : (
-                stats.topTreatments.map((t) => (
-                  <tr key={t.name} className="border-b border-slate-50 hover:bg-slate-50/80">
-                    <td className="py-4 pr-4 font-semibold text-[#0A2E1F]">{t.name}</td>
-                    <td className="py-4 pr-4 text-slate-500 text-xs font-bold uppercase tracking-wide">{t.category}</td>
-                    <td className="py-4 pr-4 text-right font-black">{t.count}</td>
-                    <td className="py-4 pr-4 text-right font-black">${t.revenue.toLocaleString()}</td>
-                    <td className="py-4 pr-4 text-right text-slate-600">${t.avgOrder.toLocaleString()}</td>
-                    <td className="py-4 text-right text-emerald-600 font-black">{t.sharePct}%</td>
+              </thead>
+              <tbody>
+                {stats.topTreatments.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-slate-400">No data</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                ) : (
+                  stats.topTreatments.map((t) => (
+                    <tr key={t.name} className="border-b border-slate-50">
+                      <td className="py-2 pr-2 font-semibold text-[#0A2E1F] truncate max-w-[120px]">{t.name}</td>
+                      <td className="py-2 pr-2 text-right font-bold">{t.count}</td>
+                      <td className="py-2 pr-2 text-right font-bold">${t.revenue.toLocaleString()}</td>
+                      <td className="py-2 text-right text-[#E87722] font-bold">{t.sharePct}%</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
 
     </div>
   );

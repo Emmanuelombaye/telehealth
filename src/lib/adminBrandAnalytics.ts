@@ -47,7 +47,7 @@ export type TreatmentRow = {
 
 export type NamedMetric = { name: string; value: number; revenue?: number };
 
-const PIE_PALETTE = ["#10b981", "#6366f1", "#f59e0b", "#f43f5e", "#8b5cf6", "#0ea5e9", "#64748b"];
+const PIE_PALETTE = ["#E87722", "#D4AF37", "#F59E0B", "#0A2E1F", "#FB923C", "#B45309", "#78716C"];
 
 const STATUS_COLORS: Record<string, string> = {
   order_submitted: "#94a3b8",
