@@ -1,12 +1,40 @@
+import { getStepIndex, ORDER_STEPS, type OrderStatus } from "./patient-store";
+
 export type AdminAnalyticsOrder = {
   orderedDate: string;
   amount: string;
   status: string;
   medication: string;
   category: string;
+  patientName?: string;
+  orderNumber?: string;
 };
 
 export type AdminTimeRange = "7D" | "30D" | "90D" | "YTD";
+
+export type StatusPipelineSlice = {
+  status: string;
+  label: string;
+  desc: string;
+  count: number;
+  fill: string;
+};
+
+export type PatientTreatmentRow = {
+  id: string;
+  patientName: string;
+  orderNumber: string;
+  medication: string;
+  category: string;
+  status: string;
+  statusLabel: string;
+  stepIndex: number;
+  stepTotal: number;
+  progressPct: number;
+  orderedDate: string;
+  amount: number;
+  needsAttention: boolean;
+};
 
 export type TreatmentRow = {
   name: string;
@@ -20,6 +48,156 @@ export type TreatmentRow = {
 export type NamedMetric = { name: string; value: number; revenue?: number };
 
 const PIE_PALETTE = ["#10b981", "#6366f1", "#f59e0b", "#f43f5e", "#8b5cf6", "#0ea5e9", "#64748b"];
+
+const STATUS_COLORS: Record<string, string> = {
+  order_submitted: "#94a3b8",
+  account_created: "#64748b",
+  id_verified: "#0ea5e9",
+  intake_completed: "#06b6d4",
+  medical_review: "#f59e0b",
+  rx_sent: "#10b981",
+  shipped: "#059669",
+  delivered: "#047857",
+  follow_up: "#f43f5e",
+  refill_eligible: "#8b5cf6",
+  cancelled: "#cbd5e1",
+};
+
+const ATTENTION_STATUSES = new Set(["follow_up", "medical_review", "order_submitted", "intake_completed"]);
+
+const STATUS_LABEL_OVERRIDES: Record<string, string> = {
+  order_submitted: "Submitted",
+  account_created: "Registered",
+  id_verified: "ID verified",
+  intake_completed: "Intake done",
+  medical_review: "Clinical review",
+  rx_sent: "Prescribed",
+  shipped: "Shipped",
+  delivered: "Delivered",
+  follow_up: "Follow-up",
+  refill_eligible: "Refill eligible",
+  cancelled: "Cancelled",
+};
+
+function statusLabel(status: string): string {
+  if (STATUS_LABEL_OVERRIDES[status]) return STATUS_LABEL_OVERRIDES[status];
+  return status.replace(/_/g, " ");
+}
+
+function stepMeta(status: string): { stepIndex: number; stepTotal: number; progressPct: number } {
+  const stepTotal = ORDER_STEPS.length;
+  const idx = getStepIndex(status as OrderStatus);
+  if (status === "cancelled") {
+    return { stepIndex: -1, stepTotal, progressPct: 0 };
+  }
+  if (idx < 0) {
+    return { stepIndex: 0, stepTotal, progressPct: 8 };
+  }
+  const progressPct = Math.round(((idx + 1) / stepTotal) * 100);
+  return { stepIndex: idx, stepTotal, progressPct };
+}
+
+export function filterOrdersInPeriod(
+  orders: AdminAnalyticsOrder[],
+  timeRange: AdminTimeRange,
+  now = new Date(),
+): AdminAnalyticsOrder[] {
+  const startDate = rangeStart(timeRange, now);
+  return orders.filter((o) => inPeriod(o.orderedDate, startDate, now));
+}
+
+export function buildOrderedStatusPipeline(statusMap: Record<string, number>): StatusPipelineSlice[] {
+  const pipeline = ORDER_STEPS.map((step) => ({
+    status: step.key,
+    label: step.label,
+    desc: step.desc,
+    count: statusMap[step.key] || 0,
+    fill: STATUS_COLORS[step.key] || "#64748b",
+  }));
+
+  const extras = Object.entries(statusMap)
+    .filter(([st]) => !ORDER_STEPS.some((s) => s.key === st))
+    .map(([status, count]) => ({
+      status,
+      label: statusLabel(status),
+      desc: "Other order state",
+      count,
+      fill: STATUS_COLORS[status] || "#94a3b8",
+    }));
+
+  return [...pipeline, ...extras].filter((s) => s.count > 0);
+}
+
+export function buildPatientTreatmentRows(orders: AdminAnalyticsOrder[]): PatientTreatmentRow[] {
+  const rows = orders.map((o) => {
+    const st = o.status || "order_submitted";
+    const meta = stepMeta(st);
+    return {
+      id: o.orderNumber || `${o.patientName}-${o.orderedDate}`,
+      patientName: (o.patientName || "Patient").trim(),
+      orderNumber: o.orderNumber || "—",
+      medication: (o.medication || "Consultation").trim(),
+      category: (o.category || "General").trim(),
+      status: st,
+      statusLabel: statusLabel(st),
+      stepIndex: meta.stepIndex,
+      stepTotal: meta.stepTotal,
+      progressPct: meta.progressPct,
+      orderedDate: o.orderedDate,
+      amount: parseOrderAmount(o.amount),
+      needsAttention: ATTENTION_STATUSES.has(st),
+    };
+  });
+
+  const priority = (r: PatientTreatmentRow) => {
+    if (r.needsAttention) return 0;
+    if (r.status === "cancelled") return 3;
+    if (r.status === "delivered" || r.status === "shipped") return 2;
+    return 1;
+  };
+
+  return rows.sort((a, b) => {
+    const pa = priority(a);
+    const pb = priority(b);
+    if (pa !== pb) return pa - pb;
+    return new Date(b.orderedDate).getTime() - new Date(a.orderedDate).getTime();
+  });
+}
+
+export function buildTreatmentPipelineViews(
+  orders: AdminAnalyticsOrder[],
+  timeRange: AdminTimeRange,
+  treatmentFilter = "ALL",
+) {
+  const periodOrders = filterOrdersInPeriod(orders, timeRange);
+  const scoped =
+    treatmentFilter === "ALL"
+      ? periodOrders
+      : periodOrders.filter((o) => (o.medication || "Consultation").trim() === treatmentFilter);
+
+  const statusMap: Record<string, number> = {};
+  for (const o of scoped) {
+    const st = o.status || "unknown";
+    statusMap[st] = (statusMap[st] || 0) + 1;
+  }
+
+  const treatmentOptions = Array.from(
+    new Set(periodOrders.map((o) => (o.medication || "Consultation").trim())),
+  ).sort();
+
+  return {
+    scopedCount: scoped.length,
+    treatmentOptions,
+    statusPipeline: buildOrderedStatusPipeline(statusMap),
+    patientRows: buildPatientTreatmentRows(scoped),
+    inPipeline: scoped.filter(
+      (o) => !["delivered", "shipped", "cancelled"].includes(o.status || ""),
+    ).length,
+    awaitingReview: scoped.filter((o) => o.status === "medical_review" || o.status === "follow_up").length,
+    prescribed: scoped.filter((o) => o.status === "rx_sent").length,
+    fulfilled: scoped.filter((o) => o.status === "shipped" || o.status === "delivered").length,
+  };
+}
 
 export function parseOrderAmount(amount: string | number | null | undefined): number {
   return parseFloat(String(amount ?? "").replace(/[$,]/g, "") || "0") || 0;
@@ -112,14 +290,7 @@ export function buildAdminBrandAnalytics(orders: AdminAnalyticsOrder[], timeRang
     revenue: t.revenue,
   }));
 
-  const statusPipeline = Object.entries(statusMap)
-    .map(([status, count]) => ({
-      status,
-      label: status.replace(/_/g, " "),
-      count,
-      fill: PIE_PALETTE[Object.keys(statusMap).indexOf(status) % PIE_PALETTE.length],
-    }))
-    .sort((a, b) => b.count - a.count);
+  const statusPipeline = buildOrderedStatusPipeline(statusMap);
 
   const chartData: { label: string; revenue: number; yield: number }[] = [];
   const interval = timeRange === "7D" ? 7 : timeRange === "30D" ? 30 : 90;
@@ -190,5 +361,8 @@ export function buildAdminBrandAnalytics(orders: AdminAnalyticsOrder[], timeRang
     productBreakdown,
     statusPipeline,
     pieColors: PIE_PALETTE,
+    treatmentOptions: Array.from(
+      new Set(filtered.map((o) => (o.medication || "Consultation").trim())),
+    ).sort(),
   };
 }

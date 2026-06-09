@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Link, useLocation } from "react-router";
+import { motion } from "framer-motion";
 import { 
-  TrendingUp, Users, DollarSign, Activity, Globe, 
-  Zap, BarChart3, ArrowUpRight, ArrowDownRight, 
-  Target, ZapOff, Sparkles, Gem, ShieldCheck, 
-  Clock, Filter, Download, Maximize2, Loader2, FileText
+  DollarSign, Activity, Globe, 
+  Zap, BarChart3, ArrowUpRight, 
+  Target, Sparkles, Gem, ShieldCheck, 
+  Download, Loader2, Stethoscope, Package, ChevronRight, User, Route
 } from "lucide-react";
 import { Card, CardContent, Badge, Button } from "../../../components/ui/shared.tsx";
 import { 
@@ -21,9 +22,11 @@ import { cn } from "../../../components/ui/shared.tsx";
 import { downloadBrandedScreenshotPdf } from "../../../../lib/brandedExport";
 import {
   buildAdminBrandAnalytics,
+  buildTreatmentPipelineViews,
   type AdminAnalyticsOrder,
   type AdminTimeRange,
 } from "../../../../lib/adminBrandAnalytics";
+import { adminPortalBaseFromPath } from "../../../../lib/portalPath";
 
 type AdminOrderRow = AdminAnalyticsOrder & {
   patient_country?: string;
@@ -40,12 +43,15 @@ const COLORS = {
 };
 
 export function AdminAnalyticsPage() {
+  const location = useLocation();
+  const adminBase = adminPortalBaseFromPath(location.pathname);
   const { role, brandId: authBrandId } = useAuthStore();
   const { brand: tenantBrand } = useBrand();
   const brandId = resolveAdminBrandScope(role, authBrandId, tenantBrand.id);
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<AdminTimeRange>("30D");
+  const [treatmentFilter, setTreatmentFilter] = useState("ALL");
   const [isExporting, setIsExporting] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
 
@@ -78,6 +84,8 @@ export function AdminAnalyticsPage() {
             status: (d.status as string) || "",
             medication: (d.medication as string) || "",
             category: (d.category as string) || "General",
+            patientName: (d.patient_name as string) || "",
+            orderNumber: (d.order_number as string) || "",
             patient_country: d.patient_country as string | undefined,
           }));
         setOrders(rows);
@@ -99,6 +107,17 @@ export function AdminAnalyticsPage() {
   }, [role, brandId]);
 
   const stats = useMemo(() => buildAdminBrandAnalytics(orders, timeRange), [orders, timeRange]);
+
+  const pipeline = useMemo(
+    () => buildTreatmentPipelineViews(orders, timeRange, treatmentFilter),
+    [orders, timeRange, treatmentFilter],
+  );
+
+  useEffect(() => {
+    if (treatmentFilter !== "ALL" && !pipeline.treatmentOptions.includes(treatmentFilter)) {
+      setTreatmentFilter("ALL");
+    }
+  }, [pipeline.treatmentOptions, treatmentFilter]);
 
   const downloadPDF = async () => {
     if (!terminalRef.current) return;
@@ -172,7 +191,7 @@ export function AdminAnalyticsPage() {
 
         <div className="flex items-center gap-3 no-print">
            <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
-              {["7D", "30D", "90D", "YTD"].map(range => (
+              {(["7D", "30D", "90D", "YTD"] as AdminTimeRange[]).map((range) => (
                 <button
                   key={range}
                   onClick={() => setTimeRange(range)}
@@ -248,6 +267,270 @@ export function AdminAnalyticsPage() {
             </Card>
           </motion.div>
         ))}
+      </div>
+
+      {/* TREATMENT CARE PIPELINE — live from orders.status + medication */}
+      <div className="px-4 space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Route className="h-4 w-4 text-emerald-600" />
+              <span className="text-[9px] font-black uppercase tracking-[0.35em] text-emerald-600">
+                Live fulfillment tracking
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-[#0A2E1F] tracking-tight uppercase italic">
+              Treatment <span className="text-emerald-600 font-serif font-normal lowercase">care pipeline</span>
+            </h2>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">
+              Patient journey by treatment · sourced from live orders ({timeRange})
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 no-print">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 mr-1">Filter treatment</span>
+            <button
+              type="button"
+              onClick={() => setTreatmentFilter("ALL")}
+              className={cn(
+                "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
+                treatmentFilter === "ALL"
+                  ? "bg-[#0A2E1F] text-white border-[#0A2E1F] shadow-lg"
+                  : "bg-white text-slate-500 border-slate-200 hover:border-emerald-200",
+              )}
+            >
+              All treatments
+            </button>
+            {pipeline.treatmentOptions.slice(0, 6).map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => setTreatmentFilter(name)}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all max-w-[180px] truncate",
+                  treatmentFilter === name
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-lg"
+                    : "bg-white text-slate-500 border-slate-200 hover:border-emerald-200",
+                )}
+                title={name}
+              >
+                {name.length > 22 ? `${name.slice(0, 20)}…` : name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-12 gap-6">
+          <Card className="lg:col-span-8 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white p-8 overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-black text-[#0A2E1F] uppercase italic tracking-tight flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5 text-emerald-600" />
+                  Fulfillment steps
+                </h3>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                  Where orders sit in the clinical journey
+                </p>
+              </div>
+              <Badge className="bg-emerald-50 text-emerald-700 border-none font-black text-[9px] uppercase tracking-widest">
+                {pipeline.scopedCount} order{pipeline.scopedCount === 1 ? "" : "s"}
+              </Badge>
+            </div>
+
+            {pipeline.statusPipeline.length === 0 ? (
+              <p className="text-sm text-slate-400 py-16 text-center">No pipeline data for this period</p>
+            ) : (
+              <>
+                <div className="overflow-x-auto pb-2 -mx-2 px-2">
+                  <div className="flex items-stretch gap-2 min-w-max">
+                    {pipeline.statusPipeline.map((step, i) => (
+                      <div key={step.status} className="flex items-center gap-2">
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.04 }}
+                          className="w-[132px] rounded-2xl border border-slate-100 bg-slate-50/80 p-4 hover:bg-white hover:shadow-lg transition-all"
+                        >
+                          <div
+                            className="h-1.5 w-full rounded-full mb-3"
+                            style={{ background: step.fill }}
+                          />
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-tight min-h-[28px]">
+                            {step.label}
+                          </p>
+                          <p className="text-2xl font-black text-[#0A2E1F] mt-2 tabular-nums">{step.count}</p>
+                          <p className="text-[8px] font-bold text-slate-400 mt-1 leading-snug line-clamp-2">
+                            {step.desc}
+                          </p>
+                        </motion.div>
+                        {i < pipeline.statusPipeline.length - 1 ? (
+                          <ChevronRight className="h-4 w-4 text-slate-200 shrink-0" aria-hidden />
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="h-[220px] mt-6">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={pipeline.statusPipeline} layout="vertical" margin={{ left: 4, right: 16 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                      <XAxis type="number" tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                      <YAxis
+                        type="category"
+                        dataKey="label"
+                        width={118}
+                        tick={{ fontSize: 9, fontWeight: 700, fill: "#475569" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        formatter={(value: number, _n: string, item: { payload?: { desc?: string } }) => [
+                          `${value} patients`,
+                          item.payload?.desc ?? "Orders at this step",
+                        ]}
+                      />
+                      <Bar dataKey="count" radius={[0, 8, 8, 0]}>
+                        {pipeline.statusPipeline.map((entry) => (
+                          <Cell key={entry.status} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            )}
+          </Card>
+
+          <Card className="lg:col-span-4 border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-[#0A2E1F] p-8 text-white relative overflow-hidden">
+            <div className="absolute -right-8 -top-8 h-32 w-32 bg-emerald-500/20 blur-[50px] rounded-full" />
+            <h3 className="text-lg font-black uppercase italic tracking-tight mb-6">Pipeline snapshot</h3>
+            <div className="space-y-4">
+              {[
+                { label: "Active in pipeline", val: pipeline.inPipeline, tone: "text-emerald-300" },
+                { label: "Awaiting clinical review", val: pipeline.awaitingReview, tone: "text-amber-300" },
+                { label: "Prescribed / Rx sent", val: pipeline.prescribed, tone: "text-sky-300" },
+                { label: "Shipped or delivered", val: pipeline.fulfilled, tone: "text-white" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/60">{item.label}</span>
+                  <span className={cn("text-xl font-black tabular-nums", item.tone)}>{item.val}</span>
+                </div>
+              ))}
+            </div>
+            <Link
+              to={`${adminBase}/orders`}
+              className="mt-8 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-emerald-300 transition-colors"
+            >
+              <Package className="h-4 w-4" />
+              Manage orders queue
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </Card>
+        </div>
+
+        <Card className="border-none shadow-2xl shadow-slate-100/50 rounded-[3rem] bg-white p-8 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-xl font-black text-[#0A2E1F] tracking-tight uppercase italic">
+                Patient treatment tracker
+              </h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                Each row is a live order — treatment, current step, and progress
+              </p>
+            </div>
+            <Badge className="bg-amber-50 text-amber-800 border-none font-black text-[9px] uppercase tracking-widest w-fit">
+              {pipeline.patientRows.filter((r) => r.needsAttention).length} need attention
+            </Badge>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm min-w-[880px]">
+              <thead>
+                <tr className="border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <th className="py-3 pr-4">Patient</th>
+                  <th className="py-3 pr-4">Order</th>
+                  <th className="py-3 pr-4">Treatment</th>
+                  <th className="py-3 pr-4">Current step</th>
+                  <th className="py-3 pr-4 min-w-[140px]">Progress</th>
+                  <th className="py-3 pr-4 text-right">Amount</th>
+                  <th className="py-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pipeline.patientRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-14 text-center text-slate-400 text-xs uppercase font-bold tracking-widest">
+                      No patient treatments in this period
+                    </td>
+                  </tr>
+                ) : (
+                  pipeline.patientRows.slice(0, 25).map((row) => (
+                    <tr
+                      key={row.id}
+                      className={cn(
+                        "border-b border-slate-50 hover:bg-slate-50/80 transition-colors",
+                        row.needsAttention && "bg-amber-50/40",
+                      )}
+                    >
+                      <td className="py-4 pr-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                            <User className="h-4 w-4 text-emerald-700" />
+                          </div>
+                          <span className="font-semibold text-[#0A2E1F]">{row.patientName}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 pr-4 font-mono text-xs text-slate-500">{row.orderNumber}</td>
+                      <td className="py-4 pr-4">
+                        <p className="font-semibold text-[#0A2E1F] truncate max-w-[200px]">{row.medication}</p>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{row.category}</p>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <span
+                          className={cn(
+                            "inline-flex px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
+                            row.needsAttention
+                              ? "bg-amber-100 text-amber-900"
+                              : row.status === "shipped" || row.status === "delivered"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-slate-100 text-slate-700",
+                          )}
+                        >
+                          {row.statusLabel}
+                        </span>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-700 transition-all"
+                              style={{ width: `${row.progressPct}%` }}
+                            />
+                          </div>
+                          <span className="text-[10px] font-black text-slate-500 tabular-nums w-8">{row.progressPct}%</span>
+                        </div>
+                      </td>
+                      <td className="py-4 pr-4 text-right font-black text-[#0A2E1F]">
+                        ${row.amount.toLocaleString()}
+                      </td>
+                      <td className="py-4 text-right">
+                        <Link
+                          to={`${adminBase}/orders`}
+                          className="text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-800"
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {pipeline.patientRows.length > 25 ? (
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4 text-center">
+              Showing 25 of {pipeline.patientRows.length} — open Orders for the full queue
+            </p>
+          ) : null}
+        </Card>
       </div>
 
       <div className="grid lg:grid-cols-12 gap-8 px-4">
