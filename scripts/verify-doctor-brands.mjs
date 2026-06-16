@@ -4,6 +4,9 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import ws from "ws";
+
+global.WebSocket = ws;
 
 const url = process.env.VITE_SUPABASE_URL || "https://kvopgyhcjcniaocjozje.supabase.co";
 const key =

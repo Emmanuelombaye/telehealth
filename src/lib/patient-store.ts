@@ -100,6 +100,19 @@ export type Order = {
   order_number?: string;
   patient_name?: string;
   ordered_date?: string;
+  // New ThriveWell Rx columns
+  dea_schedule?: string;
+  patient_dob?: string;
+  patient_phone?: string;
+  patient_email?: string;
+  shipping_address_line1?: string;
+  shipping_address_line2?: string;
+  shipping_city?: string;
+  shipping_state?: string;
+  shipping_zip?: string;
+  quantity?: number;
+  refills_authorized?: number;
+  ndc_code?: string;
 }
 
 // Helper: Generate a unique Medical Record Number (MRN)
@@ -450,6 +463,19 @@ export const usePatientStore = create<AppState>()(
             doctor_id: d.doctor_id as string | undefined,
             created_at: d.created_at as string | undefined,
             order_number: d.order_number as string | undefined,
+            // Map ThriveWell fields
+            dea_schedule: d.dea_schedule as string | undefined,
+            patient_dob: d.patient_dob as string | undefined,
+            patient_phone: d.patient_phone as string | undefined,
+            patient_email: d.patient_email as string | undefined,
+            shipping_address_line1: d.shipping_address_line1 as string | undefined,
+            shipping_address_line2: d.shipping_address_line2 as string | undefined,
+            shipping_city: d.shipping_city as string | undefined,
+            shipping_state: d.shipping_state as string | undefined,
+            shipping_zip: d.shipping_zip as string | undefined,
+            quantity: d.quantity as number | undefined,
+            refills_authorized: d.refills_authorized as number | undefined,
+            ndc_code: d.ndc_code as string | undefined,
           }));
           const clinicalOrders = mappedOrders.filter(
             (o) =>

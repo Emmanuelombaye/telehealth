@@ -33,6 +33,7 @@ export type DispatchPrescriptionInput = {
   pharmacy?: string;
   medication?: string;
   refillsRemaining?: number;
+  prescriptionPdfB64?: string;
 };
 
 export type DispatchPrescriptionResult = {
@@ -83,18 +84,20 @@ export async function dispatchPrescription(
     dosage_instructions: input.dosageInstructions,
     doctor_note: input.doctorNote,
     pharmacy,
+    prescription_pdf_b64: input.prescriptionPdfB64,
   };
 
   try {
     const { data, error } = await invokeEdgeFunction("dispatch-prescription", { body });
-    if (!error && data?.success) {
+    const resData = data as { success?: boolean; pharmacy_confirmation_id?: string | null; error?: string } | null;
+    if (!error && resData?.success) {
       return {
         ok: true,
-        pharmacyConfirmationId: data.pharmacy_confirmation_id ?? null,
+        pharmacyConfirmationId: resData.pharmacy_confirmation_id ?? null,
       };
     }
 
-    const msg = error?.message || data?.error || "Edge function failed";
+    const msg = error?.message || resData?.error || "Edge function failed";
     console.warn("[prescriptions] dispatch-prescription:", msg, "— using fallback");
   } catch (e) {
     console.warn("[prescriptions] invoke failed:", e);
@@ -183,6 +186,7 @@ export async function approveAndDispatchPrescription(params: {
   doctorNote: string;
   pharmacy: string;
   refillsRemaining?: number;
+  prescriptionPdfB64?: string;
 }): Promise<DispatchPrescriptionResult & { prescriptionInserted?: boolean }> {
   const user = useAuthStore.getState().user;
   const doctorName = doctorDisplayName(user?.user_metadata as Record<string, unknown>);
@@ -193,6 +197,7 @@ export async function approveAndDispatchPrescription(params: {
     doctorNote: params.doctorNote,
     pharmacy: params.pharmacy,
     medication: params.medication,
+    prescriptionPdfB64: params.prescriptionPdfB64,
   });
 
   if (!dispatch.ok) return dispatch;

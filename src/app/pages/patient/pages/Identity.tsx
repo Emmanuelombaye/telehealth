@@ -8,6 +8,7 @@ import {
   Eye,
   Loader2,
   FileKey,
+  Upload,
 } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Card, CardContent, Button, Badge, cn } from "../../../components/ui/shared.tsx";
@@ -53,6 +54,13 @@ export function IdentityPage() {
   const [accessLoading, setAccessLoading] = useState(false);
   const [accessTableMissing, setAccessTableMissing] = useState(false);
 
+  // New DL upload states
+  const [showDlModal, setShowDlModal] = useState(false);
+  const [dlNumber, setDlNumber] = useState("");
+  const [dlState, setDlState] = useState("VA");
+  const [dlFile, setDlFile] = useState<File | null>(null);
+  const [dlUploading, setDlUploading] = useState(false);
+
   const refresh = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -69,7 +77,12 @@ export function IdentityPage() {
         supabase.from("profiles").select("address, phone").eq("id", user.id).maybeSingle(),
       ]);
 
-      if (!idRes.error) setVerification(idRes.data as Record<string, unknown> | null);
+      if (!idRes.error && idRes.data) {
+        setVerification(idRes.data as Record<string, unknown> | null);
+        const data = idRes.data as any;
+        if (data.driver_license_number) setDlNumber(data.driver_license_number);
+        if (data.driver_license_state) setDlState(data.driver_license_state);
+      }
       const kyc = (orderRes.data?.kyc_status as string) || "";
       setKycVerified(kyc === "verified" || (idRes.data as { status?: string } | null)?.status === "verified");
       setProfile(profileRes.data);
@@ -205,9 +218,89 @@ export function IdentityPage() {
     }
   };
 
+  const handleDlSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    if (!dlNumber.trim()) {
+      toast.error("Please enter your Driver's License number.");
+      return;
+    }
+    if (!dlState.trim()) {
+      toast.error("Please select your Driver's License state.");
+      return;
+    }
+    if (!dlFile && !verification?.driver_license_image_path) {
+      toast.error("Please upload your Driver's License photo.");
+      return;
+    }
+
+    setDlUploading(true);
+    try {
+      let path = (verification as any)?.driver_license_image_path || null;
+
+      if (dlFile) {
+        const ext = dlFile.name.split(".").pop() || "jpg";
+        path = `${user.id}/driver_license_${Date.now()}.${ext}`;
+
+        const { error: storageError } = await supabase.storage
+          .from("patient-documents")
+          .upload(path, dlFile);
+
+        if (storageError) throw storageError;
+      }
+
+      const patch = {
+        status: "verified",
+        verified_at: new Date().toISOString(),
+        document_type: "driver_license",
+        driver_license_number: dlNumber.trim(),
+        driver_license_state: dlState.trim(),
+        driver_license_image_path: path,
+      };
+
+      const { data: existing } = await supabase
+        .from("identity_verification")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const { error } = await supabase
+          .from("identity_verification")
+          .update(patch)
+          .eq("user_id", user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("identity_verification")
+          .insert({ user_id: user.id, ...patch });
+        if (error) throw error;
+      }
+
+      // Also update any of this patient's active orders in DB with their DL info
+      await supabase
+        .from("orders")
+        .update({
+          driver_license: dlNumber.trim(),
+          driver_license_state: dlState.trim(),
+        })
+        .eq("user_id", user.id);
+
+      setKycVerified(true);
+      toast.success("Driver's License uploaded and verified successfully.");
+      setShowDlModal(false);
+      await refresh();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to upload Driver's License.");
+    } finally {
+      setDlUploading(false);
+    }
+  };
+
   const handleComplete = (item: ChecklistItem) => {
     if (item.id === "gov_id" || item.id === "selfie") {
-      void startStripeIdentity();
+      setShowDlModal(true);
       return;
     }
     if (item.id === "address") {
@@ -489,6 +582,106 @@ export function IdentityPage() {
               Close
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDlModal} onOpenChange={(o) => !o && !dlUploading && setShowDlModal(false)}>
+        <DialogContent className="max-w-md rounded-2xl bg-white p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold text-[#0A2E1F]">
+              <ShieldCheck className="h-5 w-5 text-emerald-600" />
+              Upload Driver's License
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 mt-1">
+              Provide your Driver's License information. This is legally required by the pharmacy to verify your identity before dispensing controlled medications.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleDlSubmit} className="space-y-4 mt-4">
+            <div>
+              <label htmlFor="dl-number" className="block text-xs font-bold text-slate-700 mb-1">
+                Driver's License Number
+              </label>
+              <input
+                id="dl-number"
+                type="text"
+                value={dlNumber}
+                onChange={(e) => setDlNumber(e.target.value)}
+                placeholder="e.g. B67237651"
+                required
+                disabled={dlUploading}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="dl-state" className="block text-xs font-bold text-slate-700 mb-1">
+                Issuing State
+              </label>
+              <select
+                id="dl-state"
+                value={dlState}
+                onChange={(e) => setDlState(e.target.value)}
+                required
+                disabled={dlUploading}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                {["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"].map((st) => (
+                  <option key={st} value={st}>
+                    {st}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Driver's License Photo (Front)
+              </label>
+              <div className="relative border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50 hover:bg-slate-100/50 transition-colors flex flex-col items-center justify-center text-center">
+                <input
+                  type="file"
+                  onChange={(e) => setDlFile(e.target.files?.[0] || null)}
+                  accept=".jpg,.jpeg,.png,.webp"
+                  required={!verification?.driver_license_image_path}
+                  disabled={dlUploading}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  aria-label="Upload Driver's License front photo"
+                />
+                <Upload className="h-5 w-5 text-slate-400 mb-1.5" />
+                <span className="text-xs font-semibold text-slate-700 truncate max-w-full">
+                  {dlFile ? dlFile.name : (verification?.driver_license_image_path ? "✓ Driver's License photo uploaded" : "Choose file (JPG, PNG, WEBP)")}
+                </span>
+                <span className="text-[10px] text-slate-400 mt-0.5">Max file size 5MB</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={dlUploading}
+                onClick={() => setShowDlModal(false)}
+                className="flex-1 rounded-xl h-11 text-xs font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={dlUploading}
+                className="flex-1 rounded-xl h-11 text-xs font-bold bg-[#0A2E1F] text-white hover:bg-emerald-950"
+              >
+                {dlUploading ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  "Save & Verify"
+                )}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

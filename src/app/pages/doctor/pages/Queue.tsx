@@ -21,6 +21,7 @@ const { motion, AnimatePresence } = FramerMotion;
 import { toast } from "sonner";
 import { DoctorIntakeReviewPanel } from "../../../components/doctor/DoctorIntakeReviewPanel";
 import { buildDoctorIntakeReview, orderToIntakeSource } from "../../../../lib/doctorIntakeReview";
+import jsPDF from "jspdf";
 
 const queueStatusConfig: Record<OrderStatus, { label: string; color: string; bg: string; border: string }> = {
   order_submitted: { label: "Order Submitted", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" },
@@ -50,6 +51,153 @@ export function DoctorQueuePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isDispatching, setIsDispatching] = useState(false);
+
+  const { user: authUser } = useAuthStore();
+  const [docProfile, setDocProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (!selectedId || !authUser) {
+      setDocProfile(null);
+      return;
+    }
+    const fetchDocProfile = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", authUser.id)
+        .maybeSingle();
+      if (!error && data) {
+        setDocProfile(data);
+      }
+    };
+    fetchDocProfile();
+  }, [selectedId, authUser]);
+
+  const generatePrescriptionPdfBase64 = (
+    order: any,
+    doctor: any,
+    dosageInstructions: string,
+    doctorNote: string
+  ): string => {
+    const doc = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+
+    // Document Styling Constants
+    const margin = 15;
+    let y_pos = 20;
+
+    // Header / Branding
+    doc.setFillColor(10, 46, 31); // Primary Green (#0A2E1F)
+    doc.rect(margin, y_pos, 180, 10, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.text("PEAK HEALTH PRESCRIPTION DIRECTIVE", margin + 5, y_pos + 7);
+    y_pos += 18;
+
+    // Prescriber Information
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(10, 46, 31);
+    doc.text("PRESCRIBER INFO", margin, y_pos);
+    doc.setDrawColor(10, 46, 31);
+    doc.setLineWidth(0.3);
+    doc.line(margin, y_pos + 2, 195, y_pos + 2);
+    y_pos += 7;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+    const docName = `Dr. ${doctor?.first_name || ""} ${doctor?.last_name || ""}`.trim() || "Attending Clinician";
+    doc.text(`Name: ${docName} (${doctor?.specialty || "General Practice"})`, margin, y_pos);
+    y_pos += 5;
+    doc.text(`NPI: ${doctor?.provider_npi || "—"}    DEA: ${doctor?.provider_dea || "—"}`, margin, y_pos);
+    y_pos += 5;
+    const docAddress = `${doctor?.provider_address_line1 || ""} ${doctor?.provider_address_line2 || ""}, ${doctor?.provider_city || ""}, ${doctor?.provider_state || ""} ${doctor?.provider_zip || ""}`.trim();
+    doc.text(`Clinic Address: ${docAddress || "900 Commonwealth Place, Virginia Beach, VA 23464"}`, margin, y_pos);
+    y_pos += 10;
+
+    // Patient Information
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(10, 46, 31);
+    doc.text("PATIENT DEMOGRAPHICS", margin, y_pos);
+    doc.line(margin, y_pos + 2, 195, y_pos + 2);
+    y_pos += 7;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+    doc.text(`Name: ${order?.patientName || "—"}`, margin, y_pos);
+    y_pos += 5;
+    doc.text(`DOB: ${order?.patient_dob || "—"}    Phone: ${order?.patient_phone || "—"}`, margin, y_pos);
+    y_pos += 5;
+    const shippingAddress = `${order?.shipping_address_line1 || ""} ${order?.shipping_address_line2 || ""}, ${order?.shipping_city || ""}, ${order?.shipping_state || ""} ${order?.shipping_zip || ""}`.trim();
+    doc.text(`Shipping Address: ${shippingAddress || "—"}`, margin, y_pos);
+    y_pos += 10;
+
+    // Medication & SIG (Prescription details)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(10, 46, 31);
+    doc.text("PRESCRIPTION (Rx)", margin, y_pos);
+    doc.line(margin, y_pos + 2, 195, y_pos + 2);
+    y_pos += 7;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(10, 46, 31);
+    doc.text(`Rx: ${order?.medication || "—"}`, margin, y_pos);
+    y_pos += 6;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+    doc.text(`Directions (Sig): ${dosageInstructions || "As directed by physician"}`, margin, y_pos, { maxWidth: 175 });
+    y_pos += 10;
+    doc.text(`Dispense Quantity: ${order?.quantity || 1}    Refills Authorized: ${order?.refills_authorized ?? 0}`, margin, y_pos);
+    y_pos += 5;
+    doc.text(`NDC Code: ${order?.ndc_code || "—"}    DEA Schedule: ${order?.dea_schedule || "none"}`, margin, y_pos);
+    y_pos += 12;
+
+    // Attestation & Electronic Signature Block
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(10, 46, 31);
+    doc.text("CLINICAL ATTESTATION & SIGNATURE", margin, y_pos);
+    doc.line(margin, y_pos + 2, 195, y_pos + 2);
+    y_pos += 8;
+
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(
+      "By signing below, I attest that I have completed a clinical evaluation of this patient and authorized this prescription electronically via the Peak Health portal. I certify that the information provided is accurate and complies with all applicable state and federal guidelines.",
+      margin,
+      y_pos,
+      { maxWidth: 175 }
+    );
+    y_pos += 14;
+
+    // Electronic Signature Stamp
+    doc.setFillColor(240, 253, 244); // Light green background (#F0FDF4)
+    doc.setDrawColor(167, 243, 208); // Emerald-200 border
+    doc.rect(margin, y_pos, 180, 22, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(6, 95, 70); // Emerald-800
+    doc.text(`ELECTRONICALLY SIGNED BY: ${docName}`, margin + 5, y_pos + 6);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(52, 211, 153); // Emerald-400
+    doc.text(`Timestamp: ${new Date().toISOString()}`, margin + 5, y_pos + 12);
+    doc.text(`Security Verification Reference: ${order?.id || "—"}-${Date.now()}`, margin + 5, y_pos + 17);
+
+    // Return base64 string
+    const pdfString = doc.output("datauristring");
+    return pdfString.split(",")[1];
+  };
 
   const queue = useMemo(() => {
     return orders.filter((o) => {
@@ -505,6 +653,8 @@ export function DoctorQueuePage() {
                         className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-medium text-slate-800 focus:border-emerald-500 outline-none"
                       >
                         <option value="truepill">Truepill Partner Pharmacy (Default)</option>
+                        <option value="thrivewell">ThriveWell Rx — External API</option>
+                        <option value="pmci">PMCI Hub — Email Dispatch</option>
                         <option value="alto">Alto Pharmacy</option>
                         <option value="capsule">Capsule Pharmacy</option>
                       </select>
@@ -533,6 +683,22 @@ export function DoctorQueuePage() {
                     try {
                       const rxDosage = dosage || selected.dosageInstructions || "As directed";
                       const rxNoteFinal = rxNote || "Patient approved via clinical review.";
+
+                      let prescriptionPdfB64: string | undefined = undefined;
+                      const isControlledThrivewell =
+                        selectedPharmacy === "thrivewell" &&
+                        selected.dea_schedule &&
+                        ["ii", "iii", "iv", "v", "2", "3", "4", "5"].includes(selected.dea_schedule.toLowerCase());
+
+                      if (isControlledThrivewell) {
+                        prescriptionPdfB64 = generatePrescriptionPdfBase64(
+                          selected,
+                          docProfile,
+                          rxDosage,
+                          rxNoteFinal
+                        );
+                      }
+
                       const result = await approveAndDispatchPrescription({
                         orderKey: selected.dbId || selected.id,
                         patientId: selected.userId || selected.user_id,
@@ -540,6 +706,7 @@ export function DoctorQueuePage() {
                         dosageInstructions: rxDosage,
                         doctorNote: rxNoteFinal,
                         pharmacy: selectedPharmacy,
+                        prescriptionPdfB64,
                       });
 
                       if (!result.ok) {
