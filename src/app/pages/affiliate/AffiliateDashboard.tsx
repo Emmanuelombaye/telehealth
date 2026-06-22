@@ -92,9 +92,6 @@ export function AffiliateDashboard() {
         <CardContent className="p-6 md:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-[#0A2E1F] text-white border-none text-[8px] font-black uppercase tracking-wider">
-                Powered by Referly.so
-              </Badge>
               <Badge variant="outline" className="text-[8px] font-black uppercase tracking-wider border-emerald-200 text-emerald-700">
                 {trackingLive ? "Tracking live" : "Sync pending"}
               </Badge>

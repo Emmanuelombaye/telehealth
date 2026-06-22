@@ -126,9 +126,6 @@ export function AdminAffiliatesPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">Affiliate Hub</h1>
-            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[10px] font-black uppercase tracking-wider py-0.5">
-              Powered by Referly.so
-            </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-1 max-w-xl">
             Control marketing campaigns, monitor tracking pixels, and simulate checkout postbacks for third-party affiliate commissions.
