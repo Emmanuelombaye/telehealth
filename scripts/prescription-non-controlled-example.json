@@ -1,0 +1,31 @@
+{
+  "masterId": "ORD-2026-005678",
+  "appoinment_date": "2026-06-15",
+  "diagnosis": "Testosterone Deficiency",
+  "allergy_information": "Sulfa drugs",
+  "patient_current_medication": "None",
+  "prescription_items": [
+    {
+      "medication_code": "TEST-INV-NC",
+      "medication_quantity": 30,
+      "medication_sig": "Take one tablet by mouth once daily in the morning.",
+      "refills": 3,
+      "notes": "Patient to self-administer. Monitor blood work every 3 months."
+    }
+  ],
+  "address_1": "8829 Barton Place",
+  "address_2": "Suite 1020",
+  "city": "Austin",
+  "state": "TX",
+  "zip_code": "78701",
+  "patient_first_name": "Jane",
+  "patient_last_name": "Smith",
+  "patient_cell_phone": "5125551234",
+  "patient_email": "jane.smith@email.com",
+  "patient_gender": "Female",
+  "date_of_birth": "1990-05-20",
+  "prescriber_first_name": "Michael",
+  "prescriber_last_name": "Chen",
+  "prescriber_dea": "CF1345634",
+  "prescriber_npi": "4212541526"
+}

@@ -20,6 +20,7 @@
     "partner-storefront": "node examples/partner-storefront/server.mjs",
     "test:partner-storefront": "node examples/partner-storefront/test-api.mjs",
     "check:partner-api": "node scripts/verify-partner-api.mjs",
+    "check:thrivewell": "node scripts/dispatch-thrivewell-test.mjs",
     "auth:promote-super-admin": "node scripts/promote-super-admin.mjs",
     "auth:provision-staff": "node scripts/provision-staff.mjs",
     "auth:provision-summitmd": "node scripts/provision-summitmd-partner.mjs",

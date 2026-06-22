@@ -1,0 +1,45 @@
+{
+  "masterId": "ORD-2026-001234",
+  "notes": "New prescription for patient",
+  "address_1": "9540 20th Bay Street Apt 1",
+  "address_2": null,
+  "city": "Norfolk",
+  "state": "VA",
+  "country": "USA",
+  "zip_code": "23518",
+  "patient_first_name": "John",
+  "patient_last_name": "Doe",
+  "date_of_birth": "1985-03-15",
+  "patient_cell_phone": "(757) 717-2434",
+  "patient_gender": "Male",
+  "patient_email": "john.doe@email.com",
+  "allergy_information": "Penicillin",
+  "patient_other_medications": "None",
+  "prescription_items": [
+    {
+      "medication_code": "TEST-INV",
+      "days_supply": 30,
+      "medication_sig": "Take one tablet by mouth once daily in the morning with food.",
+      "medication_quantity": 30,
+      "refills": 2,
+      "pref_packaging": "standard",
+      "treatment_type": "Chronic",
+      "non_child_resistant_acknowledgment": "No",
+      "prescribing_doctor": {
+        "provider_npi": "1306335955",
+        "first_name": "Sarah",
+        "last_name": "Johnson",
+        "address_1": "900 Commonwealth Place",
+        "address_2": "Suite 200",
+        "city": "Virginia Beach",
+        "state": "VA",
+        "zip_code": "23464",
+        "country": "USA"
+      }
+    }
+  ],
+  "driver_license": "B67237651",
+  "driver_license_state": "VA",
+  "driver_license_image": "{{base64_jpg_image}}",
+  "encoded_prescription_pdf": "{{base64_pdf_document}}"
+}
