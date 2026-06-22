@@ -83,14 +83,24 @@ export function AdminDashboard() {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        let q = supabase
-          .from("orders")
-          .select(ORDERS_ADMIN_NON_CLINICAL_SELECT)
-          .order("created_at", { ascending: false });
-        q = applyOrdersBrandScope(q, role, brandId);
-        const { data, error } = await q;
-        if (error) throw error;
-        setOrders(data || []);
+        let allOrders: any[] = [];
+        let page = 0;
+        const limit = 1000;
+        while (true) {
+          let q = supabase
+            .from("orders")
+            .select(ORDERS_ADMIN_NON_CLINICAL_SELECT)
+            .order("created_at", { ascending: false })
+            .range(page * limit, (page + 1) * limit - 1);
+          q = applyOrdersBrandScope(q, role, brandId);
+          const { data, error } = await q;
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          allOrders = [...allOrders, ...data];
+          if (data.length < limit) break;
+          page++;
+        }
+        setOrders(allOrders);
       } catch (err) {
         console.error("Fetch error:", err);
       } finally {
