@@ -83,22 +83,36 @@ export function AdminDashboard() {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        let allOrders: any[] = [];
-        let page = 0;
+        // 1. Get the total count first using a lightweight count-only query
+        let countQ = supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true });
+        countQ = applyOrdersBrandScope(countQ, role, brandId);
+        const { count, error: countErr } = await countQ;
+        if (countErr) throw countErr;
+
+        const total = count || 0;
         const limit = 1000;
-        while (true) {
+        const pages = Math.ceil(total / limit);
+
+        // 2. Build and run all page queries in parallel
+        const promises = Array.from({ length: pages }, (_, page) => {
           let q = supabase
             .from("orders")
-            .select(ORDERS_ADMIN_NON_CLINICAL_SELECT)
+            .select("id, order_number, user_id, patient_name, patient_email, sub_brand, medication, status, amount, created_at, ordered_date")
             .order("created_at", { ascending: false })
             .range(page * limit, (page + 1) * limit - 1);
           q = applyOrdersBrandScope(q, role, brandId);
-          const { data, error } = await q;
-          if (error) throw error;
-          if (!data || data.length === 0) break;
-          allOrders = [...allOrders, ...data];
-          if (data.length < limit) break;
-          page++;
+          return q;
+        });
+
+        const results = await Promise.all(promises);
+        let allOrders: any[] = [];
+        for (const res of results) {
+          if (res.error) throw res.error;
+          if (res.data) {
+            allOrders = [...allOrders, ...res.data];
+          }
         }
         setOrders(allOrders);
       } catch (err) {
