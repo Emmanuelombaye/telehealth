@@ -6,7 +6,7 @@
   "patient_current_medication": "None",
   "prescription_items": [
     {
-      "medication_code": "TEST-INV-NC",
+      "medication_code": "SP137",
       "medication_quantity": 30,
       "medication_sig": "Take one tablet by mouth once daily in the morning.",
       "refills": 3,

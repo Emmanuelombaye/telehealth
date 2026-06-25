@@ -27,17 +27,44 @@ export async function fetchOrdersRows(
   const primarySelect = ordersSelectForMode(mode);
 
   const run = async (selectCols: string) => {
-    let query = supabase.from("orders").select(selectCols).order("created_at", { ascending: false });
-
-    if (role === "patient" && userId) {
-      query = query.eq("user_id", userId);
-    } else {
-      query = applyOrdersBrandScope(query, role, brandId);
+    if (limit != null) {
+      let query = supabase.from("orders").select(selectCols).order("created_at", { ascending: false });
+      if (role === "patient" && userId) {
+        query = query.eq("user_id", userId);
+      } else {
+        query = applyOrdersBrandScope(query, role, brandId);
+      }
+      query = query.limit(limit);
+      return query;
     }
 
-    if (limit != null) query = query.limit(limit);
+    let allData: any[] = [];
+    let page = 0;
+    const PAGE_SIZE = 1000;
+    
+    while (true) {
+      let query = supabase
+        .from("orders")
+        .select(selectCols)
+        .order("created_at", { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-    return query;
+      if (role === "patient" && userId) {
+        query = query.eq("user_id", userId);
+      } else {
+        query = applyOrdersBrandScope(query, role, brandId);
+      }
+
+      const { data, error } = await query;
+      if (error) return { data: null, error };
+      if (!data || data.length === 0) break;
+      
+      allData = allData.concat(data);
+      if (data.length < PAGE_SIZE) break;
+      page++;
+    }
+    
+    return { data: allData, error: null };
   };
 
   let { data, error } = await run(primarySelect);

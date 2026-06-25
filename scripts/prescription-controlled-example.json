@@ -17,7 +17,7 @@
   "patient_other_medications": "None",
   "prescription_items": [
     {
-      "medication_code": "TEST-INV",
+      "medication_code": "SP137",
       "days_supply": 30,
       "medication_sig": "Take one tablet by mouth once daily in the morning with food.",
       "medication_quantity": 30,

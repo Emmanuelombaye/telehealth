@@ -3,3 +3,7 @@ dist/
 .DS_Store
 *.log
 config.bat
+.env
+.env.local
+.env.backup
+.env.*.local

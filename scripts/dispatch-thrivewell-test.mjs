@@ -75,6 +75,9 @@ async function dispatchPrescription(type, url, payloadPath, username, password) 
     payload.encoded_prescription_pdf = DUMMY_PDF_BASE64;
     injectedPdf = true;
   }
+  if (payload.appoinment_date) {
+    payload.appoinment_date = new Date().toISOString().slice(0, 10);
+  }
 
   logInfo(`Payload loaded: ID="${payload.masterId || 'unknown'}", Patient="${payload.patient_first_name || ''} ${payload.patient_last_name || ''}"`);
   if (injectedDlImage) logInfo(`-> Injected dummy 1x1 JPEG driver_license_image`);
