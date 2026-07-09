@@ -429,7 +429,7 @@ export function AdminFinancePage() {
               </div>
 
               {/* KPI Cards Strip */}
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
                 {[
                   {
                     title: "Gross Sales Volume",
@@ -464,23 +464,30 @@ export function AdminFinancePage() {
                     theme: "text-indigo-700 bg-indigo-50 border-indigo-100/50",
                   }
                 ].map((kpi, idx) => (
-                  <Card key={idx} className="p-6 relative overflow-hidden group hover:shadow-lg transition-all duration-300 border border-slate-200/80 rounded-2xl bg-white">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{kpi.title}</span>
-                        <h2 className="text-2xl font-black text-[#0A2E1F] tracking-tight pt-1">
+                  <Card
+                    key={idx}
+                    className="min-w-0 w-full p-5 sm:p-6 relative overflow-hidden group hover:shadow-lg transition-all duration-300 border border-slate-200/80 rounded-2xl bg-white shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-snug">
+                          {kpi.title}
+                        </span>
+                        <h2 className="text-lg sm:text-xl xl:text-2xl font-black text-[#0A2E1F] tracking-tight pt-1 tabular-nums leading-tight break-words">
                           {kpi.value}
                         </h2>
                       </div>
-                      <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border", kpi.theme)}>
+                      <div className={cn("h-10 w-10 shrink-0 rounded-xl flex items-center justify-center border", kpi.theme)}>
                         <kpi.icon className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-slate-100">
-                      <span className="text-[9px] font-black uppercase tracking-wider text-[#0A2E1F]">
+                    <div className="mt-4 pt-3 border-t border-slate-100 space-y-1">
+                      <span className="block text-[9px] font-black uppercase tracking-wider text-[#0A2E1F] leading-snug">
                         {kpi.label}
                       </span>
-                      <span className="text-[9px] text-slate-400 font-medium">· {kpi.desc}</span>
+                      <span className="block text-[9px] text-slate-400 font-medium leading-snug">
+                        {kpi.desc}
+                      </span>
                     </div>
                   </Card>
                 ))}
