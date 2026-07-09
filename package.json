@@ -24,6 +24,7 @@
     "auth:promote-super-admin": "node scripts/promote-super-admin.mjs",
     "auth:provision-staff": "node scripts/provision-staff.mjs",
     "auth:provision-summitmd": "node scripts/provision-summitmd-partner.mjs",
+    "auth:provision-pax": "node scripts/provision-pax-partner.mjs",
     "verify:portals": "node scripts/verify-all-portals.mjs",
     "check:all-portals": "node scripts/check-all-portals.mjs",
     "db:fix-brand-admin-orders": "node scripts/apply-brand-admin-orders-rls.mjs",

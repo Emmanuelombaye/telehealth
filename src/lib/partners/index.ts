@@ -1,9 +1,11 @@
 import { registerPartner } from "./registry";
 import { northStarMdIntegration } from "./integrations/northStarMd";
 import { summitMdIntegration } from "./integrations/summitMd";
+import { paxIntegration } from "./integrations/pax";
 
 registerPartner(summitMdIntegration);
 registerPartner(northStarMdIntegration);
+registerPartner(paxIntegration);
 
 export type {
   PartnerApiDocs,
@@ -29,6 +31,7 @@ export {
 } from "./connect";
 export { summitMdIntegration } from "./integrations/summitMd";
 export { northStarMdIntegration } from "./integrations/northStarMd";
+export { paxIntegration } from "./integrations/pax";
 export {
   authModeFromSearch,
   partnerHandoffMessageForMode,

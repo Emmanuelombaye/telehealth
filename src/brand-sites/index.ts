@@ -3,10 +3,11 @@ import type { ActiveBrand } from "../lib/brands/registry";
 import type { BrandSiteConfig } from "./types";
 import { northStarSite } from "./north-star-md/site";
 import { summitMdSite } from "./summit-md/site";
+import { paxSite } from "./pax/site";
 
 export type { BrandSiteConfig, BrandSiteCopy, BrandSiteTheme } from "./types";
 
-const SITES: BrandSiteConfig[] = [northStarSite, summitMdSite];
+const SITES: BrandSiteConfig[] = [northStarSite, summitMdSite, paxSite];
 
 export const PEAK_SITE: BrandSiteConfig = {
   brand: PEAK_HEALTH_BRAND,
