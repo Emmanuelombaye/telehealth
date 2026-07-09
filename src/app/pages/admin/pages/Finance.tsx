@@ -412,21 +412,6 @@ export function AdminFinancePage() {
               exit={{ opacity: 0, y: -15 }}
               className="space-y-8"
             >
-              {/* Premium Dashboard Alert */}
-              <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-slate-50 border border-emerald-100/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-emerald-600" />
-                    <p className="text-xs font-black uppercase tracking-wider text-emerald-900">Dynamic Profitability Lens</p>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed max-w-4xl font-medium">
-                    Adjust the Diagram D sliders in the simulator below to recalculate compound pharmacy COGS, Stripe platform fees, and shipping overhead. Stats update instantly across the entire interface.
-                  </p>
-                </div>
-                <Badge variant="success" className="bg-[#0A2E1F] border border-emerald-800 text-white font-black text-[10px] px-3.5 py-1.5 rounded-lg shrink-0">
-                  EST. MARGIN: {stats.margin.toFixed(1)}%
-                </Badge>
-              </div>
 
               {/* KPI Cards Strip */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
