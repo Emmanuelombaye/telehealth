@@ -201,8 +201,8 @@ export function AdminDashboard() {
           <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-emerald-400/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-slate-200/40 blur-3xl" />
 
-          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-3">
+          <div className="relative flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0 flex-1 space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className="rounded-md border-0 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-emerald-800">
                   Brand operations
@@ -214,30 +214,30 @@ export function AdminDashboard() {
                   </span>
                   Live sync
                 </span>
+                <span className="text-xs font-medium text-slate-500">{todayLabel}</span>
               </div>
-              <div>
-                <p className="text-sm font-medium text-slate-500">{todayLabel}</p>
-                <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+              <div className="min-w-0">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl text-balance">
                   Good to see you, {adminName}
                 </h1>
-                <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-500">
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
                   Your command center for orders, revenue, and patient operations — scoped to your brand, non-clinical view.
                 </p>
               </div>
             </div>
 
-            <div className="flex shrink-0 flex-wrap items-center gap-3">
-              <Link to={`${adminBase}/analytics`}>
+            <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap xl:justify-end">
+              <Link to={`${adminBase}/analytics`} className="w-full sm:w-auto">
                 <Button
                   variant="outline"
-                  className="h-10 rounded-lg border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                  className="h-10 w-full rounded-lg border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 sm:w-auto"
                 >
                   <BarChart3 className="mr-2 h-4 w-4 text-emerald-600" />
                   View analytics
                 </Button>
               </Link>
-              <Link to={`${adminBase}/orders`}>
-                <Button className="h-10 rounded-lg bg-[#0A2E1F] px-5 text-sm font-medium text-white shadow-sm hover:bg-[#0d3d28]">
+              <Link to={`${adminBase}/orders`} className="w-full sm:w-auto">
+                <Button className="h-10 w-full rounded-lg bg-[#0A2E1F] px-5 text-sm font-medium text-white shadow-sm hover:bg-[#0d3d28] sm:w-auto">
                   Manage orders
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
