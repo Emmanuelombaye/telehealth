@@ -478,11 +478,11 @@ export function AdminFinancePage() {
                 ))}
               </div>
 
-              {/* Central Section Split */}
-              <div className="grid lg:grid-cols-12 gap-8">
+              {/* Central Section Split — stack until xl so the sidebar column is not crushed at lg */}
+              <div className="grid min-w-0 gap-8 xl:grid-cols-12">
                 
                 {/* Left Side: Chart and Economics */}
-                <div className="lg:col-span-8 space-y-8">
+                <div className="min-w-0 space-y-8 xl:col-span-7">
                   
                   {/* Interactive Chart Card */}
                   <Card className="border border-slate-200/80 rounded-2xl bg-white shadow-sm overflow-hidden">
@@ -576,20 +576,20 @@ export function AdminFinancePage() {
                   </Card>
 
                   {/* Diagram D Economics Breakdown & Margin Simulator */}
-                  <Card className="border border-slate-200/80 rounded-2xl bg-white shadow-sm p-6 sm:p-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-5 mb-6 gap-3">
-                      <div>
+                  <Card className="min-w-0 overflow-hidden border border-slate-200/80 rounded-2xl bg-white p-6 shadow-sm sm:p-8">
+                    <div className="mb-6 flex flex-col justify-between gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-center">
+                      <div className="min-w-0">
                         <h3 className="text-md font-bold uppercase tracking-wider text-[#0A2E1F]">Diagram D Margin Simulator</h3>
-                        <p className="text-[10px] font-medium text-slate-400 mt-0.5">Drag to simulate shifts in compounding COGS, shipping, and platform pricing</p>
+                        <p className="mt-0.5 text-[10px] font-medium text-slate-400">Drag to simulate shifts in compounding COGS, shipping, and platform pricing</p>
                       </div>
-                      <Badge className="bg-[#0A2E1F] border border-emerald-800 text-white font-black text-[9px] px-2.5 py-1 rounded">
+                      <Badge className="w-fit shrink-0 rounded border border-emerald-800 bg-[#0A2E1F] px-2.5 py-1 text-[9px] font-black text-white">
                         RETAINED MARGIN: {stats.margin.toFixed(1)}%
                       </Badge>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-8">
-                      {/* Left: Interactive Sliders */}
-                      <div className="space-y-5">
+                    <div className="grid min-w-0 gap-8">
+                      {/* Sliders */}
+                      <div className="min-w-0 space-y-5">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-xs font-bold">
                             <label className="text-slate-600 flex items-center gap-1.5">
@@ -645,9 +645,9 @@ export function AdminFinancePage() {
                         </div>
                       </div>
 
-                      {/* Right: Dynamic Calculation Bar Stack */}
-                      <div className="space-y-4 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
-                        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">Simulated Overhead Breakdown</h4>
+                      {/* Overhead breakdown */}
+                      <div className="min-w-0 space-y-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                        <h4 className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Simulated Overhead Breakdown</h4>
                         
                         {[
                           { label: "Pharmacy Compounding COGS", val: stats.drugCogs, pct: cogsPercent, color: "bg-blue-500" },
@@ -655,13 +655,13 @@ export function AdminFinancePage() {
                           { label: "Shipping & Fulfillment Logistics", val: stats.shippingCosts, pct: stats.totalGross > 0 ? (stats.shippingCosts / stats.totalGross) * 100 : 0, color: "bg-indigo-500" },
                           { label: "Retained Net Brand Profit", val: stats.netProfit, pct: stats.margin, color: "bg-emerald-500" },
                         ].map((costItem, idx) => (
-                          <div key={idx} className="space-y-1">
-                            <div className="flex justify-between text-[11px] font-bold">
-                              <span className="text-slate-600">{costItem.label}</span>
-                              <span className="text-[#0A2E1F] font-black space-x-1.5">
-                                <span>${costItem.val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span className="text-slate-400 font-normal">({costItem.pct.toFixed(1)}%)</span>
-                              </span>
+                          <div key={idx} className="space-y-1.5">
+                            <div className="space-y-0.5 text-[11px] font-bold">
+                              <p className="leading-snug text-slate-600">{costItem.label}</p>
+                              <p className="tabular-nums text-[#0A2E1F] font-black">
+                                ${costItem.val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                <span className="ml-1.5 font-normal text-slate-400">({costItem.pct.toFixed(1)}%)</span>
+                              </p>
                             </div>
                             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                               <div className={cn("h-full rounded-full transition-all duration-300", costItem.color)} style={{ width: `${Math.min(costItem.pct, 100)}%` }} />
@@ -730,7 +730,7 @@ export function AdminFinancePage() {
                 </div>
 
                 {/* Right Side: Banking, Payouts, Audit */}
-                <div className="lg:col-span-4 space-y-8">
+                <div className="min-w-0 w-full space-y-8 xl:col-span-5">
                   
                   {/* Settlement debit card layout */}
                   <Card className="p-6 border border-slate-200/80 rounded-2xl bg-white shadow-sm space-y-6">
@@ -759,9 +759,9 @@ export function AdminFinancePage() {
                     </div>
 
                     <div className="space-y-4 pt-2">
-                      <div className="flex justify-between text-xs font-bold text-slate-600">
+                      <div className="flex flex-col gap-1 text-xs font-bold text-slate-600 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                         <span>Automatic Payout Threshold</span>
-                        <span className="font-black text-[#0A2E1F]">
+                        <span className="shrink-0 tabular-nums font-black text-[#0A2E1F]">
                           ${(stats.totalGross % 3000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / $3,000.00
                         </span>
                       </div>
@@ -776,23 +776,30 @@ export function AdminFinancePage() {
                   </Card>
 
                   {/* Recent Payouts History */}
-                  <Card className="p-6 border border-slate-200/80 rounded-2xl bg-white shadow-sm space-y-4">
+                  <Card className="min-w-0 overflow-hidden space-y-4 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                      <h3 className="text-xs font-bold text-[#0A2E1F] uppercase tracking-wider">Payout History</h3>
-                      <Receipt className="h-4 w-4 text-slate-400" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#0A2E1F]">Payout History</h3>
+                      <Receipt className="h-4 w-4 shrink-0 text-slate-400" />
                     </div>
 
-                    <div className="space-y-3.5 max-h-[260px] overflow-y-auto pr-1">
+                    <div className="max-h-[320px] space-y-3 overflow-y-auto pr-2">
                       {payouts.slice(0, 4).map((payout, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/40 hover:bg-slate-50 transition-colors">
-                          <div className="space-y-0.5">
-                            <p className="text-[10px] font-black text-slate-800">{payout.id}</p>
-                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{payout.date} · {payout.invoicesCount} txs</p>
+                        <div
+                          key={idx}
+                          className="w-full min-w-0 space-y-2 rounded-xl border border-slate-100 bg-slate-50/40 p-3.5 transition-colors hover:bg-slate-50"
+                        >
+                          <p className="break-all text-[10px] font-black leading-snug text-slate-800">{payout.id}</p>
+                          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                              {payout.date} · {payout.invoicesCount} txs
+                            </p>
+                            <p className="shrink-0 whitespace-nowrap text-xs font-extrabold tabular-nums text-[#0A2E1F]">
+                              ${payout.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
                           </div>
-                          <div className="text-right space-y-0.5">
-                            <p className="text-xs font-extrabold text-[#0A2E1F]">${payout.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                          <div>
                             <span className={cn(
-                              "text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md border",
+                              "inline-block whitespace-nowrap text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md border",
                               payout.status === "Settled" 
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
                                 : "bg-blue-50 text-blue-700 border-blue-100"
