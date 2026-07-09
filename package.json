@@ -7,8 +7,8 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "node scripts/vercel-build.mjs",
-    "dev": "vite",
+    "build": "node init && node scripts/vercel-build.mjs",
+    "dev": "node init && vite",
     "preview": "vite preview",
     "check:patient-e2e": "node scripts/patient-e2e-check.mjs",
     "check:engineering": "node scripts/engineering-check.mjs",
@@ -24,6 +24,7 @@
     "auth:promote-super-admin": "node scripts/promote-super-admin.mjs",
     "auth:provision-staff": "node scripts/provision-staff.mjs",
     "auth:provision-summitmd": "node scripts/provision-summitmd-partner.mjs",
+    "auth:provision-pax": "node scripts/provision-pax-partner.mjs",
     "verify:portals": "node scripts/verify-all-portals.mjs",
     "check:all-portals": "node scripts/check-all-portals.mjs",
     "db:fix-brand-admin-orders": "node scripts/apply-brand-admin-orders-rls.mjs",
@@ -72,6 +73,7 @@
     "input-otp": "1.4.2",
     "jspdf": "^4.2.1",
     "lucide-react": "0.487.0",
+    "node-fetch": "^3.3.2",
     "pg": "^8.20.0",
     "react": "18.3.1",
     "react-day-picker": "8.10.1",
